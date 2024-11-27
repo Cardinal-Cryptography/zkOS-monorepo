@@ -1,0 +1,25 @@
+[package]
+name = "stress-testing"
+version = "0.1.0"
+readme = "README.md"
+
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+alloy-provider = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-signer-local = { workspace = true }
+anyhow = { workspace = true, default-features = true }
+clap = { workspace = true, features = ["derive"] }
+rand = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+
+shielder-circuits = { workspace = true }
+shielder-relayer = { workspace = true }
+shielder-rust-sdk = { workspace = true, features = ["account", "contract", "native_token", "parameter_generation"] }

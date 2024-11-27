@@ -1,0 +1,19 @@
+[package]
+name = "evm-utils"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+alloy-sol-types = { workspace = true }
+hex = { workspace = true }
+revm = { workspace = true, default-features = false, features = ["std"] }
+revm-interpreter = { workspace = true }
+revm-precompile = { workspace = true }
+revm-primitives = { workspace = true }
+sha3 = { workspace = true }
+thiserror = { workspace = true }

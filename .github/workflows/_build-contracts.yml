@@ -1,0 +1,60 @@
+---
+name: Generate, compile and lint contracts
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Generate, compile and lint contracts
+    runs-on: [self-hosted, Linux, X64, large]
+    #runs-on: ubuntu-20.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Setup node
+        uses: asdf-vm/actions/install@v3
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Lint contracts code (excluding generated code)
+        shell: bash
+        run: make deps && make lint-contracts
+
+      - name: Regenerate verifier and Poseidon contracts and ensure that they are up-to-date
+        run: |
+          make generate-verifier-contracts && make generate-poseidon-contracts && \
+          git diff --exit-code -- contracts/
+
+      - name: Compile eth contracts
+        run: make compile-contracts
+
+      - name: Upload generated contracts to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-contracts
+          path: contracts
+          retention-days: 1
+
+      - name: Upload bytecode and ABI to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+          retention-days: 1

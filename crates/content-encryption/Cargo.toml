@@ -1,0 +1,23 @@
+[package]
+name = "content-encryption"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+description = "Small library for encrypting and decrypting content with a password."
+
+[lib]
+path = "lib.rs"
+name = "content_encryption"
+
+[dependencies]
+anyhow = { workspace = true }
+chacha20poly1305 = { workspace = true, features = ["alloc"] }
+rust-argon2 = { workspace = true }
+
+[features]
+default = ["std"]
+std = []

@@ -1,0 +1,69 @@
+---
+name: Run linter and tests for all Typescript modules
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  PLASMO_PUBLIC_SHIELDER_CONTRACT_ADDRESS: ${{ vars.SHIELDER_CONTRACT_ADDRESS }}
+
+jobs:
+  main:
+    name: Run lints and tests
+    runs-on: [self-hosted, Linux, X64, small]
+    timeout-minutes: 10
+
+    steps:
+      - name: Display variables
+        run: |
+          echo "PLASMO_PUBLIC_SHIELDER_CONTRACT_ADDRESS: \
+            ${{ env.PLASMO_PUBLIC_SHIELDER_CONTRACT_ADDRESS }}"
+
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Download compiled contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+
+      - name: Download generated wasm from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: crates-shielder-wasm-pkg
+          path: crates/shielder-wasm/pkg
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies (shielder-sdk)
+        run: pnpm install --frozen-lockfile
+        working-directory: ts/shielder-sdk
+
+      - name: Build shielder-sdk
+        run: pnpm build
+        working-directory: ts/shielder-sdk
+
+      - name: Run lint checks (shielder-sdk)
+        run: pnpm lint
+        working-directory: ts/shielder-sdk

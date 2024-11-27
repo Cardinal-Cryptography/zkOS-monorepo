@@ -1,0 +1,361 @@
+use std::{assert_matches::assert_matches, str::FromStr};
+
+use alloy_primitives::{Address, Bytes, TxHash, U256};
+use rstest::rstest;
+use shielder_rust_sdk::{
+    account::{
+        call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+        ShielderAccount,
+    },
+    contract::ShielderContract::{
+        withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, WithdrawNative,
+    },
+    version::ContractVersion,
+};
+
+use crate::shielder::{
+    actor_balance_decreased_by,
+    calls::{deposit_native, new_account_native},
+    deploy::{deployment, Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS, REVERTING_ADDRESS},
+    destination_balances_unchanged, invoke_shielder_call,
+    merkle::get_merkle_args,
+    recipient_balance_increased_by, relayer_balance_increased_by, CallResult,
+};
+
+struct PrepareCallArgs {
+    amount: U256,
+    withdraw_address: Address,
+    relayer_address: Address,
+    relayer_fee: U256,
+}
+
+fn prepare_args(amount: U256, relayer_fee: U256) -> PrepareCallArgs {
+    PrepareCallArgs {
+        amount,
+        withdraw_address: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+        relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
+        relayer_fee,
+    }
+}
+
+fn prepare_call(
+    deployment: &mut Deployment,
+    shielder_account: &mut ShielderAccount,
+    args: PrepareCallArgs,
+) -> (withdrawNativeCall, U256) {
+    let note_index = shielder_account
+        .current_leaf_index()
+        .expect("No leaf index");
+
+    let (params, pk) = deployment.withdraw_native_proving_params.clone();
+    let (merkle_root, merkle_path) = get_merkle_args(
+        deployment.contract_suite.shielder,
+        note_index,
+        &mut deployment.evm,
+    );
+
+    let calldata = shielder_account.prepare_call::<WithdrawCallType>(
+        &params,
+        &pk,
+        U256::from(args.amount),
+        &WithdrawExtra {
+            merkle_proof: MerkleProof {
+                root: merkle_root,
+                path: merkle_path,
+            },
+            to: args.withdraw_address,
+            relayer_address: args.relayer_address,
+            relayer_fee: args.relayer_fee,
+            contract_version: ContractVersion {
+                note_version: 0,
+                circuit_version: 0,
+                patch_version: 1,
+            },
+        },
+    );
+
+    (calldata, note_index)
+}
+
+fn invoke_call(
+    deployment: &mut Deployment,
+    shielder_account: &mut ShielderAccount,
+    calldata: &withdrawNativeCall,
+) -> CallResult {
+    let call_result = invoke_shielder_call(deployment, calldata, None);
+
+    match call_result {
+        Ok(event) => {
+            shielder_account.register_action((TxHash::default(), event.clone()));
+            Ok(event)
+        }
+        Err(_) => call_result,
+    }
+}
+
+#[rstest]
+fn succeeds(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (withdraw_calldata, withdraw_note_index) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(5), U256::from(1)),
+    );
+    let withdraw_result = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata);
+
+    assert_eq!(
+        withdraw_result,
+        Ok(ShielderContractEvents::WithdrawNative(WithdrawNative {
+            idHiding: withdraw_calldata.idHiding,
+            amount: U256::from(5),
+            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            newNote: withdraw_calldata.newNote,
+            relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+            newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+            fee: U256::from(1),
+        }))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
+    assert!(relayer_balance_increased_by(&deployment, U256::from(1)));
+    assert_eq!(shielder_account.shielded_amount, U256::from(15))
+}
+
+#[rstest]
+fn succeeds_after_deposit(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let deposit_amount = U256::from(10);
+    let (deposit_calldata, _) =
+        deposit_native::prepare_call(&mut deployment, &mut shielder_account, deposit_amount);
+    deposit_native::invoke_call(
+        &mut deployment,
+        &mut shielder_account,
+        deposit_amount,
+        &deposit_calldata,
+    )
+    .unwrap();
+
+    let (withdraw_calldata, withdraw_note_index) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(5), U256::from(1)),
+    );
+    let withdraw_result = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata);
+
+    assert_eq!(
+        withdraw_result,
+        Ok(ShielderContractEvents::WithdrawNative(WithdrawNative {
+            idHiding: withdraw_calldata.idHiding,
+            amount: U256::from(5),
+            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            newNote: withdraw_calldata.newNote,
+            relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+            newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+            fee: U256::from(1),
+        }))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::from(30)));
+    assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
+    assert!(relayer_balance_increased_by(&deployment, U256::from(1)));
+    assert_eq!(shielder_account.shielded_amount, U256::from(25))
+}
+
+#[rstest]
+fn fails_if_proof_incorrect(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (mut calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(5), U256::from(1)),
+    );
+    calldata.newNote = calldata.newNote.wrapping_add(U256::from(1));
+
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(
+        result,
+        Err(ShielderContractErrors::WithdrawVerificationFailed(_))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
+fn rejects_value_zero(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(0), U256::from(1)),
+    );
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(result, Err(ShielderContractErrors::ZeroAmount(_)));
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
+fn fails_if_fee_higher_than_amount(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(3), U256::from(3)),
+    );
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(result, Err(ShielderContractErrors::FeeHigherThanAmount(_)));
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
+fn accepts_max_amount(mut deployment: Deployment) {
+    let mut shielder_account = new_account_native::create_account_and_call(
+        &mut deployment,
+        U256::from(1),
+        U256::from((1u128 << 112) - 1),
+    )
+    .unwrap();
+
+    let (calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from((1u128 << 112) - 1), U256::from(1)),
+    );
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert!(result.is_ok());
+    assert!(actor_balance_decreased_by(
+        &deployment,
+        U256::from((1u128 << 112) - 1)
+    ));
+    assert!(recipient_balance_increased_by(
+        &deployment,
+        U256::from((1u128 << 112) - 2)
+    ));
+    assert!(relayer_balance_increased_by(&deployment, U256::from(1)))
+}
+
+#[rstest]
+fn rejects_too_high_amount(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (mut calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(2), U256::from(1)),
+    );
+    calldata.amount = U256::from(1u128 << 112);
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(result, Err(ShielderContractErrors::AmountTooHigh(_)));
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
+fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
+    let mut shielder_account = ShielderAccount::default();
+
+    let calldata = withdrawNativeCall {
+        idHiding: U256::ZERO,
+        withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+        relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+        relayerFee: U256::ZERO,
+        amount: U256::from(10),
+        merkleRoot: U256::ZERO,
+        oldNullifierHash: U256::ZERO,
+        newNote: U256::ZERO,
+        proof: Bytes::from(vec![]),
+    };
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(
+        result,
+        Err(ShielderContractErrors::MerkleRootDoesNotExist(_))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::from(0)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
+fn cannot_use_same_note_twice(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(5), U256::from(1)),
+    );
+    assert!(invoke_call(&mut deployment, &mut shielder_account, &calldata).is_ok());
+
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(result, Err(ShielderContractErrors::DuplicatedNullifier(_)));
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
+    assert!(relayer_balance_increased_by(&deployment, U256::from(1)))
+}
+
+#[rstest]
+fn handles_withdraw_transfer_failure(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        PrepareCallArgs {
+            withdraw_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
+            ..prepare_args(U256::from(5), U256::from(1))
+        },
+    );
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(result, Err(ShielderContractErrors::NativeTransferFailed(_)));
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
+fn handles_fee_transfer_failure(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        PrepareCallArgs {
+            relayer_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
+            ..prepare_args(U256::from(5), U256::from(1))
+        },
+    );
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(result, Err(ShielderContractErrors::NativeTransferFailed(_)));
+    assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+    assert!(destination_balances_unchanged(&deployment))
+}

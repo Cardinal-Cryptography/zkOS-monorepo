@@ -1,0 +1,18 @@
+# Full reference https://github.com/foundry-rs/foundry/tree/master/crates/config
+
+[profile.default]
+auto_detect_solc = true
+block_timestamp = 1_680_220_800 # March 31, 2023 at 00:00 GMT
+bytecode_hash = "none"
+evm_version = "shanghai"
+fuzz = { runs = 1_000 }
+gas_reports = ["*"]
+optimizer = true
+via-ir = true
+out = "artifacts"
+script = "scripts"
+src = "contracts"
+test = "test"
+
+[rpc_endpoints]
+anvil = "http://localhost:8545"

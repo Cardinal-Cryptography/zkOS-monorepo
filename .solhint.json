@@ -1,0 +1,21 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+    "quotes": ["error", "double"],
+    "no-inline-assembly": "",
+    "no-global-import": "error",
+    "no-empty-blocks": "",
+    "reason-string": "error",
+    "func-visibility": [
+      "warn",
+      {
+        "ignoreConstructors": true
+      }
+    ],
+    "avoid-low-level-calls": "",
+    "no-unused-import": "error",
+    "no-unused-vars": "error"
+  }
+}

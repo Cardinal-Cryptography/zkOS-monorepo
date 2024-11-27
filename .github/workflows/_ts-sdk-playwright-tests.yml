@@ -1,0 +1,257 @@
+---
+name: Run sharded Playwright tests for shielder-sdk
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build-rust-binary:
+    name: Build Rust binary
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Build Rust binary
+        run: cargo build --manifest-path crates/test-ts-conversions/Cargo.toml
+
+      - name: Build relayer
+        run: cd crates/shielder-relayer && make build
+
+      - name: DOCKER | Build and push latest docker image
+        id: build-image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          file: ./crates/shielder-relayer/docker/Dockerfile.client
+          tags: shielder-relayer
+          outputs: type=docker,dest=/tmp/shielder-relayer.tar
+
+      - name: Upload binary to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-ts-conversions-binary
+          path: target/debug/test-ts-conversions
+          retention-days: 1
+
+      - name: Upload docker image to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shielder-relayer-docker-image
+          path: /tmp/shielder-relayer.tar
+          retention-days: 1
+
+  ts-sdk-playwright-tests:
+    name: Run shielder-sdk Playwright tests
+    runs-on: ubuntu-22.04
+    needs: [build-rust-binary]
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # When increasing parallelism, make it so at least 2 tests are run per worker
+        # by having `shardTotal <= total_number_of_tests / 2`.
+        # This way repeated usage of WASM wrappers within worker is tested as a side effect.
+        shardIndex: [1]
+        shardTotal: [1]
+        threads: [st, mt]
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Run anvil node in background
+        shell: bash
+        run: make anvil &
+
+      - name: Install dependencies
+        shell: bash
+        run: make deps
+
+      - name: Download generated contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-contracts
+          path: contracts
+
+      - name: Download compiled contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+
+      - name: Deploy eth contracts
+        shell: bash
+        run: |
+          NETWORK=anvil make deploy-contracts
+          SHIELDER_CONTRACT_ADDRESS=$(
+            NETWORK=anvil make deploy-contracts \
+            | grep 'Shielder deployed at:' | awk '{print $NF}')
+          echo "SHIELDER_CONTRACT_ADDRESS=${SHIELDER_CONTRACT_ADDRESS}" >> $GITHUB_ENV
+
+      - name: Download generated wasm from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: crates-shielder-wasm-pkg
+          path: crates/shielder-wasm/pkg
+
+      - name: Download binary from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-ts-conversions-binary
+          path: target/debug
+
+      - name: Download relayer image from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: shielder-relayer-docker-image
+          path: /tmp
+
+      - name: Load relayer image
+        run: docker load --input /tmp/shielder-relayer.tar
+
+      - name: Run shielder-relayer
+        run: |
+          source ../../tooling-e2e-tests/local_env.sh
+          DOCKER_USER="$(id -u):$(id -g)" \
+          RELAYER_CONTAINER_NAME=shielder-relayer \
+          RELAYER_DOCKER_IMAGE=shielder-relayer \
+          ./run-relayer.sh&
+        working-directory: crates/shielder-relayer
+
+      - name: Executable permissions
+        run: chmod +x target/debug/test-ts-conversions
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies (shielder-sdk)
+        run: pnpm install --frozen-lockfile
+        working-directory: ts/shielder-sdk
+
+      - name: Build shielder-sdk
+        run: pnpm build
+        working-directory: ts/shielder-sdk
+
+      - name: Install dependencies (shielder-sdk-tests)
+        run: pnpm install --frozen-lockfile
+        working-directory: ts/shielder-sdk-tests
+
+      - name: Install Playwright dependencies (shielder-sdk-tests)
+        run: pnpm postinstall
+        working-directory: ts/shielder-sdk-tests
+
+      - name: Build shielder-sdk-tests
+        run: pnpm build
+        working-directory: ts/shielder-sdk-tests
+
+      - name: Run tests (shielder-sdk-tests)
+        run: |
+          if [[ ${{ matrix.threads }} == "st" ]]; then
+            CONFIG="playwright.singlethreaded.config.mjs"
+          else
+            CONFIG="playwright.multithreaded.config.mjs"
+          fi
+          source ../../tooling-e2e-tests/local_env.sh
+          RELAYER_SIGNER_ADDRESSES="$RELAYER_SIGNER_ADDRESSES" \
+          pnpm playwright test --config $CONFIG \
+            --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        working-directory: ts/shielder-sdk-tests
+
+      - name: Upload blob report to GitHub Actions Artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "ts-sdk-tests-shard-report\
+            -${{ matrix.threads }}\
+            -${{ matrix.shardIndex }}\
+            -${{ matrix.shardTotal }}"
+          path: ts/shielder-sdk-tests/blob-report
+          retention-days: 1
+
+  merge-reports:
+    if: ${{ !cancelled() }}
+    needs: [ts-sdk-playwright-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        threads: [mt]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: ts-sdk-tests-shard-report-${{ matrix.threads }}-*
+          merge-multiple: true
+
+      - name: Print merged report
+        run: npx playwright merge-reports --reporter list ./all-blob-reports
+
+      - name: Store merged report in HTML
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-sdk-tests-report-${{ matrix.threads }}-attempt-${{ github.run_attempt }}
+          path: playwright-report
+          retention-days: 14
+
+  clean-rust-artifact:
+    name: Clean rust artifacts
+    runs-on: ubuntu-22.04
+    if: ${{ always() }}
+    needs: [ts-sdk-playwright-tests]
+    steps:
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            test-ts-conversions-binary
+            shielder-relayer-docker-image

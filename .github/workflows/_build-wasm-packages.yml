@@ -1,0 +1,35 @@
+---
+name: Build wasm packages
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Build wasm packages
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build shielder-wasm
+        run: cd crates/shielder-wasm && make all
+
+      - name: Upload generated wasm to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: crates-shielder-wasm-pkg
+          path: crates/shielder-wasm/pkg
+          retention-days: 1

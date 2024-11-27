@@ -1,0 +1,24 @@
+{
+    "name": "zkOS",
+    "version": "1.0.0",
+    "description": "ZK contracts",
+    "author": "CardinalCryptography",
+    "license": "MIT",
+    "dependencies": {
+        "@openzeppelin/contracts": "=5.0.2",
+        "@openzeppelin/contracts-upgradeable": "=5.0.2",
+        "@uniswap/permit2": "github:Uniswap/permit2#cc56ad0f3439c502c246fc5cfcc3db92bb8b7219",
+        "solmate": "github:transmissions11/solmate#8d910d876f51c3b2585c9109409d601f600e68e1"
+    },
+    "devDependencies": {
+        "@safe-global/protocol-kit": "^3.0.0",
+        "@safe-global/safe-core-sdk-types": "^4.0.0",
+        "child_process": "^1.0.2",
+        "dotenv": "^16.3.1",
+        "forge-std": "github:foundry-rs/forge-std#v1.8.1",
+        "prettier": "^3.2.5",
+        "prettier-plugin-solidity": "^1.3.1",
+        "solhint-community": "^3.7.0",
+        "solhint-plugin-prettier": "^0.1.0"
+    }
+}

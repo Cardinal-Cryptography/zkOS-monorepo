@@ -1,0 +1,17 @@
+.idea/
+__pycache__/
+addresses.json
+artifacts/
+broadcast/
+cache/
+node_modules/
+target/
+.DS_Store
+.vscode/
+contracts/*Key.sol
+contracts/*Verifier.sol
+**/*output.log
+
+tooling-dev/*
+!tooling-dev/Makefile
+!tooling-dev/README.md

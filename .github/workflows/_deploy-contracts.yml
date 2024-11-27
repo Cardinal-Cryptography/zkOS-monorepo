@@ -1,0 +1,51 @@
+---
+name: Deploy contracts
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Deploy contracts to the anvil network
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: asdf-vm/actions/install@v3
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Run anvil node in background
+        shell: bash
+        run: make anvil &
+
+      - name: Install dependencies
+        shell: bash
+        run: make deps
+
+      - name: Download generated contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-contracts
+          path: contracts
+
+      - name: Download compiled contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+
+      - name: deploy eth contracts
+        shell: bash
+        run: NETWORK=anvil make deploy-contracts

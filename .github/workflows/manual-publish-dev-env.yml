@@ -1,0 +1,125 @@
+---
+name: "Build and deploy development environment"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push-relayer:
+    name: Build and push shielder-relayer
+    runs-on: [self-hosted, Linux, X64, medium]
+    steps:
+      - name: GIT | Checkout
+        uses: actions/checkout@v4
+
+      - name: DOCKER | Build and push
+        uses: ./.github/actions/shielder-relayer/build-and-push
+        id: build_shielder_relayer
+        with:
+          aws-mainnet-ecr-access-key-id: ${{ secrets.AWS_MAINNET_ECR_ACCESS_KEY_ID }}
+          aws-mainnet-ecr-access-key: ${{ secrets.AWS_MAINNET_ECR_ACCESS_KEY }}
+          ecr-private-host: ${{ secrets.ECR_PRIVATE_HOST }}
+    outputs:
+      image_tag: ${{ steps.build_shielder_relayer.outputs.image_tag }}
+
+  shielder-sdk:
+    name: Build and push shielder-sdk
+    runs-on: [self-hosted, Linux, X64, medium]
+    steps:
+      - name: GIT | Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Install deps
+        run: make deps
+
+      - name: Compile eth contracts
+        run: make compile-contracts
+
+      - name: Build shielder-wasm
+        run: make all
+        working-directory: crates/shielder-wasm
+
+      - name: Install dependencies (shielder-sdk)
+        run: pnpm install --frozen-lockfile
+        working-directory: ts/shielder-sdk
+
+      - name: Build shielder-sdk
+        run: pnpm build
+        working-directory: ts/shielder-sdk
+
+      - name: Add .npmrc with publish token
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISHING_KEY }}" > .npmrc
+        working-directory: ts/shielder-sdk
+
+      - name: Publish shielder-sdk
+        run: pnpm publish --access restricted --no-git-checks
+        working-directory: ts/shielder-sdk
+
+  tooling-dev:
+    name: Generate developer scripts
+    runs-on: [self-hosted, Linux, X64, medium]
+    steps:
+      - name: GIT | Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Install deps
+        run: make deps
+
+      - name: Compile eth contracts
+        run: make compile-contracts
+
+      - name: Generate developer scripts
+        run: make generate-tooling-dev
+
+      - name: Upload developer scripts to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tooling-dev
+          path: tooling-dev
+          include-hidden-files: true
+          retention-days: 14

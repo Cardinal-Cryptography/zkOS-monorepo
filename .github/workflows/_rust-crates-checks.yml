@@ -1,0 +1,110 @@
+---
+name: Run linter and tests for all Rust crates
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  # Run formatter and linter for all crates, and unit tests for all simple crates, that,
+  # in particular, do not require anvil node to be running.
+  # For shielder-circuit crate, we run tests and build the binary for measuring circuits.
+  rust-checks-and-unit-tests:
+    name: Run lints and tests
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 60
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Download generated contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-contracts
+          path: contracts
+
+      - name: Download compiled contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      # NOTE: integration tests use vanilla solc compiler for compiling Solidity
+      - name: Install solc compiler
+        uses: ./.github/actions/install-solc
+        with:
+          solc-version: 0.8.26
+
+      - name: Run linter
+        run: |
+          make lint-rust
+          make format-rust
+
+      - name: Run tests for Shielder Rust SDK
+        run: cargo test --release -p shielder-rust-sdk --all-features
+
+      - name: Run tests for halo2-verifier
+        run: cd crates/halo2-verifier && make test
+
+      - name: Run tests for shielder-cli
+        run: cd crates/shielder-cli && make test
+
+      - name: Run tests for shielder-wasm
+        run: cd crates/shielder-wasm && make test
+
+      - name: Run integration tests
+        run: make deps && cargo test --release -p integration-tests
+
+  # Run heavy tests for shielder-relayer and e2e tooling tests.
+  full-testing:
+    name: Run heavy tests
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 60
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Download generated contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-contracts
+          path: contracts
+
+      - name: Download compiled contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Run tests for shielder-relayer
+        run: make deps && cd crates/shielder-relayer && BUILD=client make test
+
+      - name: Run e2e tooling tests
+        run: |
+          NO_FORMATTING=true ./tooling-e2e-tests/full_scenario.sh
+          NO_FORMATTING=true ./tooling-e2e-tests/recovery_scenario.sh
+          NO_FORMATTING=true ./tooling-e2e-tests/many_actors.sh

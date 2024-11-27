@@ -1,0 +1,23 @@
+---
+name: 'Install Solc'
+description: 'Installs the Solc compiler.'
+inputs:
+  solc-version:
+    description: 'The latest version of solc.'
+    required: false
+    default: '0.8.26'
+runs:
+  using: "composite"
+  steps:
+    - name: Install solc compiler
+      shell: bash
+      run: |
+        if ! solc --version &> /dev/null ||
+          [[ $(solc --version | grep -oP '(\d+\.\d+\.\d+)' | head -n 1) \
+          != ${{ inputs.solc-version }} ]]; then
+            cargo install solc-select --force
+            solc-select install ${{ inputs.solc-version }}
+            solc-select use ${{ inputs.solc-version }}
+        else
+            echo "solc is already installed."
+        fi

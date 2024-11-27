@@ -1,0 +1,66 @@
+---
+name: Deploy docker image
+
+inputs:
+  image-tag:
+    description: Tag of the docker image to be deployed
+    required: true
+  autocommit-author:
+    description: Commit author
+    required: true
+  autocommit-email:
+    description: Commit author's mail
+    required: true
+  github-token:
+    description: Github token
+    required: true
+  ecr-private-host:
+    description: ECR private host
+    required: true
+  kustomize-version:
+    description: Kustomize version
+    required: true
+  environment:
+    type: choice
+    options:
+      - testnet-dev
+      - testnet
+      - mainnet
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: GIT | Checkout aleph-apps repo
+      uses: actions/checkout@v4
+      with:
+        repository: Cardinal-Cryptography/aleph-apps
+        token: ${{ inputs.github-token }}
+        path: "aleph-apps"
+        ref: main
+
+    - name: KUSTOMIZE | Init kustomize
+      uses: imranismail/setup-kustomize@v2
+      with:
+        kustomize-version: ${{ inputs.kustomize-version }}
+
+    - name: KUSTOMIZE | Update docker image tag
+      shell: bash
+      env:
+        DEPLOY_IMAGE: ${{ inputs.ecr-private-host }}/shielder-relayer:${{ inputs.image-tag }}
+      run: |
+        cd aleph-apps/shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1
+        kustomize edit set image "shielder-relayer-image-placeholder=${{ env.DEPLOY_IMAGE }}"
+
+    - name: GIT | Commit changes to aleph-apps repository
+      uses: EndBug/add-and-commit@v9.1.4
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      with:
+        author_name: ${{ inputs.autocommit-author }}
+        author_email: ${{ inputs.autocommit-email }}
+        message: >
+          Updating shielder-relayer ${{ inputs.environment }}
+          docker image tag: ${{ inputs.image-tag }}
+        add: "*.yaml"
+        cwd: 'aleph-apps'

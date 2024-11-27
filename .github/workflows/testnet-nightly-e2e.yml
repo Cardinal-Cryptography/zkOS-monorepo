@@ -1,0 +1,119 @@
+---
+name: Nightly E2E tests run on testnet
+
+on:
+  schedule:
+    - cron: '00 23 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.ref }}-${{ github.workflow }}"
+  cancel-in-progress: true
+
+jobs:
+  circuits-benches:
+    name: Run benches for shielder-circuits crate
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 10
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Run benches for shielder-circuits
+        run: cd crates/shielder-circuits && make bench
+
+  e2e-tests:
+    name: Run E2E tests on testnet
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      RUSTC_WRAPPER: sccache
+      CACHE_VERSION: 1
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Restore rust cache
+        uses: actions/cache@v4
+        with:
+          key: "${{ runner.os }}\
+            -rust\
+            -${{ env.CACHE_VERSION }}\
+            -build\
+            -${{ hashFiles('**/Cargo.toml') }}"
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.cache/sccache/
+            ~/.rustup/
+            target/
+          restore-keys: |
+            ${{ runner.os }}-rust-${{ env.CACHE_VERSION }}-build-
+            ${{ runner.os }}-rust-${{ env.CACHE_VERSION }}
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Node deps
+        run: make deps
+
+      - name: Generate Solidity contracts
+        run: make generate-verifier-contracts
+
+      - name: Compile eth contracts
+        shell: bash
+        run: make compile-contracts
+
+      - name: Run e2e tooling tests
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}
+          ALICE_PUBLIC_KEY: ${{ vars.CI_TESTNET_ALICE_PUBLIC_KEY }}
+          ALICE_PRIVATE_KEY: ${{ secrets.CI_TESTNET_ALICE_PRIVATE_KEY }}
+          BOB_PUBLIC_KEY: ${{ vars.CI_TESTNET_BOB_PUBLIC_KEY }}
+          BOB_PRIVATE_KEY: ${{ secrets.CI_TESTNET_BOB_PRIVATE_KEY }}
+          CHARLIE_PUBLIC_KEY: ${{ vars.CI_TESTNET_CHARLIE_PUBLIC_KEY }}
+          CHARLIE_PRIVATE_KEY: ${{ secrets.CI_TESTNET_CHARLIE_PRIVATE_KEY }}
+          FEE_DESTINATION: ${{ vars.CI_TESTNET_FEE_DESTINATION }}
+          FEE_DESTINATION_KEY: ${{ secrets.CI_TESTNET_FEE_DESTINATION_KEY }}
+          RELAYER_SIGNER_ADDRESSES: ${{ vars.CI_TESTNET_RELAYER_SIGNER_ADDRESSES }}
+          RELAYER_SIGNING_KEYS: ${{ secrets.CI_TESTNET_RELAYER_SIGNING_KEYS }}
+        run: |
+          NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/full_scenario.sh
+          NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/recovery_scenario.sh
+          NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/many_actors.sh
+
+  slack-notification:
+    name: Slack notification
+    runs-on: ubuntu-22.04
+    needs: [circuits-benches, e2e-tests]
+    if: >
+      !cancelled() &&
+      github.event_name != 'workflow_dispatch'
+    steps:
+      - name: Send Slack message
+        uses: Cardinal-Cryptography/github-actions/slack-notification@v7
+        with:
+          notify-on: "failure"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_ZKOS }}
