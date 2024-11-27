@@ -12,7 +12,7 @@ sdkTest("new account and valid merkle path", async ({ workerPage }) => {
       // setup
       const { alicePublicAccount, contract, aliceSendTransaction } =
         await window.chain.testUtils.setupContractTest(
-          5n * 10n ** 18n,
+          10n ** 18n,
           chainConfig,
           privateKeyAlice,
         );
@@ -87,7 +87,7 @@ sdkTest("new account failure (bad calldata)", async ({ workerPage }) => {
       // setup
       const { alicePublicAccount, contract, aliceSendTransaction } =
         await window.chain.testUtils.setupContractTest(
-          5n * 10n ** 18n,
+          10n ** 18n,
           chainConfig,
           privateKeyAlice,
         );
@@ -157,7 +157,7 @@ sdkTest("deposit after new account", async ({ workerPage }) => {
         aliceSendTransaction,
         shielderClient,
       } = await window.chain.testUtils.setupContractTest(
-        5n * 10n ** 18n,
+        10n ** 18n,
         chainConfig,
         privateKeyAlice,
       );
@@ -255,7 +255,7 @@ sdkTest(
           aliceSendTransaction,
           shielderClient,
         } = await window.chain.testUtils.setupContractTest(
-          5n * 10n ** 18n,
+          10n ** 18n,
           chainConfig,
           privateKeyAlice,
         );

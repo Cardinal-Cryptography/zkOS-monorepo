@@ -5,6 +5,8 @@ NODE_RPC_PORT=8545
 export NODE_RPC_PORT
 NODE_RPC_URL="http://localhost:${NODE_RPC_PORT}"
 export NODE_RPC_URL
+CHAIN_ID=31337
+export CHAIN_ID
 
 # ======================================================================================================================
 # Contract configuration
@@ -29,6 +31,11 @@ CHARLIE_PUBLIC_KEY=0xcACA0B734B779c97fc25BF9723e622649cFCDDfe # Random address w
 export CHARLIE_PUBLIC_KEY
 CHARLIE_PRIVATE_KEY=0xa68e4f75a36d07db56c06b1103c9158801f0f1f24a07deae9324ee86b0753494 # Corresponding private key
 export CHARLIE_PRIVATE_KEY
+
+TS_SDK_PUBLIC_KEY=0xC881A90D50c4F267AdD6e94720299E31b214aA5C # Random address without any funds by default
+export TS_SDK_PUBLIC_KEY
+TS_SDK_PRIVATE_KEY=0xbdb9193adbb1dc104b51c09f9cb4456d395ac334324d72c477039bca4a6cad5e # Corresponding private key
+export TS_SDK_PRIVATE_KEY
 
 WITHDRAWAL_PUBLIC_KEY=0xCaCA0cf7Ad10377313e391E8eF365c0ED0C51057 # Random address without any funds by default
 export WITHDRAWAL_PUBLIC_KEY

@@ -16,6 +16,7 @@ import {
   defineChain,
   http,
   publicActions,
+  walletActions,
   TransactionExecutionError,
   type Chain,
   type HttpTransport,
@@ -29,24 +30,31 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { createNonceManager, jsonRpc } from "viem/nonce";
 
-const chainName = "devnet";
+const chainName = "azero";
 const chainNativeCurrency = {
   name: "AZERO",
   symbol: "AZERO",
   decimals: 18,
 };
 
-export class DevnetManager {
-  testClient: TestClient;
+export class BalanceManager {
+  testClient: TestClient &
+    WalletClient<HttpTransport, Chain, PrivateKeyAccount, WalletRpcSchema> &
+    PublicClient<HttpTransport, Chain, PrivateKeyAccount, PublicRpcSchema>;
 
   /**
    *
    * @param privateKey use private key prefilled with funds
-   * @param chainId devnet chain id
-   * @param rpcHttpEndpoint devnet rpc endpoint
+   * @param chainId chain id
+   * @param rpcHttpEndpoint rpc endpoint
    */
-  constructor(chainId: number, rpcHttpEndpoint: string) {
+  constructor(
+    chainId: number,
+    rpcHttpEndpoint: string,
+    testnetPrivateKey: `0x${string}`,
+  ) {
     this.testClient = createTestClient({
+      account: privateKeyToAccount(testnetPrivateKey),
       chain: defineChain({
         name: chainName,
         id: chainId,
@@ -59,14 +67,29 @@ export class DevnetManager {
       }),
       mode: "anvil",
       transport: http(),
-    });
+    })
+      .extend(publicActions)
+      .extend(walletActions);
   }
 
   async setBalance(address: `0x${string}`, value: bigint) {
-    await this.testClient.setBalance({
-      address,
+    if (this.testClient.chain.rpcUrls.default.http[0].includes("localhost")) {
+      await this.testClient.setBalance({
+        address,
+        value,
+      });
+      return;
+    }
+    const txHash = await this.testClient.sendTransaction({
+      to: address,
       value,
     });
+    const receipt = await this.testClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+    if (receipt.status !== "success") {
+      throw new Error("Faucet failed");
+    }
   }
 }
 
@@ -75,7 +98,7 @@ export interface ContractTestFixture {
   shielderClient: ShielderClient;
   relayer?: Relayer;
   alicePublicAccount: SeededAccount;
-  devnetManager: DevnetManager;
+  balanceManager: BalanceManager;
   storage: InjectedStorageInterface;
   aliceSendTransaction: SendShielderTransaction;
 }
@@ -86,17 +109,18 @@ export const setupContractTest = async (
     chainId: number;
     rpcHttpEndpoint: string;
     contractAddress: `0x${string}`;
+    testnetPrivateKey: `0x${string}`;
   },
   privateKeyAlice: `0x${string}`,
   relayerConfig?: {
     address: `0x${string}`;
     url: string;
-    relayerSignerAddresses: `0x${string}`[];
   },
 ): Promise<ContractTestFixture> => {
-  const devnetManager = window.chain.testUtils.createDevnetManager(
+  const balanceManager = window.chain.testUtils.createBalanceManager(
     chainConfig.chainId,
     chainConfig.rpcHttpEndpoint,
+    chainConfig.testnetPrivateKey,
   );
   const alicePublicAccount: SeededAccount = createAccount(
     privateKeyAlice,
@@ -116,15 +140,10 @@ export const setupContractTest = async (
     }),
     transport: http(),
   });
-  await devnetManager.setBalance(
+  await balanceManager.setBalance(
     alicePublicAccount.account.address,
     initialPublicBalance,
   );
-  if (relayerConfig) {
-    for (const relayerAddress of relayerConfig.relayerSignerAddresses) {
-      await devnetManager.setBalance(relayerAddress, 5n * 10n ** 18n);
-    }
-  }
   const contract = window.chain.createContract(
     publicClient,
     chainConfig.contractAddress,
@@ -174,7 +193,7 @@ export const setupContractTest = async (
     shielderClient,
     relayer,
     alicePublicAccount,
-    devnetManager,
+    balanceManager: balanceManager,
     storage,
     aliceSendTransaction,
   };

@@ -36,8 +36,17 @@ else
 	echo "Don't know what to do with ${BUILD}"; exit -1;
 endif
 
+.PHONY: ensure-image
+ensure-image: ## Ensures Docker image exists, building only if necessary
+	@if [ -z "$$(docker images -q ${RELAYER_DOCKER_IMAGE})" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) build-image; \
+	else \
+		echo "Docker image already exists. Skipping build."; \
+	fi
+
 .PHONY: run
-run: build-image stop ## Start the Relayer service in a local Docker container
+run: ensure-image stop ## Start the Relayer service in a local Docker container
 	@DOCKER_USER=$(DOCKER_USER) \
 	RELAYER_CONTAINER_NAME=$(RELAYER_CONTAINER_NAME) \
 	RELAYER_DOCKER_IMAGE=$(RELAYER_DOCKER_IMAGE) \

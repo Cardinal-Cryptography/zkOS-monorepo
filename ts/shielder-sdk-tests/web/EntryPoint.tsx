@@ -54,7 +54,7 @@ import {
 import type { Address } from "viem";
 import { generatePrivateKey } from "viem/accounts";
 import {
-  DevnetManager,
+  BalanceManager,
   getEvent,
   getValidatedMerklePath,
   setupContractTest,
@@ -125,10 +125,11 @@ declare global {
       createRelayer: (url: string, address: Address) => Relayer;
 
       testUtils: {
-        createDevnetManager: (
+        createBalanceManager: (
           chainId: number,
           rpcHttpEndpoint: string,
-        ) => DevnetManager;
+          testnetPrivateKey: `0x${string}`,
+        ) => BalanceManager;
         getValidatedMerklePath: (
           merkleTreeIdx: bigint,
           contract: Contract,
@@ -145,12 +146,12 @@ declare global {
             chainId: number;
             rpcHttpEndpoint: string;
             contractAddress: `0x${string}`;
+            testnetPrivateKey: `0x${string}`;
           },
           privateKeyAlice: `0x${string}`,
           relayerConfig?: {
             address: `0x${string}`;
             url: string;
-            relayerSignerAddresses: `0x${string}`[];
           },
         ) => Promise<ContractTestFixture>;
       };
@@ -255,10 +256,11 @@ function EntryPoint() {
       new Relayer(url, address);
 
     window.chain.testUtils = window.chain.testUtils || {};
-    window.chain.testUtils.createDevnetManager = (
+    window.chain.testUtils.createBalanceManager = (
       chainId: number,
       rpcHttpEndpoint: string,
-    ) => new DevnetManager(chainId, rpcHttpEndpoint);
+      testnetPrivateKey: `0x${string}`,
+    ) => new BalanceManager(chainId, rpcHttpEndpoint, testnetPrivateKey);
     window.chain.testUtils.getValidatedMerklePath = getValidatedMerklePath;
     window.chain.testUtils.getEvent = getEvent;
     window.chain.testUtils.setupContractTest = setupContractTest;
