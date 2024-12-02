@@ -8,8 +8,8 @@ on:
 jobs:
   build-rust-deps:
     name: Build Rust dependencies
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 20
     env:
       RUSTC_WRAPPER: sccache
     steps:
@@ -57,9 +57,9 @@ jobs:
 
   ts-sdk-playwright-tests:
     name: Run shielder-sdk Playwright tests
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, Linux, X64, large]
     needs: [build-rust-deps]
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
