@@ -9,7 +9,6 @@ jobs:
   main:
     name: Generate, compile and lint contracts
     runs-on: [self-hosted, Linux, X64, large]
-    #runs-on: ubuntu-20.04
     timeout-minutes: 10
 
     steps:
