@@ -70,14 +70,14 @@ jobs:
         shardTotal: [1]
         threads: [st, mt]
     steps:
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.SSH_PRIVATE_KEY }}
-            ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
-
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
       - name: Cache pnpm modules
         uses: actions/cache@v4
