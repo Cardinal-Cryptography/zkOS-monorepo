@@ -2,10 +2,10 @@ use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use alloy_sol_types::SolCall;
 
-use super::ContractResult;
 use crate::contract::{
     call_type::CallType,
     connection::{Connection, ConnectionPolicy, NoProvider},
+    ContractResult,
     ShielderContract::{
         depositNativeCall, getMerklePathCall, newAccountNativeCall, nullifiersCall,
         withdrawNativeCall,

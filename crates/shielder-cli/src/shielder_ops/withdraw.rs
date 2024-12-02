@@ -103,6 +103,7 @@ async fn prepare_relayer_query(
     );
 
     Ok(RelayQuery {
+        expected_contract_version: contract_version().to_bytes(),
         id_hiding: calldata.idHiding,
         amount,
         withdraw_address: to,

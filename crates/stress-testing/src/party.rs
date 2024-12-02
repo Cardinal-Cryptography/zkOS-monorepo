@@ -112,6 +112,7 @@ async fn prepare_relay_query(
     );
 
     let query = RelayQuery {
+        expected_contract_version: contract_version().to_bytes(),
         id_hiding: calldata.idHiding,
         amount: U256::from(WITHDRAW_AMOUNT),
         withdraw_address: to,

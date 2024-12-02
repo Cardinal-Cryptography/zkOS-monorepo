@@ -8,13 +8,31 @@ use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolCall};
 use ShielderContract::*;
 
+use crate::{
+    contract::ShielderContractError,
+    version::{contract_version, ContractVersion},
+};
+
 sol! {
     #[sol(rpc, all_derives = true)]
     #[derive(Debug, PartialEq, Eq)]
     contract ShielderContract {
-        event NewAccountNative(uint256 idHash, uint256 amount, uint256 newNote, uint256 newNoteIndex);
-        event DepositNative(uint256 idHiding, uint256 amount, uint256 newNote, uint256 newNoteIndex);
+        event NewAccountNative(
+            bytes3 contractVersion,
+            uint256 idHash,
+            uint256 amount,
+            uint256 newNote,
+            uint256 newNoteIndex
+        );
+        event DepositNative(
+            bytes3 contractVersion,
+            uint256 idHiding,
+            uint256 amount,
+            uint256 newNote,
+            uint256 newNoteIndex
+        );
         event WithdrawNative(
+            bytes3 contractVersion,
             uint256 idHiding,
             uint256 amount,
             address withdrawAddress,
@@ -37,6 +55,7 @@ sol! {
         error ContractBalanceLimitReached();
         error LeafIsNotInTheTree();
         error PrecompileCallFailed();
+        error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
 
         function depositLimit() external view returns (uint256);
 
@@ -56,8 +75,14 @@ sol! {
         function pause() external;
         function unpause() external;
 
-        function newAccountNative(uint256 newNote, uint256 idHash, bytes calldata proof) external payable;
+        function newAccountNative(
+            bytes3 expectedContractVersion,
+            uint256 newNote,
+            uint256 idHash,
+            bytes calldata proof
+        ) external payable;
         function depositNative(
+            bytes3 expectedContractVersion,
             uint256 idHiding,
             uint256 oldNullifierHash,
             uint256 newNote,
@@ -65,6 +90,7 @@ sol! {
             bytes calldata proof,
         ) external payable;
         function withdrawNative(
+            bytes3 expectedContractVersion,
             uint256 idHiding,
             uint256 amount,
             address withdrawAddress,
@@ -102,7 +128,9 @@ sol! {
             uint256 relayerFee
         ) external;
 
-        function getMerklePath(uint256 id) external view returns (uint256[] memory);
+        function getMerklePath(
+            uint256 id
+        ) external view returns (uint256[] memory);
 
         function setDepositLimit(uint256 _depositLimit) external;
     }
@@ -114,6 +142,35 @@ impl ShielderContractEvents {
             Self::NewAccountNative(NewAccountNative { newNote: note, .. })
             | Self::DepositNative(DepositNative { newNote: note, .. })
             | Self::WithdrawNative(WithdrawNative { newNote: note, .. }) => *note,
+        }
+    }
+
+    pub fn version(&self) -> ContractVersion {
+        let version = match self {
+            Self::NewAccountNative(NewAccountNative {
+                contractVersion, ..
+            })
+            | Self::DepositNative(DepositNative {
+                contractVersion, ..
+            })
+            | Self::WithdrawNative(WithdrawNative {
+                contractVersion, ..
+            }) => contractVersion,
+        };
+
+        ContractVersion::from_bytes(*version)
+    }
+
+    pub fn check_version(&self) -> Result<(), ShielderContractError> {
+        let version = self.version();
+        let sdk_version = contract_version();
+
+        match version == sdk_version {
+            true => Ok(()),
+            false => Err(ShielderContractError::ContractVersionMismatch {
+                version,
+                sdk_version,
+            }),
         }
     }
 }

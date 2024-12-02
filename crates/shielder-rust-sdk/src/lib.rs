@@ -11,7 +11,7 @@ pub mod version {
 
     /// The contract version.
     /// Versioned by note, circuit and patch version.
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
     pub struct ContractVersion {
         pub note_version: u8,
         pub circuit_version: u8,
@@ -21,6 +21,14 @@ pub mod version {
     impl ContractVersion {
         pub fn to_bytes(&self) -> FixedBytes<3> {
             FixedBytes([self.note_version, self.circuit_version, self.patch_version])
+        }
+
+        pub fn from_bytes(bytes: FixedBytes<3>) -> Self {
+            Self {
+                note_version: bytes.0[0],
+                circuit_version: bytes.0[1],
+                patch_version: bytes.0[2],
+            }
         }
 
         #[cfg(feature = "account")]

@@ -6,7 +6,10 @@ use rand::Rng;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
 use shielder_relayer::RelayQuery;
-use shielder_rust_sdk::alloy_primitives::{Address, Bytes, U256};
+use shielder_rust_sdk::{
+    alloy_primitives::{Address, Bytes, U256},
+    version::contract_version,
+};
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
     ImageExt, TestcontainersError,
@@ -63,6 +66,7 @@ impl TestContext {
         reqwest::Client::new()
             .post(format!("{BASE_URL}:{}/relay", self.relayer_port))
             .json(&RelayQuery {
+                expected_contract_version: contract_version().to_bytes(),
                 id_hiding: U256::ZERO,
                 amount: U256::from(1),
                 withdraw_address: Address::from_str(FEE_DESTINATION).unwrap(),

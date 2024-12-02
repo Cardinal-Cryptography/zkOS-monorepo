@@ -20,7 +20,7 @@ use crate::{
         WithdrawCommitment,
     },
     conversion::{field_to_u256, u256_to_field},
-    version::ContractVersion,
+    version::{contract_version, ContractVersion},
 };
 
 struct ActionSecrets {
@@ -82,6 +82,7 @@ impl CallType for NewAccountCallType {
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
         newAccountNativeCall {
+            expectedContractVersion: contract_version().to_bytes(),
             newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
             proof: Bytes::from(proof),
@@ -136,6 +137,7 @@ impl CallType for DepositCallType {
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
         depositNativeCall {
+            expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
             oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
@@ -202,6 +204,7 @@ impl CallType for WithdrawCallType {
     ) -> Self::Calldata {
         use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
         withdrawNativeCall {
+            expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
             amount: field_to_u256(pk.compute_public_input(WithdrawalValue)),
             withdrawAddress: extra.to,

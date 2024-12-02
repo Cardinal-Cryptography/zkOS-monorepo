@@ -1,6 +1,6 @@
 use std::{assert_matches::assert_matches, str::FromStr};
 
-use alloy_primitives::{Address, Bytes, TxHash, U256};
+use alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 use rstest::rstest;
 use shielder_rust_sdk::{
     account::{
@@ -9,6 +9,7 @@ use shielder_rust_sdk::{
     },
     contract::ShielderContract::{
         withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, WithdrawNative,
+        WrongContractVersion,
     },
     version::ContractVersion,
 };
@@ -85,11 +86,13 @@ fn invoke_call(
     let call_result = invoke_shielder_call(deployment, calldata, None);
 
     match call_result {
-        Ok(event) => {
+        Ok(events) => {
+            assert!(events.len() == 1);
+            let event = events[0].clone();
             shielder_account.register_action((TxHash::default(), event.clone()));
-            Ok(event)
+            Ok(events)
         }
-        Err(_) => call_result,
+        Err(err) => Err(err),
     }
 }
 
@@ -108,15 +111,18 @@ fn succeeds(mut deployment: Deployment) {
 
     assert_eq!(
         withdraw_result,
-        Ok(ShielderContractEvents::WithdrawNative(WithdrawNative {
-            idHiding: withdraw_calldata.idHiding,
-            amount: U256::from(5),
-            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
-            newNote: withdraw_calldata.newNote,
-            relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
-            newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
-            fee: U256::from(1),
-        }))
+        Ok(vec![ShielderContractEvents::WithdrawNative(
+            WithdrawNative {
+                contractVersion: FixedBytes([0, 0, 1]),
+                idHiding: withdraw_calldata.idHiding,
+                amount: U256::from(5),
+                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                newNote: withdraw_calldata.newNote,
+                relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+                newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+                fee: U256::from(1),
+            }
+        )])
     );
     assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
     assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
@@ -150,15 +156,18 @@ fn succeeds_after_deposit(mut deployment: Deployment) {
 
     assert_eq!(
         withdraw_result,
-        Ok(ShielderContractEvents::WithdrawNative(WithdrawNative {
-            idHiding: withdraw_calldata.idHiding,
-            amount: U256::from(5),
-            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
-            newNote: withdraw_calldata.newNote,
-            relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
-            newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
-            fee: U256::from(1),
-        }))
+        Ok(vec![ShielderContractEvents::WithdrawNative(
+            WithdrawNative {
+                contractVersion: FixedBytes([0, 0, 1]),
+                idHiding: withdraw_calldata.idHiding,
+                amount: U256::from(5),
+                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                newNote: withdraw_calldata.newNote,
+                relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+                newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+                fee: U256::from(1),
+            }
+        )])
     );
     assert!(actor_balance_decreased_by(&deployment, U256::from(30)));
     assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
@@ -273,10 +282,42 @@ fn rejects_too_high_amount(mut deployment: Deployment) {
 }
 
 #[rstest]
+fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
+    let mut shielder_account = ShielderAccount::default();
+
+    let calldata = withdrawNativeCall {
+        expectedContractVersion: FixedBytes([9, 8, 7]),
+        idHiding: U256::ZERO,
+        withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+        relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+        relayerFee: U256::ZERO,
+        amount: U256::from(10),
+        merkleRoot: U256::ZERO,
+        oldNullifierHash: U256::ZERO,
+        newNote: U256::ZERO,
+        proof: Bytes::from(vec![]),
+    };
+    let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+    assert_matches!(
+        result,
+        Err(ShielderContractErrors::WrongContractVersion(
+            WrongContractVersion {
+                actual: FixedBytes([0, 0, 1]),
+                expectedByCaller: FixedBytes([9, 8, 7]),
+            }
+        ))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::from(0)));
+    assert!(destination_balances_unchanged(&deployment))
+}
+
+#[rstest]
 fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
     let mut shielder_account = ShielderAccount::default();
 
     let calldata = withdrawNativeCall {
+        expectedContractVersion: FixedBytes([0, 0, 1]),
         idHiding: U256::ZERO,
         withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
         relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),

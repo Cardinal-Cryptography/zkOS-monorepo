@@ -6,7 +6,9 @@ use axum::{
 };
 use shielder_relayer::{relayer_fee, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_rust_sdk::{
-    alloy_primitives::Address, contract::ShielderContract::withdrawNativeCall,
+    alloy_primitives::Address,
+    contract::ShielderContract::withdrawNativeCall,
+    version::{contract_version, ContractVersion},
 };
 use tracing::{debug, error};
 
@@ -26,7 +28,11 @@ const OPTIMISTIC_DRY_RUN_THRESHOLD: u32 = 32;
 
 pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) -> impl IntoResponse {
     debug!("Relay request received: {query:?}");
-    let request_trace = RequestTrace::new(&query);
+    let mut request_trace = RequestTrace::new(&query);
+
+    if let Err(response) = check_expected_version(&query, &mut request_trace) {
+        return response;
+    }
 
     let withdraw_call = create_call(query, app_state.fee_destination);
     let Ok(rx) = app_state
@@ -72,6 +78,7 @@ fn server_error(msg: &str) -> Response {
 
 fn create_call(q: RelayQuery, relayer_address: Address) -> withdrawNativeCall {
     withdrawNativeCall {
+        expectedContractVersion: q.expected_contract_version,
         idHiding: q.id_hiding,
         withdrawAddress: q.withdraw_address,
         relayerAddress: relayer_address,
@@ -82,4 +89,22 @@ fn create_call(q: RelayQuery, relayer_address: Address) -> withdrawNativeCall {
         newNote: q.new_note,
         proof: q.proof,
     }
+}
+
+fn check_expected_version(
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    let expected_by_client = ContractVersion::from_bytes(query.expected_contract_version);
+    let expected_by_relayer = contract_version();
+
+    if expected_by_client != expected_by_relayer {
+        request_trace.record_version_mismatch(expected_by_relayer, expected_by_client);
+        return Err(bad_request(&format!(
+            "Version mismatch: relayer expects {}, client expects {}",
+            expected_by_relayer.to_bytes(),
+            expected_by_client.to_bytes()
+        )));
+    }
+    Ok(())
 }

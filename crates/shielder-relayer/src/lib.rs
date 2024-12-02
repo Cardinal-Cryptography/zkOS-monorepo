@@ -1,7 +1,7 @@
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use shielder_rust_sdk::{
-    alloy_primitives::{Address, Bytes, TxHash, U256},
+    alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256},
     native_token::ONE_TZERO,
 };
 
@@ -45,6 +45,7 @@ impl RelayResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RelayQuery {
+    pub expected_contract_version: FixedBytes<3>,
     pub id_hiding: U256,
     pub amount: U256,
     pub withdraw_address: Address,

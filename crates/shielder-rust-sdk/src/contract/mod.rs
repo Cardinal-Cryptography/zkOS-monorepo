@@ -33,6 +33,11 @@ pub enum ShielderContractError {
     EventNotFound,
     #[error("Invalid signer: {0:?}")]
     InvalidSigner(LocalSignerError),
+    #[error("Contract version does not match sdk version. {version:?} is not compatible with {sdk_version:?}")]
+    ContractVersionMismatch {
+        version: ContractVersion,
+        sdk_version: ContractVersion,
+    },
     #[error("Other error: {0}")]
     Other(String),
 }
