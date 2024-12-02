@@ -7,12 +7,45 @@ import {
   Hash,
   PublicClient
 } from "viem";
+import { BaseError, ContractFunctionRevertedError } from "viem";
 
 import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
 
+export class VersionRejectedByContract extends Error {
+  constructor() {
+    super("Version rejected by contract");
+
+    Object.setPrototypeOf(this, VersionRejectedByContract.prototype);
+  }
+}
+
+export async function handleWrongContractVersionError<T>(
+  func: () => Promise<T>
+): Promise<T> {
+  try {
+    return await func();
+  } catch (err) {
+    // Following advice from
+    // https://viem.sh/docs/contract/simulateContract#handling-custom-errors
+    if (err instanceof BaseError) {
+      const revertError = err.walk(
+        (err) => err instanceof ContractFunctionRevertedError
+      );
+      if (revertError instanceof ContractFunctionRevertedError) {
+        const errorName = revertError.data?.errorName ?? "";
+        if (errorName === "WrongContractVersion") {
+          throw new VersionRejectedByContract();
+        }
+      }
+    }
+    throw err;
+  }
+}
+
 export type NoteEvent = {
   name: "NewAccountNative" | "DepositNative" | "WithdrawNative";
+  contractVersion: `0x${string}`;
   amount: bigint;
   newNoteIndex: bigint;
   newNote: bigint;
@@ -36,6 +69,7 @@ export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
   newAccountCalldata: (
+    expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
     idHash: bigint,
@@ -43,6 +77,7 @@ export type IContract = {
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   depositCalldata: (
+    expectedContractVersion: `0x${string}`,
     from: Address,
     idHiding: bigint,
     oldNoteNullifierHash: bigint,
@@ -69,32 +104,34 @@ export class Contract implements IContract {
   };
 
   getMerklePath = async (idx: bigint): Promise<readonly bigint[]> => {
-    return (await this.contract.read.getMerklePath([idx])) as readonly bigint[];
+    const merklePath = await this.contract.read.getMerklePath([idx]);
+
+    return merklePath as readonly bigint[];
   };
 
   newAccountCalldata = async (
+    expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
     proof: Uint8Array
   ) => {
-    await this.contract.simulate.newAccountNative(
-      [newNote, idHash, bytesToHex(proof)],
-      {
-        account: from,
-        value: amount,
-        gas: shieldActionGasLimit
-      }
-    );
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.newAccountNative(
+        [expectedContractVersion, newNote, idHash, bytesToHex(proof)],
+        { account: from, value: amount, gas: shieldActionGasLimit }
+      );
+    });
     return encodeFunctionData({
       abi,
       functionName: "newAccountNative",
-      args: [newNote, idHash, bytesToHex(proof)]
+      args: [expectedContractVersion, newNote, idHash, bytesToHex(proof)]
     });
   };
 
   depositCalldata = async (
+    expectedContractVersion: `0x${string}`,
     from: Address,
     idHiding: bigint,
     oldNoteNullifierHash: bigint,
@@ -103,14 +140,24 @@ export class Contract implements IContract {
     amount: bigint,
     proof: Uint8Array
   ) => {
-    await this.contract.simulate.depositNative(
-      [idHiding, oldNoteNullifierHash, newNote, merkleRoot, bytesToHex(proof)],
-      { account: from, value: amount, gas: shieldActionGasLimit }
-    );
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.depositNative(
+        [
+          expectedContractVersion,
+          idHiding,
+          oldNoteNullifierHash,
+          newNote,
+          merkleRoot,
+          bytesToHex(proof)
+        ],
+        { account: from, value: amount, gas: shieldActionGasLimit }
+      );
+    });
     return encodeFunctionData({
       abi,
       functionName: "depositNative",
       args: [
+        expectedContractVersion,
         idHiding,
         oldNoteNullifierHash,
         newNote,
@@ -162,6 +209,7 @@ export class Contract implements IContract {
     ].map((event) => {
       return {
         name: event.eventName,
+        contractVersion: event.args.contractVersion,
         amount: event.args.amount!,
         newNoteIndex: event.args.newNoteIndex!,
         newNote: event.args.newNote!,

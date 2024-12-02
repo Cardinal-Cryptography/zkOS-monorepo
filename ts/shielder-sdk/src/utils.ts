@@ -21,3 +21,7 @@ export function noteVersion() {
   // So we need to take 3rd byte, we do so by shifting the number by 16 bits to the right.
   return Scalar.fromBigint(BigInt(contractVersion) >> 16n);
 }
+
+export function isVersionSupported(version: `0x${string}`) {
+  return version === contractVersion;
+}

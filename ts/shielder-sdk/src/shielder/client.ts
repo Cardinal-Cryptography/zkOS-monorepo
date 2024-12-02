@@ -18,6 +18,7 @@ import {
   InjectedStorageInterface
 } from "@/shielder/state/storageSchema";
 import { Calldata } from "@/shielder/actions";
+import { contractVersion } from "@/constants";
 
 export type ShielderOperation = "shield" | "withdraw";
 
@@ -114,6 +115,9 @@ export const createShielderClient = (
     callbacks
   );
 };
+
+// TODO(ZK-572): handle wrong version exceptions and produce a single
+// `OutdatedSdk` exception for the frontend.
 
 export class ShielderClient {
   private stateManager: StateManager;
@@ -227,7 +231,13 @@ export class ShielderClient {
   async withdraw(amount: bigint, address: Address) {
     const state = await this.stateManager.accountState();
     const txHash = await this.handleCalldata(
-      () => this.withdrawAction.generateCalldata(state, amount, address),
+      () =>
+        this.withdrawAction.generateCalldata(
+          state,
+          amount,
+          address,
+          contractVersion
+        ),
       (calldata) => this.withdrawAction.sendCalldata(calldata),
       "withdraw"
     );
@@ -245,7 +255,8 @@ export class ShielderClient {
   ) {
     const state = await this.stateManager.accountState();
     const txHash = await this.handleCalldata(
-      () => this.newAccountAction.generateCalldata(state, amount),
+      () =>
+        this.newAccountAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>
         this.newAccountAction.sendCalldata(
           calldata,
@@ -264,7 +275,7 @@ export class ShielderClient {
   ) {
     const state = await this.stateManager.accountState();
     const txHash = await this.handleCalldata(
-      () => this.depositAction.generateCalldata(state, amount),
+      () => this.depositAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>
         this.depositAction.sendCalldata(
           calldata,

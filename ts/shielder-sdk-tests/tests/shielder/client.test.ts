@@ -3,6 +3,9 @@ import { sdkTest } from "@tests/playwrightTestUtils";
 import type { Calldata, ShielderOperation } from "shielder-sdk/__internal__";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 
+// TODO(ZK-572): add tests to confirm that all wrong version code paths
+// result in producing the correct error for the frontend.
+
 sdkTest("new account, validate positive callbacks", async ({ workerPage }) => {
   const privateKeyAlice = generatePrivateKey();
   const aliceAddress = privateKeyToAddress(privateKeyAlice);

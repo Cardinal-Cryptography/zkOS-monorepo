@@ -8,6 +8,7 @@ import { wasmClientWorker } from "@/wasmClientWorker";
 
 export interface NewAccountCalldata {
   calldata: NewAccountReturn;
+  expectedContractVersion: `0x${string}`;
   provingTimeMillis: number;
   amount: bigint;
 }
@@ -44,7 +45,8 @@ export class NewAccountAction {
    */
   async generateCalldata(
     state: AccountState,
-    amount: bigint
+    amount: bigint,
+    expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
     const { nullifier, trapdoor } = await wasmClientWorker.getSecrets(
       state.id,
@@ -64,6 +66,7 @@ export class NewAccountAction {
       });
     const provingTime = Date.now() - time;
     return {
+      expectedContractVersion,
       calldata,
       provingTimeMillis: provingTime,
       amount
@@ -84,9 +87,11 @@ export class NewAccountAction {
   ) {
     const {
       calldata: { pubInputs, proof },
+      expectedContractVersion,
       amount
     } = calldata;
     const encodedCalldata = await this.contract.newAccountCalldata(
+      expectedContractVersion,
       from,
       scalarToBigint(pubInputs.hNote),
       scalarToBigint(pubInputs.hId),

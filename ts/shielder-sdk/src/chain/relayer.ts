@@ -6,9 +6,26 @@ export type WithdrawResponse = {
   block_hash: Hash;
 };
 
+export class VersionRejectedByRelayer extends Error {
+  constructor(message: string) {
+    super(`Version rejected by relayer: ${message}`);
+
+    Object.setPrototypeOf(this, VersionRejectedByRelayer.prototype);
+  }
+}
+
+export class GenericWithdrawError extends Error {
+  constructor(message: string) {
+    super(`Failed to withdraw: ${message}`);
+
+    Object.setPrototypeOf(this, GenericWithdrawError.prototype);
+  }
+}
+
 export type IRelayer = {
   address: Address;
   withdraw: (
+    expectedContractVersion: `0x${string}`,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
@@ -29,6 +46,7 @@ export class Relayer implements IRelayer {
   }
 
   withdraw = async (
+    expectedContractVersion: `0x${string}`,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
@@ -37,14 +55,16 @@ export class Relayer implements IRelayer {
     proof: Uint8Array,
     withdrawAddress: `0x${string}`
   ) => {
+    let response;
     try {
-      const response = await fetch(`${this.url}${relayPath}`, {
+      response = await fetch(`${this.url}${relayPath}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(
           {
+            expected_contract_version: expectedContractVersion,
             id_hiding: idHiding,
             amount,
             withdraw_address: withdrawAddress,
@@ -57,12 +77,20 @@ export class Relayer implements IRelayer {
             typeof value === "bigint" ? value.toString() : value
         )
       });
-      if (!response.ok) {
-        throw new Error(`${await response.text()}`);
-      }
-      return (await response.json()) as WithdrawResponse;
     } catch (error) {
-      throw new Error(`Failed to withdraw: ${(error as Error).message}`);
+      throw new GenericWithdrawError(`${(error as Error).message}`);
     }
+
+    if (!response.ok) {
+      const responseText = await response.text();
+
+      if (responseText.startsWith('"Version mismatch:')) {
+        throw new VersionRejectedByRelayer(responseText);
+      }
+
+      throw new GenericWithdrawError(`${responseText}`);
+    }
+
+    return (await response.json()) as WithdrawResponse;
   };
 }

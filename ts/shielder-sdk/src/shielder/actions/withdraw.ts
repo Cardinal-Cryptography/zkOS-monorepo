@@ -9,6 +9,7 @@ import { rawAction } from "@/shielder/actions/utils";
 import { WithdrawReturn } from "@/crypto/circuits/withdraw";
 
 export interface WithdrawCalldata {
+  expectedContractVersion: `0x${string}`;
   calldata: WithdrawReturn;
   provingTimeMillis: number;
   amount: bigint;
@@ -55,7 +56,8 @@ export class WithdrawAction {
   async generateCalldata(
     state: AccountState,
     amount: bigint,
-    address: Address
+    address: Address,
+    expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
@@ -108,6 +110,7 @@ export class WithdrawAction {
       });
     const provingTime = Date.now() - time;
     return {
+      expectedContractVersion,
       calldata,
       provingTimeMillis: provingTime,
       amount,
@@ -124,6 +127,7 @@ export class WithdrawAction {
    */
   async sendCalldata(calldata: WithdrawCalldata) {
     const {
+      expectedContractVersion,
       calldata: { pubInputs, proof },
       amount,
       address,
@@ -131,6 +135,7 @@ export class WithdrawAction {
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
+        expectedContractVersion,
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
