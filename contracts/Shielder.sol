@@ -78,18 +78,21 @@ contract Shielder is
 
     // -- Events --
     event NewAccountNative(
+        bytes3 contractVersion,
         uint256 idHash,
         uint256 amount,
         uint256 newNote,
         uint256 newNoteIndex
     );
     event DepositNative(
+        bytes3 contractVersion,
         uint256 idHiding,
         uint256 amount,
         uint256 newNote,
         uint256 newNoteIndex
     );
     event WithdrawNative(
+        bytes3 contractVersion,
         uint256 idHiding,
         uint256 amount,
         address to,
@@ -114,9 +117,16 @@ contract Shielder is
     error ContractBalanceLimitReached();
     error LeafIsNotInTheTree();
     error PrecompileCallFailed();
+    error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
 
     modifier withinDepositLimit() {
         if (msg.value > depositLimit) revert AmountOverDepositLimit();
+        _;
+    }
+
+    modifier restrictContractVersion(bytes3 expectedByCaller) {
+        if (expectedByCaller != CONTRACT_VERSION)
+            revert WrongContractVersion(CONTRACT_VERSION, expectedByCaller);
         _;
     }
 
@@ -173,10 +183,17 @@ contract Shielder is
      * This transaction serves as the entrypoint to the Shielder.
      */
     function newAccountNative(
+        bytes3 expectedContractVersion,
         uint256 newNote,
         uint256 idHash,
         bytes calldata proof
-    ) external payable whenNotPaused withinDepositLimit {
+    )
+        external
+        payable
+        whenNotPaused
+        withinDepositLimit
+        restrictContractVersion(expectedContractVersion)
+    {
         uint256 amount = msg.value;
         if (nullifiers[idHash] != 0) revert DuplicatedNullifier();
         // `address(this).balance` already includes `msg.value`.
@@ -202,19 +219,26 @@ contract Shielder is
         merkleRoots.add(merkleTree.root);
         registerNullifier(idHash);
 
-        emit NewAccountNative(idHash, amount, newNote, index);
+        emit NewAccountNative(CONTRACT_VERSION, idHash, amount, newNote, index);
     }
 
     /*
      * Make a native token deposit into the Shielder
      */
     function depositNative(
+        bytes3 expectedContractVersion,
         uint256 idHiding,
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
         bytes calldata proof
-    ) external payable whenNotPaused withinDepositLimit {
+    )
+        external
+        payable
+        whenNotPaused
+        withinDepositLimit
+        restrictContractVersion(expectedContractVersion)
+    {
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
         if (nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
@@ -244,13 +268,20 @@ contract Shielder is
         merkleRoots.add(merkleTree.root);
         registerNullifier(oldNullifierHash);
 
-        emit DepositNative(idHiding, msg.value, newNote, index);
+        emit DepositNative(
+            CONTRACT_VERSION,
+            idHiding,
+            msg.value,
+            newNote,
+            index
+        );
     }
 
     /*
      * Withdraw shielded native funds
      */
     function withdrawNative(
+        bytes3 expectedContractVersion,
         uint256 idHiding,
         uint256 amount,
         address withdrawAddress,
@@ -260,7 +291,7 @@ contract Shielder is
         bytes calldata proof,
         address relayerAddress,
         uint256 relayerFee
-    ) external whenNotPaused {
+    ) external whenNotPaused restrictContractVersion(expectedContractVersion) {
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
@@ -313,6 +344,7 @@ contract Shielder is
         if (!nativeTransferSuccess) revert NativeTransferFailed();
 
         emit WithdrawNative(
+            CONTRACT_VERSION,
             idHiding,
             amount,
             withdrawAddress,

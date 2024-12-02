@@ -29,6 +29,7 @@ export class MockedContract implements IContract {
     return this.merklePaths.get(idx)!;
   };
   newAccountCalldata = async (
+    _expectedContractVersion: `0x${string}`,
     _from: `0x${string}`,
     _newNote: bigint,
     _idHash: bigint,
@@ -41,6 +42,7 @@ export class MockedContract implements IContract {
     return this.txHashToReturn;
   };
   depositCalldata = async (
+    _expectedContractVersion: `0x${string}`,
     _from: `0x${string}`,
     _idHiding: bigint,
     _oldNoteNullifierHash: bigint,
@@ -52,6 +54,7 @@ export class MockedContract implements IContract {
     throw new Error("Not implemented");
   };
   withdraw = async (
+    _expectedContractVersion: `0x${string}`,
     _idHiding: bigint,
     _oldNullifierHash: bigint,
     _newNote: bigint,
@@ -79,6 +82,7 @@ export class MockedRelayer implements IRelayer {
     this.address = address;
   }
   withdraw = async (
+    _expectedContractVersion: `0x${string}`,
     _idHiding: bigint,
     _oldNullifierHash: bigint,
     _newNote: bigint,

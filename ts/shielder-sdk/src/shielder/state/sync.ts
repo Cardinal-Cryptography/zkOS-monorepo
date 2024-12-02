@@ -12,6 +12,7 @@ import {
 } from "@/shielder/state/chainEvents";
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Mutex } from "async-mutex";
+import { isVersionSupported } from "@/utils";
 
 export class StateSynchronizer {
   contract: IContract;
@@ -73,20 +74,37 @@ export class StateSynchronizer {
     }
   }
 
+  private async getNullifier(state: AccountState) {
+    if (state.nonce > 0n) {
+      return (await wasmClientWorker.getSecrets(state.id, state.nonce - 1n))
+        .nullifier;
+    }
+    return state.id;
+  }
+
+  private async getNoteEventForBlock(state: AccountState, block: bigint) {
+    const events = await stateChangingEvents(
+      state,
+      await this.contract.getNoteEventsFromBlock(block)
+    );
+
+    if (events.length != 1) {
+      console.error(events);
+      throw new Error(
+        `Unexpected number of events: ${events.length}, expected 1 event`
+      );
+    }
+
+    return events[0];
+  }
+
   /**
    * Finds the next state transition event for the given state, emitted in shielder contract.
    * @param state - account state
    * @returns the next state transition event
    */
   private async findStateTransitionEvent(state: AccountState) {
-    let nullifier;
-    if (state.nonce > 0n) {
-      nullifier = (
-        await wasmClientWorker.getSecrets(state.id, state.nonce - 1n)
-      ).nullifier;
-    } else {
-      nullifier = state.id;
-    }
+    const nullifier = await this.getNullifier(state);
 
     const block = await this.contract.nullifierBlock(
       scalarToBigint(await wasmClientWorker.poseidonHash([nullifier]))
@@ -96,17 +114,11 @@ export class StateSynchronizer {
       return null;
     }
 
-    const events = await stateChangingEvents(
-      state,
-      await this.contract.getNoteEventsFromBlock(block)
-    );
+    const event = await this.getNoteEventForBlock(state, block);
 
-    if (events.length != 1) {
-      console.error(events);
-      throw new Error(`Unexpected number of events: ${events.length}`);
+    if (!isVersionSupported(event.contractVersion)) {
+      throw new Error(`Unexpected version: ${event.contractVersion}`);
     }
-
-    const event = events[0];
 
     return event;
   }

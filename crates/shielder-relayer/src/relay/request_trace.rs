@@ -4,6 +4,7 @@ use shielder_relayer::RelayQuery;
 use shielder_rust_sdk::{
     alloy_primitives::{Address, TxHash, U256},
     contract::ShielderContractError,
+    version::ContractVersion,
 };
 use tracing::{error, info};
 
@@ -56,6 +57,20 @@ impl RequestTrace {
         metrics::counter!(WITHDRAW_SUCCESS).increment(1);
         self.tx_hash = Some(tx_hash);
         self.finish("✅ SUCCESS");
+    }
+
+    pub fn record_version_mismatch(
+        &mut self,
+        expected_by_relayer: ContractVersion,
+        expected_by_client: ContractVersion,
+    ) {
+        metrics::counter!(WITHDRAW_FAILURE).increment(1);
+        error!(
+            "Relay version mismatch: relayer expects {}, client expects {}",
+            expected_by_relayer.to_bytes(),
+            expected_by_client.to_bytes()
+        );
+        self.finish("❌ VERSION FAILURE");
     }
 
     pub fn record_failure(&mut self, err: ShielderContractError) {

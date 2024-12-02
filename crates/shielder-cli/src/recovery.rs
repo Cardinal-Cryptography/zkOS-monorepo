@@ -87,10 +87,11 @@ async fn find_shielder_transaction(
         .expect("We should get full transactions");
 
     for tx in txs {
-        let Some(event) = try_get_shielder_event_for_tx(provider, tx, block.header.hash).await?
-        else {
-            continue;
+        let event = match try_get_shielder_event_for_tx(provider, tx, block.header.hash).await? {
+            Some(event) => event,
+            _ => continue,
         };
+        event.check_version().map_err(|_| anyhow!("Bad version"))?;
         let event_note = event.note();
         let action = ShielderAction::from((tx.hash, event));
 

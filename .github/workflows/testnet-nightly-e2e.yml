@@ -3,7 +3,7 @@ name: Nightly E2E tests run on testnet
 
 on:
   schedule:
-    - cron: '00 23 * * *'
+    - cron: "00 23 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -85,6 +85,39 @@ jobs:
         shell: bash
         run: make compile-contracts
 
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build shielder-wasm
+        run: cd crates/shielder-wasm && make all
+
+      - name: Build Rust-TS conversions binary
+        run: cargo build --manifest-path crates/test-ts-conversions/Cargo.toml
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies (shielder-sdk)
+        run: pnpm install --frozen-lockfile
+        working-directory: ts/shielder-sdk
+
+      - name: Build shielder-sdk
+        run: pnpm build
+        working-directory: ts/shielder-sdk
+
+      - name: Install dependencies (shielder-sdk-tests)
+        run: pnpm install --frozen-lockfile
+        working-directory: ts/shielder-sdk-tests
+
+      - name: Install Playwright dependencies (shielder-sdk-tests)
+        run: pnpm postinstall
+        working-directory: ts/shielder-sdk-tests
+
+      - name: Build shielder-sdk-tests
+        run: pnpm build
+        working-directory: ts/shielder-sdk-tests
+
       - name: Run e2e tooling tests
         env:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}
@@ -94,6 +127,8 @@ jobs:
           BOB_PRIVATE_KEY: ${{ secrets.CI_TESTNET_BOB_PRIVATE_KEY }}
           CHARLIE_PUBLIC_KEY: ${{ vars.CI_TESTNET_CHARLIE_PUBLIC_KEY }}
           CHARLIE_PRIVATE_KEY: ${{ secrets.CI_TESTNET_CHARLIE_PRIVATE_KEY }}
+          TS_SDK_PUBLIC_KEY: ${{ vars.CI_TESTNET_TS_SDK_PUBLIC_KEY }}
+          TS_SDK_PRIVATE_KEY: ${{ secrets.CI_TESTNET_TS_SDK_PRIVATE_KEY }}
           FEE_DESTINATION: ${{ vars.CI_TESTNET_FEE_DESTINATION }}
           FEE_DESTINATION_KEY: ${{ secrets.CI_TESTNET_FEE_DESTINATION_KEY }}
           RELAYER_SIGNER_ADDRESSES: ${{ vars.CI_TESTNET_RELAYER_SIGNER_ADDRESSES }}
@@ -102,6 +137,7 @@ jobs:
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/full_scenario.sh
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/recovery_scenario.sh
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/many_actors.sh
+          NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/ts_sdk_tests.sh
 
   slack-notification:
     name: Slack notification

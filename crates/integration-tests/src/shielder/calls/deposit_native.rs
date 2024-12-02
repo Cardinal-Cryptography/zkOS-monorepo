@@ -1,6 +1,6 @@
 use std::assert_matches::assert_matches;
 
-use alloy_primitives::{Bytes, TxHash, U256};
+use alloy_primitives::{Bytes, FixedBytes, TxHash, U256};
 use rstest::rstest;
 use shielder_rust_sdk::{
     account::{
@@ -9,6 +9,7 @@ use shielder_rust_sdk::{
     },
     contract::ShielderContract::{
         depositNativeCall, DepositNative, ShielderContractErrors, ShielderContractEvents,
+        WrongContractVersion,
     },
 };
 
@@ -58,11 +59,13 @@ pub fn invoke_call(
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
     match call_result {
-        Ok(event) => {
+        Ok(events) => {
+            assert!(events.len() == 1);
+            let event = events[0].clone();
             shielder_account.register_action((TxHash::default(), event.clone()));
-            Ok(event)
+            Ok(events)
         }
-        Err(_) => call_result,
+        Err(err) => Err(err),
     }
 }
 
@@ -78,15 +81,41 @@ fn succeeds(mut deployment: Deployment) {
 
     assert_eq!(
         result,
-        Ok(ShielderContractEvents::DepositNative(DepositNative {
+        Ok(vec![ShielderContractEvents::DepositNative(DepositNative {
+            contractVersion: FixedBytes([0, 0, 1]),
             idHiding: calldata.idHiding,
             amount: U256::from(amount),
             newNote: calldata.newNote,
             newNoteIndex: note_index.saturating_add(U256::from(1)),
-        }))
+        })])
     );
     assert!(actor_balance_decreased_by(&deployment, U256::from(15)));
     assert_eq!(shielder_account.shielded_amount, U256::from(15))
+}
+#[rstest]
+fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(10))
+            .unwrap();
+    let (mut calldata, _) = prepare_call(&mut deployment, &mut shielder_account, U256::ZERO);
+    calldata.expectedContractVersion = FixedBytes([9, 8, 7]);
+    let result = invoke_call(
+        &mut deployment,
+        &mut shielder_account,
+        U256::from(5),
+        &calldata,
+    );
+
+    assert_matches!(
+        result,
+        Err(ShielderContractErrors::WrongContractVersion(
+            WrongContractVersion {
+                actual: FixedBytes([0, 0, 1]),
+                expectedByCaller: FixedBytes([9, 8, 7])
+            }
+        ))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::from(10)))
 }
 
 #[rstest]
@@ -175,6 +204,7 @@ fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
     let mut shielder_account = ShielderAccount::default();
 
     let calldata = depositNativeCall {
+        expectedContractVersion: FixedBytes([0, 0, 1]),
         idHiding: U256::ZERO,
         oldNullifierHash: U256::ZERO,
         newNote: U256::ZERO,

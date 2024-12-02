@@ -1,11 +1,12 @@
 use std::assert_matches::assert_matches;
 
-use alloy_primitives::{TxHash, U256};
+use alloy_primitives::{FixedBytes, TxHash, U256};
 use rstest::rstest;
 use shielder_rust_sdk::{
     account::{call_data::NewAccountCallType, ShielderAccount},
     contract::ShielderContract::{
         newAccountNativeCall, NewAccountNative, ShielderContractErrors, ShielderContractEvents,
+        WrongContractVersion,
     },
 };
 
@@ -33,11 +34,13 @@ pub fn invoke_call(
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
     match call_result {
-        Ok(event) => {
+        Ok(events) => {
+            assert!(events.len() == 1);
+            let event = events[0].clone();
             shielder_account.register_action((TxHash::default(), event.clone()));
-            Ok(event)
+            Ok(events)
         }
-        Err(_) => call_result,
+        Err(err) => Err(err),
     }
 }
 
@@ -67,15 +70,39 @@ fn succeeds(mut deployment: Deployment) {
 
     assert_eq!(
         result,
-        Ok(ShielderContractEvents::NewAccountNative(NewAccountNative {
-            idHash: calldata.idHash,
-            amount,
-            newNote: calldata.newNote,
-            newNoteIndex: U256::ZERO,
-        }))
+        Ok(vec![ShielderContractEvents::NewAccountNative(
+            NewAccountNative {
+                contractVersion: FixedBytes([0, 0, 1]),
+                idHash: calldata.idHash,
+                amount,
+                newNote: calldata.newNote,
+                newNoteIndex: U256::ZERO,
+            }
+        )])
     );
     assert!(actor_balance_decreased_by(&deployment, amount));
     assert_eq!(shielder_account.shielded_amount, U256::from(amount))
+}
+
+#[rstest]
+fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
+    let mut shielder_account = ShielderAccount::default();
+    let amount = U256::from(10);
+    let mut calldata = prepare_call(&mut deployment, &mut shielder_account, amount);
+    calldata.expectedContractVersion = FixedBytes([9, 8, 7]);
+
+    let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
+
+    assert_matches!(
+        result,
+        Err(ShielderContractErrors::WrongContractVersion(
+            WrongContractVersion {
+                actual: FixedBytes([0, 0, 1]),
+                expectedByCaller: FixedBytes([9, 8, 7]),
+            }
+        ))
+    );
+    assert!(actor_balance_decreased_by(&deployment, U256::ZERO))
 }
 
 #[rstest]
@@ -97,7 +124,9 @@ fn can_consume_entire_contract_balance_limit(mut deployment: Deployment) {
     let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
 
     assert!(result.is_ok());
-    assert_matches!(result.unwrap(), ShielderContractEvents::NewAccountNative(_));
+    let events = result.unwrap();
+    assert!(events.len() == 1);
+    assert_matches!(events[0], ShielderContractEvents::NewAccountNative(_));
     assert!(actor_balance_decreased_by(&deployment, amount))
 }
 

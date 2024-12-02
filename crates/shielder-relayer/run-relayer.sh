@@ -7,6 +7,7 @@ set -u
 # The following environment variables are required to run the Relayer service. Other configuration parameters
 # have their default fallback values.
 REQUIRED_RUN_VARS=(
+    "NODE_RPC_PORT"
     "NODE_RPC_URL"
     "FEE_DESTINATION_KEY"
     "RELAYER_SIGNING_KEYS"
@@ -42,7 +43,11 @@ if [[ -n "${RELAYER_PORT:-}" ]]; then
   ARGS+=(-e RELAYER_PORT=${RELAYER_PORT})
 fi
 if [[ -n "${NODE_RPC_URL:-}" ]]; then
-  ARGS+=(-e NODE_RPC_URL=${NODE_RPC_URL})
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    ARGS+=(-e NODE_RPC_URL=http://host.docker.internal:${NODE_RPC_PORT})
+  else 
+    ARGS+=(-e NODE_RPC_URL=${NODE_RPC_URL})
+  fi
 fi
 if [[ -n "${FEE_DESTINATION_KEY:-}" ]]; then
   ARGS+=(-e FEE_DESTINATION_KEY=${FEE_DESTINATION_KEY})

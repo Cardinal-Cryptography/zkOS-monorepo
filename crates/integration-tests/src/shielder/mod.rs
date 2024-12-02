@@ -28,7 +28,7 @@ fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     .expect("Call failed");
 }
 
-type CallResult = Result<ShielderContractEvents, ShielderContractErrors>;
+type CallResult = Result<Vec<ShielderContractEvents>, ShielderContractErrors>;
 
 fn invoke_shielder_call(
     deployment: &mut Deployment,
@@ -51,11 +51,16 @@ fn invoke_shielder_call(
         })?
         .logs;
 
-    assert_eq!(logs.len(), 1);
-    let event = ShielderContractEvents::decode_log(&logs[0], true).expect("Decoding event failed");
-    assert_eq!(event.address, deployment.contract_suite.shielder);
-
-    Ok(event.data)
+    let events: Vec<_> = logs
+        .iter()
+        .map(|log| {
+            let event =
+                ShielderContractEvents::decode_log(log, true).expect("Decoding event failed");
+            assert_eq!(event.address, deployment.contract_suite.shielder);
+            event.data
+        })
+        .collect();
+    Ok(events)
 }
 
 fn get_balance(deployment: &Deployment, address: &str) -> U256 {

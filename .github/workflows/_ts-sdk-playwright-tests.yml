@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-rust-binary:
-    name: Build Rust binary
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
+  build-rust-deps:
+    name: Build Rust dependencies
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 20
     env:
       RUSTC_WRAPPER: sccache
     steps:
@@ -25,7 +25,7 @@ jobs:
           poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
-      - name: Build Rust binary
+      - name: Build Rust-TS conversions binary
         run: cargo build --manifest-path crates/test-ts-conversions/Cargo.toml
 
       - name: Build relayer
@@ -41,7 +41,7 @@ jobs:
           tags: shielder-relayer
           outputs: type=docker,dest=/tmp/shielder-relayer.tar
 
-      - name: Upload binary to artifacts
+      - name: Upload Rust-TS conversions binary to artifacts
         uses: actions/upload-artifact@v4
         with:
           name: test-ts-conversions-binary
@@ -57,9 +57,9 @@ jobs:
 
   ts-sdk-playwright-tests:
     name: Run shielder-sdk Playwright tests
-    runs-on: ubuntu-22.04
-    needs: [build-rust-binary]
-    timeout-minutes: 10
+    runs-on: [self-hosted, Linux, X64, large]
+    needs: [build-rust-deps]
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -70,12 +70,14 @@ jobs:
         shardTotal: [1]
         threads: [st, mt]
     steps:
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
       - name: Cache pnpm modules
         uses: actions/cache@v4
@@ -98,10 +100,6 @@ jobs:
             contract-suite
           version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
 
-      - name: Run anvil node in background
-        shell: bash
-        run: make anvil &
-
       - name: Install dependencies
         shell: bash
         run: make deps
@@ -117,15 +115,6 @@ jobs:
         with:
           name: contract-artifacts
           path: artifacts
-
-      - name: Deploy eth contracts
-        shell: bash
-        run: |
-          NETWORK=anvil make deploy-contracts
-          SHIELDER_CONTRACT_ADDRESS=$(
-            NETWORK=anvil make deploy-contracts \
-            | grep 'Shielder deployed at:' | awk '{print $NF}')
-          echo "SHIELDER_CONTRACT_ADDRESS=${SHIELDER_CONTRACT_ADDRESS}" >> $GITHUB_ENV
 
       - name: Download generated wasm from artifacts
         uses: actions/download-artifact@v4
@@ -147,15 +136,6 @@ jobs:
 
       - name: Load relayer image
         run: docker load --input /tmp/shielder-relayer.tar
-
-      - name: Run shielder-relayer
-        run: |
-          source ../../tooling-e2e-tests/local_env.sh
-          DOCKER_USER="$(id -u):$(id -g)" \
-          RELAYER_CONTAINER_NAME=shielder-relayer \
-          RELAYER_DOCKER_IMAGE=shielder-relayer \
-          ./run-relayer.sh&
-        working-directory: crates/shielder-relayer
 
       - name: Executable permissions
         run: chmod +x target/debug/test-ts-conversions
@@ -186,16 +166,10 @@ jobs:
 
       - name: Run tests (shielder-sdk-tests)
         run: |
-          if [[ ${{ matrix.threads }} == "st" ]]; then
-            CONFIG="playwright.singlethreaded.config.mjs"
-          else
-            CONFIG="playwright.multithreaded.config.mjs"
-          fi
-          source ../../tooling-e2e-tests/local_env.sh
-          RELAYER_SIGNER_ADDRESSES="$RELAYER_SIGNER_ADDRESSES" \
-          pnpm playwright test --config $CONFIG \
-            --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
-        working-directory: ts/shielder-sdk-tests
+          NO_FORMATTING=true \
+          THREADING=${{ matrix.threads }} \
+          PLAYWRIGHT_SHARDS=--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} \
+          ./tooling-e2e-tests/ts_sdk_tests.sh
 
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
@@ -245,7 +219,7 @@ jobs:
           retention-days: 14
 
   clean-rust-artifact:
-    name: Clean rust artifacts
+    name: Clean rust dependencies
     runs-on: ubuntu-22.04
     if: ${{ always() }}
     needs: [ts-sdk-playwright-tests]

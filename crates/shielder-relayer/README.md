@@ -74,6 +74,7 @@ Submits a new withdrawal transaction to the Shielder contract through the relaye
 It expects one json object in the body, compliant with the structure:
 ```rust
 pub struct RelayQuery {
+    pub expected_contract_version: FixedBytes<3>,
     pub amount: U256,
     pub withdraw_address: Address,
     pub merkle_root: U256,

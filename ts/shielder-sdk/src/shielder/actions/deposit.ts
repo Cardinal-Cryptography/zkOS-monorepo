@@ -9,6 +9,7 @@ import { wasmClientWorker } from "@/wasmClientWorker";
 
 export interface DepositCalldata extends Calldata {
   calldata: DepositReturn;
+  expectedContractVersion: `0x${string}`;
   amount: bigint;
   merkleRoot: Scalar;
 }
@@ -45,7 +46,8 @@ export class DepositAction {
    */
   async generateCalldata(
     state: AccountState,
-    amount: bigint
+    amount: bigint,
+    expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
@@ -88,6 +90,7 @@ export class DepositAction {
     const provingTime = Date.now() - time;
     return {
       calldata,
+      expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
       merkleRoot
@@ -112,6 +115,7 @@ export class DepositAction {
       merkleRoot
     } = calldata;
     const encodedCalldata = await this.contract.depositCalldata(
+      calldata.expectedContractVersion,
       from,
       scalarToBigint(pubInputs.idHiding),
       scalarToBigint(pubInputs.hNullifierOld),
