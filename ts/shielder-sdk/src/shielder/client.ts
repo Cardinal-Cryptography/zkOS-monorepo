@@ -19,8 +19,15 @@ import {
 } from "@/shielder/state/storageSchema";
 import { Calldata } from "@/shielder/actions";
 import { contractVersion } from "@/constants";
+import { CustomError } from "ts-custom-error";
 
-export type ShielderOperation = "shield" | "withdraw";
+export type ShielderOperation = "shield" | "withdraw" | "sync";
+
+export class OutdatedSdkError extends CustomError {
+  public constructor() {
+    super("Contract version not supported by SDK");
+  }
+}
 
 export interface ShielderCallbacks {
   /**
@@ -49,11 +56,11 @@ export interface ShielderCallbacks {
    */
   onNewTransaction?: (tx: ShielderTransaction) => unknown;
   /**
-   * Fired when an error occurs during the generation or sending of the calldata.
+   * Fired when an error occurs during the generation or sending of the calldata, or during syncing.
    */
   onError?: (
     error: unknown,
-    stage: "generation" | "sending",
+    stage: "generation" | "sending" | "syncing",
     operation: ShielderOperation
   ) => unknown;
 }
@@ -170,6 +177,7 @@ export class ShielderClient {
    * For the fresh storage and existing account being imported, it goes through the whole
    * shielder transactions history and updates the state, so it might be slow.
    * @returns new transactions, which were not yet synced
+   * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
   async syncShielder() {
     return await this.stateSynchronizer.syncAccountState();
@@ -189,6 +197,7 @@ export class ShielderClient {
    * as it may fetch and return a large amount of data.
    * Instead, consider using callback `onNewTransaction` to track the new transactions.
    * @returns the shielder transactions
+   * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
   scanChainForShielderTransactions() {
     return this.stateSynchronizer.getShielderTransactions();
@@ -202,6 +211,7 @@ export class ShielderClient {
    * @param {SendShielderTransaction} sendShielderTransaction - function to send the shielder transaction to the blockchain
    * @param {`0x${string}`} from - public address of the sender
    * @returns transaction hash of the shield transaction
+   * @throws {OutdatedSdkError} if cannot call the contract due to unsupported contract version
    */
   async shield(
     amount: bigint,
@@ -227,6 +237,7 @@ export class ShielderClient {
    * @param {bigint} amount - amount to withdraw, in wei
    * @param {`0x${string}`} address - public address of the recipient
    * @returns transaction hash of the withdraw transaction
+   * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
   async withdraw(amount: bigint, address: Address) {
     const state = await this.stateManager.accountState();

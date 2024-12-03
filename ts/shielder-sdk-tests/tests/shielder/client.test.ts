@@ -90,7 +90,7 @@ sdkTest(
           },
           onError: (
             error: unknown,
-            stage: "generation" | "sending",
+            stage: "generation" | "sending" | "syncing",
             operation: ShielderOperation,
           ) => {
             if (

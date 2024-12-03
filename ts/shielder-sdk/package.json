@@ -55,6 +55,7 @@
   "dependencies": {
     "async-mutex": "^0.5.0",
     "comlink": "^4.4.1",
+    "ts-custom-error": "^3.3.1",
     "viem": "^2.21.40",
     "zod": "^3.23.8"
   }
