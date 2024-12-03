@@ -2008,24 +2008,6 @@ dependencies = [
 [[package]]
 name = "halo2_poseidon"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?branch=poseidon2-pow7#af9a8b342b2d3b1f9074d09840171677dd9077ec"
-dependencies = [
- "arrayvec",
- "bitvec",
- "ff",
- "group",
- "halo2_proofs",
- "halo2curves",
- "hex",
- "lazy_static",
- "rand",
- "subtle",
- "uint",
-]
-
-[[package]]
-name = "halo2_poseidon"
-version = "0.2.0"
 source = "git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?rev=de9281b#de9281bf9642f6a75c5faa28437161fa32d65365"
 dependencies = [
  "arrayvec",
@@ -4464,7 +4446,7 @@ version = "0.1.0"
 source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=624f6a8#624f6a80e672f7731f5b26ba7c2e18541b502099"
 dependencies = [
  "console_error_panic_hook",
- "halo2_poseidon 0.2.0 (git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?rev=de9281b)",
+ "halo2_poseidon",
  "halo2_proofs",
  "human_bytes",
  "macros",
