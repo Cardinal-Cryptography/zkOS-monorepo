@@ -1,4 +1,4 @@
-import { Scalar, scalarToBigint } from "@/crypto/scalar";
+import { Scalar, scalarsEqual, scalarToBigint } from "@/crypto/scalar";
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Address, Hex } from "viem";
 import storageSchema, {
@@ -52,6 +52,7 @@ export class StateManager {
   private storage: StorageInterface;
   privateKey: Hex;
   id: Scalar | undefined;
+  idHash: Scalar | undefined;
 
   constructor(privateKey: Hex, storage: StorageInterface) {
     this.privateKey = privateKey;
@@ -62,6 +63,11 @@ export class StateManager {
     const res = await this.storage.getItem("accountState");
     const id = await this.getId();
     if (res) {
+      const expectedIdHash = await this.getIdHash();
+      const storageIdHash = Scalar.fromBigint(res.idHash);
+      if (!scalarsEqual(expectedIdHash, storageIdHash)) {
+        throw new Error("Id hash in storage does not matched the configured.");
+      }
       const obj = res;
       return {
         id,
@@ -81,7 +87,13 @@ export class StateManager {
     if (accountState.currentNoteIndex == undefined) {
       throw new Error("currentNoteIndex must be set.");
     }
+    if (!scalarsEqual(accountState.id, await this.getId())) {
+      throw new Error("New account id does not match the configured.");
+    }
     await this.storage.setItem("accountState", {
+      idHash: scalarToBigint(
+        await wasmClientWorker.poseidonHash([accountState.id])
+      ),
       nonce: accountState.nonce,
       balance: accountState.balance,
       currentNote: scalarToBigint(accountState.currentNote),
@@ -98,6 +110,12 @@ export class StateManager {
       this.id = await wasmClientWorker.privateKeyToScalar(this.privateKey);
     }
     return this.id;
+  }
+  private async getIdHash(): Promise<Scalar> {
+    if (!this.idHash) {
+      this.idHash = await wasmClientWorker.poseidonHash([await this.getId()]);
+    }
+    return this.idHash;
   }
 }
 
