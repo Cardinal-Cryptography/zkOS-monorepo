@@ -10,6 +10,7 @@ target/
 .vscode/
 contracts/*Key.sol
 contracts/*Verifier.sol
+contracts/Poseidon2T8Assembly.sol
 **/*output.log
 
 tooling-dev/*
