@@ -34,7 +34,6 @@ console_error_panic_hook = { version = "0.1.7" }
 criterion = { version = "0.5.1" }
 darling = { version = "0.20.10" }
 getrandom = { version = "0.2" }
-halo2_poseidon = { git = "ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget", branch = "poseidon2-pow7" }
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", default-features = false }
 halo2curves = { version = "0.6.0", default-features = false }
 hex = { version = "0.4.3" }
