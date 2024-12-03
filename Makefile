@@ -42,7 +42,7 @@ lint-contracts:
 
 .PHONY: compile-contracts
 compile-contracts: # Compile solidity contracts
-compile-contracts: generate-verifier-contracts
+compile-contracts: generate-verifier-contracts generate-poseidon-contracts
 	forge build
 
 .PHONY: deploy-contracts

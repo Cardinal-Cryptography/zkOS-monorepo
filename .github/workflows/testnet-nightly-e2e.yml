@@ -61,7 +61,7 @@ jobs:
         run: make deps
 
       - name: Generate Solidity contracts
-        run: make generate-verifier-contracts
+        run: make generate-verifier-contracts && make generate-poseidon-contracts
 
       - name: Compile eth contracts
         shell: bash
