@@ -11,24 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  circuits-benches:
-    name: Run benches for shielder-circuits crate
-    runs-on: [self-hosted, Linux, X64, large]
-    timeout-minutes: 10
-    env:
-      RUSTC_WRAPPER: sccache
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Prepare Rust env
-        uses: ./.github/actions/prepare-rust-env
-        with:
-          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
-
-      - name: Run benches for shielder-circuits
-        run: cd crates/shielder-circuits && make bench
 
   e2e-tests:
     name: Run E2E tests on testnet
