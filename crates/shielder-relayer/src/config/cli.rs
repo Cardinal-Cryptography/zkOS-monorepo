@@ -130,4 +130,13 @@ pub struct CLIConfig {
             the default value is `{DEFAULT_RELAY_FEE:?}`.")
     )]
     pub relay_fee: Option<String>,
+
+    #[clap(
+        long,
+        help = "Relay gas amount.",
+        long_help = format!("Relay gas amount. If not provided, the value from the \
+            environment variable `{RELAY_GAS_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_RELAY_GAS:?}`.")
+    )]
+    pub relay_gas: Option<u64>,
 }

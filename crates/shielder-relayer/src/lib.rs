@@ -1,9 +1,6 @@
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use shielder_rust_sdk::{
-    alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256},
-    native_token::ONE_TZERO,
-};
+use shielder_rust_sdk::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 
 pub const LOGGING_FORMAT_ENV: &str = "LOGGING_FORMAT";
 pub const RELAYER_HOST_ENV: &str = "RELAYER_HOST";
@@ -18,6 +15,7 @@ pub const NONCE_POLICY_ENV: &str = "NONCE_POLICY";
 pub const DRY_RUNNING_ENV: &str = "DRY_RUNNING";
 pub const RELAY_COUNT_FOR_RECHARGE_ENV: &str = "RELAY_COUNT_FOR_RECHARGE";
 pub const RELAY_FEE_ENV: &str = "RELAY_FEE";
+pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]

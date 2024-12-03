@@ -1,4 +1,4 @@
-use alloy_provider::{network::Ethereum, Provider, ProviderBuilder, RootProvider};
+use alloy_provider::Provider;
 use axum::{
     extract::State,
     http::StatusCode,
@@ -8,9 +8,7 @@ use axum::{
 use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_rust_sdk::{
     alloy_primitives::{Address, U256},
-    contract::{
-        providers::create_simple_provider, NoProvider, ShielderContract::withdrawNativeCall,
-    },
+    contract::{providers::create_simple_provider, ShielderContract::withdrawNativeCall},
     version::{contract_version, ContractVersion},
 };
 use tracing::{debug, error};
@@ -71,7 +69,7 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
 }
 
 pub async fn quote_fees(app_state: State<AppState>) -> impl IntoResponse {
-    let relay_gas_limit = app_state.relay_gas_limit;
+    let relay_gas = app_state.relay_gas;
     let relay_fee = app_state.relay_fee;
 
     let provider = match create_simple_provider(&app_state.node_rpc_url).await {
@@ -86,7 +84,7 @@ pub async fn quote_fees(app_state: State<AppState>) -> impl IntoResponse {
         Ok(current_gas_price) => (
             StatusCode::OK,
             QuoteFeeResponse::from(
-                U256::from(relay_gas_limit) * U256::from(current_gas_price),
+                U256::from(relay_gas) * U256::from(current_gas_price),
                 relay_fee,
             ),
         )

@@ -23,13 +23,13 @@ use crate::{
 
 pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
-    let amount = U256::from(amount) + relayer_fee();
+
+    let relayer_fee = get_relayer_fee(app_state).await?;
+    let amount = U256::from(amount) + relayer_fee;
 
     if amount > app_state.account.shielded_amount {
         bail!("Not enough funds to withdraw");
     }
-
-    let relayer_fee = get_relayer_fee(app_state).await?;
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())

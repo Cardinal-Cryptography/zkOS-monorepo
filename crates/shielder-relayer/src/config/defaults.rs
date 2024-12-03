@@ -9,3 +9,4 @@ pub const DEFAULT_NONCE_POLICY: NoncePolicy = NoncePolicy::Caching;
 pub const DEFAULT_DRY_RUNNING: DryRunning = DryRunning::Always;
 pub const DEFAULT_RELAY_COUNT_FOR_RECHARGE: u32 = 20;
 pub const DEFAULT_RELAY_FEE: &str = "100_000_000_000_000_000"; // 0.1 TZERO
+pub const DEFAULT_RELAY_GAS: u64 = 2_000_000;
