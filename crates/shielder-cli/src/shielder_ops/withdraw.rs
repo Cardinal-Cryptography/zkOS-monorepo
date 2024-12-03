@@ -2,7 +2,7 @@ use alloy_primitives::{Address, BlockHash, TxHash, U256};
 use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
-use shielder_relayer::{relayer_fee, RelayQuery, RelayResponse};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse};
 use shielder_rust_sdk::{
     account::{
         call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
@@ -29,9 +29,11 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
         bail!("Not enough funds to withdraw");
     }
 
+    let relayer_fee = get_relayer_fee(app_state).await?;
+
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to).await?)
+        .json(&prepare_relayer_query(app_state, amount, to, relayer_fee).await?)
         .send()
         .await?;
 
@@ -73,10 +75,27 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
     bail!("Couldn't fetch transaction receipt")
 }
 
+async fn get_relayer_fee(app_state: &mut AppState) -> Result<U256> {
+    let relayer_response = reqwest::Client::new()
+        .get(app_state.relayer_rpc_url.fees_url())
+        .send()
+        .await?;
+
+    if !relayer_response.status().is_success() {
+        bail!(
+            "Relayer failed to quote fees: {:?}",
+            relayer_response.status()
+        );
+    }
+    let relay_fee = relayer_response.json::<QuoteFeeResponse>().await?.relay_fee;
+    Ok(relay_fee.parse()?)
+}
+
 async fn prepare_relayer_query(
     app_state: &AppState,
     amount: U256,
     to: Address,
+    relayer_fee: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
     let leaf_index = app_state
@@ -97,7 +116,7 @@ async fn prepare_relayer_query(
             },
             to,
             relayer_address: app_state.relayer_address,
-            relayer_fee: relayer_fee(),
+            relayer_fee,
             contract_version: contract_version(),
         },
     );
