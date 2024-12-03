@@ -1,3 +1,4 @@
+import { CustomError } from "ts-custom-error";
 import { IContract } from "@/chain/contract";
 import { scalarToBigint } from "@/crypto/scalar";
 import {
@@ -13,6 +14,12 @@ import {
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Mutex } from "async-mutex";
 import { isVersionSupported } from "@/utils";
+
+export class UnexpectedVersionInEvent extends CustomError {
+  public constructor(message: string) {
+    super(`Unexpected version in event: ${message}`);
+  }
+}
 
 export class StateSynchronizer {
   contract: IContract;
@@ -102,6 +109,7 @@ export class StateSynchronizer {
    * Finds the next state transition event for the given state, emitted in shielder contract.
    * @param state - account state
    * @returns the next state transition event
+   * @throws UnexpectedVersionInEvent
    */
   private async findStateTransitionEvent(state: AccountState) {
     const nullifier = await this.getNullifier(state);
@@ -117,7 +125,7 @@ export class StateSynchronizer {
     const event = await this.getNoteEventForBlock(state, block);
 
     if (!isVersionSupported(event.contractVersion)) {
-      throw new Error(`Unexpected version: ${event.contractVersion}`);
+      throw new UnexpectedVersionInEvent(`${event.contractVersion}`);
     }
 
     return event;

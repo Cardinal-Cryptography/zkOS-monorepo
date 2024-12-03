@@ -1,4 +1,8 @@
-import { Contract, IContract } from "@/chain/contract";
+import {
+  Contract,
+  IContract,
+  VersionRejectedByContract
+} from "@/chain/contract";
 import {
   Address,
   createPublicClient,
@@ -7,12 +11,15 @@ import {
   http,
   PublicClient
 } from "viem";
-import { IRelayer, Relayer } from "@/chain/relayer";
+import { IRelayer, Relayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { ShielderTransaction, StateManager } from "@/shielder/state";
 import { NewAccountAction } from "@/shielder/actions/newAccount";
 import { DepositAction } from "@/shielder/actions/deposit";
 import { WithdrawAction } from "@/shielder/actions/withdraw";
-import { StateSynchronizer } from "@/shielder/state/sync";
+import {
+  StateSynchronizer,
+  UnexpectedVersionInEvent
+} from "@/shielder/state/sync";
 import {
   createStorage,
   InjectedStorageInterface
@@ -123,9 +130,6 @@ export const createShielderClient = (
   );
 };
 
-// TODO(ZK-572): handle wrong version exceptions and produce a single
-// `OutdatedSdk` exception for the frontend.
-
 export class ShielderClient {
   private stateManager: StateManager;
   private stateSynchronizer: StateSynchronizer;
@@ -180,7 +184,14 @@ export class ShielderClient {
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
   async syncShielder() {
-    return await this.stateSynchronizer.syncAccountState();
+    try {
+      return await this.handleVersionErrors(() => {
+        return this.stateSynchronizer.syncAccountState();
+      });
+    } catch (error) {
+      this.callbacks.onError?.(error, "syncing", "sync");
+      throw error;
+    }
   }
 
   /**
@@ -199,8 +210,22 @@ export class ShielderClient {
    * @returns the shielder transactions
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
-  scanChainForShielderTransactions() {
-    return this.stateSynchronizer.getShielderTransactions();
+  async *scanChainForShielderTransactions() {
+    try {
+      for await (const transaction of this.stateSynchronizer.getShielderTransactions()) {
+        yield transaction;
+      }
+    } catch (error) {
+      // Rethrow to produce `OutdatedSdkError` if needed.
+      try {
+        await this.handleVersionErrors(() => {
+          throw error;
+        });
+      } catch (error) {
+        this.callbacks.onError?.(error, "syncing", "sync");
+        throw error;
+      }
+    }
   }
 
   /**
@@ -305,7 +330,7 @@ export class ShielderClient {
   ): Promise<Hash> {
     let calldata: T;
     try {
-      calldata = await generateCalldata();
+      calldata = await this.handleVersionErrors(generateCalldata);
     } catch (error) {
       this.callbacks.onError?.(error, "generation", operation);
       throw error;
@@ -313,12 +338,29 @@ export class ShielderClient {
     this.callbacks.onCalldataGenerated?.(calldata, operation);
 
     try {
-      const txHash = await sendCalldata(calldata);
+      const txHash = await this.handleVersionErrors(() => {
+        return sendCalldata(calldata);
+      });
       this.callbacks.onCalldataSent?.(txHash, operation);
       return txHash;
     } catch (error) {
       this.callbacks.onError?.(error, "sending", operation);
       throw error;
+    }
+  }
+
+  private async handleVersionErrors<T>(func: () => Promise<T>): Promise<T> {
+    try {
+      return await func();
+    } catch (err) {
+      if (
+        err instanceof VersionRejectedByContract ||
+        err instanceof VersionRejectedByRelayer ||
+        err instanceof UnexpectedVersionInEvent
+      ) {
+        throw new OutdatedSdkError();
+      }
+      throw err;
     }
   }
 }
