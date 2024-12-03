@@ -4545,7 +4545,6 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
- "halo2_poseidon",
  "halo2_proofs",
  "rand",
  "rand_chacha",
