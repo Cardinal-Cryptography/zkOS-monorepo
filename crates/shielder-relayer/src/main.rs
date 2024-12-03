@@ -36,6 +36,7 @@ mod relay;
 pub struct AppState {
     pub node_rpc_url: String,
     pub fee_destination: Address,
+    pub relay_gas_limit: u64,
     pub relay_fee: U256,
     pub signer_addresses: Vec<Address>,
     pub taskmaster: Taskmaster,
@@ -119,6 +120,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
     let state = AppState {
         node_rpc_url: config.chain.node_rpc_url.clone(),
         fee_destination: fee_destination_address,
+        relay_gas_limit: 123_456,
         relay_fee: config.chain.relay_fee,
         balances: signers.balances,
         signer_addresses: signers.addresses,
@@ -137,6 +139,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
     let app = Router::new()
         .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
+        .route("/quote_fees", get(relay::quote_fees))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))
         .layer(CorsLayer::permissive());

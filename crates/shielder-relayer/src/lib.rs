@@ -45,6 +45,21 @@ impl RelayResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct QuoteFeeResponse {
+    pub base_fee: String,
+    pub relay_fee: String,
+}
+
+impl QuoteFeeResponse {
+    pub fn from(base_fee: U256, relay_fee: U256) -> Json<Self> {
+        Json(Self {
+            base_fee: base_fee.to_string(),   // convert to decimal string
+            relay_fee: relay_fee.to_string(), // convert to decimal string
+        })
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RelayQuery {
     pub expected_contract_version: FixedBytes<3>,
     pub id_hiding: U256,
@@ -54,9 +69,4 @@ pub struct RelayQuery {
     pub nullifier_hash: U256,
     pub new_note: U256,
     pub proof: Bytes,
-}
-
-/// The fee that the relayer charges for relaying a transaction. Currently set to 0.1 TZERO.
-pub fn relayer_fee() -> U256 {
-    U256::from(ONE_TZERO / 10)
 }
