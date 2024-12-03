@@ -124,7 +124,7 @@ export class StateSynchronizer {
 
     const event = await this.getNoteEventForBlock(state, block);
 
-    if (!isVersionSupported(event.contractVersion)) {
+    if (!isVersionSupported("0x000000" /* inject version error */)) {
       throw new UnexpectedVersionInEvent(`${event.contractVersion}`);
     }
 

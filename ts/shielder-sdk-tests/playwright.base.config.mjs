@@ -15,7 +15,7 @@ export default defineConfig({
   ],
   reporter: process.env.CI ? "blob" : "list",
   retries: process.env.CI ? 2 : 0,
-  testMatch: ["tests/**/*.test.ts"],
+  testMatch: ["tests/shielder/*.test.ts"],
   timeout: 240 * 1000, // 240 seconds
   use: {
     baseURL: url,

@@ -171,7 +171,8 @@ export class ShielderClient {
       callbacks.onNewTransaction
     );
     this.callbacks = callbacks;
-    this.publicClient = publicClient;
+    // remove publicClient to prevent `shield()` from calling `syncShielder()`
+    //this.publicClient = publicClient;
   }
 
   /**
