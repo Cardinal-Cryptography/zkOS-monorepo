@@ -19,7 +19,6 @@ const storageSchema = {
   accountState: z.object({
     nonce: validateBigInt,
     balance: validateBigInt,
-    id: validateBigInt,
     currentNote: validateBigInt,
     currentNoteIndex: z.union([validateBigInt, z.undefined()]).optional()
   })

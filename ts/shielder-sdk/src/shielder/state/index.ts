@@ -1,4 +1,4 @@
-import { Scalar, scalarsEqual, scalarToBigint } from "@/crypto/scalar";
+import { Scalar, scalarToBigint } from "@/crypto/scalar";
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Address, Hex } from "viem";
 import storageSchema, {
@@ -51,6 +51,7 @@ export const eventToTransaction = (event: NoteEvent): ShielderTransaction => {
 export class StateManager {
   private storage: StorageInterface;
   privateKey: Hex;
+  id: Scalar | undefined;
 
   constructor(privateKey: Hex, storage: StorageInterface) {
     this.privateKey = privateKey;
@@ -59,18 +60,11 @@ export class StateManager {
 
   async accountState(): Promise<AccountState> {
     const res = await this.storage.getItem("accountState");
+    const id = await this.getId();
     if (res) {
       const obj = res;
-      if (
-        !scalarsEqual(
-          Scalar.fromBigint(BigInt(obj.id)),
-          await wasmClientWorker.privateKeyToScalar(this.privateKey)
-        )
-      ) {
-        throw new Error("Account id does not match private key.");
-      }
       return {
-        id: Scalar.fromBigint(BigInt(obj.id)),
+        id,
         nonce: BigInt(obj.nonce),
         balance: BigInt(obj.balance),
         currentNote: Scalar.fromBigint(BigInt(obj.currentNote)),
@@ -80,39 +74,37 @@ export class StateManager {
             : undefined
       };
     }
-    return await emptyAccountState(this.privateKey);
+    return await this.emptyAccountState();
   }
 
   async updateAccountState(accountState: AccountState) {
     if (accountState.currentNoteIndex == undefined) {
       throw new Error("currentNoteIndex must be set.");
     }
-    if (
-      !scalarsEqual(
-        accountState.id,
-        await wasmClientWorker.privateKeyToScalar(this.privateKey)
-      )
-    ) {
-      throw new Error("Account id does not match private key.");
-    }
     await this.storage.setItem("accountState", {
-      ...accountState,
-      id: scalarToBigint(accountState.id),
-      currentNote: scalarToBigint(accountState.currentNote)
+      nonce: accountState.nonce,
+      balance: accountState.balance,
+      currentNote: scalarToBigint(accountState.currentNote),
+      currentNoteIndex: accountState.currentNoteIndex
     });
   }
 
   async emptyAccountState() {
-    return await emptyAccountState(this.privateKey);
+    return emptyAccountState(await this.getId());
+  }
+
+  private async getId(): Promise<Scalar> {
+    if (!this.id) {
+      this.id = await wasmClientWorker.privateKeyToScalar(this.privateKey);
+    }
+    return this.id;
   }
 }
 
-const emptyAccountState = async (
-  privateKey: `0x${string}`
-): Promise<AccountState> => {
+const emptyAccountState = (id: Scalar): AccountState => {
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
-    id: await wasmClientWorker.privateKeyToScalar(privateKey),
+    id,
     nonce: 0n,
     balance: 0n,
     currentNote: Scalar.fromBigint(0n)
