@@ -4,7 +4,6 @@ import { sdkTest } from "@tests/playwrightTestUtils";
 import { generatePrivateKey } from "viem/accounts";
 
 import {
-  wasmClientWorker,
   type AccountState,
   type NewAccountCalldata,
 } from "shielder-sdk/__internal__";

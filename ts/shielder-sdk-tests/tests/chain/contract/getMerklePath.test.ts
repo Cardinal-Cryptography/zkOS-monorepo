@@ -3,11 +3,7 @@ import { getChainConfig } from "@tests/chain/config";
 import { sdkTest } from "@tests/playwrightTestUtils";
 import { generatePrivateKey } from "viem/accounts";
 
-import {
-  wasmClientWorker,
-  type Contract,
-  type Scalar,
-} from "shielder-sdk/__internal__";
+import { type Contract, type Scalar } from "shielder-sdk/__internal__";
 
 // Custom test that creates:
 //  - `playwrightFixture`: an object initialized outside the browser environment,
