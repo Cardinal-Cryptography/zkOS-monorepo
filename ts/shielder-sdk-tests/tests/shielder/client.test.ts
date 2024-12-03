@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import { getChainConfig, getRelayerConfig } from "@tests/chain/config";
 import { sdkTest } from "@tests/playwrightTestUtils";
 import type { Calldata, ShielderOperation } from "shielder-sdk/__internal__";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
@@ -174,6 +175,175 @@ sdkTest(
         return callbackEmittedWithCorrectError && correctErrorThrown;
       },
       { privateKeyAlice, aliceAddress },
+    );
+    expect(isGood).toBe(true);
+  },
+);
+
+sdkTest(
+  "second shield throws OutdatedSdk if contract throws bad version",
+  async ({ workerPage }) => {
+    const chainConfig = getChainConfig();
+    const relayerConfig = getRelayerConfig();
+    const privateKeyAlice = generatePrivateKey();
+
+    const isGood = await workerPage.evaluate(
+      async ({ chainConfig, relayerConfig, privateKeyAlice }) => {
+        const contractTestFixture =
+          await window.chain.testUtils.setupContractTest(
+            5n * 10n ** 18n,
+            chainConfig,
+            privateKeyAlice,
+            relayerConfig,
+          );
+        const {
+          alicePublicAccount,
+          contract,
+          relayer,
+          storage,
+
+          aliceSendTransaction,
+        } = contractTestFixture;
+        let callbackEmittedWithCorrectError = false;
+        const shieldCallbacks = {
+          onError: (
+            error: unknown,
+            stage: "generation" | "sending" | "syncing",
+            operation: ShielderOperation,
+          ) => {
+            console.log("callback ", stage, operation, error);
+            if (
+              operation == "shield" &&
+              stage == "sending" &&
+              (error as Error).message.includes(
+                "Contract version not supported by SDK",
+              )
+            )
+              callbackEmittedWithCorrectError = true;
+          },
+        };
+        const shielderClient = window.shielder.createShielderClientManually(
+          privateKeyAlice,
+          contract,
+          relayer!,
+          storage,
+          contract.account,
+          shieldCallbacks,
+        );
+
+        const initialDepositAmount = 10n ** 18n;
+        const newAccountTxHash = await shielderClient.shield(
+          initialDepositAmount,
+          aliceSendTransaction,
+          alicePublicAccount.account.address,
+        );
+        await alicePublicAccount.waitForTransactionReceipt({
+          hash: newAccountTxHash,
+        });
+
+        try {
+          await shielderClient.shield(
+            initialDepositAmount,
+            aliceSendTransaction,
+            alicePublicAccount.account.address,
+          );
+        } catch (e) {
+          return (
+            callbackEmittedWithCorrectError &&
+            (e as Error).message.includes(
+              "Contract version not supported by SDK",
+            )
+          );
+        }
+
+        return false;
+      },
+      { chainConfig, relayerConfig, privateKeyAlice },
+    );
+    expect(isGood).toBe(true);
+  },
+);
+
+sdkTest(
+  "withdraw throws OutdatedSdk if relayer throws bad version",
+  async ({ workerPage }) => {
+    const chainConfig = getChainConfig();
+    const relayerConfig = getRelayerConfig();
+    const privateKeyAlice = generatePrivateKey();
+
+    const isGood = await workerPage.evaluate(
+      async ({ chainConfig, relayerConfig, privateKeyAlice }) => {
+        const contractTestFixture =
+          await window.chain.testUtils.setupContractTest(
+            5n * 10n ** 18n,
+            chainConfig,
+            privateKeyAlice,
+            relayerConfig,
+          );
+        const {
+          alicePublicAccount,
+          contract,
+          relayer,
+          storage,
+
+          aliceSendTransaction,
+        } = contractTestFixture;
+        let callbackEmittedWithCorrectError = false;
+        const shieldCallbacks = {
+          onError: (
+            error: unknown,
+            stage: "generation" | "sending" | "syncing",
+            operation: ShielderOperation,
+          ) => {
+            console.log("callback ", stage, operation, error);
+            if (
+              operation == "withdraw" &&
+              stage == "sending" &&
+              (error as Error).message.includes(
+                "Contract version not supported by SDK",
+              )
+            )
+              callbackEmittedWithCorrectError = true;
+          },
+        };
+        const shielderClient = window.shielder.createShielderClientManually(
+          privateKeyAlice,
+          contract,
+          relayer!,
+          storage,
+          contract.account,
+          shieldCallbacks,
+        );
+
+        const initialDepositAmount = 10n ** 18n;
+        const newAccountTxHash = await shielderClient.shield(
+          initialDepositAmount,
+          aliceSendTransaction,
+          alicePublicAccount.account.address,
+        );
+        await alicePublicAccount.waitForTransactionReceipt({
+          hash: newAccountTxHash,
+        });
+        await shielderClient.syncShielder();
+
+        const withdrawAmount = 10n ** 18n;
+        const addressTo: `0x${string}` =
+          "0x0000000000000000000000000000000000000001";
+
+        try {
+          await shielderClient.withdraw(withdrawAmount, addressTo);
+        } catch (e) {
+          return (
+            callbackEmittedWithCorrectError &&
+            (e as Error).message.includes(
+              "Contract version not supported by SDK",
+            )
+          );
+        }
+
+        return false;
+      },
+      { chainConfig, relayerConfig, privateKeyAlice },
     );
     expect(isGood).toBe(true);
   },

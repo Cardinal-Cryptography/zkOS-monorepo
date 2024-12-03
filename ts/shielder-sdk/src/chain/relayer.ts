@@ -63,7 +63,7 @@ export class Relayer implements IRelayer {
         },
         body: JSON.stringify(
           {
-            expected_contract_version: expectedContractVersion,
+            expected_contract_version: "0x000000", // inject wrong version
             id_hiding: idHiding,
             amount,
             withdraw_address: withdrawAddress,
@@ -84,6 +84,7 @@ export class Relayer implements IRelayer {
       const responseText = await response.text();
 
       if (responseText.startsWith('"Version mismatch:')) {
+        console.log("throwing VersionRejectedByRelayer");
         throw new VersionRejectedByRelayer(responseText);
       }
 

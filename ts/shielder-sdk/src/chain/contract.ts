@@ -142,7 +142,7 @@ export class Contract implements IContract {
     await handleWrongContractVersionError(() => {
       return this.contract.simulate.depositNative(
         [
-          expectedContractVersion,
+          "0x000000", // inject wrong version
           idHiding,
           oldNoteNullifierHash,
           newNote,
