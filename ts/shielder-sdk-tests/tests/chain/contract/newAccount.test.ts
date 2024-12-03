@@ -72,7 +72,9 @@ async function createWebFixture({
 
   const amount = 5n;
   const state = await window.state.emptyAccountState(
-    await wasmClientWorker.privateKeyToScalar(privateKeyAlice),
+    await window.wasmClientWorker
+      .getWorker()
+      .privateKeyToScalar(privateKeyAlice),
   );
 
   const newAccountCalldata = await newAccountAction.generateCalldata(
