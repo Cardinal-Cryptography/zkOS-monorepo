@@ -3,9 +3,9 @@ import { getChainConfig } from "@tests/chain/config";
 import { sdkTest } from "@tests/playwrightTestUtils";
 import { generatePrivateKey } from "viem/accounts";
 
-import type {
-  AccountState,
-  NewAccountCalldata,
+import {
+  type AccountState,
+  type NewAccountCalldata,
 } from "shielder-sdk/__internal__";
 import type { ContractTestFixture } from "@/chain/testUtils";
 
@@ -14,7 +14,7 @@ import type { ContractTestFixture } from "@/chain/testUtils";
 //  - `webFixture`: a `JSHandle` to an object accessible only in the browser environment.
 export const newAccountTest = sdkTest.extend<Fixtures>({
   // eslint-disable-next-line no-empty-pattern
-  playwrightFixture: async ({ }, use) => {
+  playwrightFixture: async ({}, use) => {
     const playwrightFixture = await createPlaywrightFixture();
     await use(playwrightFixture);
   },
@@ -70,7 +70,11 @@ async function createWebFixture({
     window.shielder.actions.createNewAccountAction(contract);
 
   const amount = 5n;
-  const state = await window.state.emptyAccountState(privateKeyAlice);
+  const state = await window.state.emptyAccountState(
+    await window.wasmClientWorker
+      .getWorker()
+      .privateKeyToScalar(privateKeyAlice),
+  );
 
   const newAccountCalldata = await newAccountAction.generateCalldata(
     state,
