@@ -4575,7 +4575,6 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
- "halo2_poseidon 0.2.0 (git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?branch=poseidon2-pow7)",
  "halo2_proofs",
  "rand",
  "rand_chacha",
