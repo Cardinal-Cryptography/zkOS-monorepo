@@ -11,8 +11,8 @@
         "solmate": "github:transmissions11/solmate#8d910d876f51c3b2585c9109409d601f600e68e1"
     },
     "devDependencies": {
-        "@safe-global/protocol-kit": "^3.0.0",
-        "@safe-global/safe-core-sdk-types": "^4.0.0",
+        "@safe-global/protocol-kit": "^5.0.4",
+        "@safe-global/safe-core-sdk-types": "^5.1.0",
         "child_process": "^1.0.2",
         "dotenv": "^16.3.1",
         "forge-std": "github:foundry-rs/forge-std#v1.8.1",
