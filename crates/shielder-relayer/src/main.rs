@@ -9,7 +9,7 @@ use axum::{
     Router,
 };
 use shielder_rust_sdk::{
-    alloy_primitives::Address,
+    alloy_primitives::{Address, U256},
     contract::{
         providers::create_provider_with_nonce_caching_signer, ConnectionPolicy, ShielderUser,
     },
@@ -36,6 +36,7 @@ mod relay;
 pub struct AppState {
     pub node_rpc_url: String,
     pub fee_destination: Address,
+    pub relay_fee: U256,
     pub signer_addresses: Vec<Address>,
     pub taskmaster: Taskmaster,
     pub balances: Balances,
@@ -112,11 +113,13 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
         fee_destination,
         signers.addresses.len(),
         config.operations.relay_count_for_recharge,
+        config.chain.relay_fee,
     );
 
     let state = AppState {
         node_rpc_url: config.chain.node_rpc_url.clone(),
         fee_destination: fee_destination_address,
+        relay_fee: config.chain.relay_fee,
         balances: signers.balances,
         signer_addresses: signers.addresses,
         taskmaster: Taskmaster::new(

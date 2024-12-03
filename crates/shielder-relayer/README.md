@@ -1,6 +1,6 @@
 # shielder-relayer
 
-This crate provides a relayer service for the Shielder system. 
+This crate provides a relayer service for the Shielder system.
 It implements concept described in https://docs.alephzero.org/aleph-zero/protocol-details/shielder/relayers.
 
 # Usage
@@ -19,7 +19,7 @@ Usage: shielder-relayer [OPTIONS]
 Options:
       --logging-format <LOGGING_FORMAT>
           Logging format configuration. If not provided, the value from the environment variable `LOGGING_FORMAT` will be used. If that is not set, the default value is `Text`.
-          
+
           [possible values: text, json]
 
       --host <HOST>
@@ -31,17 +31,36 @@ Options:
       --metrics-port <METRICS_PORT>
           Port where the server metrics should be exposed. If not provided, the value from the environment variable `RELAYER_METRICS_PORT` will be used. If that is not set, the default value is `9615`.
 
+      --balance-monitor-interval-secs <BALANCE_MONITOR_INTERVAL_SECS>
+          Interval (in seconds) for monitoring signers' balances. If not provided, the value from the environment variable `BALANCE_MONITOR_INTERVAL_SECS` will be used. If that is not set, the default value is `900`.
+
       --node-rpc-url <NODE_RPC_URL>
           URL of the Ethereum RPC node. If not provided, the value from the environment variable `NODE_RPC_URL` will be used.
 
       --shielder-contract-address <SHIELDER_CONTRACT_ADDRESS>
           Address of the Shielder contract. If not provided, the value from the environment variable `SHIELDER_CONTRACT_ADDRESS` will be used.
 
-      --relayer-address <RELAYER_ADDRESS>
-          Address of the relayer. If not provided, the value from the environment variable `RELAYER_ADDRESS` will be used.
+      --fee-destination-key <FEE_DESTINATION_KEY>
+          Signing key of the address where the fees should go. If not provided, the value from the environment variable `FEE_DESTINATION_KEY` will be used.
 
-      --signing-key <SIGNING_KEY>
-          Signing key of the relayer. If not provided, the value from the environment variable `RELAYER_SIGNING_KEY` will be used.
+      --signing-keys <SIGNING_KEYS>...
+          Signing keys of the relayer. If not provided, the value from the environment variable `RELAYER_SIGNING_KEYS` will be used.
+
+      --nonce-policy <NONCE_POLICY>
+          Nonce management policy. If not provided, the value from the environment variable `NONCE_POLICY` will be used. If that is not set, the default value is `Caching`.
+
+          [possible values: caching, stateless]
+
+      --dry-running <DRY_RUNNING>
+          Dry running policy. If not provided, the value from the environment variable `DRY_RUNNING` will be used. If that is not set, the default value is `Always`.
+
+          [possible values: always, optimistic]
+
+      --relay-count-for-recharge <RELAY_COUNT_FOR_RECHARGE>
+          Relay count for recharge. If not provided, the value from the environment variable `RELAY_COUNT_FOR_RECHARGE` will be used. If that is not set,the default value is `20`.
+
+      --relay-fee <RELAY_FEE>
+          Relay operation fee. If not provided, the value from the environment variable `RELAY_FEE` will be used. If that is not set,the default value is `"100_000_000_000_000_000"`.
 
   -h, --help
           Print help (see a summary with '-h')
@@ -72,6 +91,7 @@ Apart from operational / monitoring endpoints, the relayer provides the followin
 
 Submits a new withdrawal transaction to the Shielder contract through the relayer.
 It expects one json object in the body, compliant with the structure:
+
 ```rust
 pub struct RelayQuery {
     pub expected_contract_version: FixedBytes<3>,

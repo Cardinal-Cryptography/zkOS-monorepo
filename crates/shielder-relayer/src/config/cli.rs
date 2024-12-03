@@ -121,4 +121,13 @@ pub struct CLIConfig {
             the default value is `{DEFAULT_RELAY_COUNT_FOR_RECHARGE:?}`.")
     )]
     pub relay_count_for_recharge: Option<u32>,
+
+    #[clap(
+        long,
+        help = "Relay operation fee.",
+        long_help = format!("Relay operation fee. If not provided, the value from the \
+            environment variable `{RELAY_FEE_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_RELAY_FEE:?}`.")
+    )]
+    pub relay_fee: Option<String>,
 }
