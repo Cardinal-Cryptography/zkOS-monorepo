@@ -29,7 +29,7 @@ export class Hasher {
       throw new Error("Input too large");
     }
     return new Scalar(
-      this.wasmModule.padded_poseidon_hash(flatUint8(input.map((s) => s.bytes)))
+      this.wasmModule.poseidon_hash(flatUint8(input.map((s) => s.bytes)))
     );
   }
 

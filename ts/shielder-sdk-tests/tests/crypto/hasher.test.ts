@@ -30,7 +30,7 @@ sdkTest("poseidonHash agrees with Rust", async ({ workerPage }) => {
 
     execSync(
       `../../target/debug/test-ts-conversions` +
-        ` padded-poseidon-hash-agrees-with-rust` +
+        ` poseidon-hash-agrees-with-rust` +
         ` --hashed-tuple ${unpackUint8Array(hashedTupleBytes)}` +
         ` --expected-hash ${unpackUint8Array(hash)}`,
       {
