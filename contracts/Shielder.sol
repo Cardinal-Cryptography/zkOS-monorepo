@@ -2,21 +2,14 @@
 
 pragma solidity 0.8.26;
 
-import { IArbSys } from "./IArbSys.sol";
+import { IArbSys } from "./interfaces/IArbSys.sol";
+import { IVerifier } from "./interfaces/IVerifier.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UIntSet } from "./UIntSet.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-
-interface IVerifier {
-    function verifyProof(
-        address vk,
-        bytes calldata proof,
-        uint256[] calldata instances
-    ) external returns (bool);
-}
 
 /// @title Shielder
 /// @author CardinalCryptography

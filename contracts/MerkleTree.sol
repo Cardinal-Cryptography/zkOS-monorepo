@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { IPoseidon2 } from "./IPoseidon2.sol";
+import { IPoseidon2 } from "./interfaces/IPoseidon2.sol";
 
 /*
  * Merkle Tree with Poseidon2

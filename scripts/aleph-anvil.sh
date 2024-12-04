@@ -69,7 +69,7 @@ pushd "${root_dir}" > /dev/null
 
 # ============================ Prepare Arbitrum precompiles ============================================================
 
-forge build contracts/ArbSysMock.sol > /dev/null
+forge build contracts/mocks/ArbSysMock.sol > /dev/null
 ARB_SYS_BYTECODE=$(jq '.deployedBytecode.object' artifacts/ArbSysMock.sol/ArbSysMock.json)
 echo "Arbitrum precompiles prepared"
 
