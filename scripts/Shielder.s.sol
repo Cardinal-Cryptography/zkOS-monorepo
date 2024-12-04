@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.14;
 
-import { Script, console2 } from "forge-std/src/Script.sol";
+import { Script, console2 } from "forge-std/Script.sol";
+import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Poseidon2T8Assembly as Poseidon2 } from "../contracts/Poseidon2T8Assembly.sol";
 import { Halo2Verifier as NewAccountVerifier } from "../contracts/NewAccountVerifier.sol";
 import { Halo2VerifyingKey as NewAccountVerifyingKey } from "../contracts/NewAccountVerifyingKey.sol";
 import { Halo2Verifier as DepositVerifier } from "../contracts/DepositVerifier.sol";
@@ -23,6 +25,8 @@ contract DeployShielderScript is Script {
 
         vm.startBroadcast(privateKey);
 
+        Poseidon2 poseidon2 = new Poseidon2();
+        console2.log("Poseidon2 deployed at:", address(poseidon2));
         NewAccountVerifier newAccountVerifier = new NewAccountVerifier();
         console2.log(
             "NewAccountVerifier deployed at:",
@@ -53,12 +57,11 @@ contract DeployShielderScript is Script {
             address(withdrawVerifyingKey)
         );
 
-        address shielderImplementation = address(new Shielder());
-
-        bytes memory data = abi.encodeCall(
+        bytes memory initializerData = abi.encodeCall(
             Shielder.initialize,
             (
                 owner,
+                address(poseidon2),
                 address(newAccountVerifier),
                 address(depositVerifier),
                 address(withdrawVerifier),
@@ -69,7 +72,10 @@ contract DeployShielderScript is Script {
             )
         );
 
-        address proxy = address(new ERC1967Proxy(shielderImplementation, data));
+        address proxy = Upgrades.deployUUPSProxy(
+            "Shielder.sol:Shielder",
+            initializerData
+        );
 
         Shielder shielder = Shielder(proxy);
 

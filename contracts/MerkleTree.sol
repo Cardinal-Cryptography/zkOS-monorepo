@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { Poseidon2T8Assembly as Poseidon2 } from "./Poseidon2T8Assembly.sol";
+import { IPoseidon2 } from "./IPoseidon2.sol";
 
 /*
  * Merkle Tree with Poseidon2
@@ -14,6 +14,7 @@ library MerkleTree {
     // tree height is computed as ceil(log_{ARITY}(2^36))
 
     struct MerkleTreeData {
+        IPoseidon2 poseidon2;
         mapping(uint256 => uint256) notes;
         uint256 root;
         uint256 nextFreeLeafId;
@@ -28,11 +29,22 @@ library MerkleTree {
     /*
      * Initialize the tree.
      */
-    function init(MerkleTreeData storage merkleTree) internal {
+    function init(
+        MerkleTreeData storage merkleTree,
+        address _poseidon2
+    ) internal {
+        setPoseidon2(merkleTree, _poseidon2);
         (merkleTree.maxLeafId, merkleTree.nextFreeLeafId) = treeBounds(
             TREE_HEIGHT
         );
         merkleTree.firstLeafId = merkleTree.nextFreeLeafId;
+    }
+
+    function setPoseidon2(
+        MerkleTreeData storage self,
+        address _poseidon2
+    ) internal {
+        self.poseidon2 = IPoseidon2(_poseidon2);
     }
 
     /*
@@ -61,7 +73,7 @@ library MerkleTree {
                     j++;
                 }
             }
-            note = Poseidon2.hash(subtrees);
+            note = self.poseidon2.hash(subtrees);
             self.notes[parent] = note;
 
             index = parent;

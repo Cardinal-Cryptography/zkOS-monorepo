@@ -14,7 +14,7 @@ def wrap_into_full_code(assembly_code, T):
 
     return f"""
 pragma solidity 0.8.26;
-library Poseidon2T{T}Assembly {{
+contract Poseidon2T{T}Assembly {{
     function hash(uint256[{T - 1}] memory) public pure returns (uint256) {{
         assembly {{
 

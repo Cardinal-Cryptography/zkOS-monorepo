@@ -20,6 +20,7 @@ interface IVerifier {
 
 /// @title Shielder
 /// @author CardinalCryptography
+/// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Shielder is
     Initializable,
     UUPSUpgradeable,
@@ -130,6 +131,7 @@ contract Shielder is
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
@@ -139,6 +141,7 @@ contract Shielder is
 
     function initialize(
         address initialOwner,
+        address _poseidon2,
         address _newAccountVerifier,
         address _depositVerifier,
         address _withdrawVerifier,
@@ -151,7 +154,7 @@ contract Shielder is
         __Pausable_init();
         _pause();
 
-        merkleTree.init();
+        merkleTree.init(_poseidon2);
 
         arbSysPrecompile = IArbSys(ARB_SYS_ADDRESS);
 
