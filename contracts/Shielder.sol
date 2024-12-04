@@ -20,7 +20,6 @@ interface IVerifier {
 
 /// @title Shielder
 /// @author CardinalCryptography
-/// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Shielder is
     Initializable,
     UUPSUpgradeable,
