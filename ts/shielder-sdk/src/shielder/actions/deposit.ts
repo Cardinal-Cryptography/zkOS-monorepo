@@ -1,4 +1,4 @@
-import { IContract } from "@/chain/contract";
+import { IContract, VersionRejectedByContract } from "@/chain/contract";
 import { Scalar, scalarToBigint } from "@/crypto/scalar";
 import { SendShielderTransaction } from "@/shielder/client";
 import { Calldata } from "@/shielder/actions";
@@ -103,6 +103,7 @@ export class DepositAction {
    * @param calldata calldata for deposit action
    * @param sendShielderTransaction function to send the transaction to the blockchain
    * @returns transaction hash of the deposit transaction
+   * @throws VersionRejectedByContract
    */
   async sendCalldata(
     calldata: DepositCalldata,
@@ -129,6 +130,9 @@ export class DepositAction {
       to: this.contract.getAddress(),
       value: amount
     }).catch((e) => {
+      if (e instanceof VersionRejectedByContract) {
+        throw e;
+      }
       console.error(e);
       throw new Error(`Failed to deposit: ${e}`);
     });
