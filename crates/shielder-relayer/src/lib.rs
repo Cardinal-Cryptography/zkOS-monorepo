@@ -1,4 +1,8 @@
-use axum::Json;
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use shielder_rust_sdk::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 
@@ -67,4 +71,9 @@ pub struct RelayQuery {
     pub nullifier_hash: U256,
     pub new_note: U256,
     pub proof: Bytes,
+}
+
+pub fn server_error(msg: &str) -> Response {
+    let code = StatusCode::INTERNAL_SERVER_ERROR;
+    (code, SimpleServiceResponse::from(msg)).into_response()
 }

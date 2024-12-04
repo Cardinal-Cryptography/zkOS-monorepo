@@ -29,6 +29,7 @@ use crate::{
 mod config;
 mod metrics;
 mod monitor;
+mod quote;
 mod recharge;
 mod relay;
 
@@ -139,7 +140,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
     let app = Router::new()
         .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
-        .route("/quote_fees", get(relay::quote_fees))
+        .route("/quote_fees", get(quote::quote_fees))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))
         .layer(CorsLayer::permissive());
