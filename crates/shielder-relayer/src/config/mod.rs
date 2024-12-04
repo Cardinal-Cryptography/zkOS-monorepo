@@ -4,7 +4,7 @@ use clap::Parser;
 use cli::CLIConfig;
 use defaults::{
     DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT,
-    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_RELAY_FEE,
+    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_RELAY_FEE, DEFAULT_RELAY_GAS,
 };
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
 use shielder_relayer::{
@@ -133,7 +133,7 @@ fn resolve_config_from_cli_config(
             Some(DEFAULT_RELAY_FEE.to_string()),
         ))
         .expect("Invalid relay fee"),
-        relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, None),
+        relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
     };
 
     let operational_config = OperationalConfig {
