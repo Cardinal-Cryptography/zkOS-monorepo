@@ -77,14 +77,15 @@ async fn prepare_relay_queries<'actor>(
     let (params, pk) = proving_keys::<WithdrawCircuit<_, RANGE_PROOF_CHUNK_SIZE>>();
     let mut result = Vec::new();
 
-    let relayer_fee = reqwest::Client::new()
+    let quoted_fees = reqwest::Client::new()
         .get(config.relayer_url.clone() + "/quote_fee")
         .send()
         .await?
         .json::<QuoteFeeResponse>()
-        .await?
-        .relay_fee
-        .parse()?;
+        .await?;
+
+    let relayer_fee =
+        quoted_fees.base_fee.parse::<U256>()? + quoted_fees.relay_fee.parse::<U256>()?;
 
     println!("⏳ Preparing relay queries for actors...");
     for actor in actors {
