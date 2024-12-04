@@ -1,4 +1,4 @@
-import { relayPath } from "@/constants";
+import { feePath, relayPath } from "@/constants";
 import { Address, Hash } from "viem";
 
 export type WithdrawResponse = {
@@ -104,7 +104,7 @@ export class Relayer implements IRelayer {
   quoteFees = async () => {
     let response;
     try {
-      response = await fetch(`${this.url}${relayPath}`, {
+      response = await fetch(`${this.url}${feePath}`, {
         method: "GET"
       });
     } catch (error) {
