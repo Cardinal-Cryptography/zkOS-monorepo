@@ -58,7 +58,10 @@ export class WithdrawAction {
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
-    const relayerFee = BigInt((await this.relayer.quoteFees()).relay_fee);
+    const quotedFees = await this.relayer.quoteFees();
+    const baseFee = BigInt(quotedFees.base_fee);
+    const relayFee = BigInt(quotedFees.relay_fee);
+    const relayerFee = baseFee + relayFee;
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
