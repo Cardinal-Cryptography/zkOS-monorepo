@@ -48,15 +48,17 @@ impl RelayResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QuoteFeeResponse {
-    pub base_fee: String,
-    pub relay_fee: String,
+    pub relayer_fee: String, // the fee used as a contract input by the relayer. decimal string
+    pub base_fee: String,    // estimation of a base fee for relay call. decimal string
+    pub relay_fee: String,   // estimation of a relay fee for relay call. decimal string
 }
 
 impl QuoteFeeResponse {
-    pub fn from(base_fee: U256, relay_fee: U256) -> Json<Self> {
+    pub fn from(relayer_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
         Json(Self {
-            base_fee: base_fee.to_string(),   // convert to decimal string
-            relay_fee: relay_fee.to_string(), // convert to decimal string
+            relayer_fee: relayer_fee.to_string(), // convert to decimal string
+            base_fee: base_fee.to_string(),       // convert to decimal string
+            relay_fee: relay_fee.to_string(),     // convert to decimal string
         })
     }
 }

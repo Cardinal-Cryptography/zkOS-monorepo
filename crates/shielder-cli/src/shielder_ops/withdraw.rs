@@ -88,7 +88,7 @@ async fn get_relayer_fee(app_state: &mut AppState) -> Result<U256> {
         );
     }
     let quoted_fees = relayer_response.json::<QuoteFeeResponse>().await?;
-    Ok(quoted_fees.base_fee.parse::<U256>()? + quoted_fees.relay_fee.parse::<U256>()?)
+    Ok(quoted_fees.relayer_fee.parse()?)
 }
 
 async fn prepare_relayer_query(
