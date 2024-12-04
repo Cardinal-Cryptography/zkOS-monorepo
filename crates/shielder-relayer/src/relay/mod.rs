@@ -35,7 +35,22 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
         return response;
     }
 
-    let withdraw_call = create_call(query, app_state.fee_destination, app_state.relay_fee);
+    let quoted_fees = match quote_relayer_fees(
+        app_state.relay_gas,
+        app_state.relay_fee,
+        &app_state.node_rpc_url,
+    )
+    .await
+    {
+        Ok(quoted_fees) => quoted_fees,
+        Err(response) => return response,
+    };
+
+    let withdraw_call = create_call(
+        query,
+        app_state.fee_destination,
+        quoted_fees.base_fee + quoted_fees.relay_fee,
+    );
     let Ok(rx) = app_state
         .taskmaster
         .register_new_task(withdraw_call, request_trace)
@@ -69,30 +84,19 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
 }
 
 pub async fn quote_fees(app_state: State<AppState>) -> impl IntoResponse {
-    let relay_gas = app_state.relay_gas;
-    let relay_fee = app_state.relay_fee;
-
-    let provider = match create_simple_provider(&app_state.node_rpc_url).await {
-        Ok(provider) => provider,
-        Err(err) => {
-            error!("[UNEXPECTED] Failed to create provider: {err}");
-            return server_error("Failed to create provider");
-        }
-    };
-
-    match provider.get_gas_price().await {
-        Ok(current_gas_price) => (
+    match quote_relayer_fees(
+        app_state.relay_gas,
+        app_state.relay_fee,
+        &app_state.node_rpc_url,
+    )
+    .await
+    {
+        Ok(quoted_fees) => (
             StatusCode::OK,
-            QuoteFeeResponse::from(
-                U256::from(relay_gas) * U256::from(current_gas_price),
-                relay_fee,
-            ),
+            QuoteFeeResponse::from(quoted_fees.base_fee, quoted_fees.relay_fee),
         )
             .into_response(),
-        Err(err) => {
-            error!("[UNEXPECTED] Fee quoter failed: {err}");
-            server_error("Could not quote fees")
-        }
+        Err(response) => response,
     }
 }
 
@@ -117,6 +121,36 @@ fn create_call(q: RelayQuery, relayer_address: Address, relay_fee: U256) -> with
         oldNullifierHash: q.nullifier_hash,
         newNote: q.new_note,
         proof: q.proof,
+    }
+}
+
+struct QuotedFees {
+    base_fee: U256,
+    relay_fee: U256,
+}
+
+async fn quote_relayer_fees(
+    relay_gas: u64,
+    relay_fee: U256,
+    node_rpc_url: &str,
+) -> Result<QuotedFees, Response> {
+    let provider = match create_simple_provider(node_rpc_url).await {
+        Ok(provider) => provider,
+        Err(err) => {
+            error!("[UNEXPECTED] Failed to create provider: {err}");
+            return Err(server_error("Failed to create provider").into_response());
+        }
+    };
+
+    match provider.get_gas_price().await {
+        Ok(current_gas_price) => Ok(QuotedFees {
+            base_fee: U256::from(relay_gas) * U256::from(current_gas_price),
+            relay_fee,
+        }),
+        Err(err) => {
+            error!("[UNEXPECTED] Fee quoter failed: {err}");
+            Err(server_error("Could not quote fees").into_response())
+        }
     }
 }
 
