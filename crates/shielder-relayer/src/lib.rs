@@ -18,7 +18,7 @@ pub const SHIELDER_CONTRACT_ADDRESS_ENV: &str = "SHIELDER_CONTRACT_ADDRESS";
 pub const NONCE_POLICY_ENV: &str = "NONCE_POLICY";
 pub const DRY_RUNNING_ENV: &str = "DRY_RUNNING";
 pub const RELAY_COUNT_FOR_RECHARGE_ENV: &str = "RELAY_COUNT_FOR_RECHARGE";
-pub const RELAY_FEE_ENV: &str = "RELAY_FEE";
+pub const RELAYER_FEE_ENV: &str = "RELAYER_FEE";
 pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
