@@ -28,7 +28,7 @@ lint: ## Run linter
 .PHONY: build-image
 build-image:  ## Builds a Docker image with the Relayer service binary. Use BUILD=client to use a binary built on the client.
 ifeq ($(BUILD),client)
-	@cargo build --release --target aarch64-unknown-linux-gnu
+	@cargo build --release
 	@cd ../.. && docker build --tag "${RELAYER_DOCKER_IMAGE}" -f "crates/shielder-relayer/docker/Dockerfile.client" .
 else ifeq ($(BUILD),docker)
 	@cd ../.. && DOCKER_BUILDKIT=1 docker build --ssh default --tag "${RELAYER_DOCKER_IMAGE}" -f "crates/shielder-relayer/docker/Dockerfile.docker" .
