@@ -3,7 +3,6 @@ import { Scalar, scalarToBigint } from "@/crypto/scalar";
 import { AccountState } from "@/shielder/state";
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Address } from "viem";
-import { relayerFee } from "@/constants";
 import { IRelayer } from "@/chain/relayer";
 import { rawAction } from "@/shielder/actions/utils";
 import { WithdrawReturn } from "@/crypto/circuits/withdraw";
@@ -59,6 +58,7 @@ export class WithdrawAction {
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
+    const relayerFee = BigInt((await this.relayer.quoteFees()).relay_fee);
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)

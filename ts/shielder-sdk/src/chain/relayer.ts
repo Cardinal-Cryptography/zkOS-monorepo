@@ -6,6 +6,11 @@ export type WithdrawResponse = {
   block_hash: Hash;
 };
 
+export type QuoteFeesResponse = {
+  base_fee: string; // decimal string
+  relay_fee: string; // decimal string
+};
+
 export class VersionRejectedByRelayer extends Error {
   constructor(message: string) {
     super(`Version rejected by relayer: ${message}`);
@@ -34,6 +39,7 @@ export type IRelayer = {
     proof: Uint8Array,
     withdrawAddress: `0x${string}`
   ) => Promise<WithdrawResponse>;
+  quoteFees: () => Promise<QuoteFeesResponse>;
 };
 
 export class Relayer implements IRelayer {
@@ -92,5 +98,24 @@ export class Relayer implements IRelayer {
     }
 
     return (await response.json()) as WithdrawResponse;
+  };
+
+  quoteFees = async () => {
+    let response;
+    try {
+      response = await fetch(`${this.url}${relayPath}`, {
+        method: "GET"
+      });
+    } catch (error) {
+      throw new Error(`${(error as Error).message}`);
+    }
+
+    if (!response.ok) {
+      const responseText = await response.text();
+
+      throw new Error(`${responseText}`);
+    }
+
+    return (await response.json()) as QuoteFeesResponse;
   };
 }

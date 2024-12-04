@@ -133,6 +133,7 @@ export class ShielderClient {
   private depositAction: DepositAction;
   private withdrawAction: WithdrawAction;
   private callbacks: ShielderCallbacks;
+  private relayer: IRelayer;
   private publicClient?: PublicClient;
 
   /**
@@ -166,8 +167,21 @@ export class ShielderClient {
       contract,
       callbacks.onNewTransaction
     );
+    this.relayer = relayer;
     this.callbacks = callbacks;
     this.publicClient = publicClient;
+  }
+
+  /**
+   * Get the fees for the withdraw operation.
+   * @returns the base fee and the relayer fee
+   */
+  async getWithdrawOpFees() {
+    const fees = await this.relayer.quoteFees();
+    return {
+      baseFee: BigInt(fees.base_fee),
+      relayerFee: BigInt(fees.relay_fee)
+    };
   }
 
   /**

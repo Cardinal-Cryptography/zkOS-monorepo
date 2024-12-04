@@ -5,6 +5,7 @@ import type {
   InjectedStorageInterface,
   IRelayer,
   NoteEvent,
+  QuoteFeesResponse,
   SendShielderTransaction,
   WithdrawResponse,
 } from "shielder-sdk/__internal__";
@@ -91,6 +92,9 @@ export class MockedRelayer implements IRelayer {
     _proof: Uint8Array,
     _withdrawAddress: `0x${string}`,
   ): Promise<WithdrawResponse> => {
+    throw new Error("Not implemented");
+  };
+  quoteFees = async (): Promise<QuoteFeesResponse> => {
     throw new Error("Not implemented");
   };
 }
