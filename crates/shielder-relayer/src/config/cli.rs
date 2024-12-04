@@ -124,12 +124,12 @@ pub struct CLIConfig {
 
     #[clap(
         long,
-        help = "Relay operation fee.",
-        long_help = format!("Relay operation fee. If not provided, the value from the \
-            environment variable `{RELAY_FEE_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_RELAY_FEE:?}`.")
+        help = "Relayer fee.",
+        long_help = format!("Relayer fee. If not provided, the value from the \
+            environment variable `{RELAYER_FEE_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_RELAYER_FEE:?}`.")
     )]
-    pub relay_fee: Option<String>,
+    pub relayer_fee: Option<String>,
 
     #[clap(
         long,

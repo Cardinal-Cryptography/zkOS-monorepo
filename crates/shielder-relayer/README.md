@@ -59,8 +59,11 @@ Options:
       --relay-count-for-recharge <RELAY_COUNT_FOR_RECHARGE>
           Relay count for recharge. If not provided, the value from the environment variable `RELAY_COUNT_FOR_RECHARGE` will be used. If that is not set,the default value is `20`.
 
-      --relay-fee <RELAY_FEE>
-          Relay operation fee. If not provided, the value from the environment variable `RELAY_FEE` will be used. If that is not set,the default value is `"100_000_000_000_000_000"`.
+      --relayer-fee <RELAYER_FEE>
+          Relay operation fee. If not provided, the value from the environment variable `RELAYER_FEE` will be used. If that is not set,the default value is `"100_000_000_000_000_000"`.
+
+      --relay-gas <RELAY_GAS>
+          Relay gas amount. If not provided, the value from the environment variable `RELAY_GAS` will be used. If that is not set,the default value is `2000000`.
 
   -h, --help
           Print help (see a summary with '-h')

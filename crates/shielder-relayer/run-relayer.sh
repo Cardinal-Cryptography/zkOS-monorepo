@@ -73,5 +73,8 @@ fi
 if [[ -n "${RELAYER_FEE:-}" ]]; then
   ARGS+=(-e RELAYER_FEE=${RELAYER_FEE})
 fi
+if [[ -n "${RELAY_GAS:-}" ]]; then
+  ARGS+=(-e RELAY_GAS=${RELAY_GAS})
+fi
 
 docker run --rm -d "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
