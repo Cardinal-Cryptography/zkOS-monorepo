@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import { IArbSys } from "../interfaces/IArbSys.sol";
-import { IVerifier } from "../interfaces/IVerifier.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "../MerkleTree.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";

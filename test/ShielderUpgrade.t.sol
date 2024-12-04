@@ -16,16 +16,16 @@ import { Shielder } from "../contracts/Shielder.sol";
 import { ShielderV2Mock } from "../contracts/mocks/ShielderV2Mock.sol";
 
 contract ShielderUpgrade is Test {
-    address owner;
+    address public owner;
 
-    address poseidon2;
+    address public poseidon2;
 
-    address newAccountVerifier;
-    address newAccountVerifyingKey;
-    address depositVerifier;
-    address depositVerifyingKey;
-    address withdrawVerifier;
-    address withdrawVerifyingKey;
+    address public newAccountVerifier;
+    address public newAccountVerifyingKey;
+    address public depositVerifier;
+    address public depositVerifyingKey;
+    address public withdrawVerifier;
+    address public withdrawVerifyingKey;
 
     function setUp() public {
         owner = msg.sender;
