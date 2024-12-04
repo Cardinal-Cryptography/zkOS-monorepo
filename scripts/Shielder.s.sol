@@ -3,9 +3,8 @@
 pragma solidity ^0.8.14;
 
 import { Script, console2 } from "forge-std/Script.sol";
-import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { Poseidon2T8Assembly as Poseidon2 } from "../contracts/Poseidon2T8Assembly.sol";
 import { Halo2Verifier as NewAccountVerifier } from "../contracts/NewAccountVerifier.sol";
 import { Halo2VerifyingKey as NewAccountVerifyingKey } from "../contracts/NewAccountVerifyingKey.sol";
