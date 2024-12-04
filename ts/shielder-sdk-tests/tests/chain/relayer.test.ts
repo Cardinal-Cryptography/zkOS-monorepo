@@ -97,10 +97,12 @@ async function createWebFixture({
 
   const withdrawAmount = 10n ** 18n;
   const addressTo: `0x${string}` = "0x0000000000000000000000000000000000000001";
+  const quotedFees = await shielderClient.getWithdrawOpFees();
 
   const withdrawCalldata = await withdrawAction.generateCalldata(
     stateAfterNewAccount,
     withdrawAmount,
+    quotedFees.baseFee + quotedFees.relayFee,
     addressTo,
     "0x000001",
   );

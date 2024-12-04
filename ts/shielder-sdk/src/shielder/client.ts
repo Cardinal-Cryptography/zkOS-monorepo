@@ -180,7 +180,7 @@ export class ShielderClient {
     const fees = await this.relayer.quoteFees();
     return {
       baseFee: BigInt(fees.base_fee),
-      relayerFee: BigInt(fees.relay_fee)
+      relayFee: BigInt(fees.relay_fee)
     };
   }
 
@@ -249,17 +249,19 @@ export class ShielderClient {
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
    * @param {bigint} amount - amount to withdraw, in wei
+   * @param {bigint} relayerFee - relayer fee, in wei, supposedly a sum of base fee and relay fee
    * @param {`0x${string}`} address - public address of the recipient
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
-  async withdraw(amount: bigint, address: Address) {
+  async withdraw(amount: bigint, relayerFee: bigint, address: Address) {
     const state = await this.stateManager.accountState();
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
           state,
           amount,
+          relayerFee,
           address,
           contractVersion
         ),

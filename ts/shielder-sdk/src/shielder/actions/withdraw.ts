@@ -48,20 +48,18 @@ export class WithdrawAction {
    * The amount must include the relayer fee, e.g. `amount = value + relayerFee`,
    * where `value` is the targeted amount to withdraw.
    * @param state current account state
-   * @param amount amount to withdraw, including the relayer fee
+   * @param amount amount to withdraw, excluding the relayer fee
+   * @param relayerFee relayer fee, supposedly a sum of base fee and relay fee
    * @param address recipient address
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
+    relayerFee: bigint,
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
-    const quotedFees = await this.relayer.quoteFees();
-    const baseFee = BigInt(quotedFees.base_fee);
-    const relayFee = BigInt(quotedFees.relay_fee);
-    const relayerFee = baseFee + relayFee;
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
