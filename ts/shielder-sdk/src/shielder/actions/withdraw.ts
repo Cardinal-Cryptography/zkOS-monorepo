@@ -56,7 +56,7 @@ export class WithdrawAction {
   async generateCalldata(
     state: AccountState,
     amount: bigint,
-    relayerFee: bigint,
+    withdrawFee: bigint,
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
@@ -71,9 +71,9 @@ export class WithdrawAction {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < relayerFee) {
+    if (amount < withdrawFee) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${relayerFee.toString()}`
+        `Amount must be greater than the relayer fee: ${withdrawFee.toString()}`
       );
     }
 
@@ -102,7 +102,7 @@ export class WithdrawAction {
         trapdoorNew,
         accountBalanceNew: Scalar.fromBigint(accountBalanceNew),
         relayerAddress: Scalar.fromAddress(this.relayer.address),
-        relayerFee: Scalar.fromBigint(relayerFee),
+        relayerFee: Scalar.fromBigint(withdrawFee),
         address: Scalar.fromAddress(address)
       })
       .catch((e) => {
