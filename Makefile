@@ -92,12 +92,3 @@ generate-tooling-dev:
 	cp -r contracts tooling-dev/
 	cp -r scripts tooling-dev/
 	git rev-parse --short=7 HEAD > tooling-dev/.git-sha
-
-.PHONY: verify-shielder-contract
-verify-shielder-contract: # Verify shielder contract
-verify-shielder-contract:
-	forge verify-contract --rpc-url https://rpc.alephzero-testnet.gelato.digital \
-		--verifier blockscout --verifier-url https://evm-explorer-testnet.alephzero.org/api \
-		--libraries $(shell cat broadcast/Shielder.s.sol/2039/run-latest.json | jq ".libraries | flatten[]") \
-		$(shell cat broadcast/Shielder.s.sol/2039/run-latest.json | jq -c '.transactions | .[] | select(.contractName=="Shielder") | .contractAddress') \
-		contracts/Shielder.sol:Shielder

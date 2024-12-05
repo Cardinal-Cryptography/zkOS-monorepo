@@ -38,10 +38,13 @@ jobs:
         run: make compile-contracts
 
       - name: Deploy contracts
-        run: PRIVATE_KEY= ${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }} NETWORK=https://rpc.alephzero-testnet.gelato.digital make deploy-contracts
+        run: |
+          PRIVATE_KEY= ${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }} \
+          NETWORK=https://rpc.alephzero-testnet.gelato.digital \
+          make deploy-contracts
 
       - name: Verify Shielder contract
-        run: make verify-shielder-contract
+        run: ./scripts/verify-shielder-testnet.sh
 
       - name: Upload Shielder abi to artifacts
         uses: actions/upload-artifact@v4
@@ -50,11 +53,6 @@ jobs:
           path: artifacts/Shielder.sol/Shielder.json
           include-hidden-files: true
           retention-days: 14
-
-      - name: Create file with Shielder contract address
-        run: echo $(cat broadcast/Shielder.s.sol/2039/run-latest.json | \
-          jq -c '.transactions | .[] | select(.contractName=="Shielder") | .contractAddress') \
-          > shielder_address.txt
 
       - name: Upload Shielder contract address to artifacts
         uses: actions/upload-artifact@v4
