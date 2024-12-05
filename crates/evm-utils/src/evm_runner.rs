@@ -45,7 +45,7 @@ pub struct EvmRunner {
 
 fn get_precompile_source() -> String {
     let mut source = String::new();
-    let mut file = File::open(repo_root_dir().join("contracts/ArbSysMock.sol"))
+    let mut file = File::open(repo_root_dir().join("contracts/mocks/ArbSysMock.sol"))
         .expect("Cannot open contract source file");
     file.read_to_string(&mut source)
         .expect("Cannot read contract source file");
