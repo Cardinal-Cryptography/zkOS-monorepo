@@ -6,7 +6,7 @@ import {
   type InjectedStorageInterface,
   type IRelayer,
   type NoteEvent,
-  QuoteFeesResponse,
+  type QuoteFeesResponse,
   type SendShielderTransaction,
   type WithdrawResponse,
 } from "shielder-sdk/__internal__";

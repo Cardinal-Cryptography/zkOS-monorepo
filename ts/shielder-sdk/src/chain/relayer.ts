@@ -10,7 +10,7 @@ export type WithdrawResponse = {
 export type QuoteFeesResponse = {
   base_fee: string; // decimal string
   relay_fee: string; // decimal string
-  relayer_fee: string; // decimal string
+  total_fee: string; // decimal string
 };
 
 export class VersionRejectedByRelayer extends CustomError {

@@ -45,18 +45,18 @@ export class WithdrawAction {
 
   /**
    * Generate calldata for withdrawing `amount` from the account.
-   * The amount must include the relayer fee, e.g. `amount = value + relayerFee`,
+   * The amount must include the relayer fee, e.g. `amount = value + totalFee`,
    * where `value` is the targeted amount to withdraw.
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
-   * @param relayerFee relayer fee, supposedly a sum of base fee and relay fee
+   * @param totalFee total relayer fee, supposedly a sum of base fee and relay fee
    * @param address recipient address
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
-    withdrawFee: bigint,
+    totalFee: bigint,
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
@@ -71,9 +71,9 @@ export class WithdrawAction {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < withdrawFee) {
+    if (amount < totalFee) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${withdrawFee.toString()}`
+        `Amount must be greater than the relayer fee: ${totalFee.toString()}`
       );
     }
 
@@ -102,7 +102,7 @@ export class WithdrawAction {
         trapdoorNew,
         accountBalanceNew: Scalar.fromBigint(accountBalanceNew),
         relayerAddress: Scalar.fromAddress(this.relayer.address),
-        relayerFee: Scalar.fromBigint(withdrawFee),
+        relayerFee: Scalar.fromBigint(totalFee),
         address: Scalar.fromAddress(address)
       })
       .catch((e) => {
