@@ -1,6 +1,7 @@
 use std::{assert_matches::assert_matches, str::FromStr};
 
 use alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
+use evm_utils::SuccessResult;
 use rstest::rstest;
 use shielder_rust_sdk::{
     account::{
@@ -22,6 +23,8 @@ use crate::shielder::{
     merkle::get_merkle_args,
     recipient_balance_increased_by, relayer_balance_increased_by, CallResult,
 };
+
+const GAS_CONSUMPTION: u64 = 1903378;
 
 struct PrepareCallArgs {
     amount: U256,
@@ -86,14 +89,34 @@ fn invoke_call(
     let call_result = invoke_shielder_call(deployment, calldata, None);
 
     match call_result {
-        Ok(events) => {
+        Ok((events, success_result)) => {
             assert!(events.len() == 1);
             let event = events[0].clone();
             shielder_account.register_action((TxHash::default(), event.clone()));
-            Ok(events)
+            Ok((events, success_result))
         }
         Err(err) => Err(err),
     }
+}
+
+#[rstest]
+fn gas_consumption_regression(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(20))
+            .unwrap();
+
+    let (withdraw_calldata, _) = prepare_call(
+        &mut deployment,
+        &mut shielder_account,
+        prepare_args(U256::from(5), U256::from(1)),
+    );
+    let (_, SuccessResult { gas_used, .. }) =
+        invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata).unwrap();
+
+    assert!(
+        gas_used < 110 * GAS_CONSUMPTION / 100,
+        "withdraw native transaction consumes {gas_used}, which is 10% beyond baseline of {GAS_CONSUMPTION}"
+    );
 }
 
 #[rstest]
@@ -107,22 +130,22 @@ fn succeeds(mut deployment: Deployment) {
         &mut shielder_account,
         prepare_args(U256::from(5), U256::from(1)),
     );
-    let withdraw_result = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata);
+    let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
+        .unwrap()
+        .0;
 
     assert_eq!(
-        withdraw_result,
-        Ok(vec![ShielderContractEvents::WithdrawNative(
-            WithdrawNative {
-                contractVersion: FixedBytes([0, 0, 1]),
-                idHiding: withdraw_calldata.idHiding,
-                amount: U256::from(5),
-                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
-                newNote: withdraw_calldata.newNote,
-                relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
-                newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
-                fee: U256::from(1),
-            }
-        )])
+        events,
+        vec![ShielderContractEvents::WithdrawNative(WithdrawNative {
+            contractVersion: FixedBytes([0, 0, 1]),
+            idHiding: withdraw_calldata.idHiding,
+            amount: U256::from(5),
+            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            newNote: withdraw_calldata.newNote,
+            relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+            newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+            fee: U256::from(1),
+        })]
     );
     assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
     assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
@@ -152,22 +175,22 @@ fn succeeds_after_deposit(mut deployment: Deployment) {
         &mut shielder_account,
         prepare_args(U256::from(5), U256::from(1)),
     );
-    let withdraw_result = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata);
+    let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
+        .unwrap()
+        .0;
 
     assert_eq!(
-        withdraw_result,
-        Ok(vec![ShielderContractEvents::WithdrawNative(
-            WithdrawNative {
-                contractVersion: FixedBytes([0, 0, 1]),
-                idHiding: withdraw_calldata.idHiding,
-                amount: U256::from(5),
-                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
-                newNote: withdraw_calldata.newNote,
-                relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
-                newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
-                fee: U256::from(1),
-            }
-        )])
+        events,
+        vec![ShielderContractEvents::WithdrawNative(WithdrawNative {
+            contractVersion: FixedBytes([0, 0, 1]),
+            idHiding: withdraw_calldata.idHiding,
+            amount: U256::from(5),
+            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            newNote: withdraw_calldata.newNote,
+            relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+            newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+            fee: U256::from(1),
+        })]
     );
     assert!(actor_balance_decreased_by(&deployment, U256::from(30)));
     assert!(recipient_balance_increased_by(&deployment, U256::from(4)));

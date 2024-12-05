@@ -1,6 +1,7 @@
 use std::assert_matches::assert_matches;
 
 use alloy_primitives::{Bytes, FixedBytes, TxHash, U256};
+use evm_utils::SuccessResult;
 use rstest::rstest;
 use shielder_rust_sdk::{
     account::{
@@ -22,6 +23,8 @@ use crate::shielder::{
     merkle::get_merkle_args,
     CallResult,
 };
+
+const GAS_CONSUMPTION: u64 = 1833173;
 
 pub fn prepare_call(
     deployment: &mut Deployment,
@@ -59,14 +62,31 @@ pub fn invoke_call(
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
     match call_result {
-        Ok(events) => {
+        Ok((events, _success_result)) => {
             assert!(events.len() == 1);
             let event = events[0].clone();
             shielder_account.register_action((TxHash::default(), event.clone()));
-            Ok(events)
+            Ok((events, _success_result))
         }
         Err(err) => Err(err),
     }
+}
+
+#[rstest]
+fn gas_consumption_regression(mut deployment: Deployment) {
+    let mut shielder_account =
+        new_account_native::create_account_and_call(&mut deployment, U256::from(1), U256::from(10))
+            .unwrap();
+
+    let amount = U256::from(5);
+    let (calldata, _) = prepare_call(&mut deployment, &mut shielder_account, amount);
+    let (_, SuccessResult { gas_used, .. }) =
+        invoke_call(&mut deployment, &mut shielder_account, amount, &calldata).unwrap();
+
+    assert!(
+        gas_used < 110 * GAS_CONSUMPTION / 100,
+        "deposit transaction consumes {gas_used}, which is 10% beyond baseline of {GAS_CONSUMPTION}"
+    );
 }
 
 #[rstest]
@@ -77,17 +97,19 @@ fn succeeds(mut deployment: Deployment) {
 
     let amount = U256::from(5);
     let (calldata, note_index) = prepare_call(&mut deployment, &mut shielder_account, amount);
-    let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
+    let events = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata)
+        .unwrap()
+        .0;
 
     assert_eq!(
-        result,
-        Ok(vec![ShielderContractEvents::DepositNative(DepositNative {
+        events,
+        vec![ShielderContractEvents::DepositNative(DepositNative {
             contractVersion: FixedBytes([0, 0, 1]),
             idHiding: calldata.idHiding,
             amount: U256::from(amount),
             newNote: calldata.newNote,
             newNoteIndex: note_index.saturating_add(U256::from(1)),
-        })])
+        })]
     );
     assert!(actor_balance_decreased_by(&deployment, U256::from(15)));
     assert_eq!(shielder_account.shielded_amount, U256::from(15))

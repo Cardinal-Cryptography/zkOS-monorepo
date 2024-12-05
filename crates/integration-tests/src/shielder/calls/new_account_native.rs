@@ -1,6 +1,7 @@
 use std::assert_matches::assert_matches;
 
 use alloy_primitives::{FixedBytes, TxHash, U256};
+use evm_utils::SuccessResult;
 use rstest::rstest;
 use shielder_rust_sdk::{
     account::{call_data::NewAccountCallType, ShielderAccount},
@@ -15,6 +16,8 @@ use crate::shielder::{
     limits::{get_deposit_limit, set_deposit_limit},
     CallResult, Deployment,
 };
+
+const GAS_CONSUMPTION: u64 = 2005642;
 
 pub fn prepare_call(
     deployment: &mut Deployment,
@@ -34,11 +37,11 @@ pub fn invoke_call(
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
     match call_result {
-        Ok(events) => {
+        Ok((events, success_result)) => {
             assert!(events.len() == 1);
             let event = events[0].clone();
             shielder_account.register_action((TxHash::default(), event.clone()));
-            Ok(events)
+            Ok((events, success_result))
         }
         Err(err) => Err(err),
     }
@@ -61,24 +64,39 @@ pub fn create_account_and_call(
 }
 
 #[rstest]
+fn gas_consumption_regression(mut deployment: Deployment) {
+    let mut shielder_account = ShielderAccount::default();
+    let amount = U256::from(10);
+    let calldata = prepare_call(&mut deployment, &mut shielder_account, amount);
+
+    let (_, SuccessResult { gas_used, .. }) =
+        invoke_call(&mut deployment, &mut shielder_account, amount, &calldata).unwrap();
+
+    assert!(
+        gas_used < 110 * GAS_CONSUMPTION / 100,
+        "new account native transaction consumes {gas_used}, which is 10% beyond baseline of {GAS_CONSUMPTION}"
+    );
+}
+
+#[rstest]
 fn succeeds(mut deployment: Deployment) {
     let mut shielder_account = ShielderAccount::default();
     let amount = U256::from(10);
     let calldata = prepare_call(&mut deployment, &mut shielder_account, amount);
 
-    let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
+    let events = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata)
+        .unwrap()
+        .0;
 
     assert_eq!(
-        result,
-        Ok(vec![ShielderContractEvents::NewAccountNative(
-            NewAccountNative {
-                contractVersion: FixedBytes([0, 0, 1]),
-                idHash: calldata.idHash,
-                amount,
-                newNote: calldata.newNote,
-                newNoteIndex: U256::ZERO,
-            }
-        )])
+        events,
+        vec![ShielderContractEvents::NewAccountNative(NewAccountNative {
+            contractVersion: FixedBytes([0, 0, 1]),
+            idHash: calldata.idHash,
+            amount,
+            newNote: calldata.newNote,
+            newNoteIndex: U256::ZERO,
+        })]
     );
     assert!(actor_balance_decreased_by(&deployment, amount));
     assert_eq!(shielder_account.shielded_amount, U256::from(amount))
@@ -124,7 +142,7 @@ fn can_consume_entire_contract_balance_limit(mut deployment: Deployment) {
     let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
 
     assert!(result.is_ok());
-    let events = result.unwrap();
+    let events = result.unwrap().0;
     assert!(events.len() == 1);
     assert_matches!(events[0], ShielderContractEvents::NewAccountNative(_));
     assert!(actor_balance_decreased_by(&deployment, amount))
