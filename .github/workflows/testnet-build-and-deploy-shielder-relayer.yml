@@ -21,13 +21,6 @@ jobs:
       - name: Build relayer
         run: cd crates/shielder-relayer && make build
 
-      - name: Upload shielder-relayer binary to artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: shielder-relayer-binary
-          path: target/release/shielder-relayer
-          retention-days: 1
-
       - name: DOCKER | Build and push
         uses: ./.github/actions/shielder-relayer/build-and-push
         id: build_shielder_relayer
