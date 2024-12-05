@@ -39,7 +39,7 @@ jobs:
 
       - name: Deploy contracts
         run: |
-          PRIVATE_KEY= ${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }} \
+          PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }} \
           NETWORK=https://rpc.alephzero-testnet.gelato.digital \
           make deploy-contracts
 
