@@ -1,17 +1,21 @@
 import { feePath, relayPath } from "@/constants";
 import { CustomError } from "ts-custom-error";
-import { Address, Hash } from "viem";
+import { Address } from "viem";
+import { z } from "zod";
 
-export type WithdrawResponse = {
-  tx_hash: Hash;
-  block_hash: Hash;
-};
+const withdrawResponseSchema = z.object({
+  tx_hash: z.string().regex(/^0x([A-Fa-f0-9]{64})$/)
+});
 
-export type QuoteFeesResponse = {
-  base_fee: string; // decimal string
-  relay_fee: string; // decimal string
-  total_fee: string; // decimal string
-};
+export type WithdrawResponse = z.infer<typeof withdrawResponseSchema>;
+
+const quoteFeesResponseSchema = z.object({
+  base_fee: z.string().regex(/^\d+$/),
+  relay_fee: z.string().regex(/^\d+$/),
+  total_fee: z.string().regex(/^\d+$/)
+});
+
+export type QuoteFeesResponse = z.infer<typeof quoteFeesResponseSchema>;
 
 export class VersionRejectedByRelayer extends CustomError {
   public constructor(message: string) {
@@ -60,7 +64,7 @@ export class Relayer implements IRelayer {
     amount: bigint,
     proof: Uint8Array,
     withdrawAddress: `0x${string}`
-  ) => {
+  ): Promise<WithdrawResponse> => {
     let response;
     try {
       response = await fetch(`${this.url}${relayPath}`, {
@@ -97,7 +101,11 @@ export class Relayer implements IRelayer {
       throw new GenericWithdrawError(`${responseText}`);
     }
 
-    return (await response.json()) as WithdrawResponse;
+    try {
+      return withdrawResponseSchema.parse(await response.json());
+    } catch (error) {
+      throw new GenericWithdrawError(`${(error as Error).message}`);
+    }
   };
 
   quoteFees = async () => {
@@ -116,6 +124,10 @@ export class Relayer implements IRelayer {
       throw new Error(`${responseText}`);
     }
 
-    return (await response.json()) as QuoteFeesResponse;
+    try {
+      return quoteFeesResponseSchema.parse(await response.json());
+    } catch (error) {
+      throw new Error(`${(error as Error).message}`);
+    }
   };
 }

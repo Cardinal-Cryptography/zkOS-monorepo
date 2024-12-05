@@ -153,6 +153,6 @@ export class WithdrawAction {
         console.error(e);
         throw new Error(`Failed to withdraw: ${e}`);
       });
-    return txHash;
+    return txHash as `0x${string}`;
   }
 }
