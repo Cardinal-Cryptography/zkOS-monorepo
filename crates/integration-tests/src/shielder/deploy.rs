@@ -81,9 +81,6 @@ pub fn prepare_account(
     caller
 }
 
-/// Solc leaves this placeholder for a Poseidon2 contract address.
-const POSEIDON2_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
-
 pub struct Deployment {
     pub evm: EvmRunner,
     pub contract_suite: ShielderContractSuite,
@@ -112,10 +109,12 @@ pub fn deployment(
         Some(reverting_bytecode),
     );
 
+    let poseidon2 = deploy_contract("Poseidon2T8Assembly.sol", "Poseidon2T8Assembly", &mut evm);
     let verification_contracts = deploy_verifiers_and_keys(&mut evm);
     let token = deploy_token(&mut evm, owner);
     let permit2 = deploy_permit2(&mut evm, owner);
-    let shielder_address = deploy_shielder_contract(verification_contracts, &mut evm, owner);
+    let shielder_address =
+        deploy_shielder_contract(poseidon2, verification_contracts, &mut evm, owner);
     unpause_shielder(shielder_address, &mut evm);
     instrument_token(&mut evm, owner, actor, token, permit2);
 
@@ -134,7 +133,7 @@ pub fn deployment(
 
 /// Deploy ERC20 token contract
 fn deploy_token(evm: &mut EvmRunner, caller: Address) -> Address {
-    let solidity_code = read_contract("Token.sol");
+    let solidity_code = read_contract("mocks/Token.sol");
     let compiled_bytecode = source_to_bytecode(solidity_code, "Token", true);
 
     let constructor_calldata = token::constructor_calldata(U256::from(1000000));
@@ -183,30 +182,12 @@ fn deploy_permit2(evm: &mut EvmRunner, caller: Address) -> Address {
 /// This requires more steps than deploying a regular contract because Solc leaves placeholders
 /// in the bytecode, which has to be replaced with a deployed Poseidon2 contract address.
 fn deploy_shielder_implementation(evm: &mut EvmRunner) -> Address {
-    // 1. Compile the Shielder implementation contract. It will contain placeholders.
-    let solidity_code = read_contract("Shielder.sol");
-    let implementation_bytecode = source_to_bytecode(solidity_code, "Shielder", false);
-
-    // 2. Compile and deploy auxiliary contracts.
-    let poseidon2_address =
-        deploy_contract("Poseidon2T8Assembly.sol", "Poseidon2T8Assembly", evm).to_string();
-
-    // 3. Manipulate the Shielder implementation bytecode to replace the placeholders with the
-    //    corresponding contract addresses.
-    let implementation_bytecode = String::from_utf8(implementation_bytecode).unwrap();
-    let with_poseidon2 = implementation_bytecode.replace(
-        POSEIDON2_LIB_PLACEHOLDER,
-        poseidon2_address.strip_prefix("0x").unwrap(),
-    );
-    let ready_bytecode = hex::decode(with_poseidon2).unwrap();
-
-    // 4. Finally, deploy the Shielder implementation contract.
-    evm.create(ready_bytecode, None)
-        .expect("Failed to deploy Shielder implementation contract")
+    deploy_contract("Shielder.sol", "Shielder", evm)
 }
 
 /// Deploy Shielder contract using ERC 1967 proxy.
 pub fn deploy_shielder_contract(
+    poseidon2_contract: Address,
     verification_contracts: VerificationContracts,
     evm: &mut EvmRunner,
     owner: Address,
@@ -214,6 +195,7 @@ pub fn deploy_shielder_contract(
     let implementation_address = deploy_shielder_implementation(evm);
     let initialization_data = initializeCall {
         initialOwner: owner,
+        _poseidon2: poseidon2_contract,
         _newAccountVerifier: verification_contracts.new_account_verifier,
         _depositVerifier: verification_contracts.deposit_verifier,
         _withdrawVerifier: verification_contracts.withdraw_verifier,

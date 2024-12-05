@@ -61,6 +61,7 @@ sol! {
 
         function initialize(
             address initialOwner,
+            address _poseidon2,
             address _newAccountVerifier,
             address _depositVerifier,
             address _withdrawVerifier,
