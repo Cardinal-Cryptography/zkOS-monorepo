@@ -57,3 +57,10 @@ jobs:
           name: contract-artifacts
           path: artifacts
           retention-days: 1
+
+      - name: Upload contracts build cache to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-build-cache
+          path: cache
+          retention-days: 1

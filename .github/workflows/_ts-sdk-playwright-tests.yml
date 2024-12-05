@@ -116,6 +116,12 @@ jobs:
           name: contract-artifacts
           path: artifacts
 
+      - name: Download contracts build cache from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-build-cache
+          path: cache
+
       - name: Download generated wasm from artifacts
         uses: actions/download-artifact@v4
         with:
