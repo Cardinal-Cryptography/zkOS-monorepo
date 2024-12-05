@@ -54,7 +54,7 @@ run() {
     --master-seed "${DEPLOYER_PRIVATE_KEY}" \
     --node-rpc-url "${NODE_RPC_URL}" \
     --shielder "${SHIELDER_CONTRACT_ADDRESS}" \
-    --relayer-url "${RELAYER_URL}/relay" \
+    --relayer-url "${RELAYER_URL}" \
     --relayer-address "${FEE_DESTINATION}" \
     --actor-count 12
 

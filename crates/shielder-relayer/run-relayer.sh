@@ -70,8 +70,11 @@ fi
 if [[ -n "${BALANCE_MONITOR_INTERVAL_SECS:-}" ]]; then
   ARGS+=(-e BALANCE_MONITOR_INTERVAL_SECS=${BALANCE_MONITOR_INTERVAL_SECS})
 fi
-if [[ -n "${RELAYER_FEE:-}" ]]; then
-  ARGS+=(-e RELAYER_FEE=${RELAYER_FEE})
+if [[ -n "${TOTAL_FEE:-}" ]]; then
+  ARGS+=(-e TOTAL_FEE=${TOTAL_FEE})
+fi
+if [[ -n "${RELAY_GAS:-}" ]]; then
+  ARGS+=(-e RELAY_GAS=${RELAY_GAS})
 fi
 
 docker run --rm -d "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"

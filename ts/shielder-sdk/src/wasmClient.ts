@@ -117,4 +117,8 @@ export class WasmClient {
   privateKeyToScalar(hex: Hex): Scalar {
     return this.converter!.privateKeyToScalar(hex);
   }
+
+  arity(): number {
+    return this.hasher!.arity();
+  }
 }

@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use shielder_relayer::{RelayQuery, RelayResponse, SimpleServiceResponse};
+use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_rust_sdk::{
     alloy_primitives::{Address, U256},
     contract::ShielderContract::withdrawNativeCall,
@@ -34,7 +34,7 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
         return response;
     }
 
-    let withdraw_call = create_call(query, app_state.fee_destination, app_state.relay_fee);
+    let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
     let Ok(rx) = app_state
         .taskmaster
         .register_new_task(withdraw_call, request_trace)
@@ -71,18 +71,13 @@ fn bad_request(msg: &str) -> Response {
     (StatusCode::BAD_REQUEST, SimpleServiceResponse::from(msg)).into_response()
 }
 
-fn server_error(msg: &str) -> Response {
-    let code = StatusCode::INTERNAL_SERVER_ERROR;
-    (code, SimpleServiceResponse::from(msg)).into_response()
-}
-
-fn create_call(q: RelayQuery, relayer_address: Address, relay_fee: U256) -> withdrawNativeCall {
+fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawNativeCall {
     withdrawNativeCall {
         expectedContractVersion: q.expected_contract_version,
         idHiding: q.id_hiding,
         withdrawAddress: q.withdraw_address,
         relayerAddress: relayer_address,
-        relayerFee: relay_fee,
+        relayerFee: relayer_fee,
         amount: q.amount,
         merkleRoot: q.merkle_root,
         oldNullifierHash: q.nullifier_hash,

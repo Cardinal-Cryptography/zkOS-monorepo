@@ -6,7 +6,7 @@ use shielder_circuits::{
     consts::RANGE_PROOF_CHUNK_SIZE,
     withdraw::WithdrawCircuit,
 };
-use shielder_relayer::{relayer_fee, RelayQuery};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery};
 use shielder_rust_sdk::{
     account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
     alloy_primitives::U256,
@@ -51,7 +51,7 @@ async fn actor_task(actor: Actor, query: RelayQuery, relayer_rpc_url: String) ->
 
     let start = Instant::now();
     let status = reqwest::Client::new()
-        .post(relayer_rpc_url)
+        .post(relayer_rpc_url + "/relay")
         .json(&query)
         .send()
         .await?
@@ -77,9 +77,18 @@ async fn prepare_relay_queries<'actor>(
     let (params, pk) = proving_keys::<WithdrawCircuit<_, RANGE_PROOF_CHUNK_SIZE>>();
     let mut result = Vec::new();
 
+    let total_fee = reqwest::Client::new()
+        .get(config.relayer_url.clone() + "/quote_fee")
+        .send()
+        .await?
+        .json::<QuoteFeeResponse>()
+        .await?
+        .total_fee
+        .parse()?;
+
     println!("⏳ Preparing relay queries for actors...");
     for actor in actors {
-        let query = prepare_relay_query(config, &actor, &params, &pk).await?;
+        let query = prepare_relay_query(config, &actor, &params, &pk, total_fee).await?;
         result.push((actor, query));
     }
     Ok(result)
@@ -90,6 +99,7 @@ async fn prepare_relay_query(
     actor: &Actor,
     params: &Params,
     pk: &ProvingKey,
+    relayer_fee: U256,
 ) -> Result<RelayQuery> {
     let (merkle_root, merkle_path) =
         get_current_merkle_path(U256::from(actor.id), &actor.shielder_user).await?;
@@ -106,7 +116,7 @@ async fn prepare_relay_query(
             },
             to,
             relayer_address: config.relayer_address,
-            relayer_fee: relayer_fee(),
+            relayer_fee,
             contract_version: contract_version(),
         },
     );

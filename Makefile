@@ -68,6 +68,10 @@ generate-verifier-contracts:
 	cargo run --release --bin halo2_solidity_verifier_generator
 	$(MAKE) format-contracts
 
+.PHONY: generate-contracts
+generate-contracts: # Generate poseidon & relation verifier contracts
+generate-contracts: generate-poseidon-contracts generate-verifier-contracts
+
 .PHONY: format-rust
 format-rust: # Format all rust crates
 format-rust:

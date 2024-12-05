@@ -14,9 +14,11 @@ export async function rawAction(
   if (balanceNew < 0n) {
     return null;
   }
-  const hAccountBalanceNew = await wasmClientWorker.poseidonHash([
-    Scalar.fromBigint(balanceNew)
-  ]);
+  const scalarArray: Scalar[] = new Array<Scalar>(
+    await wasmClientWorker.arity()
+  ).fill(Scalar.fromBigint(0n));
+  scalarArray[0] = Scalar.fromBigint(balanceNew);
+  const hAccountBalanceNew = await wasmClientWorker.poseidonHash(scalarArray);
   const version = noteVersion();
   const noteNew = await wasmClientWorker.poseidonHash([
     version,

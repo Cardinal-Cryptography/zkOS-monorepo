@@ -3,7 +3,6 @@ import { Scalar, scalarToBigint } from "@/crypto/scalar";
 import { AccountState } from "@/shielder/state";
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Address } from "viem";
-import { relayerFee } from "@/constants";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { rawAction } from "@/shielder/actions/utils";
 import { WithdrawReturn } from "@/crypto/circuits/withdraw";
@@ -46,16 +45,18 @@ export class WithdrawAction {
 
   /**
    * Generate calldata for withdrawing `amount` from the account.
-   * The amount must include the relayer fee, e.g. `amount = value + relayerFee`,
+   * The amount must include the relayer fee, e.g. `amount = value + totalFee`,
    * where `value` is the targeted amount to withdraw.
    * @param state current account state
-   * @param amount amount to withdraw, including the relayer fee
+   * @param amount amount to withdraw, excluding the relayer fee
+   * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
    * @param address recipient address
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
+    totalFee: bigint,
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
@@ -70,9 +71,9 @@ export class WithdrawAction {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < relayerFee) {
+    if (amount < totalFee) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${relayerFee.toString()}`
+        `Amount must be greater than the relayer fee: ${totalFee.toString()}`
       );
     }
 
@@ -101,7 +102,7 @@ export class WithdrawAction {
         trapdoorNew,
         accountBalanceNew: Scalar.fromBigint(accountBalanceNew),
         relayerAddress: Scalar.fromAddress(this.relayer.address),
-        relayerFee: Scalar.fromBigint(relayerFee),
+        relayerFee: Scalar.fromBigint(totalFee),
         address: Scalar.fromAddress(address)
       })
       .catch((e) => {
@@ -152,6 +153,6 @@ export class WithdrawAction {
         console.error(e);
         throw new Error(`Failed to withdraw: ${e}`);
       });
-    return txHash;
+    return txHash as `0x${string}`;
   }
 }
