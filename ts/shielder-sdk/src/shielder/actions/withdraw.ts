@@ -49,7 +49,7 @@ export class WithdrawAction {
    * where `value` is the targeted amount to withdraw.
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
-   * @param totalFee total relayer fee, supposedly a sum of base fee and relay fee
+   * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
    * @param address recipient address
    * @returns calldata for withdrawal action
    */
