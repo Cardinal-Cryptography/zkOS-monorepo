@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { mockedStorage } from "@/storage/mockedStorage";
-import type {
-  IContract,
-  InjectedStorageInterface,
-  IRelayer,
-  NoteEvent,
+import {
+  VersionRejectedByContract,
+  type IContract,
+  type InjectedStorageInterface,
+  type IRelayer,
+  type NoteEvent,
   QuoteFeesResponse,
-  SendShielderTransaction,
-  WithdrawResponse,
+  type SendShielderTransaction,
+  type WithdrawResponse,
 } from "shielder-sdk/__internal__";
 import type { PublicClient } from "viem";
 
 export class MockedContract implements IContract {
   merklePaths: Map<bigint, readonly bigint[]>;
   txHashToReturn: `0x${string}` | null = null;
+  throwVersionErrorInNewAccountCalldata: boolean = false;
 
   constructor() {
     this.merklePaths = new Map();
@@ -37,6 +39,9 @@ export class MockedContract implements IContract {
     _amount: bigint,
     _proof: Uint8Array,
   ): Promise<`0x${string}`> => {
+    if (this.throwVersionErrorInNewAccountCalldata) {
+      throw new VersionRejectedByContract();
+    }
     if (this.txHashToReturn === null) {
       throw new Error("No tx hash to return");
     }

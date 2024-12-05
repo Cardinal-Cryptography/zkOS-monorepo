@@ -1,4 +1,5 @@
 import { feePath, relayPath } from "@/constants";
+import { CustomError } from "ts-custom-error";
 import { Address, Hash } from "viem";
 
 export type WithdrawResponse = {
@@ -12,11 +13,9 @@ export type QuoteFeesResponse = {
   relayer_fee: string; // decimal string
 };
 
-export class VersionRejectedByRelayer extends Error {
-  constructor(message: string) {
+export class VersionRejectedByRelayer extends CustomError {
+  public constructor(message: string) {
     super(`Version rejected by relayer: ${message}`);
-
-    Object.setPrototypeOf(this, VersionRejectedByRelayer.prototype);
   }
 }
 

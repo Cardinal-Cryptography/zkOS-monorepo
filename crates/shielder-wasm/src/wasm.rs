@@ -22,7 +22,7 @@ pub fn tree_height() -> usize {
 }
 
 #[wasm_bindgen]
-pub fn padded_poseidon_hash(inputs: Vec<u8>) -> Vec<u8> {
+pub fn poseidon_hash(inputs: Vec<u8>) -> Vec<u8> {
     if inputs.len() % F::size() != 0 {
         panic!("Input length must be divisible by F::size()");
     }

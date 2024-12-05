@@ -3,7 +3,7 @@ import { Scalar, scalarToBigint } from "@/crypto/scalar";
 import { AccountState } from "@/shielder/state";
 import { wasmClientWorker } from "@/wasmClientWorker";
 import { Address } from "viem";
-import { IRelayer } from "@/chain/relayer";
+import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { rawAction } from "@/shielder/actions/utils";
 import { WithdrawReturn } from "@/crypto/circuits/withdraw";
 
@@ -125,6 +125,7 @@ export class WithdrawAction {
    * Calls the relayer to perform the withdrawal on the blockchain.
    * @param calldata calldata for withdrawal action
    * @returns transaction hash of the withdraw transaction
+   * @throws VersionRejectedByRelayer
    */
   async sendCalldata(calldata: WithdrawCalldata) {
     const {
@@ -146,6 +147,9 @@ export class WithdrawAction {
         address
       )
       .catch((e) => {
+        if (e instanceof VersionRejectedByRelayer) {
+          throw e;
+        }
         console.error(e);
         throw new Error(`Failed to withdraw: ${e}`);
       });

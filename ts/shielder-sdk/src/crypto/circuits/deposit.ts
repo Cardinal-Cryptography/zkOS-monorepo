@@ -58,9 +58,11 @@ export class Deposit {
     const idHiding = this.hasher.poseidonHash([hId, nonce]);
 
     const hNullifierOld = this.hasher.poseidonHash([values.nullifierOld]);
-    const hAccountBalanceNew = this.hasher.poseidonHash([
-      values.accountBalanceNew
-    ]);
+    const scalarArray: Scalar[] = new Array<Scalar>(this.hasher.arity()).fill(
+      Scalar.fromBigint(0n)
+    );
+    scalarArray[0] = values.accountBalanceNew;
+    const hAccountBalanceNew = this.hasher.poseidonHash(scalarArray);
     const hNoteNew = this.hasher.poseidonHash([
       version,
       values.id,

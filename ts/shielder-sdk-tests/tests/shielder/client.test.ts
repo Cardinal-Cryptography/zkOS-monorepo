@@ -3,7 +3,7 @@ import { sdkTest } from "@tests/playwrightTestUtils";
 import type { Calldata, ShielderOperation } from "shielder-sdk/__internal__";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 
-// TODO(ZK-572): add tests to confirm that all wrong version code paths
+// TODO(ZK-591): add tests to confirm that all wrong version code paths
 // result in producing the correct error for the frontend.
 
 sdkTest("new account, validate positive callbacks", async ({ workerPage }) => {
@@ -121,6 +121,57 @@ sdkTest(
           return true;
         }
         throw new Error("shielderClient.shield should have thrown");
+      },
+      { privateKeyAlice, aliceAddress },
+    );
+    expect(isGood).toBe(true);
+  },
+);
+
+sdkTest(
+  "shield throws OutdatedSdk if contract throws bad version",
+  async ({ workerPage }) => {
+    const privateKeyAlice = generatePrivateKey();
+    const aliceAddress = privateKeyToAddress(privateKeyAlice);
+    const isGood = await workerPage.evaluate(
+      async ({ privateKeyAlice, aliceAddress }) => {
+        const { contract, relayer, storage, publicClient, sendTx } =
+          window.shielder.testUtils.mockedServices(aliceAddress);
+        contract.throwVersionErrorInNewAccountCalldata = true;
+        let callbackEmittedWithCorrectError = false;
+        let correctErrorThrown = false;
+        const shieldCallbacks = {
+          onError: (
+            error: unknown,
+            stage: "generation" | "sending" | "syncing",
+            operation: ShielderOperation,
+          ) => {
+            if (
+              operation == "shield" &&
+              stage == "sending" &&
+              (error as Error).message.includes(
+                "Contract version not supported by SDK",
+              )
+            )
+              callbackEmittedWithCorrectError = true;
+          },
+        };
+        const shielderClient = window.shielder.createShielderClientManually(
+          privateKeyAlice,
+          contract,
+          relayer,
+          storage,
+          publicClient,
+          shieldCallbacks,
+        );
+        try {
+          await shielderClient.shield(5n * 10n ** 18n, sendTx, aliceAddress);
+        } catch (e) {
+          correctErrorThrown = (e as Error).message.includes(
+            "Contract version not supported by SDK",
+          );
+        }
+        return callbackEmittedWithCorrectError && correctErrorThrown;
       },
       { privateKeyAlice, aliceAddress },
     );

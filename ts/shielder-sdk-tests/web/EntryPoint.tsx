@@ -166,7 +166,7 @@ declare global {
     };
 
     state: {
-      emptyAccountState: (privateKey: `0x${string}`) => Promise<AccountState>;
+      emptyAccountState: (id: Scalar) => AccountState;
       stateChangingEvents: (
         state: AccountState,
         noteEvents: NoteEvent[],

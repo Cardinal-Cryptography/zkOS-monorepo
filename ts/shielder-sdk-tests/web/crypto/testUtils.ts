@@ -40,7 +40,11 @@ export function generateNoteHash(
   trapdoorOld: Scalar,
   accountBalanceOld: Scalar,
 ): Scalar {
-  const hAccountBalanceOld = hasher.poseidonHash([accountBalanceOld]);
+  const scalarArray: Scalar[] = new Array<Scalar>(hasher.arity()).fill(
+    Scalar.fromBigint(0n),
+  );
+  scalarArray[0] = accountBalanceOld;
+  const hAccountBalanceOld = hasher.poseidonHash(scalarArray);
   return hasher.poseidonHash([
     noteVersion,
     id,

@@ -1,3 +1,4 @@
+import { CustomError } from "ts-custom-error";
 import {
   Address,
   bytesToHex,
@@ -12,11 +13,9 @@ import { BaseError, ContractFunctionRevertedError } from "viem";
 import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
 
-export class VersionRejectedByContract extends Error {
-  constructor() {
+export class VersionRejectedByContract extends CustomError {
+  public constructor() {
     super("Version rejected by contract");
-
-    Object.setPrototypeOf(this, VersionRejectedByContract.prototype);
   }
 }
 
