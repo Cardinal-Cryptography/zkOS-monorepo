@@ -25,7 +25,8 @@ fn config_resolution() {
     let nonce_policy = DEFAULT_NONCE_POLICY;
     let dry_running = DryRunning::Always;
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
-    let relay_fee = DEFAULT_RELAY_FEE.to_string();
+    let total_fee = DEFAULT_TOTAL_FEE.to_string();
+    let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -39,7 +40,8 @@ fn config_resolution() {
             shielder_contract_address,                        // from CLI
             fee_destination_key: fee_destination_key.clone(), // from env
             signing_keys: vec![key1.clone(), key2.clone()],   // from env
-            relay_fee: U256::from_str(&relay_fee).unwrap(),   // from CLI
+            total_fee: U256::from_str(&total_fee).unwrap(),   // from CLI
+            relay_gas,                                        // from env
         },
         operations: OperationalConfig {
             balance_monitor_interval_secs, // from env
@@ -63,7 +65,8 @@ fn config_resolution() {
         nonce_policy: None,
         dry_running: Some(dry_running),
         relay_count_for_recharge: None,
-        relay_fee: Some(relay_fee),
+        total_fee: Some(total_fee),
+        relay_gas: None,
     };
 
     // ---- Environment variables. -----------------------------------------------------------
@@ -75,6 +78,7 @@ fn config_resolution() {
         );
         std::env::set_var(FEE_DESTINATION_KEY_ENV, fee_destination_key);
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
+        std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
     }
 
     // ---- Test. ------------------------------------------------------------------------------

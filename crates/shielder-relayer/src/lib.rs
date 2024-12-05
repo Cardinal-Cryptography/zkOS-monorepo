@@ -1,9 +1,10 @@
-use axum::Json;
-use serde::{Deserialize, Serialize};
-use shielder_rust_sdk::{
-    alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256},
-    native_token::ONE_TZERO,
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
 };
+use serde::{Deserialize, Serialize};
+use shielder_rust_sdk::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 
 pub const LOGGING_FORMAT_ENV: &str = "LOGGING_FORMAT";
 pub const RELAYER_HOST_ENV: &str = "RELAYER_HOST";
@@ -17,7 +18,8 @@ pub const SHIELDER_CONTRACT_ADDRESS_ENV: &str = "SHIELDER_CONTRACT_ADDRESS";
 pub const NONCE_POLICY_ENV: &str = "NONCE_POLICY";
 pub const DRY_RUNNING_ENV: &str = "DRY_RUNNING";
 pub const RELAY_COUNT_FOR_RECHARGE_ENV: &str = "RELAY_COUNT_FOR_RECHARGE";
-pub const RELAY_FEE_ENV: &str = "RELAY_FEE";
+pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
+pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -45,6 +47,26 @@ impl RelayResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct QuoteFeeResponse {
+    /// The fee used as a contract input by the relayer. Decimal string.
+    pub total_fee: String,
+    /// The estimation of a base fee for relay call. Decimal string.
+    pub base_fee: String,
+    /// The estimation of a relay fee for relay call. Decimal string.
+    pub relay_fee: String,
+}
+
+impl QuoteFeeResponse {
+    pub fn from(total_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
+        Json(Self {
+            total_fee: total_fee.to_string(), // convert to decimal string
+            base_fee: base_fee.to_string(),   // convert to decimal string
+            relay_fee: relay_fee.to_string(), // convert to decimal string
+        })
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RelayQuery {
     pub expected_contract_version: FixedBytes<3>,
     pub id_hiding: U256,
@@ -56,7 +78,7 @@ pub struct RelayQuery {
     pub proof: Bytes,
 }
 
-/// The fee that the relayer charges for relaying a transaction. Currently set to 0.1 TZERO.
-pub fn relayer_fee() -> U256 {
-    U256::from(ONE_TZERO / 10)
+pub fn server_error(msg: &str) -> Response {
+    let code = StatusCode::INTERNAL_SERVER_ERROR;
+    (code, SimpleServiceResponse::from(msg)).into_response()
 }

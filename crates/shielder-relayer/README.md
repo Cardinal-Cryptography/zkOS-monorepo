@@ -59,8 +59,11 @@ Options:
       --relay-count-for-recharge <RELAY_COUNT_FOR_RECHARGE>
           Relay count for recharge. If not provided, the value from the environment variable `RELAY_COUNT_FOR_RECHARGE` will be used. If that is not set,the default value is `20`.
 
-      --relay-fee <RELAY_FEE>
-          Relay operation fee. If not provided, the value from the environment variable `RELAY_FEE` will be used. If that is not set,the default value is `"100_000_000_000_000_000"`.
+      --total-fee <TOTAL_FEE>
+          The total relayer fee, which is used as an argument for `withdraw_native` call. It should be a fixed value, close to a sum of 'withdraw_native' on-chain gas cost and the intended relayer fee. If not provided, the value from the environment variable `TOTAL_FEE` will be used. If that is not set, the default value is `"100_000_000_000_000_000"`.
+
+      --relay-gas <RELAY_GAS>
+          The estimated amount of gas 'withdraw_native' on-chain call burns. If not provided, the value from the environment variable `RELAY_GAS` will be used. If that is not set,the default value is `2000000`.
 
   -h, --help
           Print help (see a summary with '-h')
