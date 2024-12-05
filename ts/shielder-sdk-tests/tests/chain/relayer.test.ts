@@ -142,7 +142,7 @@ withdrawTest("succeeds", async ({ workerPage, webFixture }) => {
       );
       const withdrawReceipt =
         await alicePublicAccount.waitForTransactionReceipt({
-          hash: withdrawResponse.tx_hash,
+          hash: withdrawResponse.tx_hash as `0x${string}`,
         });
       if (withdrawReceipt.status !== "success")
         throw new Error("Transaction failed");

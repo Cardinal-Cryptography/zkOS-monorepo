@@ -124,10 +124,6 @@ export class Relayer implements IRelayer {
       throw new Error(`${responseText}`);
     }
 
-    try {
-      return quoteFeesResponseSchema.parse(await response.json());
-    } catch (error) {
-      throw new Error(`${(error as Error).message}`);
-    }
+    return quoteFeesResponseSchema.parse(await response.json());
   };
 }
