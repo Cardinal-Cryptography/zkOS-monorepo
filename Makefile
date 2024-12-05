@@ -29,22 +29,22 @@ stop-anvil:
 .PHONY: watch-contracts
 watch-contracts: # watcher on the eth contracts. Scripts dir is watched by default
 watch-contracts:
-	forge build --watch contracts/*.sol --watch scripts/*.sol
+	forge clean && forge build --watch contracts/**/*.sol --watch scripts/*.sol
 
 .PHONY: format-contracts
 format-contracts: # Format solidity contracts
 format-contracts:
-	npx prettier --write --plugin=prettier-plugin-solidity 'contracts/*.sol' 'contracts/*/*.sol' 'scripts/*.sol' 'test/*.sol'
+	npx prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol' 'scripts/*.sol' 'test/*.sol'
 
 .PHONY: lint-contracts
 lint-contracts: # Lint solidity contracts
 lint-contracts:
-	npx solhint -c .solhint.json 'contracts/*.sol' 'contracts/*/*.sol' 'scripts/*.sol' 'test/*.sol'
+	npx solhint -c .solhint.json 'contracts/**/*.sol' 'scripts/*.sol' 'test/*.sol'
 
 .PHONY: compile-contracts
 compile-contracts: # Compile solidity contracts
 compile-contracts: generate-verifier-contracts generate-poseidon-contracts
-	forge build
+	forge clean && forge build
 
 .PHONY: deploy-contracts
 deploy-contracts: # Deploy solidity contracts
