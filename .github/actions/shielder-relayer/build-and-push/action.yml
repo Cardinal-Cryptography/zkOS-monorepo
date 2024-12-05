@@ -38,15 +38,6 @@ runs:
       with:
         version: v0.9.1
 
-    - name: Build relayer
-      run: cd crates/shielder-relayer && make build
-
-    - name: Prepare Rust env
-      uses: ./.github/actions/prepare-rust-env
-      with:
-        poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
-
     - name: DOCKER | Build and push latest docker image
       id: build-image
       uses: docker/build-push-action@v3
