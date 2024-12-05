@@ -25,7 +25,7 @@ fn config_resolution() {
     let nonce_policy = DEFAULT_NONCE_POLICY;
     let dry_running = DryRunning::Always;
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
-    let relayer_fee = DEFAULT_RELAYER_FEE.to_string();
+    let total_fee = DEFAULT_TOTAL_FEE.to_string();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
 
     let expected_config = ServerConfig {
@@ -36,12 +36,12 @@ fn config_resolution() {
             metrics_port, // from CLI
         },
         chain: ChainConfig {
-            node_rpc_url: node_rpc_url.clone(),                 // from CLI
-            shielder_contract_address,                          // from CLI
-            fee_destination_key: fee_destination_key.clone(),   // from env
-            signing_keys: vec![key1.clone(), key2.clone()],     // from env
-            relayer_fee: U256::from_str(&relayer_fee).unwrap(), // from CLI
-            relay_gas,                                          // from env
+            node_rpc_url: node_rpc_url.clone(),               // from CLI
+            shielder_contract_address,                        // from CLI
+            fee_destination_key: fee_destination_key.clone(), // from env
+            signing_keys: vec![key1.clone(), key2.clone()],   // from env
+            total_fee: U256::from_str(&total_fee).unwrap(),   // from CLI
+            relay_gas,                                        // from env
         },
         operations: OperationalConfig {
             balance_monitor_interval_secs, // from env
@@ -65,7 +65,7 @@ fn config_resolution() {
         nonce_policy: None,
         dry_running: Some(dry_running),
         relay_count_for_recharge: None,
-        relayer_fee: Some(relayer_fee),
+        total_fee: Some(total_fee),
         relay_gas: None,
     };
 

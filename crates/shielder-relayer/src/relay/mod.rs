@@ -34,7 +34,7 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
         return response;
     }
 
-    let withdraw_call = create_call(query, app_state.fee_destination, app_state.relayer_fee);
+    let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
     let Ok(rx) = app_state
         .taskmaster
         .register_new_task(withdraw_call, request_trace)

@@ -19,11 +19,11 @@ pub async fn quote_fees(app_state: State<AppState>) -> impl IntoResponse {
         Ok(current_gas_price) => {
             let base_fee = U256::from(app_state.relay_gas) * U256::from(current_gas_price);
             // if the difference is negative, tell them that we don't charge
-            // in reality, we would lose money, cause base_fee is higher than relayer_fee
-            let relay_fee = std::cmp::max(U256::from(0), app_state.relayer_fee - base_fee);
+            // in reality, we would lose money, cause 'base_fee' is higher than 'total_fee'
+            let relay_fee = app_state.total_fee.saturating_sub(base_fee);
             (
                 StatusCode::OK,
-                QuoteFeeResponse::from(app_state.relayer_fee, base_fee, relay_fee),
+                QuoteFeeResponse::from(app_state.total_fee, base_fee, relay_fee),
             )
                 .into_response()
         }

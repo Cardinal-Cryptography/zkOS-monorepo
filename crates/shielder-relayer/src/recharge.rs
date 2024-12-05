@@ -18,7 +18,7 @@ pub fn start_recharging_worker(
     cornucopia: PrivateKeySigner,
     relay_workers: usize,
     relay_count_for_recharge: u32,
-    relayer_fee: U256,
+    total_fee: U256,
 ) -> MPSCSender<Address> {
     let (relay_report_sender, relay_report_receiver) = mpsc::channel(relay_workers);
     tokio::spawn(recharging_worker(
@@ -26,7 +26,7 @@ pub fn start_recharging_worker(
         cornucopia,
         relay_report_receiver,
         relay_count_for_recharge,
-        relayer_fee,
+        total_fee,
     ));
 
     relay_report_sender
@@ -37,7 +37,7 @@ async fn recharging_worker(
     cornucopia: PrivateKeySigner,
     mut relay_reports: MPSCReceiver<Address>,
     relay_count_for_recharge: u32,
-    relayer_fee: U256,
+    total_fee: U256,
 ) -> Result<()> {
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
@@ -49,8 +49,7 @@ async fn recharging_worker(
         info!("Relayer {relayer} reported that it sent a relay tx. Current counter: {count}");
 
         if *count >= relay_count_for_recharge {
-            match recharge_relayer(&provider, relayer, cornucopia_address, *count, relayer_fee)
-                .await
+            match recharge_relayer(&provider, relayer, cornucopia_address, *count, total_fee).await
             {
                 Ok(recharge_amount) => {
                     info!("Recharged relayer {relayer} with {recharge_amount}");
@@ -72,10 +71,10 @@ async fn recharge_relayer(
     relayer: Address,
     cornucopia_address: Address,
     relay_count: u32,
-    relayer_fee: U256,
+    total_fee: U256,
 ) -> Result<U256> {
     let recharge_amount = U256::from(relay_count)
-        * (relayer_fee * U256::from(RECHARGE_AS_FEE_PERCENT) / U256::from(100));
+        * (total_fee * U256::from(RECHARGE_AS_FEE_PERCENT) / U256::from(100));
 
     let tx = TransactionRequest::default()
         .with_from(cornucopia_address)
