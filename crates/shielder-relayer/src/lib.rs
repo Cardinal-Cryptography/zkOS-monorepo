@@ -18,7 +18,7 @@ pub const SHIELDER_CONTRACT_ADDRESS_ENV: &str = "SHIELDER_CONTRACT_ADDRESS";
 pub const NONCE_POLICY_ENV: &str = "NONCE_POLICY";
 pub const DRY_RUNNING_ENV: &str = "DRY_RUNNING";
 pub const RELAY_COUNT_FOR_RECHARGE_ENV: &str = "RELAY_COUNT_FOR_RECHARGE";
-pub const RELAYER_FEE_ENV: &str = "RELAYER_FEE";
+pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
 pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -48,17 +48,20 @@ impl RelayResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QuoteFeeResponse {
-    pub relayer_fee: String, // the fee used as a contract input by the relayer. decimal string
-    pub base_fee: String,    // estimation of a base fee for relay call. decimal string
-    pub relay_fee: String,   // estimation of a relay fee for relay call. decimal string
+    /// The fee used as a contract input by the relayer. Decimal string.
+    pub total_fee: String,
+    /// The estimation of a base fee for relay call. Decimal string.
+    pub base_fee: String,
+    /// The estimation of a relay fee for relay call. Decimal string.
+    pub relay_fee: String,
 }
 
 impl QuoteFeeResponse {
-    pub fn from(relayer_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
+    pub fn from(total_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
         Json(Self {
-            relayer_fee: relayer_fee.to_string(), // convert to decimal string
-            base_fee: base_fee.to_string(),       // convert to decimal string
-            relay_fee: relay_fee.to_string(),     // convert to decimal string
+            total_fee: total_fee.to_string(), // convert to decimal string
+            base_fee: base_fee.to_string(),   // convert to decimal string
+            relay_fee: relay_fee.to_string(), // convert to decimal string
         })
     }
 }

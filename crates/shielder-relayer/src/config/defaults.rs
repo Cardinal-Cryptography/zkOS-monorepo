@@ -8,5 +8,5 @@ pub const DEFAULT_BALANCE_MONITOR_INTERVAL_SECS: u64 = 60 * 15;
 pub const DEFAULT_NONCE_POLICY: NoncePolicy = NoncePolicy::Caching;
 pub const DEFAULT_DRY_RUNNING: DryRunning = DryRunning::Always;
 pub const DEFAULT_RELAY_COUNT_FOR_RECHARGE: u32 = 20;
-pub const DEFAULT_RELAYER_FEE: &str = "100_000_000_000_000_000"; // 0.1 TZERO
-pub const DEFAULT_RELAY_GAS: u64 = 2_000_000;
+pub const DEFAULT_TOTAL_FEE: &str = "100_000_000_000_000_000"; // 0.1 TZERO
+pub const DEFAULT_RELAY_GAS: u64 = 2_000_000; // an estimated amount of gas for a 'withdraw_native' call

@@ -24,8 +24,8 @@ use crate::{
 pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
-    let relayer_fee = get_relayer_fee(app_state).await?;
-    let amount = U256::from(amount) + relayer_fee;
+    let total_fee = get_relayer_total_fee(app_state).await?;
+    let amount = U256::from(amount) + total_fee;
 
     if amount > app_state.account.shielded_amount {
         bail!("Not enough funds to withdraw");
@@ -33,7 +33,7 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to, relayer_fee).await?)
+        .json(&prepare_relayer_query(app_state, amount, to, total_fee).await?)
         .send()
         .await?;
 
@@ -75,7 +75,7 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
     bail!("Couldn't fetch transaction receipt")
 }
 
-async fn get_relayer_fee(app_state: &mut AppState) -> Result<U256> {
+async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .get(app_state.relayer_rpc_url.fees_url())
         .send()
@@ -88,7 +88,7 @@ async fn get_relayer_fee(app_state: &mut AppState) -> Result<U256> {
         );
     }
     let quoted_fees = relayer_response.json::<QuoteFeeResponse>().await?;
-    Ok(quoted_fees.relayer_fee.parse()?)
+    Ok(quoted_fees.total_fee.parse()?)
 }
 
 async fn prepare_relayer_query(
