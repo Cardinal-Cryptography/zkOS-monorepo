@@ -193,9 +193,9 @@ export class ShielderClient {
   async getWithdrawFees(): Promise<QuotedFees> {
     const fees = await this.relayer.quoteFees();
     return {
-      baseFee: fees.base_fee,
-      relayFee: fees.relay_fee,
-      totalFee: fees.total_fee
+      baseFee: BigInt(fees.base_fee),
+      relayFee: BigInt(fees.relay_fee),
+      totalFee: BigInt(fees.total_fee)
     };
   }
 

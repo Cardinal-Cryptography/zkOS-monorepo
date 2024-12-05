@@ -10,9 +10,9 @@ const withdrawResponseSchema = z.object({
 export type WithdrawResponse = z.infer<typeof withdrawResponseSchema>;
 
 const quoteFeesResponseSchema = z.object({
-  base_fee: z.bigint(),
-  relay_fee: z.bigint(),
-  total_fee: z.bigint()
+  base_fee: z.string().regex(/^\d+$/),
+  relay_fee: z.string().regex(/^\d+$/),
+  total_fee: z.string().regex(/^\d+$/)
 });
 
 export type QuoteFeesResponse = z.infer<typeof quoteFeesResponseSchema>;
