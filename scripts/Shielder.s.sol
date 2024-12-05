@@ -55,6 +55,11 @@ contract DeployShielderScript is Script {
 
         address shielderImplementation = address(new Shielder());
 
+        console2.log(
+            "Shielder Implementation deployed at:",
+            address(shielderImplementation)
+        );
+
         bytes memory data = abi.encodeCall(
             Shielder.initialize,
             (
