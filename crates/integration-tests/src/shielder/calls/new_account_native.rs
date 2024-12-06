@@ -17,7 +17,7 @@ use crate::shielder::{
     CallResult, Deployment,
 };
 
-const GAS_CONSUMPTION: u64 = 1998654;
+const GAS_CONSUMPTION: u64 = 2000279;
 
 pub fn prepare_call(
     deployment: &mut Deployment,
