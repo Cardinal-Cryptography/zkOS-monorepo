@@ -23,7 +23,7 @@ use crate::{
         unpause_shielder,
     },
     token,
-    verifier::{deploy_verifiers_and_keys, VerificationContracts},
+    verifier::deploy_verifiers,
 };
 
 /// The address of the deployer account.
@@ -83,6 +83,9 @@ pub fn prepare_account(
 
 /// Solc leaves this placeholder for a Poseidon2 contract address.
 const POSEIDON2_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
+const NEW_ACCOUNT_VERIFIER_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
+const DEPOSIT_VERIFIER_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
+const WITHDRAW_VERIFIER_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
 
 pub struct Deployment {
     pub evm: EvmRunner,
@@ -112,10 +115,9 @@ pub fn deployment(
         Some(reverting_bytecode),
     );
 
-    let verification_contracts = deploy_verifiers_and_keys(&mut evm);
     let token = deploy_token(&mut evm, owner);
     let permit2 = deploy_permit2(&mut evm, owner);
-    let shielder_address = deploy_shielder_contract(verification_contracts, &mut evm, owner);
+    let shielder_address = deploy_shielder_contract(&mut evm, owner);
     unpause_shielder(shielder_address, &mut evm);
     instrument_token(&mut evm, owner, actor, token, permit2);
 
@@ -191,14 +193,41 @@ fn deploy_shielder_implementation(evm: &mut EvmRunner) -> Address {
     let poseidon2_address =
         deploy_contract("Poseidon2T8Assembly.sol", "Poseidon2T8Assembly", evm).to_string();
 
+    let verifiers = deploy_verifiers(evm);
+
     // 3. Manipulate the Shielder implementation bytecode to replace the placeholders with the
     //    corresponding contract addresses.
     let implementation_bytecode = String::from_utf8(implementation_bytecode).unwrap();
-    let with_poseidon2 = implementation_bytecode.replace(
-        POSEIDON2_LIB_PLACEHOLDER,
-        poseidon2_address.strip_prefix("0x").unwrap(),
-    );
-    let ready_bytecode = hex::decode(with_poseidon2).unwrap();
+    let with_linked_libs = implementation_bytecode
+        .replace(
+            POSEIDON2_LIB_PLACEHOLDER,
+            poseidon2_address.strip_prefix("0x").unwrap(),
+        )
+        .replace(
+            NEW_ACCOUNT_VERIFIER_LIB_PLACEHOLDER,
+            verifiers
+                .new_account_verifier
+                .to_string()
+                .strip_prefix("0x")
+                .unwrap(),
+        )
+        .replace(
+            DEPOSIT_VERIFIER_LIB_PLACEHOLDER,
+            verifiers
+                .deposit_verifier
+                .to_string()
+                .strip_prefix("0x")
+                .unwrap(),
+        )
+        .replace(
+            WITHDRAW_VERIFIER_LIB_PLACEHOLDER,
+            verifiers
+                .withdraw_verifier
+                .to_string()
+                .strip_prefix("0x")
+                .unwrap(),
+        );
+    let ready_bytecode = hex::decode(with_linked_libs).unwrap();
 
     // 4. Finally, deploy the Shielder implementation contract.
     evm.create(ready_bytecode, None)
@@ -206,20 +235,10 @@ fn deploy_shielder_implementation(evm: &mut EvmRunner) -> Address {
 }
 
 /// Deploy Shielder contract using ERC 1967 proxy.
-pub fn deploy_shielder_contract(
-    verification_contracts: VerificationContracts,
-    evm: &mut EvmRunner,
-    owner: Address,
-) -> Address {
+pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address {
     let implementation_address = deploy_shielder_implementation(evm);
     let initialization_data = initializeCall {
         initialOwner: owner,
-        _newAccountVerifier: verification_contracts.new_account_verifier,
-        _depositVerifier: verification_contracts.deposit_verifier,
-        _withdrawVerifier: verification_contracts.withdraw_verifier,
-        _newAccountVerifyingKey: verification_contracts.new_account_vk,
-        _depositVerifyingKey: verification_contracts.deposit_vk,
-        _withdrawVerifyingKey: verification_contracts.withdraw_vk,
         _depositLimit: INITIAL_DEPOSIT_LIMIT,
     }
     .abi_encode();

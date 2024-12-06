@@ -2,6 +2,9 @@
 
 pragma solidity 0.8.26;
 
+import { Halo2Verifier as NewAccountVerifier } from "../contracts/NewAccountVerifier.sol";
+import { Halo2Verifier as DepositVerifier } from "../contracts/DepositVerifier.sol";
+import { Halo2Verifier as WithdrawVerifier } from "../contracts/WithdrawVerifier.sol";
 import { IArbSys } from "./IArbSys.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
@@ -9,14 +12,6 @@ import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/O
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UIntSet } from "./UIntSet.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-
-interface IVerifier {
-    function verifyProof(
-        address vk,
-        bytes calldata proof,
-        uint256[] calldata instances
-    ) external returns (bool);
-}
 
 /// @title Shielder
 /// @author CardinalCryptography
@@ -139,12 +134,6 @@ contract Shielder is
 
     function initialize(
         address initialOwner,
-        address _newAccountVerifier,
-        address _depositVerifier,
-        address _withdrawVerifier,
-        address _newAccountVerifyingKey,
-        address _depositVerifyingKey,
-        address _withdrawVerifyingKey,
         uint256 _depositLimit
     ) public initializer {
         __Ownable_init(initialOwner);
@@ -154,14 +143,6 @@ contract Shielder is
         merkleTree.init();
 
         arbSysPrecompile = IArbSys(ARB_SYS_ADDRESS);
-
-        newAccountVerifier = _newAccountVerifier;
-        depositVerifier = _depositVerifier;
-        withdrawVerifier = _withdrawVerifier;
-
-        newAccountVerifyingKey = _newAccountVerifyingKey;
-        depositVerifyingKey = _depositVerifyingKey;
-        withdrawVerifyingKey = _withdrawVerifyingKey;
 
         depositLimit = _depositLimit;
     }
@@ -206,12 +187,7 @@ contract Shielder is
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
 
-        IVerifier _verifier = IVerifier(newAccountVerifier);
-        bool success = _verifier.verifyProof(
-            newAccountVerifyingKey,
-            proof,
-            publicInputs
-        );
+        bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
         if (!success) revert NewAccountVerificationFailed();
 
@@ -255,12 +231,7 @@ contract Shielder is
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
 
-        IVerifier _verifier = IVerifier(depositVerifier);
-        bool success = _verifier.verifyProof(
-            depositVerifyingKey,
-            proof,
-            publicInputs
-        );
+        bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
         if (!success) revert DepositVerificationFailed();
 
@@ -316,12 +287,7 @@ contract Shielder is
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[5] = uint256(keccak256(commitment)) >> 4;
 
-        IVerifier _verifier = IVerifier(withdrawVerifier);
-        bool success = _verifier.verifyProof(
-            withdrawVerifyingKey,
-            proof,
-            publicInputs
-        );
+        bool success = WithdrawVerifier.verifyProof(proof, publicInputs);
 
         if (!success) revert WithdrawVerificationFailed();
 
