@@ -83,9 +83,9 @@ pub fn prepare_account(
 
 /// Solc leaves this placeholder for a Poseidon2 contract address.
 const POSEIDON2_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
-const NEW_ACCOUNT_VERIFIER_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
-const DEPOSIT_VERIFIER_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
-const WITHDRAW_VERIFIER_LIB_PLACEHOLDER: &str = "__$fa7e1b6d9a16949b5fb8159594c1e0b34c$__";
+const NEW_ACCOUNT_VERIFIER_LIB_PLACEHOLDER: &str = "__$96275be2429eed9b26a54836ed89b224a2$__";
+const DEPOSIT_VERIFIER_LIB_PLACEHOLDER: &str = "__$d586e7da5a0e0b714a5d44ed4e0f6a624d$__";
+const WITHDRAW_VERIFIER_LIB_PLACEHOLDER: &str = "__$06bb88608c3ade14b496e12c6067f182f6$__";
 
 pub struct Deployment {
     pub evm: EvmRunner,
