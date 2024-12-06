@@ -43,9 +43,9 @@ contract Shielder is
     /// so we control the sum of balances instead.
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
 
-    /// The address of the Arbitrum system precompile.
-    address private constant ARB_SYS_ADDRESS =
-        0x0000000000000000000000000000000000000064;
+    /// The Arbitrum system precompile.
+    IArbSys private constant arbSysPrecompile =
+        IArbSys(0x0000000000000000000000000000000000000064);
 
     // -- Storage --
 
@@ -327,7 +327,7 @@ contract Shielder is
 
     function registerNullifier(uint256 nullifier) private {
         ShielderStorage storage $ = _getShielderStorage();
-        uint256 blockNumber = IArbSys(ARB_SYS_ADDRESS).arbBlockNumber();
+        uint256 blockNumber = arbSysPrecompile.arbBlockNumber();
         $.nullifiers[nullifier] = blockNumber + 1;
     }
 
