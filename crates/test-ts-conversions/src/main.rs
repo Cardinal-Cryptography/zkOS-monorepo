@@ -2,7 +2,7 @@ use std::error::Error;
 
 use clap::{Parser, Subcommand};
 use halo2_proofs::halo2curves::{bn256::Fr, ff::PrimeField};
-use shielder_circuits::utils::padded_hash;
+use shielder_circuits::utils::hash_variable_length;
 use shielder_rust_sdk::{
     account::secrets::{nullifier, trapdoor},
     conversion::{bytes_to_field, bytes_to_u256},
@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .chunks(32)
                 .map(|chunk| bytes_to_field(chunk.to_vec()))
                 .collect::<Result<Vec<_>, _>>()?;
-            let actual_hash = padded_hash(&hashed_tuple);
+            let actual_hash = hash_variable_length(&hashed_tuple);
 
             let expected_hash: Fr = bytes_to_field(expected_hash)?;
 
