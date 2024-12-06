@@ -44,7 +44,11 @@ export class NewAccount {
   }
 
   #prepareValues(values: NewAccountValues) {
-    const hAcc = this.hasher.poseidonHash([values.initialDeposit]);
+    const scalarArray: Scalar[] = new Array<Scalar>(this.hasher.arity()).fill(
+      Scalar.fromBigint(0n)
+    );
+    scalarArray[0] = values.initialDeposit;
+    const hAcc = this.hasher.poseidonHash(scalarArray);
     const hId = this.hasher.poseidonHash([values.id]);
     const version = noteVersion();
     const hNote = this.hasher.poseidonHash([

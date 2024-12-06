@@ -4,7 +4,7 @@ use alloy_signer_local::LocalSignerError;
 use alloy_sol_types::SolValue;
 use alloy_transport::TransportError;
 pub use api::ShielderUser;
-pub use connection::ConnectionPolicy;
+pub use connection::{ConnectionPolicy, NoProvider};
 pub use types::*;
 
 use crate::{conversion::address_to_u256, version::ContractVersion};

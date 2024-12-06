@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 
 /* @dev: linter does not understand inline assembly */
 /* solhint-disable no-unused-vars */
-contract Halo2Verifier {
+library Halo2Verifier {
     uint256 internal constant    PROOF_LEN_CPTR = {{ proof_cptr - 1 }};
     uint256 internal constant        PROOF_CPTR = {{ proof_cptr }};
     uint256 internal constant NUM_INSTANCE_CPTR = {{ proof_cptr + (proof_len / 32) }};
@@ -80,7 +80,7 @@ contract Halo2Verifier {
         {%- endmatch %}
         bytes calldata proof,
         uint256[] calldata instances
-    ) public returns (bool) {
+    ) public view returns (bool) {
         assembly ("memory-safe") {
             // Read EC point (x, y) at (proof_cptr, proof_cptr + 0x20),
             // and check if the point is on affine plane,

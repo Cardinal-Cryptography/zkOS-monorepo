@@ -31,6 +31,7 @@ pub enum EvmRunnerError {
     EvmExecution(#[from] EVMError<Infallible>),
 }
 
+#[derive(Debug, Clone)]
 pub struct SuccessResult {
     pub gas_used: u64,
     pub output: Vec<u8>,

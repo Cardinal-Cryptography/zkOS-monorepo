@@ -57,5 +57,5 @@ fn succeeds(mut deployment: Deployment) {
     let result = invoke_shielder_call(&mut deployment, &calldata, None);
 
     assert_matches!(result, Ok(_));
-    assert!(result.unwrap().is_empty())
+    assert!(result.unwrap().0.is_empty())
 }

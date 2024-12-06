@@ -32,6 +32,10 @@ impl RelayerRpcUrl {
         format!("{}/relay", self.base_url)
     }
 
+    pub fn fees_url(&self) -> String {
+        format!("{}/quote_fees", self.base_url)
+    }
+
     pub async fn check_connection(&self) -> anyhow::Result<()> {
         let response = reqwest::get(self.healthcheck_url()).await?;
         if response.status().is_success() {

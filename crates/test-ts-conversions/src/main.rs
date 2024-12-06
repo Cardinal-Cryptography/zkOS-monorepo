@@ -16,7 +16,7 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Commands {
-    PaddedPoseidonHashAgreesWithRust {
+    PoseidonHashAgreesWithRust {
         #[clap(long, required = true, value_delimiter = ',')]
         hashed_tuple: Vec<u8>,
 
@@ -46,7 +46,7 @@ enum Commands {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     match args.command {
-        Commands::PaddedPoseidonHashAgreesWithRust {
+        Commands::PoseidonHashAgreesWithRust {
             hashed_tuple,
             expected_hash,
         } => {

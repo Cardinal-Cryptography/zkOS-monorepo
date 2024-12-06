@@ -1,11 +1,21 @@
-import { relayPath } from "@/constants";
+import { feePath, relayPath } from "@/constants";
 import { CustomError } from "ts-custom-error";
-import { Address, Hash } from "viem";
+import { Address } from "viem";
+import { z } from "zod";
 
-export type WithdrawResponse = {
-  tx_hash: Hash;
-  block_hash: Hash;
-};
+const withdrawResponseSchema = z.object({
+  tx_hash: z.string().regex(/^0x([A-Fa-f0-9]{64})$/)
+});
+
+export type WithdrawResponse = z.infer<typeof withdrawResponseSchema>;
+
+const quoteFeesResponseSchema = z.object({
+  base_fee: z.coerce.bigint(),
+  relay_fee: z.coerce.bigint(),
+  total_fee: z.coerce.bigint()
+});
+
+export type QuoteFeesResponse = z.infer<typeof quoteFeesResponseSchema>;
 
 export class VersionRejectedByRelayer extends CustomError {
   public constructor(message: string) {
@@ -33,6 +43,7 @@ export type IRelayer = {
     proof: Uint8Array,
     withdrawAddress: `0x${string}`
   ) => Promise<WithdrawResponse>;
+  quoteFees: () => Promise<QuoteFeesResponse>;
 };
 
 export class Relayer implements IRelayer {
@@ -53,7 +64,7 @@ export class Relayer implements IRelayer {
     amount: bigint,
     proof: Uint8Array,
     withdrawAddress: `0x${string}`
-  ) => {
+  ): Promise<WithdrawResponse> => {
     let response;
     try {
       response = await fetch(`${this.url}${relayPath}`, {
@@ -90,6 +101,29 @@ export class Relayer implements IRelayer {
       throw new GenericWithdrawError(`${responseText}`);
     }
 
-    return (await response.json()) as WithdrawResponse;
+    try {
+      return withdrawResponseSchema.parse(await response.json());
+    } catch (error) {
+      throw new GenericWithdrawError(`${(error as Error).message}`);
+    }
+  };
+
+  quoteFees = async () => {
+    let response;
+    try {
+      response = await fetch(`${this.url}${feePath}`, {
+        method: "GET"
+      });
+    } catch (error) {
+      throw new Error(`${(error as Error).message}`);
+    }
+
+    if (!response.ok) {
+      const responseText = await response.text();
+
+      throw new Error(`${responseText}`);
+    }
+
+    return quoteFeesResponseSchema.parse(await response.json());
   };
 }

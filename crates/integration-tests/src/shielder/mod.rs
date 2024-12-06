@@ -6,7 +6,7 @@ use deploy::{
     deployment, Deployment, ACTOR_ADDRESS, ACTOR_INITIAL_BALANCE, DEPLOYER_ADDRESS,
     RECIPIENT_ADDRESS, RECIPIENT_INITIAL_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_BALANCE,
 };
-use evm_utils::{EvmRunner, EvmRunnerError};
+use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
 use shielder_rust_sdk::contract::ShielderContract::{
     unpauseCall, ShielderContractErrors, ShielderContractEvents,
 };
@@ -28,14 +28,14 @@ fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     .expect("Call failed");
 }
 
-type CallResult = Result<Vec<ShielderContractEvents>, ShielderContractErrors>;
+type CallResult = Result<(Vec<ShielderContractEvents>, SuccessResult), ShielderContractErrors>;
 
 fn invoke_shielder_call(
     deployment: &mut Deployment,
     calldata: &impl SolCall,
     value: Option<U256>,
 ) -> CallResult {
-    let logs = deployment
+    let success_result = deployment
         .evm
         .call(
             deployment.contract_suite.shielder,
@@ -48,10 +48,10 @@ fn invoke_shielder_call(
                 ShielderContractErrors::abi_decode(e.output().unwrap(), true).unwrap()
             }
             _ => panic!("Expected EvmRunnerError::Revert"),
-        })?
-        .logs;
+        })?;
 
-    let events: Vec<_> = logs
+    let events: Vec<_> = success_result
+        .logs
         .iter()
         .map(|log| {
             let event =
@@ -60,7 +60,7 @@ fn invoke_shielder_call(
             event.data
         })
         .collect();
-    Ok(events)
+    Ok((events, success_result))
 }
 
 fn get_balance(deployment: &Deployment, address: &str) -> U256 {

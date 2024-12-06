@@ -12,6 +12,15 @@ jobs:
       - name: GIT | Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Build relayer
+        run: cd crates/shielder-relayer && make build
+
       - name: DOCKER | Build and push
         uses: ./.github/actions/shielder-relayer/build-and-push
         id: build_shielder_relayer

@@ -78,6 +78,16 @@ export type SendShielderTransaction = (params: {
   value: bigint;
 }) => Promise<Hash>;
 
+export type QuotedFees = {
+  // esimated base fee for the withdraw operation
+  baseFee: bigint;
+  // estimated relay fee for the withdraw operation
+  relayFee: bigint;
+  // total fee for the withdraw operation, is deducted from the
+  // amount to withdraw, supposedly a sum of `baseFee` and `relayFee`
+  totalFee: bigint;
+};
+
 /**
  * Factory method to create ShielderClient with the original configuration
  * @param {`0x${string}`} accountPrivateKey - private key of the account, in 32-byte hex format of ethereum's private key
@@ -137,6 +147,7 @@ export class ShielderClient {
   private depositAction: DepositAction;
   private withdrawAction: WithdrawAction;
   private callbacks: ShielderCallbacks;
+  private relayer: IRelayer;
   private publicClient?: PublicClient;
 
   /**
@@ -170,8 +181,22 @@ export class ShielderClient {
       contract,
       callbacks.onNewTransaction
     );
+    this.relayer = relayer;
     this.callbacks = callbacks;
     this.publicClient = publicClient;
+  }
+
+  /**
+   * Get the fees for the withdraw operation.
+   * @returns quoted fees for the withdraw operation
+   */
+  async getWithdrawFees(): Promise<QuotedFees> {
+    const fees = await this.relayer.quoteFees();
+    return {
+      baseFee: fees.base_fee,
+      relayFee: fees.relay_fee,
+      totalFee: fees.total_fee
+    };
   }
 
   /**
@@ -260,17 +285,19 @@ export class ShielderClient {
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
    * @param {bigint} amount - amount to withdraw, in wei
+   * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
    * @param {`0x${string}`} address - public address of the recipient
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
-  async withdraw(amount: bigint, address: Address) {
+  async withdraw(amount: bigint, totalFee: bigint, address: Address) {
     const state = await this.stateManager.accountState();
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
           state,
           amount,
+          totalFee,
           address,
           contractVersion
         ),

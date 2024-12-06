@@ -60,6 +60,10 @@ export class WasmClientWorker {
   privateKeyToScalar(hex: Hex): Scalar {
     return this.client.privateKeyToScalar(hex);
   }
+
+  arity(): number {
+    return this.client.arity();
+  }
 }
 
 const wasmClientWorker = new WasmClientWorker();

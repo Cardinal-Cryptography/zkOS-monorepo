@@ -61,12 +61,6 @@ sol! {
 
         function initialize(
             address initialOwner,
-            address _newAccountVerifier,
-            address _depositVerifier,
-            address _withdrawVerifier,
-            address _newAccountVerifyingKey,
-            address _depositVerifyingKey,
-            address _withdrawVerifyingKey,
             uint256 _depositLimit
         ) public;
 
