@@ -19,12 +19,10 @@ contract Shielder is
     Initializable,
     UUPSUpgradeable,
     OwnableUpgradeable,
-    PausableUpgradeable
+    PausableUpgradeable,
+    MerkleTree
 {
-    using UIntSet for UIntSet.Set;
-    using MerkleTree for MerkleTree.MerkleTreeData;
-
-    // -- Storage --
+    // -- Constants --
 
     /// The contract version, in the form `0x{v1}{v2}{v3}`, where:
     ///  - `v1` is the version of the note schema,
@@ -46,20 +44,34 @@ contract Shielder is
     /// so we control the sum of balances instead.
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
 
-    /// The temporary limit for the maximal deposit amount in the MVP version.
-    uint256 public depositLimit;
-
     /// The address of the Arbitrum system precompile.
     address private constant ARB_SYS_ADDRESS =
         0x0000000000000000000000000000000000000064;
-    IArbSys private arbSysPrecompile;
 
-    MerkleTree.MerkleTreeData public merkleTree;
+    // -- Storage --
 
-    UIntSet.Set private merkleRoots;
-    // Mapping from nullifier hash to the block at which it was revealed. Actually, the value will be the block number + 1,
-    // so that the default value 0 can be used to indicate that the nullifier has not been revealed.
-    mapping(uint256 => uint256) public nullifiers;
+    // keccak256(abi.encode(uint256(keccak256("zkos.storage.Shielder")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant SHIELDER_LOCATION =
+        0x3bbf33a565e911db5d234e02706e28046f872b5d4014a1408daa2ad1e7661c00;
+
+    /// @custom:storage-location erc7201:zkos.storage.Shielder
+    struct ShielderStorage {
+        // Mapping from nullifier hash to the block at which it was revealed. Actually, the value will be the block number + 1,
+        // so that the default value 0 can be used to indicate that the nullifier has not been revealed.
+        mapping(uint256 => uint256) nullifiers;
+        /// The temporary limit for the maximal deposit amount in the MVP version.
+        uint256 depositLimit;
+    }
+
+    function _getShielderStorage()
+        private
+        pure
+        returns (ShielderStorage storage $)
+    {
+        assembly {
+            $.slot := SHIELDER_LOCATION
+        }
+    }
 
     // -- Events --
     event NewAccountNative(
@@ -105,13 +117,15 @@ contract Shielder is
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
 
     modifier withinDepositLimit() {
-        if (msg.value > depositLimit) revert AmountOverDepositLimit();
+        ShielderStorage storage $ = _getShielderStorage();
+        if (msg.value > $.depositLimit) revert AmountOverDepositLimit();
         _;
     }
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
-        if (expectedByCaller != CONTRACT_VERSION)
+        if (expectedByCaller != CONTRACT_VERSION) {
             revert WrongContractVersion(CONTRACT_VERSION, expectedByCaller);
+        }
         _;
     }
 
@@ -128,13 +142,12 @@ contract Shielder is
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
+        __MerkleTree_init();
         _pause();
 
-        merkleTree.init();
+        ShielderStorage storage $ = _getShielderStorage();
 
-        arbSysPrecompile = IArbSys(ARB_SYS_ADDRESS);
-
-        depositLimit = _depositLimit;
+        $.depositLimit = _depositLimit;
     }
 
     /// @dev required by the OZ UUPS module
@@ -165,11 +178,13 @@ contract Shielder is
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
     {
+        ShielderStorage storage $ = _getShielderStorage();
         uint256 amount = msg.value;
-        if (nullifiers[idHash] != 0) revert DuplicatedNullifier();
+        if ($.nullifiers[idHash] != 0) revert DuplicatedNullifier();
         // `address(this).balance` already includes `msg.value`.
-        if (address(this).balance > MAX_CONTRACT_BALANCE)
+        if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
+        }
 
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](3);
@@ -181,8 +196,7 @@ contract Shielder is
 
         if (!success) revert NewAccountVerificationFailed();
 
-        uint256 index = merkleTree.addNote(newNote);
-        merkleRoots.add(merkleTree.root);
+        uint256 index = _addNote(newNote);
         registerNullifier(idHash);
 
         emit NewAccountNative(CONTRACT_VERSION, idHash, amount, newNote, index);
@@ -205,13 +219,15 @@ contract Shielder is
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
     {
+        ShielderStorage storage $ = _getShielderStorage();
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
-        if (nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
-        if (!merkleRoots.contains(merkleRoot)) revert MerkleRootDoesNotExist();
+        if ($.nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
+        if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         // `address(this).balance` already includes `msg.value`.
-        if (address(this).balance > MAX_CONTRACT_BALANCE)
+        if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
+        }
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](5);
@@ -225,8 +241,7 @@ contract Shielder is
 
         if (!success) revert DepositVerificationFailed();
 
-        uint256 index = merkleTree.addNote(newNote);
-        merkleRoots.add(merkleTree.root);
+        uint256 index = _addNote(newNote);
         registerNullifier(oldNullifierHash);
 
         emit DepositNative(
@@ -253,12 +268,13 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     ) external whenNotPaused restrictContractVersion(expectedContractVersion) {
+        ShielderStorage storage $ = _getShielderStorage();
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
 
-        if (!merkleRoots.contains(merkleRoot)) revert MerkleRootDoesNotExist();
-        if (nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
+        if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
+        if ($.nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](6);
@@ -281,8 +297,7 @@ contract Shielder is
 
         if (!success) revert WithdrawVerificationFailed();
 
-        uint256 newNoteIndex = merkleTree.addNote(newNote);
-        merkleRoots.add(merkleTree.root);
+        uint256 newNoteIndex = _addNote(newNote);
         registerNullifier(oldNullifierHash);
 
         // return the tokens
@@ -312,26 +327,13 @@ contract Shielder is
     }
 
     function registerNullifier(uint256 nullifier) private {
-        uint256 blockNumber = arbSysPrecompile.arbBlockNumber();
-        nullifiers[nullifier] = blockNumber + 1;
+        ShielderStorage storage $ = _getShielderStorage();
+        uint256 blockNumber = IArbSys(ARB_SYS_ADDRESS).arbBlockNumber();
+        $.nullifiers[nullifier] = blockNumber + 1;
     }
 
     function addressToUInt256(address addr) public pure returns (uint256) {
         return uint256(uint160(addr));
-    }
-
-    // --- Getters ---
-
-    /*
-     * Given an index of a leaf return the path from a leaf index to the root,
-     * omitting the root and leaf for gas efficiency,
-     * as they can be derived from hashing their children.
-     */
-
-    function getMerklePath(
-        uint256 id
-    ) external view returns (uint256[] memory) {
-        return merkleTree.getMerklePath(id);
     }
 
     // -- Setters ---
@@ -340,6 +342,7 @@ contract Shielder is
      * Set the deposit limit for the maximal amount
      */
     function setDepositLimit(uint256 _depositLimit) external onlyOwner {
-        depositLimit = _depositLimit;
+        ShielderStorage storage $ = _getShielderStorage();
+        $.depositLimit = _depositLimit;
     }
 }
