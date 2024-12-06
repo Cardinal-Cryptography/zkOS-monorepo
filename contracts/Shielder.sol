@@ -10,7 +10,6 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
 import { MerkleTree } from "./MerkleTree.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import { UIntSet } from "./UIntSet.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title Shielder
@@ -340,7 +339,7 @@ contract Shielder is
 
     function nullifiers(uint256 nullifier) public view returns (uint256) {
         ShielderStorage storage $ = _getShielderStorage();
-        return $.nullifier[id];
+        return $.nullifier[nullifier];
     }
 
     function depositLimit() public view returns (uint256) {

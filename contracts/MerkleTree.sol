@@ -49,6 +49,7 @@ abstract contract MerkleTree is Initializable {
     /*
      * Initialize the tree.
      */
+    // solhint-disable func-name-mixedcase
     function __MerkleTree_init() internal onlyInitializing {
         MerkleTreeStorage storage $ = _getMerkleTreeStorage();
         ($.maxLeafId, $.nextFreeLeafId) = treeBounds(TREE_HEIGHT);
