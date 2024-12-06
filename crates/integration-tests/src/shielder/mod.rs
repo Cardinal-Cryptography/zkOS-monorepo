@@ -12,8 +12,8 @@ use shielder_rust_sdk::contract::ShielderContract::{
 };
 
 mod address_conversion;
-mod calls;
-mod deploy;
+pub mod calls;
+pub mod deploy;
 mod erc1967proxy;
 mod limits;
 mod merkle;
@@ -30,7 +30,7 @@ fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
 
 type CallResult = Result<(Vec<ShielderContractEvents>, SuccessResult), ShielderContractErrors>;
 
-fn invoke_shielder_call(
+pub fn invoke_shielder_call(
     deployment: &mut Deployment,
     calldata: &impl SolCall,
     value: Option<U256>,

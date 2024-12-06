@@ -1,4 +1,4 @@
-#![cfg(test)]
+// #![cfg(test)]
 #![feature(assert_matches)]
 
 use std::{fs::File, io::Read};
@@ -8,10 +8,13 @@ use evm_utils::{compilation::source_to_bytecode, EvmRunner};
 
 mod permit2;
 mod poseidon2;
-mod proving_utils;
-mod shielder;
+pub mod proving_utils;
+pub mod shielder;
 mod token;
 mod verifier;
+
+pub use proving_utils::*;
+pub use shielder::*;
 
 const CONTRACTS_DIR: &str = "../../contracts";
 
