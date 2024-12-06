@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.26;
 
+import { DepositLimit } from "./DepositLimit.sol";
 import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as DepositVerifier } from "./DepositVerifier.sol";
 import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
@@ -19,7 +20,8 @@ contract Shielder is
     UUPSUpgradeable,
     OwnableUpgradeable,
     PausableUpgradeable,
-    MerkleTree
+    MerkleTree,
+    DepositLimit
 {
     // -- Constants --
 
@@ -58,8 +60,6 @@ contract Shielder is
         // Mapping from nullifier hash to the block at which it was revealed. Actually, the value will be the block number + 1,
         // so that the default value 0 can be used to indicate that the nullifier has not been revealed.
         mapping(uint256 => uint256) nullifiers;
-        /// The temporary limit for the maximal deposit amount in the MVP version.
-        uint256 depositLimit;
     }
 
     function _getShielderStorage()
@@ -108,18 +108,11 @@ contract Shielder is
     error WithdrawVerificationFailed();
     error NewAccountVerificationFailed();
     error ZeroAmount();
-    error AmountOverDepositLimit();
     error AmountTooHigh();
     error ContractBalanceLimitReached();
     error LeafIsNotInTheTree();
     error PrecompileCallFailed();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
-
-    modifier withinDepositLimit() {
-        ShielderStorage storage $ = _getShielderStorage();
-        if (msg.value > $.depositLimit) revert AmountOverDepositLimit();
-        _;
-    }
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
         if (expectedByCaller != CONTRACT_VERSION) {
@@ -142,11 +135,8 @@ contract Shielder is
         __Ownable_init(initialOwner);
         __Pausable_init();
         __MerkleTree_init();
+        __DepositLimit_init(_depositLimit);
         _pause();
-
-        ShielderStorage storage $ = _getShielderStorage();
-
-        $.depositLimit = _depositLimit;
     }
 
     /// @dev required by the OZ UUPS module
@@ -342,18 +332,12 @@ contract Shielder is
         return $.nullifiers[nullifier];
     }
 
-    function depositLimit() public view returns (uint256) {
-        ShielderStorage storage $ = _getShielderStorage();
-        return $.depositLimit;
-    }
-
     // -- Setters ---
 
     /*
      * Set the deposit limit for the maximal amount
      */
     function setDepositLimit(uint256 _depositLimit) external onlyOwner {
-        ShielderStorage storage $ = _getShielderStorage();
-        $.depositLimit = _depositLimit;
+        _setDepositLimit(_depositLimit);
     }
 }
