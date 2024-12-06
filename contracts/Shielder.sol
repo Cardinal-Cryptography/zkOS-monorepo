@@ -339,7 +339,7 @@ contract Shielder is
 
     function nullifiers(uint256 nullifier) public view returns (uint256) {
         ShielderStorage storage $ = _getShielderStorage();
-        return $.nullifier[nullifier];
+        return $.nullifiers[nullifier];
     }
 
     function depositLimit() public view returns (uint256) {
