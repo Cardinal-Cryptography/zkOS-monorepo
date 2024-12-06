@@ -46,7 +46,7 @@ contract Shielder is
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
 
     /// The Arbitrum system precompile.
-    IArbSys private constant arbSysPrecompile =
+    IArbSys private constant ARB_SYS_PRECOMPILE =
         IArbSys(0x0000000000000000000000000000000000000064);
 
     // -- Storage --
@@ -110,8 +110,6 @@ contract Shielder is
     error ZeroAmount();
     error AmountTooHigh();
     error ContractBalanceLimitReached();
-    error LeafIsNotInTheTree();
-    error PrecompileCallFailed();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
@@ -317,7 +315,7 @@ contract Shielder is
 
     function registerNullifier(uint256 nullifier) private {
         ShielderStorage storage $ = _getShielderStorage();
-        uint256 blockNumber = arbSysPrecompile.arbBlockNumber();
+        uint256 blockNumber = ARB_SYS_PRECOMPILE.arbBlockNumber();
         $.nullifiers[nullifier] = blockNumber + 1;
     }
 
