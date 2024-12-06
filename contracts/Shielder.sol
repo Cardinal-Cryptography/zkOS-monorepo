@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { Halo2Verifier as NewAccountVerifier } from "../contracts/NewAccountVerifier.sol";
-import { Halo2Verifier as DepositVerifier } from "../contracts/DepositVerifier.sol";
-import { Halo2Verifier as WithdrawVerifier } from "../contracts/WithdrawVerifier.sol";
+import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
+import { Halo2Verifier as DepositVerifier } from "./DepositVerifier.sol";
+import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
 import { IArbSys } from "./IArbSys.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
@@ -53,16 +53,6 @@ contract Shielder is
     address private constant ARB_SYS_ADDRESS =
         0x0000000000000000000000000000000000000064;
     IArbSys private arbSysPrecompile;
-
-    // verifier contracts
-    address public newAccountVerifier;
-    address public depositVerifier;
-    address public withdrawVerifier;
-
-    // verification key contracts
-    address public newAccountVerifyingKey;
-    address public depositVerifyingKey;
-    address public withdrawVerifyingKey;
 
     MerkleTree.MerkleTreeData public merkleTree;
 
