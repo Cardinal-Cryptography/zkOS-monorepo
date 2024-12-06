@@ -107,7 +107,7 @@ mod test {
         let verifier_address = deploy_source_code(verifier_solidity, "Halo2Verifier", &mut evm);
 
         // Call verifier contract
-        let calldata = verifier_contract::encode_calldata( proof, public_input);
+        let calldata = verifier_contract::encode_calldata(proof, public_input);
         match evm.call(verifier_address, calldata, None, None) {
             Ok(SuccessResult {
                 gas_used, output, ..
