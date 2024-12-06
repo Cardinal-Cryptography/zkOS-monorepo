@@ -55,52 +55,17 @@ abstract contract MerkleTree is Initializable {
         $.firstLeafId = $.nextFreeLeafId;
     }
 
-    /*
-     * Add a note to the tree.
-     * Returns the index of the note in the tree starting from 0.
-     * If the tree is full, it will revert.
-     * Saves new root in the root history.
+    /**
+     * Getter for MerkleTree data.
+     * @return MerkleTree data (root, nextFreeLeafId, maxLeafId, firstLeafId)
      */
-    function _addNote(uint256 note) internal returns (uint256) {
+    function merkleTree()
+        public
+        view
+        returns (uint256, uint256, uint256, uint256)
+    {
         MerkleTreeStorage storage $ = _getMerkleTreeStorage();
-        if ($.nextFreeLeafId > $.maxLeafId) revert MaxTreeSizeExceeded();
-
-        uint256 index = $.nextFreeLeafId;
-        uint256 parent = 0;
-        uint256[ARITY] memory subtrees;
-        $.notes[index] = note;
-
-        for (uint256 i = 0; i < TREE_HEIGHT; ) {
-            unchecked {
-                parent = (index + ARITY - 2) / ARITY;
-            }
-            for (uint256 j = 0; j < ARITY; ) {
-                subtrees[j] = $.notes[parent * ARITY + j - (ARITY - 2)];
-                unchecked {
-                    j++;
-                }
-            }
-            note = Poseidon2.hash(subtrees);
-            $.notes[parent] = note;
-
-            index = parent;
-            unchecked {
-                i++;
-            }
-        }
-        $.root = note;
-        $.nextFreeLeafId += 1;
-
-        $.merkleRoots.add($.root);
-
-        return $.nextFreeLeafId - $.firstLeafId - 1;
-    }
-
-    function _merkleRootExists(
-        uint256 merkleRoot
-    ) internal view returns (bool) {
-        MerkleTreeStorage storage $ = _getMerkleTreeStorage();
-        return $.merkleRoots.contains(merkleRoot);
+        return ($.root, $.nextFreeLeafId, $.maxLeafId, $.firstLeafId);
     }
 
     /*
@@ -149,6 +114,54 @@ abstract contract MerkleTree is Initializable {
         path[TREE_HEIGHT * ARITY] = $.root;
 
         return path;
+    }
+
+    /*
+     * Add a note to the tree.
+     * Returns the index of the note in the tree starting from 0.
+     * If the tree is full, it will revert.
+     * Saves new root in the root history.
+     */
+    function _addNote(uint256 note) internal returns (uint256) {
+        MerkleTreeStorage storage $ = _getMerkleTreeStorage();
+        if ($.nextFreeLeafId > $.maxLeafId) revert MaxTreeSizeExceeded();
+
+        uint256 index = $.nextFreeLeafId;
+        uint256 parent = 0;
+        uint256[ARITY] memory subtrees;
+        $.notes[index] = note;
+
+        for (uint256 i = 0; i < TREE_HEIGHT; ) {
+            unchecked {
+                parent = (index + ARITY - 2) / ARITY;
+            }
+            for (uint256 j = 0; j < ARITY; ) {
+                subtrees[j] = $.notes[parent * ARITY + j - (ARITY - 2)];
+                unchecked {
+                    j++;
+                }
+            }
+            note = Poseidon2.hash(subtrees);
+            $.notes[parent] = note;
+
+            index = parent;
+            unchecked {
+                i++;
+            }
+        }
+        $.root = note;
+        $.nextFreeLeafId += 1;
+
+        $.merkleRoots.add($.root);
+
+        return $.nextFreeLeafId - $.firstLeafId - 1;
+    }
+
+    function _merkleRootExists(
+        uint256 merkleRoot
+    ) internal view returns (bool) {
+        MerkleTreeStorage storage $ = _getMerkleTreeStorage();
+        return $.merkleRoots.contains(merkleRoot);
     }
 
     /*

@@ -336,6 +336,18 @@ contract Shielder is
         return uint256(uint160(addr));
     }
 
+    // -- Getters ---
+
+    function nullifiers(uint256 nullifier) public view returns (uint256) {
+        ShielderStorage storage $ = _getShielderStorage();
+        return $.nullifier[id];
+    }
+
+    function depositLimit() public view returns (uint256) {
+        ShielderStorage storage $ = _getShielderStorage();
+        return $.depositLimit;
+    }
+
     // -- Setters ---
 
     /*
