@@ -1,7 +1,6 @@
 [package]
 name = "shielder-cli"
 version = "0.1.0"
-readme = "README.md"
 description = "CLI for interacting with the zkOS Shielder contract"
 
 edition.workspace = true
