@@ -83,6 +83,12 @@ jobs:
       - name: Run metrics-diff-presenter script
         run: python3 .github/scripts/gas_diff.py
 
+      - name: Report measurements difference
+        uses: pavi2410/html-preview-action@v4
+        with:
+          html_file: 'report.html'
+          job_summary: true
+
       - name: Post measurements difference
         if: ${{ hashFiles('report.html') != '' }}
         uses: thollander/actions-comment-pull-request@v3
