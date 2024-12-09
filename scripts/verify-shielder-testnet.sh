@@ -15,8 +15,8 @@ PROXY_BLOCK_NUMBER=$(cast to-dec $(cat broadcast/Shielder.s.sol/2039/run-latest.
 echo ${PROXY_CONTRACT_ADDRESS} > shielder_address.txt
 echo ${PROXY_BLOCK_NUMBER} > shielder_block_number.txt
 
-# forge verify-contract --rpc-url https://rpc.alephzero-testnet.gelato.digital \
-#     --verifier blockscout --verifier-url https://evm-explorer-testnet.alephzero.org/api \
-#     ${LIBRARIES} \
-#     ${IMPL_CONTRACT_ADDRESS} \
-#     contracts/Shielder.sol:Shielder
+forge verify-contract --rpc-url https://rpc.alephzero-testnet.gelato.digital \
+    --verifier blockscout --verifier-url https://evm-explorer-testnet.alephzero.org/api \
+    ${LIBRARIES} \
+    ${IMPL_CONTRACT_ADDRESS} \
+    contracts/Shielder.sol:Shielder
