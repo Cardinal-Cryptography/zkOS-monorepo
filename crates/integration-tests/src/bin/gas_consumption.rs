@@ -1,5 +1,6 @@
+use core::fmt;
+
 use alloy_primitives::U256;
-use evm_utils::SuccessResult;
 use integration_tests::{
     calls::{
         deposit_native::{
@@ -14,7 +15,7 @@ use integration_tests::{
         },
     },
     deploy::{deployment, Deployment},
-    deposit_native_proving_params, invoke_shielder_call, new_account_native_proving_params,
+    deposit_native_proving_params, new_account_native_proving_params,
     withdraw_native_proving_params,
 };
 use shielder_rust_sdk::{
@@ -27,6 +28,16 @@ enum Calldata {
     NewAccounNativeCall(newAccountNativeCall),
     DepositNativeCall(depositNativeCall),
     WithdrawNativeCall(withdrawNativeCall),
+}
+
+impl fmt::Display for Calldata {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Calldata::NewAccounNativeCall(_) => write!(f, "NewAccountNative"),
+            Calldata::DepositNativeCall(_) => write!(f, "DepositNative"),
+            Calldata::WithdrawNativeCall(_) => write!(f, "WithdrawNative"),
+        }
+    }
 }
 
 fn main() {
@@ -73,7 +84,7 @@ fn measure_gas(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
 ) {
-    let gas_used = match calldata {
+    let gas_used = match &calldata {
         Calldata::NewAccounNativeCall(calldata) => {
             new_account_native_call(deployment, shielder_account, U256::from(10), &calldata)
                 .unwrap()
