@@ -44,7 +44,7 @@ pub fn prepare_call(
     let calldata = shielder_account.prepare_call::<DepositCallType>(
         &params,
         &pk,
-        U256::from(amount),
+        amount,
         &MerkleProof {
             root: merkle_root,
             path: merkle_path,

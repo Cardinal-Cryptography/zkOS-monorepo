@@ -26,14 +26,14 @@ use crate::shielder::{
 
 const GAS_CONSUMPTION: u64 = 1903378;
 
-struct PrepareCallArgs {
+pub struct PrepareCallArgs {
     amount: U256,
     withdraw_address: Address,
     relayer_address: Address,
     relayer_fee: U256,
 }
 
-fn prepare_args(amount: U256, relayer_fee: U256) -> PrepareCallArgs {
+pub fn prepare_args(amount: U256, relayer_fee: U256) -> PrepareCallArgs {
     PrepareCallArgs {
         amount,
         withdraw_address: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -42,7 +42,7 @@ fn prepare_args(amount: U256, relayer_fee: U256) -> PrepareCallArgs {
     }
 }
 
-fn prepare_call(
+pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     args: PrepareCallArgs,
@@ -81,7 +81,7 @@ fn prepare_call(
     (calldata, note_index)
 }
 
-fn invoke_call(
+pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     calldata: &withdrawNativeCall,
