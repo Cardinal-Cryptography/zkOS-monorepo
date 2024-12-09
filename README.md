@@ -1,7 +1,8 @@
 [![LOGO][logo]][aleph-homepage]
 
-[![Test suite][tests-badge]][tests]
 [![Nightly Testnet E2E tests][nightly-tests-badge]][nightly-tests]
+[![Contracts Testnet deployment][contracts-deployment-badge]][contracts-deployment]
+[![Relayer Testnet deployment][relayer-deployment-badge]][relayer-deployment]
 
 # Shielder: A First Iteration of zkOS
 
@@ -84,7 +85,9 @@ Shielder is licensed under the MIT License. See the LICENSE file for more detail
 
 [aleph-homepage]: https://alephzero.org
 [logo]: logo.png
-[tests]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/on-master-branch-push-pull_request.yml
-[tests-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/on-master-branch-push-pull_request.yml/badge.svg
-[nightly-tests]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/nightly-testnet-e2e.yml
-[nightly-tests-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/nightly-testnet-e2e.yml/badge.svg
+[contracts-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-testnet-deploy-contract.yml
+[contracts-deployment-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-testnet-deploy-contract.yml/badge.svg
+[relayer-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-build-and-deploy-shielder-relayer.yml
+[relayer-deployment-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-build-and-deploy-shielder-relayer.yml/badge.svg
+[nightly-tests]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-nightly-e2e.yml
+[nightly-tests-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-nightly-e2e.yml/badge.svg
