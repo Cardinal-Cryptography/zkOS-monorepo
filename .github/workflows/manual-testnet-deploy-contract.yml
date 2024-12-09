@@ -73,14 +73,13 @@ jobs:
           src-files: |-
             evm_addresses.json|evm_
           dst-file: contract_spec.json
-          spec-version: '0.1'
-          contract-version: '${{ github.sha }}'
+          spec-version: "0.1"
+          contract-version: "${{ github.sha }}"
 
       - name: Add block numbers to contract_spec JSON
         shell: bash
         run: |
-          EVM_START_BLOCK=1810340
-          cat contract_spec.json | jq ".start_blocks = { evm: \"$EVM_START_BLOCK\" }" \
+          cat contract_spec.json | jq ".start_blocks = { evm: \"$(cat shielder_block_number.txt)\" }" \
             > contract_spec_with_block_numbers.json
 
           cat contract_spec_with_block_numbers.json
