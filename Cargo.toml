@@ -31,6 +31,7 @@ byteorder = { version = "1.4.3" }
 chacha20poly1305 = { version = "0.10.1", default-features = false }
 clap = { version = "4.5.8" }
 console_error_panic_hook = { version = "0.1.7" }
+getrandom = { version = "0.2" }
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", default-features = false }
 halo2curves = { version = "0.6.0", default-features = false }
 hex = { version = "0.4.3" }
