@@ -31,6 +31,7 @@ export async function rawAction(
     id: stateOld.id,
     nonce: stateOld.nonce + 1n,
     balance: balanceNew,
-    currentNote: noteNew
+    currentNote: noteNew,
+    storageSchemaVersion: stateOld.storageSchemaVersion
   };
 }
