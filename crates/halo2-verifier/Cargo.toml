@@ -18,7 +18,6 @@ askama = { workspace = true, features = ["config"] }
 evm-utils = { workspace = true }
 halo2_proofs = { workspace = true }
 itertools = { workspace = true }
-rand = { workspace = true, features = ["small_rng"] }
 ruint = { workspace = true }
 shielder-circuits = { workspace = true }
 shielder-rust-sdk = { workspace = true, features = ["parameter_generation", "powers_of_tau", "conversion"] }
