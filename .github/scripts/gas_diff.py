@@ -1,4 +1,5 @@
 import re
+from prettytable import PrettyTable
 
 def parse_report(file_path):
     data = {}
@@ -18,51 +19,26 @@ def calculate_differences(main_data, current_data):
         if main_value > 0:
             difference = ((current_value - main_value) / main_value) * 100
         else:
-            difference = 0  # handle case where main value is zero
+            difference = 0  # handle the case where main value is zero
         differences.append((name, main_value, current_value, difference))
     return differences
 
-def generate_html_report(differences):
-    html_content = '''
-    <html>
-    <head>
-        <style>
-            table { width: 50%; border-collapse: collapse; }
-            th, td { border: 1px solid black; padding: 8px; text-align: left; }
-            .green { background-color: #dff0d8; }
-            .red { background-color: #f2dede; }
-        </style>
-    </head>
-    <body>
-        <h2>Report Differences</h2>
-        <table>
-            <tr>
-                <th>Transaction Name</th>
-                <th>Main</th>
-                <th>Current</th>
-                <th>Difference (%)</th>
-            </tr>
-    '''
+def generate_ascii_report(differences):
+    # Create an ASCII table
+    table = PrettyTable()
+    table.field_names = ["Transaction Name", "Main", "Current", "Difference (%)"]
 
     for name, main, current, diff in differences:
         sign = '+' if diff > 0 else '-' if diff < 0 else ''
-        color_class = 'red' if diff > 0 else 'green' if diff < 0 else ''
-        html_content += f'''
-            <tr class="{color_class}">
-                <td>{name}</td>
-                <td>{main}</td>
-                <td>{current}</td>
-                <td>{sign}{abs(diff):.2f}%</td>
-            </tr>
-        '''
+        formatted_diff = f"{sign}{abs(diff):.2f}"
+        if diff > 0:
+            table.add_row([name, main, current, formatted_diff])
+        elif diff < 0:
+            table.add_row([name, main, current, formatted_diff])
+        else:
+            table.add_row([name, main, current, f"{formatted_diff}"])
 
-    html_content += '''
-        </table>
-    </body>
-    </html>
-    '''
-
-    return html_content
+    return str(table)
 
 def main():
     main_report_path = 'main-report.txt'
@@ -72,10 +48,10 @@ def main():
     current_data = parse_report(current_report_path)
     differences = calculate_differences(main_data, current_data)
 
-    html_report = generate_html_report(differences)
+    ascii_report = generate_ascii_report(differences)
 
-    with open('report.html', 'w') as report_file:
-        report_file.write(html_report)
+    # Print the ASCII report
+    print(ascii_report)
 
 if __name__ == "__main__":
     main()
