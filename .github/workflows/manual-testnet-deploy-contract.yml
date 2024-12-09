@@ -75,11 +75,6 @@ jobs:
           spec-version: '0.1'
           contract-version: '${{ github.sha }}'
 
-      - name: Debug contract_spec JSON
-        run: |
-          cat evm_addresses.json
-          cat contract_spec.json
-
       - name: Add block numbers to contract_spec JSON
         shell: bash
         run: |
@@ -89,20 +84,20 @@ jobs:
 
           cat contract_spec_with_block_numbers.json
 
-      #- name: Store addresses in S3 bucket
-      #  shell: bash
-      #  env:
-      #    AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
-      #    AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
-      #    AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
-      #  run: |
-      #    aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/l2_dev.json
+      - name: Store addresses in S3 bucket
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+        run: |
+          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/l2_dev.json
 
-      #- name: Store artifact in S3 bucket
-      #  shell: bash
-      #  env:
-      #    AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
-      #    AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
-      #    AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
-      #  run: |
-      #    aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
+      - name: Store artifact in S3 bucket
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+        run: |
+          aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
