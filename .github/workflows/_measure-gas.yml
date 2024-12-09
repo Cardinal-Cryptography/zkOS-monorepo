@@ -12,6 +12,9 @@ jobs:
     timeout-minutes: 10
     steps:
 
+      - name: Checkout code (from the current branch)
+        uses: actions/checkout@v4
+
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
         with:
@@ -19,9 +22,6 @@ jobs:
           zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
       #################### Run measurements on the current branch ####################
-
-      - name: Checkout code (from the current branch)
-        uses: actions/checkout@v4
 
       - name: Run measure-circuits binary on the current branch
         run: |
