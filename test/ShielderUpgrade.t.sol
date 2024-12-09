@@ -13,7 +13,7 @@ contract ShielderUpgrade is Test {
 
     uint256 public depositLimit = 100e18;
 
-    string[] allowedErrors;
+    string[] public allowedErrors;
 
     function setUp() public {
         owner = msg.sender;

@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import { Upgrades, Options, Core } from "openzeppelin-foundry-upgrades/Upgrades.sol";
-import { console2 } from "forge-std/Script.sol";
 import { strings } from "solidity-stringutils/src/strings.sol";
 
 library CustomUpgrades {
