@@ -12,9 +12,7 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-alloy-contract = { workspace = true }
 alloy-eips = { workspace = true }
-alloy-network = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-provider = { workspace = true }
 alloy-rpc-types-eth = { workspace = true }
@@ -23,7 +21,6 @@ alloy-sol-types = { workspace = true }
 anyhow = { workspace = true, default-features = true }
 clap = { workspace = true, features = ["derive"] }
 inquire = { workspace = true }
-rand = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

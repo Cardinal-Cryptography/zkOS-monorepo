@@ -31,34 +31,22 @@ byteorder = { version = "1.4.3" }
 chacha20poly1305 = { version = "0.10.1", default-features = false }
 clap = { version = "4.5.8" }
 console_error_panic_hook = { version = "0.1.7" }
-criterion = { version = "0.5.1" }
-darling = { version = "0.20.10" }
-getrandom = { version = "0.2" }
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", default-features = false }
 halo2curves = { version = "0.6.0", default-features = false }
 hex = { version = "0.4.3" }
-human_bytes = { version = "0.4.3", default-features = false }
 inquire = { version = "0.7.5" }
 itertools = { version = "0.13.0" }
-js-sys = { version = "0.3.61" }
 lazy_static = { version = "1.5.0" }
 log = { version = "0.4.22" }
 metrics = { version = "0.23.0", default-features = false }
 metrics-exporter-prometheus = { version = "0.15.3", default-features = false }
-mockall = { version = "0.13.0" }
 num-bigint = { version = "0.4.3" }
-once_cell = { version = "1.20.2" }
-paste = { version = "1.0.15" }
-proc-macro2 = { version = "1.0.86" }
-quote = { version = "1.0.37" }
 rand = { version = "0.8.5" }
 rand_chacha = { version = "0.3.1" }
 rand_core = { version = "0.6.4" }
 rayon = { version = "1.8" }
 reqwest = { version = "0.12.5" }
 revm = { version = "14.0.3", default-features = false }
-revm-interpreter = { version = "10.0.3", default-features = false }
-revm-precompile = { version = "11.0.3", default-features = false }
 revm-primitives = { version = "10.0.0", default-features = false }
 rstest = "0.23.0"
 ruint = { version = "1" }
@@ -72,9 +60,6 @@ shellexpand = { version = "3.1.0" }
 # https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/7743b2f084d80685041c1b16718e6388226e9631
 shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "7743b2f" }
 static_assertions = { version = "1.1.0" }
-strum = { version = "0.26.3" }
-strum_macros = { version = "0.26.3" }
-syn = { version = "2.0.79" }
 testcontainers = { version = "0.19.0" }
 thiserror = { version = "1.0.61" }
 tokio = { version = "1.38.0" }
@@ -83,7 +68,6 @@ tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18" }
 wasm-bindgen = { version = "0.2.92" }
 wasm-bindgen-rayon = { version = "1.2.1" }
-wasm-bindgen-test = { version = "0.3.42" }
 
 # Local dependencies
 content-encryption = { path = "crates/content-encryption", default-features = false }
