@@ -31,6 +31,9 @@ jobs:
 
       #################### Run measurements on the current branch ####################
 
+      - name: Install dependencies
+        run: make deps
+
       - name: Generate all contracts
         run: |
           make deps
@@ -49,10 +52,14 @@ jobs:
       #     ref: main
       #     path: main
 
-      # - name: Generate all contracts
+      # - name: Install dependencies
       #   run: |
       #     cd main
       #     make deps
+
+      # - name: Generate all contracts
+      #   run: |
+      #     cd main
       #     make generate-contracts
 
       # - name: Run measure-circuits on the `main` branch
