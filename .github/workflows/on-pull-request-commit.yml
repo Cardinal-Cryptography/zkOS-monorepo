@@ -63,3 +63,8 @@ jobs:
         with:
           name: |
             crates-shielder-wasm-pkg
+
+  measure-gas-usage:
+    name: Measure gas usage
+    uses: ./.github/workflows/_measure_gas.yml
+    secrets: inherit

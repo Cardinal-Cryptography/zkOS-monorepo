@@ -1,4 +1,5 @@
 use core::fmt;
+use std::{env, fs::File, io::Write};
 
 use alloy_primitives::U256;
 use integration_tests::{
@@ -41,6 +42,10 @@ impl fmt::Display for Calldata {
 }
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+    let mut file = File::create(filename).unwrap();
+
     let mut deployment = deployment(
         &new_account_native_proving_params(),
         &deposit_native_proving_params(),
@@ -49,61 +54,64 @@ fn main() {
 
     let mut shielder_account = ShielderAccount::new(U256::from(1));
     let amount = U256::from(10);
-    let calldata = new_account_native_calldata(&mut deployment, &mut shielder_account, amount);
-
-    measure_gas(
-        Calldata::NewAccounNativeCall(calldata),
+    let calldata = Calldata::NewAccounNativeCall(new_account_native_calldata(
         &mut deployment,
         &mut shielder_account,
+        amount,
+    ));
+
+    let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
+
+    file.write(format!("{} : {gas_used}\n", &calldata).as_bytes())
+        .unwrap();
+
+    let calldata = Calldata::DepositNativeCall(
+        deposit_native_calldata(&mut deployment, &mut shielder_account, amount).0,
     );
 
-    let calldata = deposit_native_calldata(&mut deployment, &mut shielder_account, amount).0;
+    let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
 
-    measure_gas(
-        Calldata::DepositNativeCall(calldata),
-        &mut deployment,
-        &mut shielder_account,
+    file.write(format!("{} : {gas_used}\n", &calldata).as_bytes())
+        .unwrap();
+
+    let calldata = Calldata::WithdrawNativeCall(
+        withdraw_native_calldata(
+            &mut deployment,
+            &mut shielder_account,
+            prepare_args(amount, U256::from(1)),
+        )
+        .0,
     );
 
-    let calldata = withdraw_native_calldata(
-        &mut deployment,
-        &mut shielder_account,
-        prepare_args(amount, U256::from(1)),
-    )
-    .0;
+    let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
 
-    measure_gas(
-        Calldata::WithdrawNativeCall(calldata),
-        &mut deployment,
-        &mut shielder_account,
-    );
+    file.write(format!("{} : {gas_used}", &calldata).as_bytes())
+        .unwrap();
 }
 
 fn measure_gas(
-    calldata: Calldata,
+    calldata: &Calldata,
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
-) {
-    let gas_used = match &calldata {
+) -> u64 {
+    match calldata {
         Calldata::NewAccounNativeCall(calldata) => {
-            new_account_native_call(deployment, shielder_account, U256::from(10), &calldata)
+            new_account_native_call(deployment, shielder_account, U256::from(10), calldata)
                 .unwrap()
                 .1
                 .gas_used
         }
         Calldata::DepositNativeCall(calldata) => {
-            deposit_native_call(deployment, shielder_account, U256::from(10), &calldata)
+            deposit_native_call(deployment, shielder_account, U256::from(10), calldata)
                 .unwrap()
                 .1
                 .gas_used
         }
         Calldata::WithdrawNativeCall(calldata) => {
-            withdraw_native_call(deployment, shielder_account, &calldata)
+            withdraw_native_call(deployment, shielder_account, calldata)
                 .unwrap()
                 .1
                 .gas_used
         }
-    };
-
-    println!("{}: {gas_used}", &calldata);
+    }
 }
