@@ -79,7 +79,8 @@ jobs:
       - name: Add block numbers to contract_spec JSON
         shell: bash
         run: |
-          cat contract_spec.json | jq ".start_blocks = { evm: \"$(cat shielder_block_number.txt)\" }" \
+          cat contract_spec.json | \
+            jq ".start_blocks = { evm: \"$(cat shielder_block_number.txt)\" }" \
             > contract_spec_with_block_numbers.json
 
           cat contract_spec_with_block_numbers.json
