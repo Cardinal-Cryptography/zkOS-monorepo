@@ -587,5 +587,11 @@ def partial_round(r):
 }}
 '''
 
+FUNCTION_COMMENT = """
+    /*
+    * Suitable only for 7-tuples. Using `hash` for tuples of other sizes requires adjusting
+    * the initial state of the hashing function, which is not done in the current implementation.
+    */"""
+
 if __name__ == '__main__':
-    print(generate_code(init, full_round, partial_round, T, ROUNDS_F, ROUNDS_P))
+    print(generate_code(init, full_round, partial_round, T, ROUNDS_F, ROUNDS_P, FUNCTION_COMMENT))
