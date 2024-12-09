@@ -11,14 +11,22 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 10
     steps:
-      - name: Checkout code (from the current branch)
-        uses: actions/checkout@v4
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
         with:
           poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      #################### Run measurements on the current branch ####################
+
+      - name: Checkout code (from the current branch)
+        uses: actions/checkout@v4
+
+      - name: Run measure-circuits binary on the current branch
+        run: |
+             cd crates/integration-tests
+             cargo run --bin gas-consumption -- ../../current-report.txt
 
       #################### Run measurements on the main branch ####################
 
@@ -29,12 +37,9 @@ jobs:
           path: main
 
       - name: Run measure-circuits on the `main` branch
-        run: cd main/crates/integration-tests && cargo run --bin gas-consumption -- ../../../main-report.txt
-
-      #################### Run measurements on the current branch ####################
-
-      - name: Run measure-circuits binary on the current branch
-        run: cd crates/integration-tests && cargo run --bin gas-consumption -- ../../current-report.txt
+        run: |
+          cd main/crates/integration-tests
+          cargo run --bin gas-consumption -- ../../../main-report.txt
 
       #################### Generate report ####################
 

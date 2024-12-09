@@ -66,5 +66,5 @@ jobs:
 
   measure-gas-usage:
     name: Measure gas usage
-    uses: ./.github/workflows/_measure_gas.yml
+    uses: ./.github/workflows/_measure-gas.yml
     secrets: inherit
