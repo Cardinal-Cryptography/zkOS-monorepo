@@ -14,6 +14,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 
 /// @title Shielder
 /// @author CardinalCryptography
+/// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Shielder is
     Initializable,
     UUPSUpgradeable,
@@ -92,6 +93,7 @@ contract Shielder is
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
