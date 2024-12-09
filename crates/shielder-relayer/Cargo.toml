@@ -23,6 +23,7 @@ clap = { workspace = true, features = ["derive"] }
 metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+openssl = { version = "0.10.59", features = ["vendored"] }
 shielder-rust-sdk = { workspace = true, features = ["contract", "native_token"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 tower-http = { workspace = true, features = ["cors"] }
