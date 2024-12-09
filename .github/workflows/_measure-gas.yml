@@ -36,6 +36,7 @@ jobs:
 
       - name: Generate all contracts
         run: |
+          make deps
           make generate-contracts
 
       - name: Run measure-circuits binary on the current branch
@@ -54,8 +55,8 @@ jobs:
       - name: Generate all contracts
         run: |
           cd main
+          make deps
           make generate-contracts
-
 
       - name: Run measure-circuits on the `main` branch
         run: |
