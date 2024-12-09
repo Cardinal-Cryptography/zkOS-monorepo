@@ -3,13 +3,12 @@ use alloc::vec::Vec;
 use halo2_proofs::halo2curves::bn256::Fr;
 use shielder_circuits::{
     consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
-    utils::hash_variable_length,
     F,
 };
 use shielder_rust_sdk::conversion::private_key_to_field;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::vec_to_f;
+use crate::{hash_variable_length, vec_to_f};
 
 #[wasm_bindgen]
 pub fn arity() -> usize {

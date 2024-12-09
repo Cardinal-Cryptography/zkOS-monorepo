@@ -4,7 +4,7 @@ use alloy_provider::Provider;
 use alloy_rpc_types_eth::Transaction;
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, bail, Result};
-use shielder_circuits::{utils::hash, F};
+use shielder_circuits::{poseidon::off_circuit::hash, F};
 use shielder_rust_sdk::{
     account::{ShielderAccount, ShielderAction},
     contract::{
