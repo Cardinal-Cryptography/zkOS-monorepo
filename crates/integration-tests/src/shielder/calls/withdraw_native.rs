@@ -24,7 +24,7 @@ use crate::shielder::{
     recipient_balance_increased_by, relayer_balance_increased_by, CallResult,
 };
 
-const GAS_CONSUMPTION: u64 = 1903378;
+const GAS_CONSUMPTION: u64 = 1898039;
 
 pub struct PrepareCallArgs {
     amount: U256,

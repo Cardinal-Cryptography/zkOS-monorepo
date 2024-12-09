@@ -1593,12 +1593,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "downcast"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1435fa1053d8b2fbbe9be7e97eca7f33d37b28409959813daefc1446a14247f1"
-
-[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1722,13 +1716,9 @@ dependencies = [
 name = "evm-utils"
 version = "0.1.0"
 dependencies = [
- "alloy-sol-types",
  "hex",
  "revm",
- "revm-interpreter",
- "revm-precompile",
  "revm-primitives",
- "sha3 0.10.8",
  "thiserror 1.0.69",
 ]
 
@@ -1807,12 +1797,6 @@ checksum = "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456"
 dependencies = [
  "percent-encoding",
 ]
-
-[[package]]
-name = "fragile"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c2141d6d6c8512188a7891b4b01590a45f6dac67afb4f255c4124dbb86d4eaa"
 
 [[package]]
 name = "funty"
@@ -2008,7 +1992,7 @@ dependencies = [
 [[package]]
 name = "halo2_poseidon"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?rev=de9281b#de9281bf9642f6a75c5faa28437161fa32d65365"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?rev=ce317a6#ce317a65e0f1148ce9220a7f3281ef0f27544fb4"
 dependencies = [
  "arrayvec",
  "bitvec",
@@ -2051,7 +2035,6 @@ dependencies = [
  "evm-utils",
  "halo2_proofs",
  "itertools 0.13.0",
- "rand",
  "ruint",
  "shielder-circuits",
  "shielder-rust-sdk",
@@ -2633,7 +2616,6 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
- "alloy-contract",
  "alloy-primitives",
  "alloy-sol-types",
  "evm-utils",
@@ -2642,8 +2624,6 @@ dependencies = [
  "hex",
  "rand",
  "rstest",
- "serde",
- "serde_json",
  "shielder-circuits",
  "shielder-rust-sdk",
 ]
@@ -2838,7 +2818,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=624f6a8#624f6a80e672f7731f5b26ba7c2e18541b502099"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -2965,32 +2945,6 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "mockall"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39a6bfcc6c8c7eed5ee98b9c3e33adc726054389233e201c95dab2d41a3839d2"
-dependencies = [
- "cfg-if",
- "downcast",
- "fragile",
- "mockall_derive",
- "predicates",
- "predicates-tree",
-]
-
-[[package]]
-name = "mockall_derive"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25ca3004c2efe9011bd4e461bd8256445052b9615405b4f7ea43fc8ca5c20898"
-dependencies = [
- "cfg-if",
- "proc-macro2",
- "quote",
- "syn 2.0.89",
 ]
 
 [[package]]
@@ -3452,32 +3406,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77957b295656769bb8ad2b6a6b09d897d94f05c41b069aede1fcdaa675eaea04"
 dependencies = [
  "zerocopy",
-]
-
-[[package]]
-name = "predicates"
-version = "3.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e9086cc7640c29a356d1a29fd134380bee9d8f79a17410aa76e7ad295f42c97"
-dependencies = [
- "anstyle",
- "predicates-core",
-]
-
-[[package]]
-name = "predicates-core"
-version = "1.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae8177bee8e75d6846599c6b9ff679ed51e882816914eec639944d7c9aa11931"
-
-[[package]]
-name = "predicates-tree"
-version = "1.0.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41b740d195ed3166cd147c8047ec98db0e22ec019eb8eeb76d343b795304fb13"
-dependencies = [
- "predicates-core",
- "termtree",
 ]
 
 [[package]]
@@ -4443,7 +4371,7 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=624f6a8#624f6a80e672f7731f5b26ba7c2e18541b502099"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
 dependencies = [
  "console_error_panic_hook",
  "halo2_poseidon",
@@ -4467,9 +4395,7 @@ dependencies = [
 name = "shielder-cli"
 version = "0.1.0"
 dependencies = [
- "alloy-contract",
  "alloy-eips",
- "alloy-network",
  "alloy-primitives",
  "alloy-provider",
  "alloy-rpc-types-eth",
@@ -4479,7 +4405,6 @@ dependencies = [
  "clap",
  "content-encryption",
  "inquire",
- "rand",
  "reqwest",
  "serde",
  "serde_json",
@@ -4510,7 +4435,6 @@ dependencies = [
  "rand",
  "reqwest",
  "serde",
- "serde_json",
  "shielder-rust-sdk",
  "testcontainers",
  "tokio",
@@ -4538,7 +4462,6 @@ dependencies = [
  "hex",
  "lazy_static",
  "log",
- "mockall",
  "num-bigint",
  "rand",
  "secp256k1",
@@ -4547,7 +4470,6 @@ dependencies = [
  "shielder-circuits",
  "static_assertions",
  "thiserror 1.0.69",
- "tokio",
  "tracing",
 ]
 
@@ -4872,12 +4794,6 @@ dependencies = [
  "rustix",
  "windows-sys 0.59.0",
 ]
-
-[[package]]
-name = "termtree"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test-ts-conversions"
@@ -5264,7 +5180,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=624f6a8#624f6a80e672f7731f5b26ba7c2e18541b502099"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
 dependencies = [
  "halo2_proofs",
  "itertools 0.13.0",

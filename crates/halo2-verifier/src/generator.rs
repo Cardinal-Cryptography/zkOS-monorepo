@@ -35,22 +35,21 @@ pub fn main() {
     );
 }
 
-/// Generate verification key and proving key contracts for the given circuit type.
+/// Generate verifier contract for the given circuit type.
 fn handle_relation<PK: ProverKnowledge<Fr>>(full_params: Params, relation: &str) {
     println!("Generating {relation} relation contracts...");
-    let (verifier_solidity, vk_solidity) = generate_solidity_verification_bundle::<PK>(full_params);
+    let verifier_solidity = generate_solidity_verification_bundle::<PK>(full_params);
     save_contract_source(&format!("{relation}Verifier.sol"), &verifier_solidity);
-    save_contract_source(&format!("{relation}VerifyingKey.sol"), &vk_solidity);
 }
 
-/// Given trusted setup, generate Solidity code for the verification key and the verifier.
+/// Given trusted setup, generate Solidity code for the verifier with embedded verification key.
 fn generate_solidity_verification_bundle<PK: ProverKnowledge<Fr>>(
     full_parameters: ParamsKZG<Bn256>,
-) -> (String, String) {
+) -> String {
     let (parameters, _, _, vk) =
         generate_keys_with_min_k::<PK::Circuit>(full_parameters).expect("Failed to generate keys");
     SolidityGenerator::new(&parameters, &vk, Bdfg21, PK::PublicInput::COUNT)
-        .render_separately()
+        .render()
         .expect("Failed to generate separate contracts")
 }
 
@@ -99,7 +98,6 @@ mod test {
     /// Return an error if verifier fails on-chain.
     fn verify_with_contract(
         verifier_solidity: &str,
-        vk_solidity: &str,
         proof: &[u8],
         public_input: &[Fr],
     ) -> Result<u64, EvmRunnerError> {
@@ -107,10 +105,9 @@ mod test {
 
         // Deploy verifier and vk contracts
         let verifier_address = deploy_source_code(verifier_solidity, "Halo2Verifier", &mut evm);
-        let vk_address = deploy_source_code(vk_solidity, "Halo2VerifyingKey", &mut evm);
 
         // Call verifier contract
-        let calldata = verifier_contract::encode_calldata(vk_address, proof, public_input);
+        let calldata = verifier_contract::encode_calldata(proof, public_input);
         match evm.call(verifier_address, calldata, None, None) {
             Ok(SuccessResult {
                 gas_used, output, ..
@@ -130,7 +127,7 @@ mod test {
         let prover_knowledge = PK::random_correct_example(&mut rng);
         let public_input = prover_knowledge.serialize_public_input();
 
-        let (verifier_solidity, vk_solidity) =
+        let verifier_solidity =
             generate_solidity_verification_bundle::<PK>(full_parameters.clone());
 
         let (parameters, _, pk, _) =
@@ -138,7 +135,7 @@ mod test {
         let circuit = prover_knowledge.create_circuit();
         let proof = generate_proof(&parameters, &pk, circuit, &public_input, &mut rng);
 
-        let result = verify_with_contract(&verifier_solidity, &vk_solidity, &proof, &public_input);
+        let result = verify_with_contract(&verifier_solidity, &proof, &public_input);
         assert!(result.is_ok());
         assert!(result.unwrap() <= cost_upper_bound);
     }

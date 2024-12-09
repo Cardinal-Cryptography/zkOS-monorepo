@@ -9,12 +9,13 @@ MEM_SWP = ['0x140', '0x160', '0x180', '0x1a0', '0x1c0', '0x1e0', '0x200', '0x220
 ARG = ['0x080', '0x0a0', '0x0c0', '0x0e0', '0x100', '0x120', '0x140']
 
 
-def wrap_into_full_code(assembly_code, T):
+def wrap_into_full_code(assembly_code, T, function_comment):
     """Wrap the assembly code into a full Solidity contract."""
 
     return f"""
 pragma solidity 0.8.26;
 library Poseidon2T{T}Assembly {{
+    {function_comment}
     function hash(uint256[{T - 1}] memory) public pure returns (uint256) {{
         assembly {{
 
@@ -121,7 +122,7 @@ def store6(val, swap=False): return f'mstore({MEM_SWP[6] if swap else MEM[6]}, {
 def store7(val, swap=False): return f'mstore({MEM_SWP[7] if swap else MEM[7]}, {val})'
 
 
-def generate_code(init, full_round, partial_round, t, full_rounds, partial_rounds):
+def generate_code(init, full_round, partial_round, t, full_rounds, partial_rounds, function_comment):
     """Generate the full assembly code for the Poseidon hash function with given parameters and function generators."""
 
     code = init()
@@ -140,4 +141,4 @@ def generate_code(init, full_round, partial_round, t, full_rounds, partial_round
     # We assume that the result is stored in the first memory slot.
     code += f'return({MEM[0]}, 0x20)'
 
-    return wrap_into_full_code(code.split('\n'), t)
+    return wrap_into_full_code(code.split('\n'), t, function_comment)
