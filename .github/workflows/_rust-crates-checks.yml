@@ -31,6 +31,12 @@ jobs:
           name: contract-artifacts
           path: artifacts
 
+      - name: Download generated build cache
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-build-cache
+          path: cache
+
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
         with:
@@ -63,6 +69,9 @@ jobs:
       - name: Run integration tests
         run: make deps && cargo test --release -p integration-tests
 
+      - name: Run contract upgrade tests
+        run: forge test
+
   # Run heavy tests for shielder-relayer and e2e tooling tests.
   full-testing:
     name: Run heavy tests
@@ -85,6 +94,12 @@ jobs:
         with:
           name: contract-artifacts
           path: artifacts
+      
+      - name: Download generated build cache
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-build-cache
+          path: cache
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
