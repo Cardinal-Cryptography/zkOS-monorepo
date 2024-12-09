@@ -57,7 +57,7 @@ jobs:
           name: contract-artifacts
           path: artifacts
           retention-days: 1
-      
+
       - name: Upload generated build cache
         uses: actions/upload-artifact@v4
         with:

@@ -94,7 +94,7 @@ jobs:
         with:
           name: contract-artifacts
           path: artifacts
-      
+
       - name: Download generated build cache
         uses: actions/download-artifact@v4
         with:
