@@ -44,7 +44,7 @@ jobs:
              cd crates/integration-tests
              cargo run --bin gas-consumption -- ../../current-report.txt
 
-      - name: Print current measurements
+      - name: Print gas measured on the current branch
         run: cat current-report.txt
 
       #################### Run measurements on the main branch ####################
@@ -76,7 +76,7 @@ jobs:
           cd crates/integration-tests
           cargo run --bin gas-consumption -- ../../main-report.txt
 
-      - name: Print mian branch measurements
+      - name: Print gas measured on the `main` branch
         run: cat main-report.txt
 
       #################### Generate report ####################

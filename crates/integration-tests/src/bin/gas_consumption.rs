@@ -63,7 +63,7 @@ fn main() {
     let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
     let mut content: Vec<u8> = vec![];
 
-    content.extend(&mut format!("{} : {gas_used}\n", &calldata).as_bytes().iter());
+    content.extend(&mut format!("{}: {gas_used}\n", &calldata).as_bytes().iter());
 
     let calldata = Calldata::Deposit(
         deposit_native_calldata(&mut deployment, &mut shielder_account, amount).0,
@@ -71,7 +71,7 @@ fn main() {
 
     let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
 
-    content.extend(&mut format!("{} : {gas_used}\n", &calldata).as_bytes().iter());
+    content.extend(&mut format!("{}: {gas_used}\n", &calldata).as_bytes().iter());
 
     let calldata = Calldata::Withdraw(
         withdraw_native_calldata(
@@ -84,7 +84,7 @@ fn main() {
 
     let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
 
-    content.extend(&mut format!("{} : {gas_used}\n", &calldata).as_bytes().iter());
+    content.extend(&mut format!("{}: {gas_used}\n", &calldata).as_bytes().iter());
 
     file.write_all(&content).unwrap();
 }
