@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.26;
 
 import { DepositLimit } from "./DepositLimit.sol";
 import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as DepositVerifier } from "./DepositVerifier.sol";
 import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
-import { IArbSys } from "./IArbSys.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
+import { Nullifiers } from "./Nullifiers.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -21,6 +20,7 @@ contract Shielder is
     OwnableUpgradeable,
     PausableUpgradeable,
     MerkleTree,
+    Nullifiers,
     DepositLimit
 {
     // -- Constants --
@@ -44,33 +44,6 @@ contract Shielder is
     /// making withdrawals impossible. In the contract we can't control a single shielded balance,
     /// so we control the sum of balances instead.
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
-
-    /// The Arbitrum system precompile.
-    IArbSys private constant ARB_SYS_PRECOMPILE =
-        IArbSys(0x0000000000000000000000000000000000000064);
-
-    // -- Storage --
-
-    // keccak256(abi.encode(uint256(keccak256("zkos.storage.Shielder")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SHIELDER_LOCATION =
-        0x3bbf33a565e911db5d234e02706e28046f872b5d4014a1408daa2ad1e7661c00;
-
-    /// @custom:storage-location erc7201:zkos.storage.Shielder
-    struct ShielderStorage {
-        // Mapping from nullifier hash to the block at which it was revealed. Actually, the value will be the block number + 1,
-        // so that the default value 0 can be used to indicate that the nullifier has not been revealed.
-        mapping(uint256 => uint256) nullifiers;
-    }
-
-    function _getShielderStorage()
-        private
-        pure
-        returns (ShielderStorage storage $)
-    {
-        assembly {
-            $.slot := SHIELDER_LOCATION
-        }
-    }
 
     // -- Events --
     event NewAccountNative(
@@ -165,9 +138,8 @@ contract Shielder is
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
     {
-        ShielderStorage storage $ = _getShielderStorage();
         uint256 amount = msg.value;
-        if ($.nullifiers[idHash] != 0) revert DuplicatedNullifier();
+        if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
@@ -184,7 +156,7 @@ contract Shielder is
         if (!success) revert NewAccountVerificationFailed();
 
         uint256 index = _addNote(newNote);
-        registerNullifier(idHash);
+        _registerNullifier(idHash);
 
         emit NewAccountNative(CONTRACT_VERSION, idHash, amount, newNote, index);
     }
@@ -206,10 +178,9 @@ contract Shielder is
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
     {
-        ShielderStorage storage $ = _getShielderStorage();
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
-        if ($.nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
+        if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
@@ -229,7 +200,7 @@ contract Shielder is
         if (!success) revert DepositVerificationFailed();
 
         uint256 index = _addNote(newNote);
-        registerNullifier(oldNullifierHash);
+        _registerNullifier(oldNullifierHash);
 
         emit DepositNative(
             CONTRACT_VERSION,
@@ -255,13 +226,12 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     ) external whenNotPaused restrictContractVersion(expectedContractVersion) {
-        ShielderStorage storage $ = _getShielderStorage();
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
 
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
-        if ($.nullifiers[oldNullifierHash] != 0) revert DuplicatedNullifier();
+        if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](6);
@@ -285,7 +255,7 @@ contract Shielder is
         if (!success) revert WithdrawVerificationFailed();
 
         uint256 newNoteIndex = _addNote(newNote);
-        registerNullifier(oldNullifierHash);
+        _registerNullifier(oldNullifierHash);
 
         // return the tokens
         (bool nativeTransferSuccess, ) = withdrawAddress.call{
@@ -313,21 +283,8 @@ contract Shielder is
         );
     }
 
-    function registerNullifier(uint256 nullifier) private {
-        ShielderStorage storage $ = _getShielderStorage();
-        uint256 blockNumber = ARB_SYS_PRECOMPILE.arbBlockNumber();
-        $.nullifiers[nullifier] = blockNumber + 1;
-    }
-
     function addressToUInt256(address addr) public pure returns (uint256) {
         return uint256(uint160(addr));
-    }
-
-    // -- Getters ---
-
-    function nullifiers(uint256 nullifier) public view returns (uint256) {
-        ShielderStorage storage $ = _getShielderStorage();
-        return $.nullifiers[nullifier];
     }
 
     // -- Setters ---
