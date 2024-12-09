@@ -9,7 +9,7 @@ jobs:
   main:
     name: Measure circuits
     runs-on: ubuntu-20.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
 
       - name: Checkout code (from the current branch)
