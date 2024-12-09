@@ -32,6 +32,11 @@ jobs:
             contract-suite
           version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
 
+      - name: Install solc compiler
+        uses: ./.github/actions/install-solc
+        with:
+          solc-version: 0.8.26
+          
       #################### Run measurements on the current branch ####################
 
       - name: Generate all contracts
