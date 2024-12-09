@@ -53,8 +53,8 @@ Before you begin, ensure you have the following:
 Clone the repository and install the dependencies:
 
 ```bash
-git clone git@github.com:Cardinal-Cryptography/zkOS.git
-cd zkOS
+git clone git@github.com:Cardinal-Cryptography/zkOS-monorepo.git
+cd zkOS-monorepo
 make deps
 ```
 
