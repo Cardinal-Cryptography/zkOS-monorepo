@@ -1,5 +1,5 @@
 ---
-name: Measure circuits
+name: Measure gas
 
 on:
   workflow_dispatch:
