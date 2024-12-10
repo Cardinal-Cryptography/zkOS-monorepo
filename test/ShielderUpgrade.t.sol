@@ -49,7 +49,7 @@ contract ShielderUpgrade is Test {
         allowedErrors.push(
             "Deleted namespace `erc7201:zkos.storage.DepositLimit`"
         );
-        // this will revert because Shielder does not the 'mockStateVariable'
+        // this will revert because Shielder does not have the 'mockStateVariable'
         vm.expectRevert();
         CustomUpgrades.validateUpgradeWithErrors(
             "Shielder.sol:Shielder",
