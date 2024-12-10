@@ -27,7 +27,7 @@ contract ShielderUpgrade is Test {
 
     function testValidUpgrade() public {
         Options memory opts;
-        // OZ-Upgrades recognize deleting a namespace form a contract
+        // OZ-Upgrades recognize deleting a namespace from a contract
         // as a storage violaton.
         // We can ignore error for this specific namespace,
         // while keeping all other checks.
