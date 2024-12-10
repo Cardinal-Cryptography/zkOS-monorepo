@@ -8,6 +8,12 @@ license.workspace = true
 categories.workspace = true
 repository.workspace = true
 
+[lib]
+
+[[bin]]
+name = "gas-consumption"
+path = "src/bin/gas_consumption.rs"
+
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["json"] }
