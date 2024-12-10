@@ -29,52 +29,48 @@ jobs:
         with:
           solc-version: 0.8.26
 
+      - name: Build binary
+        run: cargo build -p integration-tests --bin gas-consumption --release
+
       #################### Run measurements on the current branch ####################
 
       - name: Install dependencies
         run: make deps
 
       - name: Generate all contracts
-        run: |
-          make deps
-          make generate-contracts
+        run: make generate-contracts
 
       - name: Run measure-circuits binary on the current branch
-        run: |
-             cd crates/integration-tests
-             cargo run --bin gas-consumption -- ../../current-report.txt
+        run: CONTRACTS_DIR="contracts" CARGO_MANIFEST_DIR=./Cargo.toml ./target/release/gas-consumption current-report.txt
 
       - name: Print gas measured on the current branch
         run: cat current-report.txt
 
       #################### Run measurements on the main branch ####################
 
-      # - name: Checkout repository from `main`
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref: main
-      #     path: main
+      - name: Checkout repository from `main`
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
 
-      # - name: Install dependencies
-      #   run: |
-      #     cd main
-      #     make deps
+      - name: Install dependencies
+        run: |
+          cd main
+          make deps
 
-      # - name: Generate all contracts
-      #   run: |
-      #     cd main
-      #     make generate-contracts
+      - name: Generate all contracts
+        run: |
+          cd main
+          make generate-contracts
+
+      - name: Run measure-circuits on the `main` branch
+        run: CONTRACTS_DIR="main/contracts" CARGO_MANIFEST_DIR=./main/Cargo.toml ./target/release/gas-consumption main-report.txt
 
       # - name: Run measure-circuits on the `main` branch
       #   run: |
       #     cd main/crates/integration-tests
       #     cargo run --bin gas-consumption -- ../../../main-report.txt
-
-      # TODO: temporary
-      - name: Run measure-circuits on the `main` branch
-        run: |
-          cd crates/integration-tests
-          cargo run --bin gas-consumption -- ../../main-report.txt
 
       - name: Print gas measured on the `main` branch
         run: cat main-report.txt
