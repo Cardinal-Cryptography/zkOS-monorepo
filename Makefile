@@ -49,7 +49,8 @@ compile-contracts: generate-verifier-contracts generate-poseidon-contracts
 deploy-contracts: # Deploy solidity contracts
 deploy-contracts:
 ifeq ($(NETWORK),anvil)
-	PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
+	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
+	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
 else
 	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
 endif
