@@ -1,6 +1,6 @@
 NETWORK ?= anvil
 PRIVATE_KEY ?= 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 # pkey of the dev account `0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E` prefunded with ETH on all networks
-PUBLIC_ADDRESS ?= 0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E # public address of the `PRIVATE_KEY`
+PUBLIC_ADDRESS ?= $(shell cast wallet address $(PRIVATE_KEY)) # public address of the `PRIVATE_KEY`
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
