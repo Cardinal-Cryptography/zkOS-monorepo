@@ -24,10 +24,10 @@ def calculate_differences(main_data, current_data):
 
 def generate_html_report(differences):
     # Generate single-line HTML content without formatting
-    html_content = "<table>"
+    html_content = "<table><tr><th>Transaction Name</th><th>Main</th><th>Current</th><th>Difference (%)</th></tr>"
     for name, main, current, diff in differences:
         sign = '+' if diff > 0 else '-' if diff < 0 else ''
-        diff_value = f"{sign}{abs(diff):.2f}%"
+        diff_value = f"{sign}{abs(diff):.5f}%"
         html_content += f"<tr><td>{name}</td><td>{main}</td><td>{current}</td><td>{diff_value}</td></tr>"
     html_content += "</table>"
     return html_content
@@ -41,7 +41,7 @@ def main():
     differences = calculate_differences(main_data, current_data)
 
     html_report = generate_html_report(differences)
-    
+
     with open('report.html', 'w') as report_file:
         report_file.write(html_report)
 

@@ -96,5 +96,5 @@ jobs:
         uses: thollander/actions-comment-pull-request@v3
         with:
           file-path: report.html
-          comment-tag: gas-measurements-diff
+          comment-tag: hashFiles('report.html')
 
