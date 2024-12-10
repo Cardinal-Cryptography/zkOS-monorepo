@@ -83,7 +83,7 @@ library CustomUpgrades {
         string[] memory allowedErrors
     ) internal {
         Options memory opts;
-        upgradeProxyWithErrors(proxy, contractName, data, opts, allowedErrors);
+        upgradeProxyWithErrors(proxy, contractName, data, allowedErrors, opts);
     }
 }
 
