@@ -8,8 +8,13 @@ license.workspace = true
 categories.workspace = true
 repository.workspace = true
 
+[lib]
+
+[[bin]]
+name = "gas-consumption"
+path = "src/bin/gas_consumption.rs"
+
 [dependencies]
-alloy-contract = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["json"] }
 evm-utils = { workspace = true }
@@ -18,7 +23,5 @@ halo2_solidity_verifier = { workspace = true }
 hex = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rstest = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
 shielder-circuits = { workspace = true }
 shielder-rust-sdk = { workspace = true, features = ["account", "contract", "conversion", "parameter_generation", "powers_of_tau", "permit2"] }

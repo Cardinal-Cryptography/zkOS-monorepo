@@ -61,3 +61,45 @@ jobs:
           path: shielder_address.txt
           include-hidden-files: true
           retention-days: 14
+
+      - name: Create a JSON with address
+        run: |
+          echo -n $(cat shielder_address.txt | xargs) | jq -Rs '{ shielder: . }' \
+            > evm_addresses.json
+
+      - name: Prepare contract_spec JSON
+        uses: Cardinal-Cryptography/github-actions/generate-contract-spec@v6
+        with:
+          src-files: |-
+            evm_addresses.json|evm_
+          dst-file: contract_spec.json
+          spec-version: "0.1"
+          contract-version: "${{ github.sha }}"
+
+      - name: Add block numbers to contract_spec JSON
+        shell: bash
+        run: |
+          cat contract_spec.json | \
+            jq ".start_blocks = { evm: \"$(cat shielder_block_number.txt)\" }" \
+            > contract_spec_with_block_numbers.json
+
+          cat contract_spec_with_block_numbers.json
+
+      # yamllint disable rule:line-length
+      - name: Store addresses in S3 bucket
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+        run: |
+          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/l2_dev.json
+
+      - name: Store artifact in S3 bucket
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+        run: |
+          aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
