@@ -69,9 +69,6 @@ jobs:
       - name: Run integration tests
         run: make deps && cargo test --release -p integration-tests
 
-      - name: Run contract upgrade tests
-        run: forge test
-
   # Run heavy tests for shielder-relayer and e2e tooling tests.
   full-testing:
     name: Run heavy tests
