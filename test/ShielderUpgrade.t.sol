@@ -44,18 +44,22 @@ contract ShielderUpgrade is Test {
     function testInvalidUpgrade() public {
         Options memory opts;
         opts.referenceContract = "ShielderV2Mock.sol:ShielderV2Mock";
-        // this is not necessary becaue we add this namespace but
-        // it is kept for consistency
+        // this is not necessary becaue we add this namespace is added
+        // when "upgrading" from `ShielderV2Mock` to `Shielder`
         allowedErrors.push(
             "Deleted namespace `erc7201:zkos.storage.DepositLimit`"
         );
-        // this will revert because Shielder does not have the 'mockStateVariable'
+        // this is expected to revert because `Shielder`
+        // does not have the 'mockStateVariable'
         vm.expectRevert();
         CustomUpgrades.validateUpgradeWithErrors(
             "Shielder.sol:Shielder",
             opts,
             allowedErrors
         );
+        // allowing the `mockStateVariable` to be deleted
+        // the validation below will not revert showing that
+        // it was the only validation error
         allowedErrors.push("Deleted `mockStateVariable`");
         CustomUpgrades.validateUpgradeWithErrors(
             "Shielder.sol:Shielder",
