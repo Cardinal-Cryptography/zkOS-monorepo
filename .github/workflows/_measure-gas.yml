@@ -73,11 +73,6 @@ jobs:
           export CARGO_MANIFEST_DIR=./main/Cargo.toml
           ./target/release/gas-consumption main-report.txt
 
-      # - name: Run measure-circuits on the `main` branch
-      #   run: |
-      #     cd main/crates/integration-tests
-      #     cargo run --bin gas-consumption -- ../../../main-report.txt
-
       - name: Print gas measured on the `main` branch
         run: cat main-report.txt
 
