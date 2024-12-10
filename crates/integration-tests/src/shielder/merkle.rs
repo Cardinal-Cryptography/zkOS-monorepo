@@ -1,17 +1,8 @@
-use std::assert_matches::assert_matches;
-
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{SolCall, SolValue};
 use evm_utils::EvmRunner;
-use rstest::rstest;
 use shielder_circuits::consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT};
 use shielder_rust_sdk::contract::ShielderContract::getMerklePathCall;
-
-use crate::shielder::{
-    calls::new_account_native,
-    deploy::{deployment, Deployment},
-    invoke_shielder_call,
-};
 
 pub fn get_merkle_args(
     shielder_address: Address,
@@ -44,18 +35,34 @@ fn reorganize_merkle_path(merkle_path: Vec<U256>) -> (U256, [[U256; ARITY]; NOTE
     (root, result)
 }
 
-#[rstest]
-fn succeeds(mut deployment: Deployment) {
-    assert!(new_account_native::create_account_and_call(
-        &mut deployment,
-        U256::from(1),
-        U256::from(10)
-    )
-    .is_ok());
+#[cfg(test)]
+mod tests {
 
-    let calldata = getMerklePathCall { id: U256::ZERO };
-    let result = invoke_shielder_call(&mut deployment, &calldata, None);
+    use std::assert_matches::assert_matches;
 
-    assert_matches!(result, Ok(_));
-    assert!(result.unwrap().0.is_empty())
+    use alloy_primitives::U256;
+    use rstest::rstest;
+    use shielder_rust_sdk::contract::ShielderContract::getMerklePathCall;
+
+    use crate::shielder::{
+        calls::new_account_native,
+        deploy::{deployment, Deployment},
+        invoke_shielder_call,
+    };
+
+    #[rstest]
+    fn succeeds(mut deployment: Deployment) {
+        assert!(new_account_native::create_account_and_call(
+            &mut deployment,
+            U256::from(1),
+            U256::from(10)
+        )
+        .is_ok());
+
+        let calldata = getMerklePathCall { id: U256::ZERO };
+        let result = invoke_shielder_call(&mut deployment, &calldata, None);
+
+        assert_matches!(result, Ok(_));
+        assert!(result.unwrap().0.is_empty())
+    }
 }

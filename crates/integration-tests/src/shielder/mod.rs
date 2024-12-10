@@ -3,20 +3,20 @@ use std::str::FromStr;
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{SolCall, SolEventInterface, SolInterface};
 use deploy::{
-    deployment, Deployment, ACTOR_ADDRESS, ACTOR_INITIAL_BALANCE, DEPLOYER_ADDRESS,
-    RECIPIENT_ADDRESS, RECIPIENT_INITIAL_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_BALANCE,
+    Deployment, ACTOR_ADDRESS, ACTOR_INITIAL_BALANCE, DEPLOYER_ADDRESS, RECIPIENT_ADDRESS,
+    RECIPIENT_INITIAL_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
 use shielder_rust_sdk::contract::ShielderContract::{
     unpauseCall, ShielderContractErrors, ShielderContractEvents,
 };
 
-mod address_conversion;
+pub mod address_conversion;
 pub mod calls;
 pub mod deploy;
-mod erc1967proxy;
-mod limits;
-mod merkle;
+pub mod erc1967proxy;
+pub mod limits;
+pub mod merkle;
 
 fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     evm.call(
@@ -63,26 +63,26 @@ pub fn invoke_shielder_call(
     Ok((events, success_result))
 }
 
-fn get_balance(deployment: &Deployment, address: &str) -> U256 {
+pub fn get_balance(deployment: &Deployment, address: &str) -> U256 {
     deployment
         .evm
         .get_balance(Address::from_str(address).unwrap())
         .unwrap()
 }
 
-fn actor_balance_decreased_by(deployment: &Deployment, amount: U256) -> bool {
-    get_balance(&deployment, ACTOR_ADDRESS) == ACTOR_INITIAL_BALANCE - amount
+pub fn actor_balance_decreased_by(deployment: &Deployment, amount: U256) -> bool {
+    get_balance(deployment, ACTOR_ADDRESS) == ACTOR_INITIAL_BALANCE - amount
 }
 
-fn recipient_balance_increased_by(deployment: &Deployment, amount: U256) -> bool {
-    get_balance(&deployment, RECIPIENT_ADDRESS) == RECIPIENT_INITIAL_BALANCE + amount
+pub fn recipient_balance_increased_by(deployment: &Deployment, amount: U256) -> bool {
+    get_balance(deployment, RECIPIENT_ADDRESS) == RECIPIENT_INITIAL_BALANCE + amount
 }
 
-fn relayer_balance_increased_by(deployment: &Deployment, amount: U256) -> bool {
-    get_balance(&deployment, RELAYER_ADDRESS) == RELAYER_INITIAL_BALANCE + amount
+pub fn relayer_balance_increased_by(deployment: &Deployment, amount: U256) -> bool {
+    get_balance(deployment, RELAYER_ADDRESS) == RELAYER_INITIAL_BALANCE + amount
 }
 
-fn destination_balances_unchanged(deployment: &Deployment) -> bool {
+pub fn destination_balances_unchanged(deployment: &Deployment) -> bool {
     recipient_balance_increased_by(deployment, U256::ZERO)
         && relayer_balance_increased_by(deployment, U256::ZERO)
 }

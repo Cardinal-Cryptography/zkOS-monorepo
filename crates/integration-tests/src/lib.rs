@@ -1,4 +1,3 @@
-// #![cfg(test)]
 #![feature(assert_matches)]
 
 use std::{fs::File, io::Read};
@@ -8,11 +7,12 @@ use evm_utils::{compilation::source_to_bytecode, EvmRunner};
 
 mod permit2;
 mod poseidon2;
-pub mod proving_utils;
-pub mod shielder;
+mod proving_utils;
+mod shielder;
 mod token;
 mod verifier;
 
+pub use permit2::*;
 pub use proving_utils::*;
 pub use shielder::*;
 
