@@ -16,3 +16,6 @@ contracts/Poseidon2T8Assembly.sol
 tooling-dev/*
 !tooling-dev/Makefile
 !tooling-dev/README.md
+
+shielder_address.txt
+shielder_block_number.txt
