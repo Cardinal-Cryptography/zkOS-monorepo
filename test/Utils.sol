@@ -68,8 +68,8 @@ library CustomUpgrades {
         address proxy,
         string memory contractName,
         bytes memory data,
-        Options memory opts,
-        string[] memory allowedErrors
+        string[] memory allowedErrors,
+        Options memory opts
     ) internal {
         validateUpgradeWithErrors(contractName, opts, allowedErrors);
         address newImpl = Core.deploy(contractName, opts.constructorData, opts);
