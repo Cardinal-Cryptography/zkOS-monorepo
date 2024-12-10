@@ -1,3 +1,4 @@
+import { expect } from "@playwright/test";
 import { getChainConfig, getRelayerConfig } from "@tests/chain/config";
 import { sdkTest } from "@tests/playwrightTestUtils";
 
@@ -8,7 +9,7 @@ sdkTest("sync after withdraw w/ client", async ({ workerPage }) => {
   const relayerConfig = getRelayerConfig();
   const privateKeyAlice = generatePrivateKey();
 
-  await workerPage.evaluate(
+  const isGood = await workerPage.evaluate(
     async ({ chainConfig, relayerConfig, privateKeyAlice }) => {
       // setup
       const { alicePublicAccount, shielderClient, aliceSendTransaction } =
@@ -33,7 +34,11 @@ sdkTest("sync after withdraw w/ client", async ({ workerPage }) => {
       const withdrawAmount = 10n ** 18n;
       const addressTo = "0x0000000000000000000000000000000000000001";
       const quotedFees = await shielderClient.getWithdrawFees();
-      await shielderClient.withdraw(withdrawAmount, quotedFees.totalFee, addressTo);
+      await shielderClient.withdraw(
+        withdrawAmount,
+        quotedFees.totalFee,
+        addressTo,
+      );
 
       if (
         (await shielderClient.accountState()).balance !=
@@ -44,6 +49,7 @@ sdkTest("sync after withdraw w/ client", async ({ workerPage }) => {
     },
     { chainConfig, relayerConfig, privateKeyAlice },
   );
+  expect(isGood).toBe(true);
 });
 
 sdkTest("sync after withdraw w/o client", async ({ workerPage }) => {
@@ -51,7 +57,7 @@ sdkTest("sync after withdraw w/o client", async ({ workerPage }) => {
   const relayerConfig = getRelayerConfig();
   const privateKeyAlice = generatePrivateKey();
 
-  await workerPage.evaluate(
+  const isGood = await workerPage.evaluate(
     async ({ chainConfig, relayerConfig, privateKeyAlice }) => {
       // setup
       const {
@@ -96,7 +102,7 @@ sdkTest("sync after withdraw w/o client", async ({ workerPage }) => {
         addressTo,
         "0x000001",
       );
-      //
+
       const withdrawResponse = await relayer!.withdraw(
         withdrawCalldata.expectedContractVersion,
         window.crypto.scalar.scalarToBigint(
@@ -132,4 +138,5 @@ sdkTest("sync after withdraw w/o client", async ({ workerPage }) => {
     },
     { chainConfig, relayerConfig, privateKeyAlice },
   );
+  expect(isGood).toBe(true);
 });
