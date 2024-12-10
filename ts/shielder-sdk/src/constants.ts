@@ -12,3 +12,4 @@ export const feePath = "/quote_fees";
  * Originally they have ~2M gas limit, but we set it to 3M to be safe
  */
 export const shieldActionGasLimit = 3_000_000n;
+export const storageSchemaVersion = 1;
