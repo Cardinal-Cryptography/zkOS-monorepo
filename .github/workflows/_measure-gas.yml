@@ -42,7 +42,9 @@ jobs:
 
       - name: Run measure-circuits binary on the current branch
         run: |
-          CONTRACTS_DIR="contracts" CARGO_MANIFEST_DIR=./Cargo.toml ./target/release/gas-consumption current-report.txt
+          export CONTRACTS_DIR="contracts"
+          export CARGO_MANIFEST_DIR=./Cargo.toml
+          ./target/release/gas-consumption current-report.txt
 
       - name: Print gas measured on the current branch
         run: cat current-report.txt
@@ -67,7 +69,9 @@ jobs:
 
       - name: Run measure-circuits on the `main` branch
         run: |
-          CONTRACTS_DIR="main/contracts" CARGO_MANIFEST_DIR=./main/Cargo.toml ./target/release/gas-consumption main-report.txt
+          export CONTRACTS_DIR="main/contracts"
+          export CARGO_MANIFEST_DIR=./main/Cargo.toml
+          ./target/release/gas-consumption main-report.txt
 
       # - name: Run measure-circuits on the `main` branch
       #   run: |
