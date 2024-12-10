@@ -2,8 +2,8 @@
 pragma solidity 0.8.26;
 
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { MerkleTree } from "../MerkleTree.sol";
-import { Nullifiers } from "../Nullifiers.sol";
+import { MerkleTree } from "./MerkleTree.sol";
+import { Nullifiers } from "./Nullifiers.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";

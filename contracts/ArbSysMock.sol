@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IArbSys } from "../IArbSys.sol";
+import { IArbSys } from "./IArbSys.sol";
 
 /**
  * Mock implementation of ArbSys for testing purposes.

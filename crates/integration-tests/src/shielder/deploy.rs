@@ -136,7 +136,7 @@ pub fn deployment(
 
 /// Deploy ERC20 token contract
 fn deploy_token(evm: &mut EvmRunner, caller: Address) -> Address {
-    let solidity_code = read_contract("mocks/Token.sol");
+    let solidity_code = read_contract("Token.sol");
     let compiled_bytecode = source_to_bytecode(solidity_code, "Token", true);
 
     let constructor_calldata = token::constructor_calldata(U256::from(1000000));
