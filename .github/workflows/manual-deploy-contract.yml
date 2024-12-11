@@ -69,8 +69,6 @@ jobs:
 
       - name: Deploy contracts
         run: |
-          OWNER_ADDRESS=${{ env.OWNER_ADDRESS }} \
-          PRIVATE_KEY=${{ env.PRIVATE_KEY }} \
           NETWORK=https://rpc.alephzero-testnet.gelato.digital \
           make deploy-contracts
 
