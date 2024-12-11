@@ -115,7 +115,6 @@ contract Shielder is
     /// @dev disable possibility to renounce ownership
     function renounceOwnership() public virtual override onlyOwner {}
 
-
     function pause() external onlyOwner {
         _pause();
     }
