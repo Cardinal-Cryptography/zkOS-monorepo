@@ -72,13 +72,6 @@ native_token = []
 parameter_generation = [
     "rand"
 ]
-permit2 = [
-    "alloy-primitives",
-    "alloy-sol-types",
-    "hex",
-    "lazy_static",
-    "secp256k1",
-]
 eip_155 = []
 powers_of_tau = [
     "byteorder",

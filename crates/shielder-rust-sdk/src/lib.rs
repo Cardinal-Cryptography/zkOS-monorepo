@@ -70,10 +70,6 @@ pub mod contract;
 #[cfg(feature = "powers_of_tau")]
 pub mod powers_of_tau;
 
-/// Utilities for interacting with the Permit2 contract.
-#[cfg(feature = "permit2")]
-pub mod permit2;
-
 /// Local shielder account management.
 #[cfg(feature = "account")]
 pub mod account;
