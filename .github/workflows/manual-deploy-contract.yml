@@ -21,8 +21,7 @@ jobs:
     steps:
       - name: Print environment
         run: |
-          echo "Environment:"
-          echo ${{ github.event.inputs.environment }}
+          echo "Environment:\"${{ github.event.inputs.environment }}\""
 
       - name: GIT | Checkout
         uses: actions/checkout@v4
@@ -49,10 +48,10 @@ jobs:
       - name: Install deps
         run: make deps
 
+      # for "testnet-dev" we use default owner address, as it's not important
       - name: Set environment-specific variables
         run: |
           if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
-            echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_ALICE_PUBLIC_KEY }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "testnet-stage" ]; then
             echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
