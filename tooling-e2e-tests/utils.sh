@@ -57,11 +57,10 @@ mtzero() {
 ####################################################################################################
 #### CONTRACTS #####################################################################################
 ####################################################################################################
-# we don't care about owner, so we use ${ALICE_PUBLIC_KEY} as owner placeholder
 deploy_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
     PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
-    OWNER_ADDRESS="${ALICE_PUBLIC_KEY}" \
+    OWNER_ADDRESS="$(cast wallet address ${DEPLOYER_PRIVATE_KEY})" \
     forge script DeployShielderScript \
       --rpc-url "${NODE_RPC_URL}" \
       --broadcast \
