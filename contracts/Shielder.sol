@@ -2,13 +2,13 @@
 pragma solidity 0.8.26;
 
 import { DepositLimit } from "./DepositLimit.sol";
-import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as DepositVerifier } from "./DepositVerifier.sol";
+import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
 import { Nullifiers } from "./Nullifiers.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
@@ -18,7 +18,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 contract Shielder is
     Initializable,
     UUPSUpgradeable,
-    OwnableUpgradeable,
+    Ownable2StepUpgradeable,
     PausableUpgradeable,
     MerkleTree,
     Nullifiers,
@@ -98,9 +98,6 @@ contract Shielder is
         _disableInitializers();
     }
 
-    /// @dev disable possibility to renounce ownership
-    function renounceOwnership() public virtual override onlyOwner {}
-
     function initialize(
         address initialOwner,
         uint256 _depositLimit
@@ -114,6 +111,9 @@ contract Shielder is
 
     /// @dev required by the OZ UUPS module
     function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    /// @dev disable possibility to renounce ownership
+    function renounceOwnership() public virtual override onlyOwner {}
 
     function pause() external onlyOwner {
         _pause();
