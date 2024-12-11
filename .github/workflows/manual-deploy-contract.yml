@@ -16,13 +16,9 @@ on:
 
 jobs:
   deploy-contracts:
-    name: Deploy contracts on testnet
+    name: Deploy contracts on ${{ github.event.inputs.environment }}
     runs-on: [self-hosted, Linux, X64, medium]
     steps:
-      - name: Print environment
-        run: |
-          echo "Environment:\"${{ github.event.inputs.environment }}\""
-
       - name: GIT | Checkout
         uses: actions/checkout@v4
 
