@@ -5,14 +5,11 @@ use std::{env, fs::File, io::Read};
 use alloy_primitives::Address;
 use evm_utils::{compilation::source_to_bytecode, EvmRunner};
 
-mod permit2;
 mod poseidon2;
 mod proving_utils;
 mod shielder;
-mod token;
 mod verifier;
 
-pub use permit2::*;
 pub use proving_utils::*;
 pub use shielder::*;
 

@@ -42,7 +42,7 @@ lint-contracts:
 
 .PHONY: compile-contracts
 compile-contracts: # Compile solidity contracts
-compile-contracts: generate-verifier-contracts generate-poseidon-contracts
+compile-contracts: deps generate-contracts
 	forge clean && forge build
 
 .PHONY: deploy-contracts
@@ -71,6 +71,11 @@ generate-verifier-contracts:
 .PHONY: generate-contracts
 generate-contracts: # Generate poseidon & relation verifier contracts
 generate-contracts: generate-poseidon-contracts generate-verifier-contracts
+
+.PHONY: measure-gas
+measure-gas: # measure shielder gas usage
+measure-gas: compile-contracts
+	CONTRACTS_DIR=contracts CARGO_MANIFEST_DIR=./Cargo.toml cargo run -p integration-tests --bin gas-consumption --release -- current-report.txt
 
 .PHONY: format-rust
 format-rust: # Format all rust crates
