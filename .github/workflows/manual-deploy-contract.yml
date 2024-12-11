@@ -45,7 +45,6 @@ jobs:
         run: make deps
 
       - name: Set environment-specific variables
-        id: set-env-vars
         run: |
           if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
             echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_ALICE_PUBLIC_KEY }}" >> $GITHUB_ENV
@@ -113,21 +112,35 @@ jobs:
 
           cat contract_spec_with_block_numbers.json
 
-      # yamllint disable rule:line-length
-      # - name: Store addresses in S3 bucket
-      #   shell: bash
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
-      #     AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
-      #   run: |
-      #     aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/l2_dev.json
+      - name: Determine address to store
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
+            echo "ADDRESSES_S3_PATH=testnet/dev.json" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "testnet-stage" ]; then
+            echo "ADDRESSES_S3_PATH=testnet/stage.json" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "mainnet-prod" ]; then
+            echo "ADDRESSES_S3_PATH=mainnet/prod.json" >> $GITHUB_ENV
+          else
+            echo "Invalid environment selected!" >&2
+            exit 1
+          fi
 
-      # - name: Store artifact in S3 bucket
-      #   shell: bash
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
-      #     AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
-      #   run: |
-      #     aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
+      # yamllint disable rule:line-length
+      - name: Store addresses in S3 bucket
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+        run: |
+          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/${{ env.ADDRESSES_S3_PATH }}
+          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/${{ env.ADDRESSES_S3_PATH }}
+
+      - name: Store artifact in S3 bucket
+        shell: bash
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+        run: |
+          aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
