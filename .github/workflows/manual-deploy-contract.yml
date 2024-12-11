@@ -48,13 +48,13 @@ jobs:
         id: set-env-vars
         run: |
           if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
-            echo "OWNER_ADDRESS=${{ secrets.CI_TESTNET_ALICE_PUBLIC_KEY }}" >> $GITHUB_ENV
+            echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_ALICE_PUBLIC_KEY }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "testnet-stage" ]; then
-            echo "OWNER_ADDRESS=${{ secrets.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
+            echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "mainnet-prod" ]; then
-            echo "OWNER_ADDRESS=${{ secrets.MAINNET_PROD_OWNER_ADDRESS }}" >> $GITHUB_ENV
+            echo "OWNER_ADDRESS=${{ vars.MAINNET_PROD_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_MAINNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
           else
             echo "Invalid environment selected!" >&2
