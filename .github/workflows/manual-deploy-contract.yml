@@ -21,7 +21,9 @@ jobs:
     runs-on: [self-hosted, Linux, X64, medium]
     steps:
       - name: Print environment
-        run: echo "Environment: ${{ github.event.inputs.environment }}"
+        run: |
+          echo "Environment:"
+          echo ${{ github.event.inputs.environment }}
 
       - name: GIT | Checkout
         uses: actions/checkout@v4
