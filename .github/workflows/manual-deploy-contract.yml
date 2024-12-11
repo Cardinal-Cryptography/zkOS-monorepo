@@ -1,8 +1,18 @@
 ---
-name: "[TESTNET] Deploy contracts"
+name: "Manually Deploy contracts"
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "testnet-dev"
+        type: choice
+        options:
+          - "testnet-dev"
+          - "testnet-stage"
+          - "mainnet-prod"
 
 jobs:
   deploy-contracts:
@@ -34,12 +44,30 @@ jobs:
       - name: Install deps
         run: make deps
 
+      - name: Set environment-specific variables
+        id: set-env-vars
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
+            echo "OWNER_ADDRESS=${{ secrets.CI_TESTNET_ALICE_PUBLIC_KEY }}" >> $GITHUB_ENV
+            echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "testnet-stage" ]; then
+            echo "OWNER_ADDRESS=${{ secrets.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
+            echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "mainnet-prod" ]; then
+            echo "OWNER_ADDRESS=${{ secrets.MAINNET_PROD_OWNER_ADDRESS }}" >> $GITHUB_ENV
+            echo "PRIVATE_KEY=${{ secrets.CI_MAINNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
+          else
+            echo "Invalid environment selected!" >&2
+            exit 1
+          fi
+
       - name: Compile eth contracts
         run: make compile-contracts
 
       - name: Deploy contracts
         run: |
-          PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }} \
+          OWNER_ADDRESS=${{ env.OWNER_ADDRESS }} \
+          PRIVATE_KEY=${{ env.PRIVATE_KEY }} \
           NETWORK=https://rpc.alephzero-testnet.gelato.digital \
           make deploy-contracts
 
@@ -86,20 +114,20 @@ jobs:
           cat contract_spec_with_block_numbers.json
 
       # yamllint disable rule:line-length
-      - name: Store addresses in S3 bucket
-        shell: bash
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
-        run: |
-          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/l2_dev.json
+      # - name: Store addresses in S3 bucket
+      #   shell: bash
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
+      #     AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+      #   run: |
+      #     aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/l2_dev.json
 
-      - name: Store artifact in S3 bucket
-        shell: bash
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
-        run: |
-          aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
+      # - name: Store artifact in S3 bucket
+      #   shell: bash
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ARTIFACTS_RW_AWS_SECRET_ACCESS_KEY }}
+      #     AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+      #   run: |
+      #     aws s3 cp artifacts/Shielder.sol/Shielder.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/artifacts/${{ github.sha }}/eth_shielder/
