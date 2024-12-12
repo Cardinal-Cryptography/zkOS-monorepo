@@ -40,7 +40,7 @@ runs:
         repository: Cardinal-Cryptography/aleph-apps
         token: ${{ inputs.github-token }}
         path: "aleph-apps"
-        ref: main
+        ref: ZK-612-add-shielder-relayer-for-stage
 
     - name: KUSTOMIZE | Init kustomize
       uses: imranismail/setup-kustomize@v2
