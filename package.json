@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "ZK contracts",
     "author": "CardinalCryptography",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "dependencies": {
         "@openzeppelin/contracts": "=5.0.2",
         "@openzeppelin/contracts-upgradeable": "=5.0.2",
