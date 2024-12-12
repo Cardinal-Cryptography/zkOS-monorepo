@@ -51,28 +51,16 @@ jobs:
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
             echo "NETWORK=https://rpc.alephzero-testnet.gelato.digital" >> $GITHUB_ENV
             echo "EXPLORER_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
-            
-            echo "ADDRESSES_S3_PATH=testnet/dev.json" >> $GITHUB_ENV
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "stage" ]; then
             echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
             echo "NETWORK=https://rpc.alephzero-testnet.gelato.digital" >> $GITHUB_ENV
             echo "EXPLORER_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
-
-            echo "ADDRESSES_S3_PATH=testnet/stage.json" >> $GITHUB_ENV
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "prod" ]; then
             echo "OWNER_ADDRESS=${{ vars.MAINNET_PROD_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_MAINNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
             echo "NETWORK=https://rpc.alephzero.raas.gelato.cloud" >> $GITHUB_ENV
             echo "EXPLORER_URL=https://evm-explorer.alephzero.org/api" >> $GITHUB_ENV
-
-            echo "ADDRESSES_S3_PATH=mainnet/prod.json" >> $GITHUB_ENV
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
           else
             echo "Invalid environment selected!" >&2
             exit 1
@@ -128,13 +116,40 @@ jobs:
           cat contract_spec_with_block_numbers.json
 
       # yamllint disable rule:line-length
-      - name: Store addresses in S3 bucket
+      - name: Store addresses in S3 bucket (dev)
+        if: ${{ inputs.environment == 'dev' }}
         shell: bash
         env:
           AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
         run: |
-          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/${{ env.ADDRESSES_S3_PATH }}
-          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/${{ env.ADDRESSES_S3_PATH }}
+          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/dev.json
+          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/dev-broadcast.json
+
+      # yamllint disable rule:line-length
+      - name: Store addresses in S3 bucket (stage)
+        if: ${{ inputs.environment == 'stage' }}
+        shell: bash
+        env:
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/stage.json
+          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/stage-broadcast.json
+
+      # yamllint disable rule:line-length
+      - name: Store addresses in S3 bucket (prod)
+        if: ${{ inputs.environment == 'prod' }}
+        shell: bash
+        env:
+          AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/mainnet/prod.json
+          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/mainnet/prod-broadcast.json
 
       - name: Store artifact in S3 bucket
         shell: bash
