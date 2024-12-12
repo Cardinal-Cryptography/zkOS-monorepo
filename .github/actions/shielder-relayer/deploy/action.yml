@@ -49,6 +49,7 @@ runs:
 
     - name: Modify shielder address in the config map
       if: ${{ inputs.overwrite-shielder-address != '' }}
+      shell: bash
       run: |
         cat shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1/configmap.yaml | \
           yq '.data.SHIELDER_CONTRACT_ADDRESS="${{ inputs.overwrite-shielder-address }}"'
@@ -61,15 +62,15 @@ runs:
         cd aleph-apps/shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1
         kustomize edit set image "shielder-relayer-image-placeholder=${{ env.DEPLOY_IMAGE }}"
 
-    - name: GIT | Commit changes to aleph-apps repository
-      uses: EndBug/add-and-commit@v9.1.4
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      with:
-        author_name: ${{ inputs.autocommit-author }}
-        author_email: ${{ inputs.autocommit-email }}
-        message: >
-          Updating shielder-relayer ${{ inputs.environment }}
-          docker image tag: ${{ inputs.image-tag }}
-        add: "*.yaml"
-        cwd: 'aleph-apps'
+    #- name: GIT | Commit changes to aleph-apps repository
+    #  uses: EndBug/add-and-commit@v9.1.4
+    #  env:
+    #    GITHUB_TOKEN: ${{ inputs.github-token }}
+    #  with:
+    #    author_name: ${{ inputs.autocommit-author }}
+    #    author_email: ${{ inputs.autocommit-email }}
+    #    message: >
+    #      Updating shielder-relayer ${{ inputs.environment }}
+    #      docker image tag: ${{ inputs.image-tag }}
+    #    add: "*.yaml"
+    #    cwd: 'aleph-apps'
