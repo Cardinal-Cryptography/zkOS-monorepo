@@ -12,8 +12,9 @@ contract DeployShielderScript is Script {
     function run() external {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
 
-        address owner = vm.addr(privateKey);
-        console2.log("Using", owner, "as broadcaster");
+        address owner = vm.envAddress("OWNER_ADDRESS");
+        address broadcaster = vm.addr(privateKey);
+        console2.log("Using", broadcaster, "as broadcaster");
 
         vm.startBroadcast(privateKey);
 
@@ -34,7 +35,9 @@ contract DeployShielderScript is Script {
         Shielder shielder = Shielder(proxy);
 
         console2.log("Shielder deployed at:", address(shielder));
-        shielder.unpause();
+        if (owner == broadcaster) {
+            shielder.unpause();
+        }
 
         vm.stopBroadcast();
     }

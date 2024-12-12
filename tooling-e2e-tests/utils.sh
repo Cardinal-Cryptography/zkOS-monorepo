@@ -59,7 +59,9 @@ mtzero() {
 ####################################################################################################
 deploy_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
-    PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" forge script DeployShielderScript \
+    PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
+    OWNER_ADDRESS="$(cast wallet address ${DEPLOYER_PRIVATE_KEY})" \
+    forge script DeployShielderScript \
       --rpc-url "${NODE_RPC_URL}" \
       --broadcast \
       --non-interactive \

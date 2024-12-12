@@ -1,5 +1,6 @@
 NETWORK ?= anvil
 PRIVATE_KEY ?= 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 # pkey of the dev account `0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E` prefunded with ETH on all networks
+OWNER_ADDRESS ?= $(shell cast wallet address $(PRIVATE_KEY))
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
@@ -50,9 +51,9 @@ deploy-contracts: # Deploy solidity contracts
 deploy-contracts:
 ifeq ($(NETWORK),anvil)
 	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
-	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
+	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
 else
-	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
+	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
 endif
 
 .PHONY: generate-poseidon-contracts
