@@ -6,7 +6,7 @@ description = "WASM bindings to shielder circuits for browser"
 edition.workspace = true
 authors = ["Cardinal", "Piotr Roslaniec <p.roslaniec@gmail.com>"]
 homepage.workspace = true
-license = "GPL-3.0-only AND Apache-2.0"
+license = "Apache-2.0"
 categories.workspace = true
 repository.workspace = true
 
