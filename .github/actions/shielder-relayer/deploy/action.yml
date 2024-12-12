@@ -23,9 +23,9 @@ inputs:
   environment:
     type: choice
     options:
-      - testnet-dev
-      - testnet
-      - mainnet
+      - dev
+      - stage
+      - prod
     required: true
 
 runs:
