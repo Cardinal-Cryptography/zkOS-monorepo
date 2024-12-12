@@ -1,10 +1,7 @@
 ---
-name: "[STAGE] Build and deploy shielder-relayer"
+name: "[DEV] Build and deploy shielder-relayer"
 
 on:
-  push:
-    branches:
-      - ZK-612-adjust-shielder-relayer-deployment
   workflow_dispatch:
     inputs:
       overwrite-shielder-address:
@@ -52,12 +49,11 @@ jobs:
         uses: ./.github/actions/shielder-relayer/deploy
         id: deploy_shielder_relayer
         with:
-          environment: stage
+          environment: dev
           image-tag: ${{ needs.build-and-push.outputs.image_tag }}
           autocommit-author: ${{ secrets.AUTOCOMMIT_AUTHOR }}
           autocommit-email: ${{ secrets.AUTOCOMMIT_EMAIL }}
           github-token: ${{ secrets.CI_GH_TOKEN }}
           kustomize-version: ${{ vars.KUSTOMIZE_VERSION }}
           ecr-private-host: ${{ secrets.ECR_PRIVATE_HOST }}
-          #overwrite-shielder-address: ${{ inputs.overwrite-shielder-address }}
-          overwrite-shielder-address: just-testing
+          overwrite-shielder-address: ${{ inputs.overwrite-shielder-address }}

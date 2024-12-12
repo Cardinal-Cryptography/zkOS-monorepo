@@ -1,8 +1,14 @@
 ---
-name: "[DEV] Build and deploy shielder-relayer"
+name: "[STAGE] Build and deploy shielder-relayer"
 
 on:
   workflow_dispatch:
+    inputs:
+      overwrite-shielder-address:
+        type: string
+        required: false
+        default: ''
+        description: Overwrite shielder address - if empty it's not changed
 
 jobs:
   build-and-push:
@@ -43,7 +49,7 @@ jobs:
         uses: ./.github/actions/shielder-relayer/deploy
         id: deploy_shielder_relayer
         with:
-          environment: dev
+          environment: stage
           image-tag: ${{ needs.build-and-push.outputs.image_tag }}
           autocommit-author: ${{ secrets.AUTOCOMMIT_AUTHOR }}
           autocommit-email: ${{ secrets.AUTOCOMMIT_EMAIL }}
