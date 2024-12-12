@@ -37,6 +37,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
         .register_action(ShielderAction::new_account(
             amount,
             new_account_event.newNoteIndex,
+            new_account_event.idHash,
             tx_hash,
         ));
     info!("Created new account with {amount} tokens");
