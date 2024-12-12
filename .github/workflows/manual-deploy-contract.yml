@@ -7,12 +7,12 @@ on:
       environment:
         description: "Environment to deploy to"
         required: true
-        default: "testnet-dev"
+        default: "dev"
         type: choice
         options:
-          - "testnet-dev"
-          - "testnet-stage"
-          - "mainnet-prod"
+          - "dev"
+          - "stage"
+          - "prod"
 
 jobs:
   deploy-contracts:
@@ -44,17 +44,35 @@ jobs:
       - name: Install deps
         run: make deps
 
-      # for "testnet-dev" we use default owner address, as it's not important
+      # for "dev" we use default owner address, as it's not important
       - name: Set environment-specific variables
         run: |
-          if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
+          if [ "${{ github.event.inputs.environment }}" == "dev" ]; then
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.environment }}" == "testnet-stage" ]; then
+            echo "NETWORK=https://rpc.alephzero-testnet.gelato.digital" >> $GITHUB_ENV
+            echo "EXPLORER_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
+            
+            echo "ADDRESSES_S3_PATH=testnet/dev.json" >> $GITHUB_ENV
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "stage" ]; then
             echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.environment }}" == "mainnet-prod" ]; then
+            echo "NETWORK=https://rpc.alephzero-testnet.gelato.digital" >> $GITHUB_ENV
+            echo "EXPLORER_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
+
+            echo "ADDRESSES_S3_PATH=testnet/stage.json" >> $GITHUB_ENV
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "prod" ]; then
             echo "OWNER_ADDRESS=${{ vars.MAINNET_PROD_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_MAINNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "NETWORK=https://rpc.alephzero.raas.gelato.cloud" >> $GITHUB_ENV
+            echo "EXPLORER_URL=https://evm-explorer.alephzero.org/api" >> $GITHUB_ENV
+
+            echo "ADDRESSES_S3_PATH=mainnet/prod.json" >> $GITHUB_ENV
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
           else
             echo "Invalid environment selected!" >&2
             exit 1
@@ -65,11 +83,10 @@ jobs:
 
       - name: Deploy contracts
         run: |
-          NETWORK=https://rpc.alephzero-testnet.gelato.digital \
           make deploy-contracts
 
       - name: Verify Shielder contract
-        run: ./scripts/verify-shielder-testnet.sh
+        run: ./scripts/verify-shielder.sh
 
       - name: Upload Shielder abi to artifacts
         uses: actions/upload-artifact@v4
@@ -110,25 +127,10 @@ jobs:
 
           cat contract_spec_with_block_numbers.json
 
-      - name: Determine address to store
-        run: |
-          if [ "${{ github.event.inputs.environment }}" == "testnet-dev" ]; then
-            echo "ADDRESSES_S3_PATH=testnet/dev.json" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.environment }}" == "testnet-stage" ]; then
-            echo "ADDRESSES_S3_PATH=testnet/stage.json" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.environment }}" == "mainnet-prod" ]; then
-            echo "ADDRESSES_S3_PATH=mainnet/prod.json" >> $GITHUB_ENV
-          else
-            echo "Invalid environment selected!" >&2
-            exit 1
-          fi
-
       # yamllint disable rule:line-length
       - name: Store addresses in S3 bucket
         shell: bash
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.CONTRACTS_S3BUCKET_REGION }}
         run: |
           aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/${{ env.ADDRESSES_S3_PATH }}
