@@ -24,4 +24,4 @@ hex = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rstest = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "contract", "conversion", "parameter_generation", "powers_of_tau", "permit2"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "contract", "conversion", "parameter_generation", "powers_of_tau"] }

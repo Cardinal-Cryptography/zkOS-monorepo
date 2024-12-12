@@ -43,11 +43,14 @@ pub fn invoke_shielder_call(
             Some(Address::from_str(ACTOR_ADDRESS).unwrap()),
             value,
         )
-        .map_err(|e| match e {
-            EvmRunnerError::Revert(e) => {
-                ShielderContractErrors::abi_decode(e.output().unwrap(), true).unwrap()
+        .map_err(|e| {
+            println!("ERROR {:?}", e);
+            match e {
+                EvmRunnerError::Revert(e) => {
+                    ShielderContractErrors::abi_decode(e.output().unwrap(), true).unwrap()
+                }
+                _ => panic!("Expected EvmRunnerError::Revert"),
             }
-            _ => panic!("Expected EvmRunnerError::Revert"),
         })?;
 
     let events: Vec<_> = success_result

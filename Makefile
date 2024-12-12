@@ -28,30 +28,31 @@ stop-anvil:
 .PHONY: watch-contracts
 watch-contracts: # watcher on the eth contracts. Scripts dir is watched by default
 watch-contracts:
-	forge build --watch contracts/*.sol --watch scripts/*.sol
+	forge clean && forge build --watch contracts/**/*.sol --watch scripts/*.sol --watch test/*.sol
 
 .PHONY: format-contracts
 format-contracts: # Format solidity contracts
 format-contracts:
-	npx prettier --write --plugin=prettier-plugin-solidity 'contracts/*.sol' 'scripts/*.sol'
+	npx prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol' 'scripts/*.sol' 'test/*.sol'
 
 .PHONY: lint-contracts
 lint-contracts: # Lint solidity contracts
 lint-contracts:
-	npx solhint -c .solhint.json 'contracts/*.sol' 'scripts/*.sol'
+	npx solhint -c .solhint.json 'contracts/*.sol' 'scripts/*.sol' 'test/*.sol'
 
 .PHONY: compile-contracts
 compile-contracts: # Compile solidity contracts
-compile-contracts: generate-verifier-contracts generate-poseidon-contracts
-	forge build
+compile-contracts: deps generate-contracts
+	forge clean && forge build
 
 .PHONY: deploy-contracts
 deploy-contracts: # Deploy solidity contracts
 deploy-contracts:
 ifeq ($(NETWORK),anvil)
-	PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 forge script DeployShielderScript --broadcast --rpc-url anvil
+	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
+	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
 else
-	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK)
+	PRIVATE_KEY=$(PRIVATE_KEY) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
 endif
 
 .PHONY: generate-poseidon-contracts
@@ -70,6 +71,11 @@ generate-verifier-contracts:
 .PHONY: generate-contracts
 generate-contracts: # Generate poseidon & relation verifier contracts
 generate-contracts: generate-poseidon-contracts generate-verifier-contracts
+
+.PHONY: measure-gas
+measure-gas: # measure shielder gas usage
+measure-gas: compile-contracts
+	CONTRACTS_DIR=contracts CARGO_MANIFEST_DIR=./Cargo.toml cargo run -p integration-tests --bin gas-consumption --release -- current-report.txt
 
 .PHONY: format-rust
 format-rust: # Format all rust crates

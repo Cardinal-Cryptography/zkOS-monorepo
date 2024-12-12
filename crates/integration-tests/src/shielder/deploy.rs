@@ -12,7 +12,6 @@ use shielder_rust_sdk::contract::ShielderContract::initializeCall;
 
 use crate::{
     deploy_contract,
-    permit2::PERMIT2_BYTECODE,
     proving_utils::{
         deposit_native_proving_params, new_account_native_proving_params,
         withdraw_native_proving_params, ProvingParams,
@@ -22,7 +21,6 @@ use crate::{
         erc1967proxy::{self, ERC_1967_PROXY_BYTECODE},
         unpause_shielder,
     },
-    token,
     verifier::deploy_verifiers,
 };
 
@@ -57,9 +55,7 @@ pub const INITIAL_DEPOSIT_LIMIT: U256 = U256::MAX;
 
 /// Contains full deployment addresses.
 pub struct ShielderContractSuite {
-    pub permit2: Address,
     pub shielder: Address,
-    pub token: Address,
 }
 
 pub fn prepare_account(
@@ -104,7 +100,7 @@ pub fn deployment(
 ) -> Deployment {
     let mut evm = EvmRunner::aleph_evm();
     let owner = prepare_account(&mut evm, DEPLOYER_ADDRESS, DEPLOYER_INITIAL_BALANCE, None);
-    let actor = prepare_account(&mut evm, ACTOR_ADDRESS, ACTOR_INITIAL_BALANCE, None);
+    prepare_account(&mut evm, ACTOR_ADDRESS, ACTOR_INITIAL_BALANCE, None);
     prepare_account(&mut evm, RECIPIENT_ADDRESS, RECIPIENT_INITIAL_BALANCE, None);
     prepare_account(&mut evm, RELAYER_ADDRESS, RELAYER_INITIAL_BALANCE, None);
     let reverting_bytecode = Bytecode::new_raw(Bytes::from_static(&REVERTING_BYTECODE));
@@ -115,69 +111,18 @@ pub fn deployment(
         Some(reverting_bytecode),
     );
 
-    let token = deploy_token(&mut evm, owner);
-    let permit2 = deploy_permit2(&mut evm, owner);
     let shielder_address = deploy_shielder_contract(&mut evm, owner);
     unpause_shielder(shielder_address, &mut evm);
-    instrument_token(&mut evm, owner, actor, token, permit2);
 
     Deployment {
         evm,
         contract_suite: ShielderContractSuite {
-            token,
-            permit2,
             shielder: shielder_address,
         },
         new_account_native_proving_params: new_account_native_proving_params.clone(),
         deposit_native_proving_params: deposit_native_proving_params.clone(),
         withdraw_native_proving_params: withdraw_native_proving_params.clone(),
     }
-}
-
-/// Deploy ERC20 token contract
-fn deploy_token(evm: &mut EvmRunner, caller: Address) -> Address {
-    let solidity_code = read_contract("Token.sol");
-    let compiled_bytecode = source_to_bytecode(solidity_code, "Token", true);
-
-    let constructor_calldata = token::constructor_calldata(U256::from(1000000));
-    let calldata = [compiled_bytecode, constructor_calldata].concat();
-
-    evm.create(calldata, Some(caller))
-        .expect("Failed to deploy the Token contract")
-}
-
-/// Performs basic instrumentation:
-/// - Transfer an initial amount of ERC20 to the actor account
-/// - Approve Permit2 as spender
-fn instrument_token(
-    evm: &mut EvmRunner,
-    owner: Address,
-    actor: Address,
-    token: Address,
-    permit2: Address,
-) {
-    evm.call(
-        token,
-        token::transfer_calldata(actor, U256::from(100000)),
-        Some(owner),
-        None,
-    )
-    .expect("ERC20 transfer call failed");
-
-    evm.call(
-        token,
-        token::approve_calldata(permit2, U256::MAX),
-        Some(actor),
-        None,
-    )
-    .expect("ERC20 approve call failed");
-}
-
-/// deploy Permit2 contract from a pre-compiled bytecode.
-fn deploy_permit2(evm: &mut EvmRunner, caller: Address) -> Address {
-    let bytecode = hex::decode(PERMIT2_BYTECODE).expect("Failed to decode permit2 bytecode");
-    evm.create(bytecode, Some(caller))
-        .expect("Failed to deploy Shielder implementation contract")
 }
 
 /// Deploys the Shielder implementation contract.
