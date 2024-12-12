@@ -125,7 +125,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_DEV_RW_AWS_SECRET_ACCESS_KEY }}
         run: |
           aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/dev.json
-          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/dev-broadcast.json
+          aws s3 cp broadcast/Shielder.s.sol/2039/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/dev-broadcast.json
 
       # yamllint disable rule:line-length
       - name: Store addresses in S3 bucket (stage)
@@ -137,7 +137,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_TESTNET_STAGE_RW_AWS_SECRET_ACCESS_KEY }}
         run: |
           aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/stage.json
-          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/stage-broadcast.json
+          aws s3 cp broadcast/Shielder.s.sol/2039/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/testnet/stage-broadcast.json
 
       # yamllint disable rule:line-length
       - name: Store addresses in S3 bucket (prod)
@@ -149,7 +149,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CONTRACTS_ZKOS_ADDRESSES_MAINNET_PROD_RW_AWS_SECRET_ACCESS_KEY }}
         run: |
           aws s3 cp contract_spec_with_block_numbers.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/mainnet/prod.json
-          aws s3 cp broadcast/Shielder.s.sol/**/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/mainnet/prod-broadcast.json
+          aws s3 cp broadcast/Shielder.s.sol/41455/run-latest.json s3://${{ secrets.CONTRACTS_S3BUCKET_NAME }}/zkos/addresses/mainnet/prod-broadcast.json
 
       - name: Store artifact in S3 bucket
         shell: bash
