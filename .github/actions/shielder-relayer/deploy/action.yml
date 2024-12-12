@@ -25,6 +25,7 @@ inputs:
     options:
       - dev
       - stage
+      - prod
     required: true
 
 runs:
