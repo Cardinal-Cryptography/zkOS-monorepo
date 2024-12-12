@@ -51,7 +51,7 @@ runs:
       if: ${{ inputs.overwrite-shielder-address != '' }}
       shell: bash
       run: |
-        cat shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1/configmap.yaml | \
+        cat aleph-apps/shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1/configmap.yaml | \
           yq '.data.SHIELDER_CONTRACT_ADDRESS="${{ inputs.overwrite-shielder-address }}"'
 
     - name: KUSTOMIZE | Update docker image tag
