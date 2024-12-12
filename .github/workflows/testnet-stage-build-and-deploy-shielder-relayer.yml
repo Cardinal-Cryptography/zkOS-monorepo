@@ -56,3 +56,4 @@ jobs:
           github-token: ${{ secrets.CI_GH_TOKEN }}
           kustomize-version: ${{ vars.KUSTOMIZE_VERSION }}
           ecr-private-host: ${{ secrets.ECR_PRIVATE_HOST }}
+          overwrite-shielder-address: ${{ inputs.overwrite-shielder-address }}
