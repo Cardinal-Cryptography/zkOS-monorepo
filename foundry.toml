@@ -24,7 +24,6 @@ remappings = [
     "@uniswap/=node_modules/@uniswap/",
     "forge-std/=node_modules/forge-std/src",
     "openzeppelin-foundry-upgrades/=node_modules/openzeppelin-foundry-upgrades/src",
-    "solmate/=node_modules/solmate/",
 ]
 
 [rpc_endpoints]
