@@ -1,5 +1,5 @@
 ---
-name: "[TESTNET] Build and deploy shielder-relayer"
+name: "[DEV] Build and deploy shielder-relayer"
 
 on:
   workflow_dispatch:
