@@ -9,7 +9,7 @@ authors = ["Cardinal"]
 homepage = "https://alephzero.org"
 license = "Apache-2.0"
 categories = ["cryptography"]
-repository = "https://github.com/Cardinal-Cryptography/zkOS"
+repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [workspace.dependencies]
 alloy-contract = { version = "0.4.2" }
