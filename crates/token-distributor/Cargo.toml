@@ -10,6 +10,10 @@ license.workspace = true
 categories.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "token-distributor"
+path = "main.rs"
+
 [dependencies]
 anyhow = { workspace = true }
 alloy-provider = { workspace = true }
@@ -17,4 +21,5 @@ alloy-primitives = { workspace = true }
 alloy-rpc-types = { workspace = true }
 alloy-signer-local = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+rand = { workspace = true }
 tokio = { workspace = true }

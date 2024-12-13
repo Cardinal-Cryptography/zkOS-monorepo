@@ -4967,6 +4967,7 @@ dependencies = [
  "alloy-signer-local",
  "anyhow",
  "clap",
+ "rand",
  "tokio",
 ]
 
