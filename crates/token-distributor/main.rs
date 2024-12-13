@@ -1,7 +1,12 @@
 use std::str::FromStr;
 
 use alloy_primitives::U256;
-use alloy_provider::{Provider, ProviderBuilder};
+use alloy_provider::{
+    fillers::WalletFiller,
+    network::{EthereumWallet, TransactionBuilder},
+    Provider, ProviderBuilder,
+};
+use alloy_rpc_types::TransactionRequest;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
@@ -13,7 +18,7 @@ const TOKEN_SCALE: u128 = 1_000_000_000_000_000_000;
 pub struct Config {
     /// The master seed to use for sending funds.
     #[clap(long, value_parser = parse_signer)]
-    pub master_seed: PrivateKeySigner,
+    pub master_signer: PrivateKeySigner,
 
     /// How many minions to create and endow.
     #[clap(long)]
@@ -40,10 +45,13 @@ fn parse_signer(string: &str) -> Result<PrivateKeySigner> {
 async fn main() -> Result<()> {
     let config = Config::parse();
 
-    let provider = check_connection(&config.node_rpc_url).await?;
-    ensure_enough_funds(&provider, &config).await?;
+    let unsigned_provider = check_connection(&config.node_rpc_url).await?;
+    ensure_enough_funds(&unsigned_provider, &config).await?;
     let minions = create_minions(config.minions, config.deterministic_addresses);
     save_minions(&minions);
+    endow_minions(&config, &minions).await?;
+
+    println!("✅ All done!");
 
     Ok(())
 }
@@ -54,22 +62,24 @@ async fn check_connection(node: &str) -> Result<impl Provider> {
     let provider = ProviderBuilder::new().on_builtin(node).await?;
 
     let block_number = provider.get_block_number().await?;
-    println!("Connected to node at block number: {}", block_number);
+    println!("✅ Connected to node at block number: {}", block_number);
 
     Ok(provider)
 }
 
 /// Ensure that the master account has enough funds to distribute tokens to the recipients.
 async fn ensure_enough_funds(provider: &impl Provider, config: &Config) -> Result<()> {
-    let master_account = config.master_seed.address();
+    let master_account = config.master_signer.address();
     let balance = provider.get_balance(master_account).await?;
 
     let required =
         U256::from(config.minions) * U256::from(config.bananas) * U256::from(TOKEN_SCALE);
     if balance <= required {
-        bail!("Master account has insufficient funds. Required: {required}, available: {balance}");
+        bail!(
+            "❌ Master account has insufficient funds. Required: {required}, available: {balance}"
+        );
     }
-    println!("Master account has sufficient funds to distribute tokens");
+    println!("✅ Master account has sufficient funds to distribute tokens");
 
     Ok(())
 }
@@ -108,4 +118,34 @@ fn save_minions(minions: &[PrivateKeySigner]) {
 
     std::fs::write("minions.keys", keys.join("\n")).unwrap();
     std::fs::write("minions.addresses", addresses.join("\n")).unwrap();
+
+    println!("✅ Minions' keys and addresses saved to files");
+}
+
+/// Endow the minions with the specified amount of tokens.
+async fn endow_minions(config: &Config, minions: &[PrivateKeySigner]) -> Result<()> {
+    // Create signed provider.
+    let provider = ProviderBuilder::new()
+        .with_recommended_fillers()
+        .filler(WalletFiller::new(EthereumWallet::from(
+            config.master_signer.clone(),
+        )))
+        .on_builtin(&config.node_rpc_url)
+        .await?;
+
+    let tx = TransactionRequest::default()
+        .with_from(config.master_signer.address())
+        .with_value(U256::from(config.bananas) * U256::from(TOKEN_SCALE));
+
+    println!("⏳ Endowing minions with bananas.");
+    for minion in minions {
+        provider
+            .send_transaction(tx.clone().with_to(minion.address()))
+            .await?
+            .watch()
+            .await?;
+        println!("  ✅ Endowed minion {}", minion.address());
+    }
+
+    Ok(())
 }
