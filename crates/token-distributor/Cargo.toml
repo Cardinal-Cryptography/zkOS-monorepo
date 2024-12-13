@@ -1,0 +1,14 @@
+[package]
+name = "token-distributor"
+version = "0.1.0"
+description = "Simple app to distibute tokens to a list of addresses"
+
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
