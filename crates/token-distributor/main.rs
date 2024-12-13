@@ -45,6 +45,10 @@ fn parse_signer(string: &str) -> Result<PrivateKeySigner> {
 async fn main() -> Result<()> {
     let config = Config::parse();
 
+    if config.deterministic_addresses {
+        println!("⚠️ Using deterministic addresses for minions. This is not production-safe!");
+    }
+
     let unsigned_provider = check_connection(&config.node_rpc_url).await?;
     ensure_enough_funds(&unsigned_provider, &config).await?;
     let minions = create_minions(config.minions, config.deterministic_addresses);
@@ -79,7 +83,7 @@ async fn ensure_enough_funds(provider: &impl Provider, config: &Config) -> Resul
             "❌ Master account has insufficient funds. Required: {required}, available: {balance}"
         );
     }
-    println!("✅ Master account has sufficient funds to distribute tokens");
+    println!("✅ Master account ({master_account:?}) has sufficient funds to distribute tokens");
 
     Ok(())
 }
