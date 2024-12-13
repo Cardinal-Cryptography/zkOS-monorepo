@@ -7,6 +7,7 @@
 # You need to have installed following prerequisites in order to use that script:
 #   * jq
 #   * foundry suite (forge, anvil)
+#
 
 set -euo pipefail
 
