@@ -14,6 +14,10 @@ pub struct Config {
     #[clap(long)]
     pub minions: u32,
 
+    /// How many TZERO to send to each minion (it will be scaled by 1e18).
+    #[clap(long)]
+    pub bananas: u32,
+
     /// The URL of the node to connect to. By default, it connects to a local node.
     #[clap(long, default_value = "http://localhost:8545")]
     pub node_rpc_url: String,
