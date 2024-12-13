@@ -6,13 +6,16 @@ use clap::Parser;
 
 #[derive(Parser)]
 pub struct Config {
-    #[clap(long, value_parser = parsing::parse_signer)]
+    /// The master seed to use for sending funds.
+    #[clap(long, value_parser = parse_signer)]
     pub master_seed: PrivateKeySigner,
 
+    /// How many minions to create and endow.
     #[clap(long)]
-    pub actor_count: u32,
+    pub minions: u32,
 
-    #[clap(long)]
+    /// The URL of the node to connect to. By default, it connects to a local node.
+    #[clap(long, default_value = "http://localhost:8545")]
     pub node_rpc_url: String,
 }
 
