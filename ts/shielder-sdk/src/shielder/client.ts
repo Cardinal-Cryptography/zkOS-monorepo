@@ -95,7 +95,6 @@ export type QuotedFees = {
  * @param {number} chainId - chain id of the blockchain
  * @param {string} rpcHttpEndpoint - rpc http endpoint of the blockchain
  * @param {Address} contractAddress - address of the shielder contract
- * @param {Address} relayerAddress - address of the relayer
  * @param {string} relayerUrl - url of the relayer
  * @param {InjectedStorageInterface} storage - storage interface to manage the shielder state, must be isolated per shielder account
  * @param {ShielderCallbacks} callbacks - callbacks for the shielder actions
@@ -105,7 +104,6 @@ export const createShielderClient = (
   chainId: number,
   rpcHttpEndpoint: string,
   contractAddress: Address,
-  relayerAddress: Address,
   relayerUrl: string,
   storage: InjectedStorageInterface,
   callbacks: ShielderCallbacks = {}
@@ -128,7 +126,7 @@ export const createShielderClient = (
     transport: http()
   });
   const contract = new Contract(publicClient, contractAddress);
-  const relayer = new Relayer(relayerUrl, relayerAddress);
+  const relayer = new Relayer(relayerUrl);
 
   return new ShielderClient(
     shielderSeedPrivateKey,
