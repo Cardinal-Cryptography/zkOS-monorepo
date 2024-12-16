@@ -67,10 +67,6 @@ async fn perform_state_write_action(
             info!("Setting relayer url to {url}");
             app_state.relayer_rpc_url = relayer_rpc_url;
         }
-        StateWriteCommand::RelayerAddress { address } => {
-            info!("Setting relayer address to {address}");
-            app_state.relayer_address = address;
-        }
         StateWriteCommand::RecoverState => {
             recover_state(app_state).await?;
         }
