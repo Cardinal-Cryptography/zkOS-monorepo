@@ -8,11 +8,6 @@ export const rpcHttpEndpoint =
   (() => {
     throw new Error("RPC_HTTP_ENDPOINT env not defined");
   })();
-export const relayerFeeAddress =
-  process.env.RELAYER_FEE_ADDRESS ??
-  (() => {
-    throw new Error("RELAYER_FEE_ADDRESS env not defined");
-  })();
 export const relayerUrl =
   process.env.RELAYER_URL ??
   (() => {
@@ -40,7 +35,6 @@ export const getChainConfig = () => {
 
 export const getRelayerConfig = () => {
   return {
-    address: relayerFeeAddress as `0x${string}`,
     url: relayerUrl,
   };
 };
