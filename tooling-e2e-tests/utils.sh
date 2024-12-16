@@ -124,7 +124,6 @@ configure_cli() {
   ${1} node-url "${NODE_RPC_URL}"
   ${1} contract-address "${SHIELDER_CONTRACT_ADDRESS}"
   ${1} relayer-url "${RELAYER_URL}"
-  ${1} relayer-address "${FEE_DESTINATION}"
 
   log_progress "✅ CLI fully configured"
 }
