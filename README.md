@@ -35,7 +35,6 @@ Shielder is part of the Aleph Zero zkOS initiative, aimed at delivering Privacy-
 
 Shielder is built utilizing the following components:
 
-- **Aleph Zero WASM L1**: Serves as the Data Availability layer.
 - **EVM Layer 2 Rollup**: Leverages Arbitrum Anytrust DAC technology for fast and secure execution.
 - **Developer Tooling**: Includes Gelato’s web3 services, account abstraction, functions, VRF, oracles, block explorers, indexers, and multisig support.
 
