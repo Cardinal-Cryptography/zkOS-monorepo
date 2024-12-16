@@ -4,7 +4,9 @@ use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, Result};
 use axum::{
+    extract::State,
     middleware,
+    response::IntoResponse,
     routing::{get, post},
     Router,
 };
@@ -141,10 +143,15 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
         .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
         .route("/quote_fees", get(quote::quote_fees))
+        .route("/fee_address", get(fee_address))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))
         .layer(CorsLayer::permissive());
     Ok(axum::serve(listener, app).await?)
+}
+
+async fn fee_address(state: State<AppState>) -> impl IntoResponse {
+    state.fee_destination.to_string()
 }
 
 fn init_logging(format: LoggingFormat) -> Result<()> {
