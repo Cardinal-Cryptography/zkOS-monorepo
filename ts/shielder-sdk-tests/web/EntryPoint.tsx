@@ -158,7 +158,6 @@ declare global {
           },
           privateKeyAlice: `0x${string}`,
           relayerConfig?: {
-            address: `0x${string}`;
             url: string;
           },
         ) => Promise<ContractTestFixture>;
