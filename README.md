@@ -70,6 +70,18 @@ Compile & deploy the smart contract suite:
 make deploy-contracts
 ```
 
+### Running e2e tests
+
+Run:
+
+```bash
+run tooling-e2e-tests/full_scenario.sh
+```
+
+(or another `.sh` file from that directory). For maximum compatibility `export BUILD=docker` - this will be slower but
+will build the relayer image inside docker. Otherwise the binary is built on your machine and then copied into the image
+which might not work, depending on the exact configuration of the host.
+
 ### Deploying to anvil
 
 The command below will use `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` as a deployer:
