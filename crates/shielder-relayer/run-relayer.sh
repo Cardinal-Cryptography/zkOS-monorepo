@@ -18,7 +18,7 @@ REQUIRED_RUN_VARS=(
 )
 
 for var in "${REQUIRED_RUN_VARS[@]}"; do
-  if [ -z "${var}" ]; then
+  if [ -z "${!var+set}" ]; then
     echo "Error: Environment variable $var is not set."
     exit 1
   fi
