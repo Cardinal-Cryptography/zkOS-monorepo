@@ -51,7 +51,6 @@ RELAYER_PORT=4141 # Relayer service port
 export RELAYER_PORT
 
 FEE_DESTINATION=0xcaca0a3147bcaf6d7B706Fc5F5c325E6b0e7fb34 # Random address without any funds by default.
-export FEE_DESTINATION
 FEE_DESTINATION_KEY=0x11bc58beea7f9baab53bbef30a478ebc1657b475869b0d966e8c17a02218e529 # Corresponding signing key.
 export FEE_DESTINATION_KEY
 

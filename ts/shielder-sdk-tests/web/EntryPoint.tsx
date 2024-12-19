@@ -123,7 +123,7 @@ declare global {
     chain: {
       generatePrivateKey: () => `0x${string}`;
       createContract: (account: PublicClient, address: Address) => Contract;
-      createRelayer: (url: string, address: Address) => Relayer;
+      createRelayer: (url: string) => Relayer;
 
       testUtils: {
         createBalanceManager: (
@@ -158,7 +158,6 @@ declare global {
           },
           privateKeyAlice: `0x${string}`,
           relayerConfig?: {
-            address: `0x${string}`;
             url: string;
           },
         ) => Promise<ContractTestFixture>;
@@ -200,7 +199,6 @@ declare global {
         chainId: number,
         rpcHttpEndpoint: string,
         contractAddress: Address,
-        relayerAddress: Address,
         relayerUrl: string,
         storage: InjectedStorageInterface,
       ) => ShielderClient;
@@ -260,8 +258,7 @@ function EntryPoint() {
     window.chain.generatePrivateKey = generatePrivateKey;
     window.chain.createContract = (account: PublicClient, address: Address) =>
       new Contract(account, address);
-    window.chain.createRelayer = (url: string, address: Address) =>
-      new Relayer(url, address);
+    window.chain.createRelayer = (url: string) => new Relayer(url);
 
     window.chain.testUtils = window.chain.testUtils || {};
     window.chain.testUtils.createBalanceManager = (
@@ -285,7 +282,6 @@ function EntryPoint() {
       chainId: number,
       rpcHttpEndpoint: string,
       contractAddress: Address,
-      relayerAddress: Address,
       relayerUrl: string,
       storage: InjectedStorageInterface,
     ) =>
@@ -294,7 +290,6 @@ function EntryPoint() {
         chainId,
         rpcHttpEndpoint,
         contractAddress,
-        relayerAddress,
         relayerUrl,
         storage,
       );
