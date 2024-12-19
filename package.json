@@ -10,8 +10,8 @@
         "@uniswap/permit2": "github:Uniswap/permit2#cc56ad0f3439c502c246fc5cfcc3db92bb8b7219"
     },
     "devDependencies": {
-        "@safe-global/protocol-kit": "^3.0.0",
-        "@safe-global/safe-core-sdk-types": "^4.0.0",
+        "@safe-global/protocol-kit": "^5.1.1",
+        "@safe-global/safe-core-sdk-types": "^5.1.0",
         "child_process": "^1.0.2",
         "dotenv": "^16.3.1",
         "forge-std": "github:foundry-rs/forge-std#v1.8.1",
