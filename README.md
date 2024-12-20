@@ -64,11 +64,36 @@ Boot a local node:
 make anvil
 ```
 
+Generate additional contract sources:
+
+```bash
+make generate-contracts
+```
+
 Compile & deploy the smart contract suite:
 
 ```bash
 make deploy-contracts
 ```
+
+### Running e2e tests
+
+Install dependencies and generate additional contract sources:
+
+```bash
+make deps
+make generate-contracts
+```
+
+Run:
+
+```bash
+run tooling-e2e-tests/full_scenario.sh
+```
+
+(or another `.sh` file from that directory). For maximum compatibility `export BUILD=docker` - this will be slower but
+will build the relayer image inside docker. Otherwise the binary is built on your machine and then copied into the image
+which might not work, depending on the exact configuration of the host.
 
 ### Deploying to anvil
 
