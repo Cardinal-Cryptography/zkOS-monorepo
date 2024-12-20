@@ -64,6 +64,12 @@ Boot a local node:
 make anvil
 ```
 
+Generate additional contract sources:
+
+```bash
+make generate-contracts
+```
+
 Compile & deploy the smart contract suite:
 
 ```bash
@@ -71,6 +77,13 @@ make deploy-contracts
 ```
 
 ### Running e2e tests
+
+Install dependencies and generate additional contract sources:
+
+```bash
+make deps
+make generate-contracts
+```
 
 Run:
 
