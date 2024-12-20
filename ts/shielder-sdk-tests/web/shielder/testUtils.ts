@@ -83,10 +83,15 @@ export class MockedContract implements IContract {
 
 export class MockedRelayer implements IRelayer {
   txHashToReturn: `0x${string}` | null = null;
-  address: `0x${string}`;
+  _address: `0x${string}`;
+
   constructor(address: `0x${string}`) {
-    this.address = address;
+    this._address = address;
   }
+
+  address = async (): Promise<`0x${string}`> => {
+    return this._address;
+  };
   withdraw = async (
     _expectedContractVersion: `0x${string}`,
     _idHiding: bigint,

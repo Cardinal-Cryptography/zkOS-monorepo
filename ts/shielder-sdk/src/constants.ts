@@ -7,6 +7,7 @@ export const chainNativeCurrency = {
 export const contractVersion = "0x000001";
 export const relayPath = "/relay";
 export const feePath = "/quote_fees";
+export const feeAddressPath = "/fee_address";
 /**
  * Gas limit for shield action: newAccount or deposit
  * Originally they have ~2M gas limit, but we set it to 3M to be safe

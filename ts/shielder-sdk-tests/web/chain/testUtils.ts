@@ -114,7 +114,6 @@ export const setupContractTest = async (
   },
   privateKeyAlice: `0x${string}`,
   relayerConfig?: {
-    address: `0x${string}`;
     url: string;
   },
 ): Promise<ContractTestFixture> => {
@@ -151,10 +150,7 @@ export const setupContractTest = async (
   );
   let relayer: Relayer | undefined = undefined;
   if (relayerConfig) {
-    relayer = window.chain.createRelayer(
-      relayerConfig.url,
-      relayerConfig.address,
-    );
+    relayer = window.chain.createRelayer(relayerConfig.url);
   }
   const storage = window.storage.mockedStorage(
     alicePublicAccount.account.address,
@@ -184,7 +180,6 @@ export const setupContractTest = async (
     chainConfig.chainId,
     chainConfig.rpcHttpEndpoint,
     chainConfig.contractAddress,
-    relayerConfig ? relayerConfig.address : "0x",
     relayerConfig ? relayerConfig.url : "",
     storage,
   );

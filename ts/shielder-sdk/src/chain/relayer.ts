@@ -1,4 +1,4 @@
-import { feePath, relayPath } from "@/constants";
+import { feeAddressPath, feePath, relayPath } from "@/constants";
 import { CustomError } from "ts-custom-error";
 import { Address } from "viem";
 import { z } from "zod";
@@ -32,7 +32,7 @@ export class GenericWithdrawError extends Error {
 }
 
 export type IRelayer = {
-  address: Address;
+  address: () => Promise<Address>;
   withdraw: (
     expectedContractVersion: `0x${string}`,
     idHiding: bigint,
@@ -48,11 +48,9 @@ export type IRelayer = {
 
 export class Relayer implements IRelayer {
   url: string;
-  address: Address;
 
-  constructor(url: string, address: Address) {
+  constructor(url: string) {
     this.url = url;
-    this.address = address;
   }
 
   withdraw = async (
@@ -120,10 +118,27 @@ export class Relayer implements IRelayer {
 
     if (!response.ok) {
       const responseText = await response.text();
-
       throw new Error(`${responseText}`);
     }
 
     return quoteFeesResponseSchema.parse(await response.json());
+  };
+
+  address = async () => {
+    let response;
+    try {
+      response = await fetch(`${this.url}${feeAddressPath}`, {
+        method: "GET"
+      });
+    } catch (error) {
+      throw new Error(`${(error as Error).message}`);
+    }
+
+    if (!response.ok) {
+      const responseText = await response.text();
+      throw new Error(`${responseText}`);
+    }
+
+    return (await response.text()) as `0x${string}`;
   };
 }

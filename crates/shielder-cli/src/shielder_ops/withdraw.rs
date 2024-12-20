@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use alloy_primitives::{Address, BlockHash, TxHash, U256};
 use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
@@ -17,7 +19,7 @@ use tokio::time::sleep;
 use tracing::{debug, info};
 
 use crate::{
-    app_state::AppState,
+    app_state::{AppState, RelayerRpcUrl},
     shielder_ops::pk::{get_proving_equipment, CircuitType},
 };
 
@@ -92,6 +94,22 @@ async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
     Ok(quoted_fees.total_fee.parse()?)
 }
 
+async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address> {
+    let relayer_response = reqwest::Client::new()
+        .get(relayer_rpc_url.fee_address_url())
+        .send()
+        .await?;
+
+    if !relayer_response.status().is_success() {
+        bail!(
+            "Failed to get relayer fee address: {:?}",
+            relayer_response.status()
+        );
+    }
+    let address = relayer_response.text().await?;
+    Ok(Address::from_str(&address)?)
+}
+
 async fn prepare_relayer_query(
     app_state: &AppState,
     amount: U256,
@@ -116,7 +134,7 @@ async fn prepare_relayer_query(
                 path: merkle_path,
             },
             to,
-            relayer_address: app_state.relayer_address,
+            relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
             relayer_fee,
             contract_version: contract_version(),
         },

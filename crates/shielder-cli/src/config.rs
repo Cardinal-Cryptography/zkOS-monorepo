@@ -76,11 +76,6 @@ pub enum StateWriteCommand {
         /// Address of the relayer.
         url: String,
     },
-    /// Set relayer chain address.
-    RelayerAddress {
-        /// Address of the relayer.
-        address: Address,
-    },
     /// Recover state from the blockchain.
     RecoverState,
 }
