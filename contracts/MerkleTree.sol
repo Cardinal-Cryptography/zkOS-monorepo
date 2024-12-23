@@ -70,12 +70,13 @@ abstract contract MerkleTree is Initializable {
     }
 
     /*
-     * Given an index of a leaf return the path from a leaf index to the root,
-     * omitting the root and leaf for gas efficiency,
-     * as they can be derived from hashing their children.
+     * Given an index of a leaf return the Merkle path from this leaf to the root.
+     *
      * Leaves are indexed from 0.
-     * Path is an array of length TREE_HEIGHT*ARITY+1, where the first TREE_HEIGHT*ARITY elements are the siblings of the path,
-     * and the last element is the root.
+     *
+     * Path is an array of length TREE_HEIGHT*ARITY+1, where the first TREE_HEIGHT*ARITY elements is the full path
+     * (ancestors with their siblings, ordered) and the last element is the root.
+     *
      * If tree looks like this:
      * l_3 = hash(l_1, l_2)
      * l_5 = hash(l_3, l_4)
