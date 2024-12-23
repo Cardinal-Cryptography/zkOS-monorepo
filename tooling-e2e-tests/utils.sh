@@ -167,7 +167,8 @@ cleanup() {
   log_progress "🗒 Relayer logs saved to relayer-output.log"
   stop_relayer
 
-  if [[ ! -n "${TESTNET:-}" ]]; then
+  if [[ -z "${TESTNET:-}" ]] && [[ -z "${KEEP_NODE:-}" ]]; then
+    log_progress "🗒 Stopping anvil node"
     stop_node
   fi
 }
