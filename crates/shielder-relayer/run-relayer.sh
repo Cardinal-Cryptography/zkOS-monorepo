@@ -40,41 +40,41 @@ else
 fi
 
 if [[ -n "${RELAYER_PORT:-}" ]]; then
-  ARGS+=(-e RELAYER_PORT=${RELAYER_PORT})
+  ARGS+=(-e RELAYER_PORT="${RELAYER_PORT}")
 fi
 if [[ -n "${NODE_RPC_URL:-}" ]]; then
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    ARGS+=(-e NODE_RPC_URL=http://host.docker.internal:${NODE_RPC_PORT})
-  else 
-    ARGS+=(-e NODE_RPC_URL=${NODE_RPC_URL})
+    ARGS+=(-e NODE_RPC_URL=http://host.docker.internal:"${NODE_RPC_PORT}")
+  else
+    ARGS+=(-e NODE_RPC_URL="${NODE_RPC_URL}")
   fi
 fi
 if [[ -n "${FEE_DESTINATION_KEY:-}" ]]; then
-  ARGS+=(-e FEE_DESTINATION_KEY=${FEE_DESTINATION_KEY})
+  ARGS+=(-e FEE_DESTINATION_KEY="${FEE_DESTINATION_KEY}")
 fi
 if [[ -n "${RELAYER_SIGNING_KEYS:-}" ]]; then
-  ARGS+=(-e RELAYER_SIGNING_KEYS=${RELAYER_SIGNING_KEYS})
+  ARGS+=(-e RELAYER_SIGNING_KEYS="${RELAYER_SIGNING_KEYS}")
 fi
 if [[ -n "${SHIELDER_CONTRACT_ADDRESS:-}" ]]; then
-  ARGS+=(-e SHIELDER_CONTRACT_ADDRESS=${SHIELDER_CONTRACT_ADDRESS})
+  ARGS+=(-e SHIELDER_CONTRACT_ADDRESS="${SHIELDER_CONTRACT_ADDRESS}")
 fi
 if [[ -n "${DRY_RUNNING:-}" ]]; then
-  ARGS+=(-e DRY_RUNNING=${DRY_RUNNING})
+  ARGS+=(-e DRY_RUNNING="${DRY_RUNNING}")
 fi
 if [[ -n "${NONCE_POLICY:-}" ]]; then
-  ARGS+=(-e NONCE_POLICY=${NONCE_POLICY})
+  ARGS+=(-e NONCE_POLICY="${NONCE_POLICY}")
 fi
 if [[ -n "${RELAY_COUNT_FOR_RECHARGE:-}" ]]; then
-  ARGS+=(-e RELAY_COUNT_FOR_RECHARGE=${RELAY_COUNT_FOR_RECHARGE})
+  ARGS+=(-e RELAY_COUNT_FOR_RECHARGE="${RELAY_COUNT_FOR_RECHARGE}")
 fi
 if [[ -n "${BALANCE_MONITOR_INTERVAL_SECS:-}" ]]; then
-  ARGS+=(-e BALANCE_MONITOR_INTERVAL_SECS=${BALANCE_MONITOR_INTERVAL_SECS})
+  ARGS+=(-e BALANCE_MONITOR_INTERVAL_SECS="${BALANCE_MONITOR_INTERVAL_SECS}")
 fi
 if [[ -n "${TOTAL_FEE:-}" ]]; then
-  ARGS+=(-e TOTAL_FEE=${TOTAL_FEE})
+  ARGS+=(-e TOTAL_FEE="${TOTAL_FEE}")
 fi
 if [[ -n "${RELAY_GAS:-}" ]]; then
-  ARGS+=(-e RELAY_GAS=${RELAY_GAS})
+  ARGS+=(-e RELAY_GAS="${RELAY_GAS}")
 fi
 
 docker run --rm -d "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
