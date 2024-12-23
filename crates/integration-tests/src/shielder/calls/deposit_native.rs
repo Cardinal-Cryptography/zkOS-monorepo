@@ -60,11 +60,13 @@ pub fn invoke_call(
 #[cfg(test)]
 mod tests {
 
-    use std::assert_matches::assert_matches;
+    use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Bytes, FixedBytes, U256};
     use evm_utils::SuccessResult;
+    use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
+    use shielder_circuits::F;
     use shielder_rust_sdk::{
         account::ShielderAccount,
         contract::ShielderContract::{
@@ -75,6 +77,7 @@ mod tests {
 
     use crate::{
         calls::deposit_native::{invoke_call, prepare_call},
+        recipient_balance_increased_by, relayer_balance_increased_by,
         shielder::{
             actor_balance_decreased_by,
             calls::new_account_native,
@@ -247,6 +250,39 @@ mod tests {
             Err(ShielderContractErrors::DuplicatedNullifier(_))
         );
         assert!(actor_balance_decreased_by(&deployment, U256::from(15)))
+    }
+
+    #[rstest]
+    fn cannot_use_input_greater_than_field_modulus(mut deployment: Deployment) {
+        let mut shielder_account = new_account_native::create_account_and_call(
+            &mut deployment,
+            U256::from(1),
+            U256::from(10),
+        )
+        .unwrap();
+
+        let amount = U256::from(5);
+        let (mut calldata, _) = prepare_call(&mut deployment, &mut shielder_account, amount);
+        let mut swap_value = U256::from_str(F::MODULUS).unwrap();
+
+        mem::swap(&mut calldata.oldNullifierHash, &mut swap_value);
+        let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
+        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        mem::swap(&mut calldata.oldNullifierHash, &mut swap_value);
+
+        mem::swap(&mut calldata.newNote, &mut swap_value);
+        let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
+        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        mem::swap(&mut calldata.newNote, &mut swap_value);
+
+        mem::swap(&mut calldata.idHiding, &mut swap_value);
+        let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
+        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        mem::swap(&mut calldata.idHiding, &mut swap_value);
+
+        assert!(actor_balance_decreased_by(&deployment, U256::from(10)));
+        assert!(recipient_balance_increased_by(&deployment, U256::from(0)));
+        assert!(relayer_balance_increased_by(&deployment, U256::from(0)))
     }
 
     #[rstest]
