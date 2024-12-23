@@ -85,6 +85,7 @@ contract Shielder is
     error AmountTooHigh();
     error ContractBalanceLimitReached();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
+    error NotAFieldElement();
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
         if (expectedByCaller != CONTRACT_VERSION) {

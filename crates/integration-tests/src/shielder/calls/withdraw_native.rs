@@ -97,7 +97,9 @@ mod tests {
 
     use alloy_primitives::{Address, Bytes, FixedBytes, U256};
     use evm_utils::SuccessResult;
+    use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
+    use shielder_circuits::F;
     use shielder_rust_sdk::{
         account::ShielderAccount,
         contract::ShielderContract::{
@@ -426,6 +428,29 @@ mod tests {
         assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
         assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
         assert!(relayer_balance_increased_by(&deployment, U256::from(1)))
+    }
+
+    #[rstest]
+    fn cannot_use_nullifier_greater_than_field_modulus(mut deployment: Deployment) {
+        let mut shielder_account = new_account_native::create_account_and_call(
+            &mut deployment,
+            U256::from(1),
+            U256::from(20),
+        )
+        .unwrap();
+
+        let (mut calldata, _) = prepare_call(
+            &mut deployment,
+            &mut shielder_account,
+            prepare_args(U256::from(5), U256::from(1)),
+        );
+        calldata.oldNullifierHash = U256::from_str(F::MODULUS).unwrap();
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+
+        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
+        assert!(recipient_balance_increased_by(&deployment, U256::from(0)));
+        assert!(relayer_balance_increased_by(&deployment, U256::from(0)))
     }
 
     #[rstest]
