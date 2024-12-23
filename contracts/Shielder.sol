@@ -207,7 +207,7 @@ contract Shielder is
         emit DepositNative(
             CONTRACT_VERSION,
             idHiding,
-            msg.value,
+            amount,
             newNote,
             index
         );
