@@ -1,8 +1,9 @@
 use alloy_eips::BlockNumberOrTag;
 use alloy_primitives::{BlockHash, BlockNumber, U256};
-use alloy_provider::network::primitives::BlockTransactionsKind;
-use alloy_provider::network::TransactionResponse;
-use alloy_provider::Provider;
+use alloy_provider::{
+    network::{primitives::BlockTransactionsKind, TransactionResponse},
+    Provider,
+};
 use alloy_rpc_types_eth::{Transaction, TransactionTrait};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, bail, Result};
@@ -80,7 +81,10 @@ async fn find_shielder_transaction(
     account: &ShielderAccount,
 ) -> Result<ShielderAction> {
     let block = provider
-        .get_block_by_number(BlockNumberOrTag::Number(block_number), BlockTransactionsKind::Full)
+        .get_block_by_number(
+            BlockNumberOrTag::Number(block_number),
+            BlockTransactionsKind::Full,
+        )
         .await?
         .ok_or(anyhow!("Block not found"))?;
     let txs = block
