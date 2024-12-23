@@ -93,7 +93,7 @@ pub fn invoke_call(
 #[cfg(test)]
 mod tests {
 
-    use std::{assert_matches::assert_matches, str::FromStr};
+    use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Address, Bytes, FixedBytes, U256};
     use evm_utils::SuccessResult;
@@ -431,7 +431,7 @@ mod tests {
     }
 
     #[rstest]
-    fn cannot_use_nullifier_greater_than_field_modulus(mut deployment: Deployment) {
+    fn cannot_use_input_greater_than_field_modulus(mut deployment: Deployment) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
             U256::from(1),
@@ -444,10 +444,23 @@ mod tests {
             &mut shielder_account,
             prepare_args(U256::from(5), U256::from(1)),
         );
-        calldata.oldNullifierHash = U256::from_str(F::MODULUS).unwrap();
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+        let mut swap_value = U256::from_str(F::MODULUS).unwrap();
 
+        mem::swap(&mut calldata.oldNullifierHash, &mut swap_value);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        mem::swap(&mut calldata.oldNullifierHash, &mut swap_value);
+
+        mem::swap(&mut calldata.newNote, &mut swap_value);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        mem::swap(&mut calldata.newNote, &mut swap_value);
+
+        mem::swap(&mut calldata.idHiding, &mut swap_value);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
+        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        mem::swap(&mut calldata.idHiding, &mut swap_value);
+
         assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
         assert!(recipient_balance_increased_by(&deployment, U256::from(0)));
         assert!(relayer_balance_increased_by(&deployment, U256::from(0)))
