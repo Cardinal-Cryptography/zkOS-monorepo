@@ -1,7 +1,10 @@
 use alloy_eips::BlockNumberOrTag;
 use alloy_primitives::{BlockHash, BlockNumber, U256};
-use alloy_provider::Provider;
-use alloy_rpc_types_eth::Transaction;
+use alloy_provider::{
+    network::{primitives::BlockTransactionsKind, TransactionResponse},
+    Provider,
+};
+use alloy_rpc_types_eth::{Transaction, TransactionTrait};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, bail, Result};
 use shielder_circuits::{poseidon::off_circuit::hash, F};
@@ -78,7 +81,10 @@ async fn find_shielder_transaction(
     account: &ShielderAccount,
 ) -> Result<ShielderAction> {
     let block = provider
-        .get_block_by_number(BlockNumberOrTag::Number(block_number), true)
+        .get_block_by_number(
+            BlockNumberOrTag::Number(block_number),
+            BlockTransactionsKind::Full,
+        )
         .await?
         .ok_or(anyhow!("Block not found"))?;
     let txs = block
@@ -93,7 +99,7 @@ async fn find_shielder_transaction(
         };
         event.check_version().map_err(|_| anyhow!("Bad version"))?;
         let event_note = event.note();
-        let action = ShielderAction::from((tx.hash, event));
+        let action = ShielderAction::from((tx.tx_hash(), event));
 
         let mut hypothetical_account = account.clone();
         hypothetical_account.register_action(action.clone());
@@ -113,15 +119,15 @@ async fn try_get_shielder_event_for_tx(
     tx: &Transaction,
     block_hash: BlockHash,
 ) -> Result<Option<ShielderContractEvents>> {
-    let tx_data = tx.input.as_ref();
+    let tx_data = tx.input();
     let maybe_action = if newAccountNativeCall::abi_decode(tx_data, true).is_ok() {
-        let event = get_event::<NewAccountNative>(provider, tx.hash, block_hash).await?;
+        let event = get_event::<NewAccountNative>(provider, tx.tx_hash(), block_hash).await?;
         Some(ShielderContractEvents::NewAccountNative(event))
     } else if depositNativeCall::abi_decode(tx_data, true).is_ok() {
-        let event = get_event::<DepositNative>(provider, tx.hash, block_hash).await?;
+        let event = get_event::<DepositNative>(provider, tx.tx_hash(), block_hash).await?;
         Some(ShielderContractEvents::DepositNative(event))
     } else if withdrawNativeCall::abi_decode(tx_data, true).is_ok() {
-        let event = get_event::<WithdrawNative>(provider, tx.hash, block_hash).await?;
+        let event = get_event::<WithdrawNative>(provider, tx.tx_hash(), block_hash).await?;
         Some(ShielderContractEvents::WithdrawNative(event))
     } else {
         None
