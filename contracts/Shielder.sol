@@ -204,13 +204,7 @@ contract Shielder is
         uint256 index = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        emit DepositNative(
-            CONTRACT_VERSION,
-            idHiding,
-            amount,
-            newNote,
-            index
-        );
+        emit DepositNative(CONTRACT_VERSION, idHiding, amount, newNote, index);
     }
 
     /*
