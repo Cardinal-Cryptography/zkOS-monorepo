@@ -115,6 +115,7 @@ jobs:
           FEE_DESTINATION_KEY: ${{ secrets.CI_TESTNET_FEE_DESTINATION_KEY }}
           RELAYER_SIGNER_ADDRESSES: ${{ vars.CI_TESTNET_RELAYER_SIGNER_ADDRESSES }}
           RELAYER_SIGNING_KEYS: ${{ secrets.CI_TESTNET_RELAYER_SIGNING_KEYS }}
+          NODE_RPC_PORT: 443
         run: |
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/full_scenario.sh
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/recovery_scenario.sh
