@@ -12,17 +12,17 @@ categories = ["cryptography"]
 repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [workspace.dependencies]
-alloy-contract = { version = "0.4.2" }
-alloy-eips = { version = "0.4.2" }
-alloy-network = { version = "0.4.2" }
+alloy-contract = { version = "0.8.1" }
+alloy-eips = { version = "0.8.1" }
+alloy-network = { version = "0.8.1" }
 alloy-primitives = { version = "0.8.5" }
-alloy-provider = { version = "0.4.2" }
-alloy-rpc-types = { version = "0.4.2" }
-alloy-rpc-types-eth = { version = "0.4.2" }
-alloy-signer = { version = "0.4.2" }
-alloy-signer-local = { version = "0.4.2" }
+alloy-provider = { version = "0.8.1" }
+alloy-rpc-types = { version = "0.8.1" }
+alloy-rpc-types-eth = { version = "0.8.1" }
+alloy-signer = { version = "0.8.1" }
+alloy-signer-local = { version = "0.8.1" }
 alloy-sol-types = { version = "0.8.5" }
-alloy-transport = { version = "0.4.2" }
+alloy-transport = { version = "0.8.1" }
 anyhow = { version = "1.0.86", default-features = false }
 askama = { version = "0.12.0", default-features = false }
 async-channel = { version = "2.3.1" }
