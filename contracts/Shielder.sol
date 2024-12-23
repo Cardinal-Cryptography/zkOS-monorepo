@@ -46,6 +46,10 @@ contract Shielder is
     /// so we control the sum of balances instead.
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
 
+    /// The modulus of the field used in the circuits.
+    uint256 private constant FIELD_MODULUS =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
+
     // -- Events --
     event NewAccountNative(
         bytes3 contractVersion,
@@ -142,6 +146,8 @@ contract Shielder is
         restrictContractVersion(expectedContractVersion)
     {
         uint256 amount = msg.value;
+        if (newNote >= FIELD_MODULUS || idHash >= FIELD_MODULUS)
+            revert NotAFieldElement();
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
@@ -183,6 +189,12 @@ contract Shielder is
     {
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
+        if (
+            oldNullifierHash >= FIELD_MODULUS ||
+            newNote >= FIELD_MODULUS ||
+            idHiding >= FIELD_MODULUS
+        ) revert NotAFieldElement();
+
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         // `address(this).balance` already includes `msg.value`.
@@ -226,6 +238,11 @@ contract Shielder is
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
+        if (
+            oldNullifierHash >= FIELD_MODULUS ||
+            newNote >= FIELD_MODULUS ||
+            idHiding >= FIELD_MODULUS
+        ) revert NotAFieldElement();
 
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
