@@ -97,21 +97,15 @@ abstract contract MerkleTree is Initializable {
         uint256[] memory path = new uint256[](TREE_HEIGHT * ARITY + 1);
 
         uint256 parent = 0;
-        for (uint256 i = 0; i < TREE_HEIGHT; ) {
+        for (uint256 i = 0; i < TREE_HEIGHT; ++i) {
             unchecked {
                 parent = (index + ARITY - 2) / ARITY;
             }
-            for (uint256 j = 0; j < ARITY; ) {
+            for (uint256 j = 0; j < ARITY; ++j) {
                 path[i * ARITY + j] = $.notes[parent * ARITY + j - (ARITY - 2)];
-                unchecked {
-                    j++;
-                }
             }
 
             index = parent;
-            unchecked {
-                i++;
-            }
         }
         path[TREE_HEIGHT * ARITY] = $.root;
 
@@ -133,23 +127,17 @@ abstract contract MerkleTree is Initializable {
         uint256[ARITY] memory subtrees;
         $.notes[index] = note;
 
-        for (uint256 i = 0; i < TREE_HEIGHT; ) {
+        for (uint256 i = 0; i < TREE_HEIGHT; ++i) {
             unchecked {
                 parent = (index + ARITY - 2) / ARITY;
             }
-            for (uint256 j = 0; j < ARITY; ) {
+            for (uint256 j = 0; j < ARITY; ++j) {
                 subtrees[j] = $.notes[parent * ARITY + j - (ARITY - 2)];
-                unchecked {
-                    j++;
-                }
             }
             note = Poseidon2.hash(subtrees);
             $.notes[parent] = note;
 
             index = parent;
-            unchecked {
-                i++;
-            }
         }
         $.root = note;
         $.nextFreeLeafId += 1;
