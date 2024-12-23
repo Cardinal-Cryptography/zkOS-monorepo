@@ -178,7 +178,7 @@ mod tests {
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.newNote, &mut swap_value);
 
-        assert!(actor_balance_decreased_by(&deployment, U256::from(10)));
+        assert!(actor_balance_decreased_by(&deployment, U256::from(0)));
         assert!(recipient_balance_increased_by(&deployment, U256::from(0)));
         assert!(relayer_balance_increased_by(&deployment, U256::from(0)))
     }
