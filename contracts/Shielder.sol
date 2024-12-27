@@ -46,6 +46,10 @@ contract Shielder is
     /// so we control the sum of balances instead.
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
 
+    /// The modulus of the field used in the circuits.
+    uint256 private constant FIELD_MODULUS =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
+
     // -- Events --
     event NewAccountNative(
         bytes3 contractVersion,
@@ -85,6 +89,7 @@ contract Shielder is
     error AmountTooHigh();
     error ContractBalanceLimitReached();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
+    error NotAFieldElement();
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
         if (expectedByCaller != CONTRACT_VERSION) {
@@ -139,6 +144,8 @@ contract Shielder is
         whenNotPaused
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
+        fieldElement(newNote)
+        fieldElement(idHash)
     {
         uint256 amount = msg.value;
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
@@ -179,6 +186,9 @@ contract Shielder is
         whenNotPaused
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
+        fieldElement(idHiding)
+        fieldElement(oldNullifierHash)
+        fieldElement(newNote)
     {
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
@@ -221,7 +231,14 @@ contract Shielder is
         bytes calldata proof,
         address relayerAddress,
         uint256 relayerFee
-    ) external whenNotPaused restrictContractVersion(expectedContractVersion) {
+    )
+        external
+        whenNotPaused
+        restrictContractVersion(expectedContractVersion)
+        fieldElement(idHiding)
+        fieldElement(oldNullifierHash)
+        fieldElement(newNote)
+    {
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
@@ -281,6 +298,11 @@ contract Shielder is
 
     function addressToUInt256(address addr) public pure returns (uint256) {
         return uint256(uint160(addr));
+    }
+
+    modifier fieldElement(uint256 x) {
+        require(x < FIELD_MODULUS, NotAFieldElement());
+        _;
     }
 
     // -- Setters ---
