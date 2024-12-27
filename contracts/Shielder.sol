@@ -144,10 +144,10 @@ contract Shielder is
         whenNotPaused
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
+        fieldElement(newNote)
+        fieldElement(idHash)
     {
         uint256 amount = msg.value;
-        if (newNote >= FIELD_MODULUS || idHash >= FIELD_MODULUS)
-            revert NotAFieldElement();
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
@@ -186,15 +186,12 @@ contract Shielder is
         whenNotPaused
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
+        fieldElement(idHiding)
+        fieldElement(oldNullifierHash)
+        fieldElement(newNote)
     {
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
-        if (
-            oldNullifierHash >= FIELD_MODULUS ||
-            newNote >= FIELD_MODULUS ||
-            idHiding >= FIELD_MODULUS
-        ) revert NotAFieldElement();
-
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         // `address(this).balance` already includes `msg.value`.
@@ -234,15 +231,17 @@ contract Shielder is
         bytes calldata proof,
         address relayerAddress,
         uint256 relayerFee
-    ) external whenNotPaused restrictContractVersion(expectedContractVersion) {
+    )
+        external
+        whenNotPaused
+        restrictContractVersion(expectedContractVersion)
+        fieldElement(idHiding)
+        fieldElement(oldNullifierHash)
+        fieldElement(newNote)
+    {
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
-        if (
-            oldNullifierHash >= FIELD_MODULUS ||
-            newNote >= FIELD_MODULUS ||
-            idHiding >= FIELD_MODULUS
-        ) revert NotAFieldElement();
 
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
@@ -299,6 +298,11 @@ contract Shielder is
 
     function addressToUInt256(address addr) public pure returns (uint256) {
         return uint256(uint160(addr));
+    }
+
+    modifier fieldElement(uint256 x) {
+        require(x < FIELD_MODULUS, NotAFieldElement());
+        _;
     }
 
     // -- Setters ---
