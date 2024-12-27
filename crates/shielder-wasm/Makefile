@@ -26,7 +26,7 @@ build-pkg:
 
 .PHONY: update-package-web
 update-package-web:
-	$(SED_CMD) "s|import initWbg, { wbg_rayon_start_worker } from '../../../';|import initWbg, { wbg_rayon_start_worker } from '../../../shielder_wasm';|g" pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.worker.js
+	$(SED_CMD) "s|import initWbg, { wbg_rayon_start_worker } from '../../../';|import initWbg, { wbg_rayon_start_worker } from '../../../shielder_wasm';|g" pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
 
 .PHONY: remove-unused-files
 remove-unused-files:
