@@ -107,6 +107,15 @@ NETWORK=anvil make deploy-contracts
 
 Shielder is licensed under the Apache-2.0 License. See the LICENSE file for more details.
 
+## Private components and future open sourcing plan
+While this repository represents the majority of our work, there are still some components that are kept in private repositories.
+These include halo2 circuits and Poseidon2 hashing function.
+
+The main reason for keeping these components private at this time is that they are waiting for an external audit to ensure they meet all compliance, security, and quality standards.
+This step is essential to ensure that when we open source these parts, they adhere to our community's expectations for transparency, security, and usability.
+
+We are fully committed to open-sourcing these remaining components as soon as the audit is complete. Stay tuned for updates, and feel free to reach out with any questions or feedback in the meantime!
+
 [aleph-homepage]: https://alephzero.org
 [logo]: logo.png
 [contracts-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-deploy-contract.yml
