@@ -80,23 +80,23 @@ async fn find_shielder_transaction(
     block_number: BlockNumber,
     account: &ShielderAccount,
 ) -> Result<ShielderAction> {
+    let block_number = block_number.into();
     let block = provider
-        .get_block_by_number(
-            BlockNumberOrTag::Number(block_number),
-            BlockTransactionsKind::Full,
-        )
+        .get_block_by_number(block_number, BlockTransactionsKind::Hashes)
         .await?
         .ok_or(anyhow!("Block not found"))?;
-    let txs = block
-        .transactions
-        .as_transactions()
-        .expect("We should get full transactions");
 
-    for tx in txs {
-        let event = match try_get_shielder_event_for_tx(provider, tx, block.header.hash).await? {
+    for tx_hash in block.transactions.as_hashes().expect("We have hashes") {
+        let tx = match provider.get_transaction_by_hash(*tx_hash).await {
+            Ok(Some(tx)) => tx,
+            _ => continue,
+        };
+
+        let event = match try_get_shielder_event_for_tx(provider, &tx, block.header.hash).await? {
             Some(event) => event,
             _ => continue,
         };
+
         event.check_version().map_err(|_| anyhow!("Bad version"))?;
         let event_note = event.note();
         let action = ShielderAction::from((tx.tx_hash(), event));
