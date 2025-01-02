@@ -1,4 +1,3 @@
-use alloy_eips::BlockNumberOrTag;
 use alloy_primitives::{BlockHash, BlockNumber, U256};
 use alloy_provider::{
     network::{primitives::BlockTransactionsKind, TransactionResponse},
