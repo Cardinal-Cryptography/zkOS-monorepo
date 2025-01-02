@@ -59,7 +59,9 @@ mtzero() {
 ####################################################################################################
 deploy_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
-    PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" forge script DeployShielderScript \
+    PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
+    OWNER_ADDRESS="$(cast wallet address ${DEPLOYER_PRIVATE_KEY})" \
+    forge script DeployShielderScript \
       --rpc-url "${NODE_RPC_URL}" \
       --broadcast \
       --non-interactive \
@@ -122,7 +124,6 @@ configure_cli() {
   ${1} node-url "${NODE_RPC_URL}"
   ${1} contract-address "${SHIELDER_CONTRACT_ADDRESS}"
   ${1} relayer-url "${RELAYER_URL}"
-  ${1} relayer-address "${FEE_DESTINATION}"
 
   log_progress "✅ CLI fully configured"
 }
@@ -166,7 +167,8 @@ cleanup() {
   log_progress "🗒 Relayer logs saved to relayer-output.log"
   stop_relayer
 
-  if [[ ! -n "${TESTNET:-}" ]]; then
+  if [[ -z "${TESTNET:-}" ]] && [[ -z "${KEEP_NODE:-}" ]]; then
+    log_progress "🗒 Stopping anvil node"
     stop_node
   fi
 }

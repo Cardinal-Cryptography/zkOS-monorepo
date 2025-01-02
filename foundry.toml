@@ -1,10 +1,15 @@
 # Full reference https://github.com/foundry-rs/foundry/tree/master/crates/config
 
 [profile.default]
+ast = true
 auto_detect_solc = true
 block_timestamp = 1_680_220_800 # March 31, 2023 at 00:00 GMT
+build_info = true
 bytecode_hash = "none"
 evm_version = "shanghai"
+extra_output = ["storageLayout"]
+ffi = true
+fs_permissions = [{ access = "read", path = "artifacts" }]
 fuzz = { runs = 1_000 }
 gas_reports = ["*"]
 optimizer = true
@@ -14,5 +19,13 @@ script = "scripts"
 src = "contracts"
 test = "test"
 
+remappings = [
+    "@openzeppelin/=node_modules/@openzeppelin/",
+    "@uniswap/=node_modules/@uniswap/",
+    "forge-std/=node_modules/forge-std/src",
+    "openzeppelin-foundry-upgrades/=node_modules/openzeppelin-foundry-upgrades/src",
+]
+
 [rpc_endpoints]
 anvil = "http://localhost:8545"
+

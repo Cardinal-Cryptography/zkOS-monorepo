@@ -1,23 +1,24 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.26;
 
 import { DepositLimit } from "./DepositLimit.sol";
-import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as DepositVerifier } from "./DepositVerifier.sol";
+import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
 import { Nullifiers } from "./Nullifiers.sol";
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title Shielder
 /// @author CardinalCryptography
+/// @custom:oz-upgrades-unsafe-allow external-library-linking
 contract Shielder is
     Initializable,
     UUPSUpgradeable,
-    OwnableUpgradeable,
+    Ownable2StepUpgradeable,
     PausableUpgradeable,
     MerkleTree,
     Nullifiers,
@@ -44,6 +45,10 @@ contract Shielder is
     /// making withdrawals impossible. In the contract we can't control a single shielded balance,
     /// so we control the sum of balances instead.
     uint256 public constant MAX_CONTRACT_BALANCE = MAX_TRANSACTION_AMOUNT;
+
+    /// The modulus of the field used in the circuits.
+    uint256 private constant FIELD_MODULUS =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // -- Events --
     event NewAccountNative(
@@ -84,6 +89,7 @@ contract Shielder is
     error AmountTooHigh();
     error ContractBalanceLimitReached();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
+    error NotAFieldElement();
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
         if (expectedByCaller != CONTRACT_VERSION) {
@@ -92,12 +98,10 @@ contract Shielder is
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
-
-    /// @dev disable possibility to renounce ownership
-    function renounceOwnership() public virtual override onlyOwner {}
 
     function initialize(
         address initialOwner,
@@ -112,6 +116,9 @@ contract Shielder is
 
     /// @dev required by the OZ UUPS module
     function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    /// @dev disable possibility to renounce ownership
+    function renounceOwnership() public virtual override onlyOwner {}
 
     function pause() external onlyOwner {
         _pause();
@@ -137,6 +144,8 @@ contract Shielder is
         whenNotPaused
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
+        fieldElement(newNote)
+        fieldElement(idHash)
     {
         uint256 amount = msg.value;
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
@@ -177,6 +186,9 @@ contract Shielder is
         whenNotPaused
         withinDepositLimit
         restrictContractVersion(expectedContractVersion)
+        fieldElement(idHiding)
+        fieldElement(oldNullifierHash)
+        fieldElement(newNote)
     {
         uint256 amount = msg.value;
         if (amount == 0) revert ZeroAmount();
@@ -202,13 +214,7 @@ contract Shielder is
         uint256 index = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        emit DepositNative(
-            CONTRACT_VERSION,
-            idHiding,
-            msg.value,
-            newNote,
-            index
-        );
+        emit DepositNative(CONTRACT_VERSION, idHiding, amount, newNote, index);
     }
 
     /*
@@ -225,7 +231,14 @@ contract Shielder is
         bytes calldata proof,
         address relayerAddress,
         uint256 relayerFee
-    ) external whenNotPaused restrictContractVersion(expectedContractVersion) {
+    )
+        external
+        whenNotPaused
+        restrictContractVersion(expectedContractVersion)
+        fieldElement(idHiding)
+        fieldElement(oldNullifierHash)
+        fieldElement(newNote)
+    {
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
@@ -285,6 +298,11 @@ contract Shielder is
 
     function addressToUInt256(address addr) public pure returns (uint256) {
         return uint256(uint160(addr));
+    }
+
+    modifier fieldElement(uint256 x) {
+        require(x < FIELD_MODULUS, NotAFieldElement());
+        _;
     }
 
     // -- Setters ---

@@ -55,6 +55,11 @@ jobs:
         with:
           name: crates-shielder-wasm-pkg
           path: crates/shielder-wasm/pkg
+      - name: Download generated build cache
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-build-cache
+          path: cache
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4.0.2
         with:

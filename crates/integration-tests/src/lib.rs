@@ -1,24 +1,26 @@
-#![cfg(test)]
 #![feature(assert_matches)]
 
-use std::{fs::File, io::Read};
+use std::{env, fs::File, io::Read};
 
 use alloy_primitives::Address;
 use evm_utils::{compilation::source_to_bytecode, EvmRunner};
 
-mod permit2;
 mod poseidon2;
 mod proving_utils;
 mod shielder;
-mod token;
 mod verifier;
 
-const CONTRACTS_DIR: &str = "../../contracts";
+pub use proving_utils::*;
+pub use shielder::*;
 
 fn read_contract(contract_name: &str) -> String {
     let mut contents = String::new();
-    let mut file = File::open(format!("{CONTRACTS_DIR}/{contract_name}"))
-        .expect("Cannot open contract source file");
+
+    let mut file = File::open(format!(
+        "{}/{contract_name}",
+        env::var("CONTRACTS_DIR").unwrap_or(String::from("../../contracts"))
+    ))
+    .expect("Cannot open contract source file");
     file.read_to_string(&mut contents)
         .expect("Cannot read contract source file");
     contents

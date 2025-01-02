@@ -36,6 +36,10 @@ impl RelayerRpcUrl {
         format!("{}/quote_fees", self.base_url)
     }
 
+    pub fn fee_address_url(&self) -> String {
+        format!("{}/fee_address", self.base_url)
+    }
+
     pub async fn check_connection(&self) -> anyhow::Result<()> {
         let response = reqwest::get(self.healthcheck_url()).await?;
         if response.status().is_success() {
@@ -58,7 +62,6 @@ pub struct AppState {
     pub node_rpc_url: String,
     pub contract_address: Address,
     pub relayer_rpc_url: RelayerRpcUrl,
-    pub relayer_address: Address,
     pub signing_key: String,
 }
 
@@ -83,12 +86,10 @@ impl AppState {
 Node address:          {}
 Contract address:      {}
 Relayer url:           {}
-Relayer address:       {}
 Depositor signing key: {}",
             self.node_rpc_url,
             self.contract_address,
             self.relayer_rpc_url.relay_url(),
-            self.relayer_address,
             self.signing_key
         )
     }

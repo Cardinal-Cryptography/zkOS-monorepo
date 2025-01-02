@@ -1,8 +1,8 @@
 [![LOGO][logo]][aleph-homepage]
 
 [![Nightly Testnet E2E tests][nightly-tests-badge]][nightly-tests]
-[![Contracts Testnet deployment][contracts-deployment-badge]][contracts-deployment]
-[![Relayer Testnet deployment][relayer-deployment-badge]][relayer-deployment]
+[![Contracts deployment][contracts-deployment-badge]][contracts-deployment]
+[![Relayer deployment][relayer-deployment-badge]][relayer-deployment]
 
 # Shielder: A First Iteration of zkOS
 
@@ -35,7 +35,6 @@ Shielder is part of the Aleph Zero zkOS initiative, aimed at delivering Privacy-
 
 Shielder is built utilizing the following components:
 
-- **Aleph Zero WASM L1**: Serves as the Data Availability layer.
 - **EVM Layer 2 Rollup**: Leverages Arbitrum Anytrust DAC technology for fast and secure execution.
 - **Developer Tooling**: Includes Gelato’s web3 services, account abstraction, functions, VRF, oracles, block explorers, indexers, and multisig support.
 
@@ -65,11 +64,36 @@ Boot a local node:
 make anvil
 ```
 
+Generate additional contract sources:
+
+```bash
+make generate-contracts
+```
+
 Compile & deploy the smart contract suite:
 
 ```bash
 make deploy-contracts
 ```
+
+### Running e2e tests
+
+Install dependencies and generate additional contract sources:
+
+```bash
+make deps
+make generate-contracts
+```
+
+Run:
+
+```bash
+run tooling-e2e-tests/full_scenario.sh
+```
+
+(or another `.sh` file from that directory). For maximum compatibility `export BUILD=docker` - this will be slower but
+will build the relayer image inside docker. Otherwise the binary is built on your machine and then copied into the image
+which might not work, depending on the exact configuration of the host.
 
 ### Deploying to anvil
 
@@ -81,13 +105,22 @@ NETWORK=anvil make deploy-contracts
 
 ## License
 
-Shielder is licensed under the MIT License. See the LICENSE file for more details.
+Shielder is licensed under the Apache-2.0 License. See the LICENSE file for more details.
+
+## Private components and future open sourcing plan
+While this repository represents the majority of our work, there are still some components that are kept in private repositories.
+These include halo2 circuits and Poseidon2 hashing function.
+
+The main reason for keeping these components private at this time is that they are waiting for an external audit to ensure they meet all compliance, security, and quality standards.
+This step is essential to ensure that when we open source these parts, they adhere to our community's expectations for transparency, security, and usability.
+
+We are fully committed to open-sourcing these remaining components as soon as the audit is complete. Stay tuned for updates, and feel free to reach out with any questions or feedback in the meantime!
 
 [aleph-homepage]: https://alephzero.org
 [logo]: logo.png
-[contracts-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-testnet-deploy-contract.yml
-[contracts-deployment-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-testnet-deploy-contract.yml/badge.svg
-[relayer-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-build-and-deploy-shielder-relayer.yml
-[relayer-deployment-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-build-and-deploy-shielder-relayer.yml/badge.svg
+[contracts-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-deploy-contract.yml
+[contracts-deployment-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/manual-deploy-contract.yml/badge.svg
+[relayer-deployment]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-stage-build-and-deploy-shielder-relayer.yml
+[relayer-deployment-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-stage-build-and-deploy-shielder-relayer.yml/badge.svg
 [nightly-tests]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-nightly-e2e.yml
 [nightly-tests-badge]: https://github.com/Cardinal-Cryptography/zkOS-monorepo/actions/workflows/testnet-nightly-e2e.yml/badge.svg

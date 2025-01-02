@@ -23,10 +23,13 @@ inputs:
   environment:
     type: choice
     options:
-      - testnet-dev
-      - testnet
-      - mainnet
+      - dev
+      - stage
+      - prod
     required: true
+  overwrite-shielder-address:
+    description: Shielder address to replace the exist one
+    required: false
 
 runs:
   using: composite
@@ -43,6 +46,13 @@ runs:
       uses: imranismail/setup-kustomize@v2
       with:
         kustomize-version: ${{ inputs.kustomize-version }}
+
+    - name: Modify shielder address in the config map
+      if: ${{ inputs.overwrite-shielder-address != '' }}
+      shell: bash
+      run: |
+        yq -i '.data.SHIELDER_CONTRACT_ADDRESS="${{ inputs.overwrite-shielder-address }}"' \
+          aleph-apps/shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1/configmap.yaml
 
     - name: KUSTOMIZE | Update docker image tag
       shell: bash

@@ -1,0 +1,25 @@
+[package]
+name = "token-distributor"
+version = "0.1.0"
+description = "Simple app to distibute tokens to a list of addresses"
+
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "token-distributor"
+path = "main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+alloy-provider = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-signer-local = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+rand = { workspace = true }
+tokio = { workspace = true }

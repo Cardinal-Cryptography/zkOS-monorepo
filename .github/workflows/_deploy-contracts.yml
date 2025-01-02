@@ -46,6 +46,12 @@ jobs:
           name: contract-artifacts
           path: artifacts
 
+      - name: Download generated build cache
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-build-cache
+          path: cache
+
       - name: deploy eth contracts
         shell: bash
         run: NETWORK=anvil make deploy-contracts

@@ -21,7 +21,8 @@ const storageSchema = {
     balance: validateBigInt,
     idHash: validateBigInt,
     currentNote: validateBigInt,
-    currentNoteIndex: z.union([validateBigInt, z.undefined()]).optional()
+    currentNoteIndex: z.union([validateBigInt, z.undefined()]).optional(),
+    storageSchemaVersion: z.number()
   })
 } satisfies Record<StateManagerStorageKeys, z.ZodSchema>;
 

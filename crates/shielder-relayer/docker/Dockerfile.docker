@@ -30,6 +30,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && \
     apt-get install -y \
       libssl-dev \
+      tini \
       ca-certificates && \
       rm -rf /tmp/* /var/{tmp,cache}/* /var/lib/{apt,dpkg}/
 
@@ -39,4 +40,4 @@ RUN chmod +x /usr/local/bin/shielder-relayer
 RUN useradd server
 USER server
 
-ENTRYPOINT ["shielder-relayer"]
+ENTRYPOINT ["tini", "--", "shielder-relayer"]

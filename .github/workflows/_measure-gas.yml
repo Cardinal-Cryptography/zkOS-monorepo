@@ -1,0 +1,100 @@
+---
+name: Measure gas
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  main:
+    name: Measure circuits
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 20
+    steps:
+
+      - name: Checkout code (from the current branch)
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Setup node
+        uses: asdf-vm/actions/install@v3
+
+      - name: Install solc compiler
+        uses: ./.github/actions/install-solc
+        with:
+          solc-version: 0.8.26
+
+      - name: Build binary
+        run: cargo build -p integration-tests --bin gas-consumption --release
+
+      #################### Run measurements on the current branch ####################
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Generate all contracts
+        run: make generate-contracts
+
+      - name: Run measure-circuits binary on the current branch
+        run: |
+          export CONTRACTS_DIR="contracts"
+          export CARGO_MANIFEST_DIR=./Cargo.toml
+          ./target/release/gas-consumption current-report.txt
+
+      - name: Print gas measured on the current branch
+        run: cat current-report.txt
+
+      #################### Run measurements on the main branch ####################
+
+      - name: Checkout repository from `main`
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Install dependencies
+        run: |
+          cd main
+          make deps
+
+      - name: Generate all contracts
+        run: |
+          cd main
+          make generate-contracts
+
+      - name: Run measure-circuits on the `main` branch
+        run: |
+          export CONTRACTS_DIR="main/contracts"
+          export CARGO_MANIFEST_DIR=./main/Cargo.toml
+          ./target/release/gas-consumption main-report.txt
+
+      - name: Print gas measured on the `main` branch
+        run: cat main-report.txt
+
+      #################### Generate report ####################
+
+      - name: Install Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install python deps
+        run: pip install prettytable
+
+      - name: Run metrics-diff-presenter script
+        run: python3 .github/scripts/gas_diff.py > report.html
+
+      - name: Print gas report with diff
+        run: cat report.html
+
+      - name: Post measurements difference
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: report.html
+          comment-tag: hashFiles('report.html')
+

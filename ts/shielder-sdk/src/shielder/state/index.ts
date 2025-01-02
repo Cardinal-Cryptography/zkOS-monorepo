@@ -6,6 +6,7 @@ import storageSchema, {
   StorageInterface
 } from "./storageSchema";
 import { NoteEvent } from "@/chain/contract";
+import { storageSchemaVersion } from "@/constants";
 
 export type AccountState = {
   /**
@@ -28,6 +29,10 @@ export type AccountState = {
    * Merkle tree index of the last note.
    */
   currentNoteIndex?: bigint;
+  /**
+   * Version of the storage schema.
+   */
+  storageSchemaVersion: number;
 };
 
 export type ShielderTransaction = {
@@ -77,7 +82,8 @@ export class StateManager {
         currentNoteIndex:
           obj.currentNoteIndex !== undefined
             ? BigInt(obj.currentNoteIndex)
-            : undefined
+            : undefined,
+        storageSchemaVersion: obj.storageSchemaVersion
       };
     }
     return await this.emptyAccountState();
@@ -90,6 +96,11 @@ export class StateManager {
     if (!scalarsEqual(accountState.id, await this.getId())) {
       throw new Error("New account id does not match the configured.");
     }
+    if (accountState.storageSchemaVersion != storageSchemaVersion) {
+      throw new Error(
+        `Storage schema version mismatch: ${accountState.storageSchemaVersion} != ${storageSchemaVersion}`
+      );
+    }
     await this.storage.setItem("accountState", {
       idHash: scalarToBigint(
         await wasmClientWorker.poseidonHash([accountState.id])
@@ -97,7 +108,8 @@ export class StateManager {
       nonce: accountState.nonce,
       balance: accountState.balance,
       currentNote: scalarToBigint(accountState.currentNote),
-      currentNoteIndex: accountState.currentNoteIndex
+      currentNoteIndex: accountState.currentNoteIndex,
+      storageSchemaVersion: accountState.storageSchemaVersion
     });
   }
 
@@ -125,7 +137,8 @@ const emptyAccountState = (id: Scalar): AccountState => {
     id,
     nonce: 0n,
     balance: 0n,
-    currentNote: Scalar.fromBigint(0n)
+    currentNote: Scalar.fromBigint(0n),
+    storageSchemaVersion
   };
 };
 

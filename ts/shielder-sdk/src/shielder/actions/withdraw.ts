@@ -101,7 +101,7 @@ export class WithdrawAction {
         nullifierNew,
         trapdoorNew,
         accountBalanceNew: Scalar.fromBigint(accountBalanceNew),
-        relayerAddress: Scalar.fromAddress(this.relayer.address),
+        relayerAddress: Scalar.fromAddress(await this.relayer.address()),
         relayerFee: Scalar.fromBigint(totalFee),
         address: Scalar.fromAddress(address)
       })
