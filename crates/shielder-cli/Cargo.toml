@@ -14,7 +14,7 @@ repository.workspace = true
 alloy-eips = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-provider = { workspace = true }
-alloy-rpc-types-eth = { workspace = true }
+alloy-rpc-types-eth = { workspace = true, features = ["serde"] }
 alloy-signer-local = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true, default-features = true }
