@@ -46,6 +46,8 @@ sdkTest("sync after withdraw w/ client", async ({ workerPage }) => {
       ) {
         throw Error("Account state did not sync after withdrawal");
       }
+
+      return true;
     },
     { chainConfig, relayerConfig, privateKeyAlice },
   );
@@ -135,6 +137,8 @@ sdkTest("sync after withdraw w/o client", async ({ workerPage }) => {
       if (stateAfterWithdraw.balance != depositAmount - withdrawAmount) {
         throw Error("Account state did not sync after withdraw");
       }
+
+      return true;
     },
     { chainConfig, relayerConfig, privateKeyAlice },
   );
