@@ -79,6 +79,8 @@ export class WithdrawAction {
 
     const time = Date.now();
 
+    let stateId = scalarToBigint(state.id);
+    console.log(`WithdrawCalldata state.id: ${stateId} nonce: ${state.nonce - 1n}`);
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await wasmClientWorker.getSecrets(state.id, state.nonce - 1n);
     const { nullifier: nullifierNew, trapdoor: trapdoorNew } =

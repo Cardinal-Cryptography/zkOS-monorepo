@@ -65,6 +65,7 @@ export class Relayer implements IRelayer {
   ): Promise<WithdrawResponse> => {
     let response;
     try {
+      //amount = 0n; // TODO: remove
       let requestBodyTrimmed = JSON.stringify(
         {
           expected_contract_version: expectedContractVersion,

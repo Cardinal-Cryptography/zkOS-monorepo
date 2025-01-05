@@ -12,11 +12,7 @@ pub trait RelayingMonitoring: Clone + Send {
     fn notice_relay_failure(&mut self) {}
 }
 
-pub trait DryRunSwitch: Clone + Send {
-    fn should_dry_run_now(&self) -> bool {
-        true
-    }
-}
+pub trait DryRunSwitch: Clone + Send {}
 
 #[derive(Copy, Clone)]
 pub struct ObligatoryDryRun;
@@ -49,8 +45,4 @@ impl RelayingMonitoring for OptionalDryRun {
     }
 }
 
-impl DryRunSwitch for OptionalDryRun {
-    fn should_dry_run_now(&self) -> bool {
-        self.success_counter.load(Ordering::Relaxed) < OPTIMISTIC_DRY_RUN_THRESHOLD
-    }
-}
+impl DryRunSwitch for OptionalDryRun {}

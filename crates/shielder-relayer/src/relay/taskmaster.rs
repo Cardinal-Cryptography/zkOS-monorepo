@@ -124,18 +124,16 @@ async fn relay_worker(
         request_trace.record("received by worker");
         request_trace.set_relayer_address(worker_address);
 
-        if dry_run_manager.should_dry_run_now() {
-            let dry_run_result = shielder_user
-                .withdraw_native::<DryRun>(task.payload.clone())
-                .await;
-            request_trace.record("dry run completed");
+        let dry_run_result = shielder_user
+            .withdraw_native::<DryRun>(task.payload.clone())
+            .await;
+        request_trace.record("dry run completed");
 
-            if let Err(err) = dry_run_result {
-                let _ = task
-                    .report
-                    .send((request_trace, TaskResult::DryRunFailed(err)));
-                continue;
-            }
+        if let Err(err) = dry_run_result {
+            let _ = task
+                .report
+                .send((request_trace, TaskResult::DryRunFailed(err)));
+            continue;
         }
 
         let submit_result = shielder_user.withdraw_native::<Submit>(task.payload).await;

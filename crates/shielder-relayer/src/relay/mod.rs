@@ -51,12 +51,14 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
                 (StatusCode::OK, RelayResponse::from(tx_hash)).into_response()
             }
             TaskResult::DryRunFailed(err) => {
+                let error_str = format!("Dry run failed, error: {}", err.to_string());
                 request_trace.record_dry_run_failure(err);
-                bad_request("Dry run failed")
+                bad_request(&error_str)
             }
             TaskResult::RelayFailed(err) => {
+                let error_str = format!("Relay failed, error: {:?}", err);
                 request_trace.record_failure(err);
-                bad_request("Relay failed")
+                bad_request(&error_str)
             }
         },
         Err(err) => {
