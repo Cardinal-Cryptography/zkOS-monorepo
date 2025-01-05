@@ -65,25 +65,42 @@ export class Relayer implements IRelayer {
   ): Promise<WithdrawResponse> => {
     let response;
     try {
+      let requestBodyTrimmed = JSON.stringify(
+        {
+          expected_contract_version: expectedContractVersion,
+          id_hiding: idHiding,
+          amount,
+          withdraw_address: withdrawAddress,
+          merkle_root: merkleRoot,
+          nullifier_hash: oldNullifierHash,
+          new_note: newNote,
+          proof: Array.from(proof.slice(0, 10))
+        },
+        (_, value: unknown) =>
+          typeof value === "bigint" ? value.toString() : value
+      );
+      let requestBody = JSON.stringify(
+        {
+          expected_contract_version: expectedContractVersion,
+          id_hiding: idHiding,
+          amount,
+          withdraw_address: withdrawAddress,
+          merkle_root: merkleRoot,
+          nullifier_hash: oldNullifierHash,
+          new_note: newNote,
+          proof: Array.from(proof)
+        },
+        (_, value: unknown) =>
+          typeof value === "bigint" ? value.toString() : value
+      );
+      console.log("Withdraw request body (proof trimmed): " + requestBodyTrimmed);
+
       response = await fetch(`${this.url}${relayPath}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(
-          {
-            expected_contract_version: expectedContractVersion,
-            id_hiding: idHiding,
-            amount,
-            withdraw_address: withdrawAddress,
-            merkle_root: merkleRoot,
-            nullifier_hash: oldNullifierHash,
-            new_note: newNote,
-            proof: Array.from(proof)
-          },
-          (_, value: unknown) =>
-            typeof value === "bigint" ? value.toString() : value
-        )
+        body: requestBody
       });
     } catch (error) {
       throw new GenericWithdrawError(`${(error as Error).message}`);
