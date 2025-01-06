@@ -1,13 +1,45 @@
-# `shielder-wasm`
+# Shielder Bindings
 
-This crates provides WASM bindings for the circuits from `shielder-circuits` crate and for some parts of `shielder-rust-sdk`.
+Platform-native bindings for the Shielder cryptographic operations, supporting both WebAssembly (WASM) and mobile platforms through a unified Rust codebase.
 
-We use the `wasm-pack` tool to generate the bindings. You can find the generated bindings in the `pkg` directory.
+## Overview
 
-To build the project, run:
+The shielder_bindings crate provides a no_std compatible interface to the Shielder cryptographic operations. It supports multiple compilation targets including WebAssembly for browser environments and platform-native bindings (via UniFFI) for mobile platforms.
+
+## Building
+
+### Prerequisites
+
+- Rust toolchain (see rust-toolchain.toml)
+- wasm-pack (for WebAssembly builds)
+- Rust target: aarch64-apple-ios-sim (for iOS simulator builds)
+
+### WebAssembly Builds
 
 ```bash
-make
+# Build both single-threaded and multi-threaded WASM packages
+make wasm
+
+# This will:
+# 1. Clean previous builds
+# 2. Build single-threaded package
+# 3. Build multi-threaded package with rayon support
+# 4. Update package configuration
 ```
 
-Inspect the `Makefile` and the resulting `pkg` directory for more information.
+The WASM build process creates two packages:
+
+- `pkg-web-singlethreaded`: Standard WASM build
+- `pkg-web-multithreaded`: WASM build with rayon-powered multithreading
+
+### iOS Builds
+
+```bash
+# Generate iOS bindings
+make ios
+
+# This will:
+# 1. Build for aarch64-apple-ios-sim target
+# 2. Generate Swift bindings using UniFFI
+# 3. Output bindings to ios-bindings directory
+```

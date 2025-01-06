@@ -1,7 +1,7 @@
 [package]
 name = "shielder_bindings"
 version = "0.1.0"
-description = "WASM bindings to shielder circuits for browser"
+description = "WASM and mobile bindings for the shielder-circuits"
 
 edition.workspace = true
 authors = ["Cardinal", "Piotr Roslaniec <p.roslaniec@gmail.com>"]
@@ -14,7 +14,6 @@ repository.workspace = true
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-console_error_panic_hook = { workspace = true }
 getrandom = { workspace = true, optional = true }
 halo2_proofs = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
