@@ -4621,6 +4621,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "shielder_bindings"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "getrandom",
+ "halo2_proofs",
+ "rand",
+ "rand_chacha",
+ "rand_core",
+ "rayon",
+ "sha2",
+ "shielder-circuits",
+ "shielder-rust-sdk",
+ "wasm-bindgen",
+ "wasm-bindgen-rayon",
+]
+
+[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
