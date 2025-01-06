@@ -6,20 +6,22 @@ else
 	SED_CMD := sed -i
 endif
 
-.PHONY: all
-all: clean build-pkg update-package-web remove-unused-files
+.PHONY: wasm
+wasm: clean-wasm build-pkg-wasm update-package-web remove-unused-files-wasm
 
-.PHONY: clean
-clean:
+.PHONY: clean-wasm
+clean-wasm:
 	rm -rf pkg*
 
-.PHONY: build-pkg
-build-pkg:
+.PHONY: build-pkg-wasm
+build-pkg-wasm:
 	wasm-pack build --release --target web --out-dir pkg/pkg-web-singlethreaded -- \
+		--features build-wasm \
 		--target="wasm32-unknown-unknown" \
 		-Z build-std="panic_abort,std"
 	wasm-pack build --release --target web --out-dir pkg/pkg-web-multithreaded -- \
-		--features multithreading_wasm \
+		--features build-wasm \
+		--features multithreading-wasm \
 		--target="wasm32-unknown-unknown" \
 		-Z build-std="panic_abort,std"
 	cp package.template.json pkg/package.json
@@ -28,11 +30,23 @@ build-pkg:
 update-package-web:
 	$(SED_CMD) "s|import initWbg, { wbg_rayon_start_worker } from '../../../';|import initWbg, { wbg_rayon_start_worker } from '../../../shielder_bindings';|g" pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.worker.js
 
-.PHONY: remove-unused-files
-remove-unused-files:
+.PHONY: remove-unused-files-wasm
+remove-unused-files-wasm:
 	(cd pkg/pkg-web-singlethreaded && rm README.md package.json .gitignore)
 	(cd pkg/pkg-web-multithreaded && rm README.md package.json .gitignore)
 
 .PHONY: test
 test:
 	cargo test --release
+
+.PHONY: ios
+ios:
+	rm -rf ios-bindings
+# currently build for aarch64-apple-ios-sim
+	cargo build --release --features build-uniffi --target aarch64-apple-ios-sim
+# generate bindings for Swift
+	cargo run --features build-uniffi \
+		--bin uniffi-bindgen generate \
+		--library ../../target/aarch64-apple-ios-sim/release/libshielder_bindings.a \
+		--language swift \
+		--out-dir ios-bindings

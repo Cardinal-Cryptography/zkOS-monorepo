@@ -11,11 +11,11 @@ categories.workspace = true
 repository.workspace = true
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 console_error_panic_hook = { workspace = true }
-getrandom = { workspace = true, features = ["js"] }
+getrandom = { workspace = true, optional = true }
 halo2_proofs = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rand_chacha = { workspace = true }
@@ -28,8 +28,9 @@ shielder-rust-sdk = { workspace = true, features = [
     "conversion",
     "parameter_generation",
 ] }
+uniffi = { workspace = true, features = ["cli"], optional = true }
 wasm-bindgen-rayon = { workspace = true, optional = true }
-wasm-bindgen.workspace = true
+wasm-bindgen = { workspace = true, optional = true }
 
 [build-dependencies]
 rand = { workspace = true, features = ["small_rng"] }
@@ -42,7 +43,9 @@ shielder-rust-sdk = { workspace = true, features = [
 [features]
 default = ["std"]
 std = []
-multithreading_wasm = [
+build-wasm = ["wasm-bindgen", "getrandom/js", "multithreading-wasm"]
+build-uniffi = ["uniffi"]
+multithreading-wasm = [
     "rayon",
     "wasm-bindgen-rayon",
     "shielder-circuits/multithreading",
@@ -50,3 +53,9 @@ multithreading_wasm = [
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ['-O4', '-g']
+
+# binary for generating uniffi language bindings
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+required-features = ["build-uniffi"]
