@@ -43,8 +43,8 @@ shielder-rust-sdk = { workspace = true, features = [
 [features]
 default = ["std"]
 std = []
-build-wasm = ["wasm-bindgen", "getrandom/js", "multithreading-wasm"]
-build-uniffi = ["uniffi"]
+build-wasm = ["wasm-bindgen", "getrandom/js"]
+build-uniffi = ["uniffi", "rayon", "shielder-circuits/multithreading"]
 multithreading-wasm = [
     "rayon",
     "wasm-bindgen-rayon",
