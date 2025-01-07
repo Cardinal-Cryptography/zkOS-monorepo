@@ -1,35 +1,36 @@
 import * as singlethreaded_wasm from "shielder-wasm/web-singlethreaded";
 import * as multithreaded_wasm from "shielder-wasm/web-multithreaded";
-import { Scalar } from "shielder-sdk-crypto";
-import { NewAccount } from "@/circuits/newAccount";
-import { Deposit } from "@/circuits/deposit";
-import { Withdraw } from "@/circuits/withdraw";
+import { NewAccountCircuit } from "@/circuits/newAccount";
+import { DepositCircuit } from "@/circuits/deposit";
+import { WithdrawCircuit } from "@/circuits/withdraw";
 import { Hasher } from "@/hasher";
 import { SecretGenerator } from "@/secretGenerator";
 import { Converter } from "@/conversion";
-import { Hex } from "viem";
-import {
-  DepositPubInputs,
-  DepositValues,
-  NewAccountPubInputs,
-  NewAccountValues,
-  ShielderActionSecrets,
-  WithdrawPubInputs,
-  WithdrawValues,
-  Proof
-} from "shielder-sdk-crypto";
+import { NoteTreeConfig } from "@/noteTreeConfig";
+import { CryptoClient } from "shielder-sdk-crypto";
 
 export type Caller = "web_singlethreaded" | "web_multithreaded";
 
-export class WasmClient {
+export class WasmClient implements CryptoClient {
   threads: number | undefined;
-  newAccount: NewAccount | undefined;
-  deposit: Deposit | undefined;
-  withdraw: Withdraw | undefined;
-  hasher: Hasher | undefined;
-  secretGenerator: SecretGenerator | undefined;
-  converter: Converter | undefined;
+  newAccountCircuit: NewAccountCircuit;
+  depositCircuit: DepositCircuit;
+  withdrawCircuit: WithdrawCircuit;
+  hasher: Hasher;
+  secretManager: SecretGenerator;
+  converter: Converter;
+  noteTreeConfig: NoteTreeConfig;
   initialized: boolean = false;
+
+  constructor() {
+    this.newAccountCircuit = new NewAccountCircuit();
+    this.depositCircuit = new DepositCircuit();
+    this.withdrawCircuit = new WithdrawCircuit();
+    this.hasher = new Hasher();
+    this.secretManager = new SecretGenerator();
+    this.converter = new Converter();
+    this.noteTreeConfig = new NoteTreeConfig();
+  }
 
   async init(caller: Caller, threads: number): Promise<void> {
     const time = Date.now();
@@ -42,12 +43,13 @@ export class WasmClient {
     } else {
       throw new Error("Invalid caller");
     }
-    this.newAccount = new NewAccount(caller);
-    this.deposit = new Deposit(caller);
-    this.withdraw = new Withdraw(caller);
-    this.hasher = new Hasher(caller);
-    this.secretGenerator = new SecretGenerator(caller);
-    this.converter = new Converter(caller);
+    this.newAccountCircuit.init(caller);
+    this.depositCircuit.init(caller);
+    this.withdrawCircuit.init(caller);
+    this.hasher.init(caller);
+    this.secretManager.init(caller);
+    this.converter.init(caller);
+    this.noteTreeConfig.init(caller);
     this.initialized = true;
     if (caller == "web_singlethreaded") {
       console.log(`Initialized shielder-wasm in ${Date.now() - time}ms`);
@@ -56,52 +58,5 @@ export class WasmClient {
         `Initialized shielder-wasm with ${threads} threads in ${Date.now() - time}ms`
       );
     }
-  }
-
-  proveNewAccount = (values: NewAccountValues): Proof => {
-    return this.newAccount!.prove(values);
-  };
-
-  verifyNewAccount = (
-    proof: Proof,
-    pubInputs: NewAccountPubInputs
-  ): boolean => {
-    return this.newAccount!.verify(proof, pubInputs);
-  };
-
-  proveDeposit = (values: DepositValues): Proof => {
-    return this.deposit!.prove(values);
-  };
-
-  verifyDeposit(proof: Proof, pubInputs: DepositPubInputs): boolean {
-    return this.deposit!.verify(proof, pubInputs);
-  }
-
-  proveWithdraw(values: WithdrawValues): Proof {
-    return this.withdraw!.prove(values);
-  }
-
-  verifyWithdraw(proof: Proof, pubInputs: WithdrawPubInputs): boolean {
-    return this.withdraw!.verify(proof, pubInputs);
-  }
-
-  poseidonHash(inputs: Scalar[]): Scalar {
-    return this.hasher!.poseidonHash(inputs);
-  }
-
-  getSecrets(id: Scalar, nonce: number): ShielderActionSecrets {
-    return this.secretGenerator!.getSecrets(id, nonce);
-  }
-
-  arity(): number {
-    return this.hasher!.arity();
-  }
-
-  treeHeight(): number {
-    return this.hasher!.treeHeight();
-  }
-
-  privateKeyToScalar(hex: Hex): Scalar {
-    return this.converter!.privateKeyToScalar(hex);
   }
 }

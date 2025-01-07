@@ -1,4 +1,3 @@
-import { initWasmWorker, WasmClientWorker } from "./wasmClientWorker";
+import { initWasmWorker } from "./wasmClientWorker";
 
 export { initWasmWorker };
-export type { WasmClientWorker };

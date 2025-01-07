@@ -1,13 +1,17 @@
 import { Scalar, ShielderActionSecrets } from "shielder-sdk-crypto";
 import { Caller } from "./wasmClient";
 import { WasmModuleBase } from "./utils/wasmModuleLoader";
+import { SecretManager as ISecretManager } from "shielder-sdk-crypto";
 
-export class SecretGenerator extends WasmModuleBase {
-  constructor(caller: Caller) {
-    super(caller);
+export class SecretGenerator extends WasmModuleBase implements ISecretManager {
+  init(caller: Caller) {
+    super.init(caller);
   }
 
-  getSecrets(id: Scalar, nonce: number): ShielderActionSecrets {
+  async getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not initialized");
+    }
     const result = this.wasmModule.get_action_secrets(id.bytes, Number(nonce));
     return {
       nullifier: new Scalar(result.nullifier),

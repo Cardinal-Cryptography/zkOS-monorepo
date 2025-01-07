@@ -6,24 +6,28 @@ import {
 import { Hasher } from "../hasher";
 import { Caller } from "../wasmClient";
 import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
+import { NewAccountCircuit as INewAccountCircuit } from "shielder-sdk-crypto";
 
-type NewAccountCircuit =
+type WasmNewAccountCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").NewAccountCircuit
   | typeof import("shielder-wasm/web-multithreaded").NewAccountCircuit;
 
-export class NewAccount extends CircuitBase<InstanceType<NewAccountCircuit>> {
-  hasher: Hasher;
-
-  constructor(caller: Caller) {
-    super(
+export class NewAccountCircuit
+  extends CircuitBase<InstanceType<WasmNewAccountCircuit>>
+  implements INewAccountCircuit
+{
+  init(caller: Caller) {
+    super.init(
       caller,
       (wasmModule: WasmModule) => new wasmModule.NewAccountCircuit()
     );
-    this.hasher = new Hasher(caller);
   }
 
-  prove(values: NewAccountValues): Proof {
-    return this.circuit.prove(
+  async prove(values: NewAccountValues): Promise<Proof> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    return this.wasmCircuit.prove(
       values.id.bytes,
       values.nullifier.bytes,
       values.trapdoor.bytes,
@@ -31,10 +35,13 @@ export class NewAccount extends CircuitBase<InstanceType<NewAccountCircuit>> {
     );
   }
 
-  verify(proof: Proof, pubInputs: NewAccountPubInputs): boolean {
+  async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
     const time = Date.now();
     try {
-      this.circuit.verify(
+      this.wasmCircuit.verify(
         pubInputs.hNote.bytes,
         pubInputs.hId.bytes,
         pubInputs.initialDeposit.bytes,

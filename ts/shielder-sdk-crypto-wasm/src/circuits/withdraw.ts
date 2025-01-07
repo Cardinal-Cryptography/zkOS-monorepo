@@ -2,21 +2,28 @@ import { Proof, WithdrawPubInputs, WithdrawValues } from "shielder-sdk-crypto";
 import { Hasher } from "../hasher";
 import { Caller } from "../wasmClient";
 import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
+import { WithdrawCircuit as IWithdrawCircuit } from "shielder-sdk-crypto";
 
-type WithdrawCircuit =
+type WasmWithdrawCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").WithdrawCircuit
   | typeof import("shielder-wasm/web-multithreaded").WithdrawCircuit;
 
-export class Withdraw extends CircuitBase<InstanceType<WithdrawCircuit>> {
-  hasher: Hasher;
-
-  constructor(caller: Caller) {
-    super(caller, (wasmModule: WasmModule) => new wasmModule.WithdrawCircuit());
-    this.hasher = new Hasher(caller);
+export class WithdrawCircuit
+  extends CircuitBase<InstanceType<WasmWithdrawCircuit>>
+  implements IWithdrawCircuit
+{
+  init(caller: Caller) {
+    super.init(
+      caller,
+      (wasmModule: WasmModule) => new wasmModule.WithdrawCircuit()
+    );
   }
 
-  prove(values: WithdrawValues): Proof {
-    return this.circuit.prove(
+  async prove(values: WithdrawValues): Promise<Proof> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    return this.wasmCircuit.prove(
       values.id.bytes,
       values.nonce.bytes,
       values.nullifierOld.bytes,
@@ -30,10 +37,13 @@ export class Withdraw extends CircuitBase<InstanceType<WithdrawCircuit>> {
     );
   }
 
-  verify(proof: Proof, pubInputs: WithdrawPubInputs) {
+  async verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
     const time = Date.now();
     try {
-      this.circuit.verify(
+      this.wasmCircuit.verify(
         pubInputs.idHiding.bytes,
         pubInputs.merkleRoot.bytes,
         pubInputs.hNullifierOld.bytes,

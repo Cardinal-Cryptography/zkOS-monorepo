@@ -18,22 +18,22 @@ export function getWasmModule(caller: Caller): WasmModule {
 }
 
 export abstract class WasmModuleBase {
-  protected caller: Caller;
-  protected wasmModule: WasmModule;
+  protected caller: Caller | undefined;
+  protected wasmModule: WasmModule | undefined;
 
-  constructor(caller: Caller) {
+  init(caller: Caller) {
     this.caller = caller;
     this.wasmModule = getWasmModule(caller);
   }
 }
 
 export abstract class CircuitBase<T> {
-  protected caller: Caller;
-  protected circuit: T;
+  protected caller: Caller | undefined;
+  protected wasmCircuit: T | undefined;
 
-  constructor(caller: Caller, createCircuit: (module: WasmModule) => T) {
+  init(caller: Caller, createCircuit: (module: WasmModule) => T) {
     this.caller = caller;
     const wasmModule = getWasmModule(caller);
-    this.circuit = createCircuit(wasmModule);
+    this.wasmCircuit = createCircuit(wasmModule);
   }
 }

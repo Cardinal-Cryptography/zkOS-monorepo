@@ -2,21 +2,28 @@ import { Proof, DepositValues, DepositPubInputs } from "shielder-sdk-crypto";
 import { Hasher } from "../hasher";
 import { Caller } from "../wasmClient";
 import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
+import { DepositCircuit as IDepositCircuit } from "shielder-sdk-crypto";
 
-type DepositCircuit =
+type WasmDepositCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").DepositCircuit
   | typeof import("shielder-wasm/web-multithreaded").DepositCircuit;
 
-export class Deposit extends CircuitBase<InstanceType<DepositCircuit>> {
-  hasher: Hasher;
-
-  constructor(caller: Caller) {
-    super(caller, (wasmModule: WasmModule) => new wasmModule.DepositCircuit());
-    this.hasher = new Hasher(caller);
+export class DepositCircuit
+  extends CircuitBase<InstanceType<WasmDepositCircuit>>
+  implements IDepositCircuit
+{
+  init(caller: Caller) {
+    super.init(
+      caller,
+      (wasmModule: WasmModule) => new wasmModule.DepositCircuit()
+    );
   }
 
-  prove(values: DepositValues): Proof {
-    return this.circuit.prove(
+  async prove(values: DepositValues): Promise<Proof> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    return this.wasmCircuit.prove(
       values.id.bytes,
       values.nonce.bytes,
       values.nullifierOld.bytes,
@@ -29,9 +36,12 @@ export class Deposit extends CircuitBase<InstanceType<DepositCircuit>> {
     );
   }
 
-  verify(proof: Proof, pubInputs: DepositPubInputs) {
+  async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
     try {
-      this.circuit.verify(
+      this.wasmCircuit.verify(
         pubInputs.idHiding.bytes,
         pubInputs.merkleRoot.bytes,
         pubInputs.hNullifierOld.bytes,

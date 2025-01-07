@@ -11,21 +11,18 @@ import {
 } from "./index";
 
 export interface NewAccountCircuit {
-  proveNewAccount(values: NewAccountValues): Promise<Proof>;
-  verifyNewAccount(
-    proof: Proof,
-    pubInputs: NewAccountPubInputs
-  ): Promise<boolean>;
+  prove(values: NewAccountValues): Promise<Proof>;
+  verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean>;
 }
 
 export interface DepositCircuit {
-  proveDeposit(values: DepositValues): Promise<Proof>;
-  verifyDeposit(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean>;
+  prove(values: DepositValues): Promise<Proof>;
+  verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean>;
 }
 
 export interface WithdrawCircuit {
-  proveWithdraw(values: WithdrawValues): Promise<Proof>;
-  verifyWithdraw(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean>;
+  prove(values: WithdrawValues): Promise<Proof>;
+  verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean>;
 }
 
 export interface Hasher {
@@ -46,11 +43,12 @@ export interface NoteTreeConfig {
 }
 
 // Main interface that combines all crypto-related functionality
-export interface CryptoClient
-  extends NewAccountCircuit,
-    DepositCircuit,
-    WithdrawCircuit,
-    Hasher,
-    SecretManager,
-    Converter,
-    NoteTreeConfig {}
+export interface CryptoClient {
+  newAccountCircuit: NewAccountCircuit;
+  depositCircuit: DepositCircuit;
+  withdrawCircuit: WithdrawCircuit;
+  hasher: Hasher;
+  secretManager: SecretManager;
+  converter: Converter;
+  noteTreeConfig: NoteTreeConfig;
+}
