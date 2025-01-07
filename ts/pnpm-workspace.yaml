@@ -1,2 +1,4 @@
 packages:
   - "shielder-sdk-crypto"
+  - "shielder-sdk"
+  - "shielder-sdk-tests"
