@@ -6,6 +6,7 @@ use shielder_rust_sdk::conversion::private_key_to_field;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
+#[cfg_attr(feature = "build-uniffi", uniffi::export)]
 pub fn private_key_to_f(hex: &str) -> Vec<u8> {
     private_key_to_field::<Fr>(hex)
         .unwrap()

@@ -1,12 +1,12 @@
 [package]
 name = "shielder_bindings"
 version = "0.1.0"
-description = "WASM and mobile bindings for the shielder-circuits"
+description = "WASM and mobile bindings for shielder-circuits"
 
 edition.workspace = true
 authors = ["Cardinal", "Piotr Roslaniec <p.roslaniec@gmail.com>"]
 homepage.workspace = true
-license = "Apache-2.0"
+license.workspace = true
 categories.workspace = true
 repository.workspace = true
 
@@ -20,7 +20,6 @@ rand = { workspace = true, features = ["small_rng"] }
 rand_chacha = { workspace = true }
 rand_core = { workspace = true }
 rayon = { workspace = true, optional = true }
-sha2 = { workspace = true }
 shielder-circuits = { workspace = true }
 shielder-rust-sdk = { workspace = true, features = [
     "account",
@@ -56,5 +55,5 @@ wasm-opt = ['-O4', '-g']
 # binary for generating uniffi language bindings
 [[bin]]
 name = "uniffi-bindgen"
-path = "uniffi-bindgen.rs"
+path = "src/bin/uniffi-bindgen.rs"
 required-features = ["build-uniffi"]

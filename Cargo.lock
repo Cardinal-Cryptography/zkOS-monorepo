@@ -4720,7 +4720,6 @@ dependencies = [
  "rand_chacha",
  "rand_core",
  "rayon",
- "sha2",
  "shielder-circuits",
  "shielder-rust-sdk",
  "uniffi",

@@ -1,9 +1,6 @@
 use alloc::vec::Vec;
 
-use shielder_circuits::{
-    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
-    F,
-};
+use shielder_circuits::{consts::POSEIDON_RATE, F};
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -11,14 +8,8 @@ use crate::utils::{hash_variable_length, vec_to_f};
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn arity() -> u32 {
-    ARITY.try_into().unwrap()
-}
-
-#[cfg_attr(feature = "build-wasm", wasm_bindgen)]
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn tree_height() -> u32 {
-    NOTE_TREE_HEIGHT.try_into().unwrap()
+pub fn poseidon_rate() -> u32 {
+    POSEIDON_RATE.try_into().unwrap()
 }
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]

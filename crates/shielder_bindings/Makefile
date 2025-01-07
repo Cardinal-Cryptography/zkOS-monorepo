@@ -6,7 +6,12 @@ else
 	SED_CMD := sed -i
 endif
 
+.PHONY: help
+help: # Show help for each of the Makefile recipes.
+	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
+
 .PHONY: wasm
+wasm: # Build wasm bindings
 wasm: clean-wasm build-pkg-wasm update-package-web remove-unused-files-wasm
 
 .PHONY: clean-wasm
@@ -40,6 +45,7 @@ test:
 	cargo test --release
 
 .PHONY: ios
+ios: # Build iOS bindings
 ios:
 	rm -rf ios-bindings
 # currently build for aarch64-apple-ios-sim
