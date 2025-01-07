@@ -26,8 +26,6 @@ export interface CryptoClient {
 
   verifyWithdraw(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean>;
 
-  proveAndVerifyMerkle(): Promise<Proof>;
-
   poseidonHash(inputs: Scalar[]): Promise<Scalar>;
 
   getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets>;
