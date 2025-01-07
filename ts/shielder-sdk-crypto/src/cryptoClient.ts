@@ -1,32 +1,34 @@
 import { Scalar } from "./scalar";
 import {
   DepositPubInputs,
-  DepositValues,
+  DepositAdvice,
   NewAccountPubInputs,
-  NewAccountValues,
+  NewAccountAdvice,
   Proof,
   ShielderActionSecrets,
   WithdrawPubInputs,
-  WithdrawValues
+  WithdrawAdvice
 } from "./types";
 
 export interface NewAccountCircuit {
-  prove(values: NewAccountValues): Promise<Proof>;
+  prove(values: NewAccountAdvice): Promise<Proof>;
   verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean>;
 }
 
 export interface DepositCircuit {
-  prove(values: DepositValues): Promise<Proof>;
+  prove(values: DepositAdvice): Promise<Proof>;
   verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean>;
 }
 
 export interface WithdrawCircuit {
-  prove(values: WithdrawValues): Promise<Proof>;
+  prove(values: WithdrawAdvice): Promise<Proof>;
   verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean>;
 }
 
 export interface Hasher {
   poseidonHash(inputs: Scalar[]): Promise<Scalar>;
+  // max number of inputs to the Poseidon hash function
+  poseidonRate(): Promise<number>;
 }
 
 export interface SecretManager {
@@ -34,11 +36,14 @@ export interface SecretManager {
 }
 
 export interface Converter {
+  // convert a 32-byte hex (66 characters, starting with 0x) string to a Scalar
   privateKeyToScalar(hex: `0x${string}`): Promise<Scalar>;
 }
 
 export interface NoteTreeConfig {
+  // the height of the note Merkle tree
   treeHeight(): Promise<number>;
+  // the arity of the tree's nodes
   arity(): Promise<number>;
 }
 
