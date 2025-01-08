@@ -1,12 +1,11 @@
 import {
   Proof,
-  NewAccountValues,
-  NewAccountPubInputs
+  NewAccountAdvice,
+  NewAccountPubInputs,
+  NewAccountCircuit as INewAccountCircuit
 } from "shielder-sdk-crypto";
-import { Hasher } from "../hasher";
 import { Caller } from "../wasmClient";
 import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
-import { NewAccountCircuit as INewAccountCircuit } from "shielder-sdk-crypto";
 
 type WasmNewAccountCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").NewAccountCircuit
@@ -23,15 +22,17 @@ export class NewAccountCircuit
     );
   }
 
-  async prove(values: NewAccountValues): Promise<Proof> {
+  prove(values: NewAccountAdvice): Promise<Proof> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    return this.wasmCircuit.prove(
-      values.id.bytes,
-      values.nullifier.bytes,
-      values.trapdoor.bytes,
-      values.initialDeposit.bytes
+    return Promise.resolve(
+      this.wasmCircuit.prove(
+        values.id.bytes,
+        values.nullifier.bytes,
+        values.trapdoor.bytes,
+        values.initialDeposit.bytes
+      )
     );
   }
 
@@ -41,11 +42,13 @@ export class NewAccountCircuit
     }
     const time = Date.now();
     try {
-      this.wasmCircuit.verify(
-        pubInputs.hNote.bytes,
-        pubInputs.hId.bytes,
-        pubInputs.initialDeposit.bytes,
-        proof
+      await Promise.resolve(
+        this.wasmCircuit.verify(
+          pubInputs.hNote.bytes,
+          pubInputs.hId.bytes,
+          pubInputs.initialDeposit.bytes,
+          proof
+        )
       );
     } catch (e) {
       console.log(`verification ${Date.now() - time}ms`);

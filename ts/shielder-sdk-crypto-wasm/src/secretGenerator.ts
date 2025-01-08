@@ -8,15 +8,15 @@ export class SecretGenerator extends WasmModuleBase implements ISecretManager {
     super.init(caller);
   }
 
-  async getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
+  getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
     const result = this.wasmModule.get_action_secrets(id.bytes, Number(nonce));
-    return {
+    return Promise.resolve({
       nullifier: new Scalar(result.nullifier),
       trapdoor: new Scalar(result.trapdoor)
-    };
+    });
   }
 }
 

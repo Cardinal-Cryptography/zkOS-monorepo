@@ -9,7 +9,7 @@ export class Hasher extends WasmModuleBase implements IHasher {
     super.init(caller);
   }
 
-  async poseidonHash(input: Scalar[]): Promise<Scalar> {
+  poseidonHash(input: Scalar[]): Promise<Scalar> {
     console.log("Hasher.poseidonHash", input, this.caller, this.wasmModule);
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
@@ -20,8 +20,15 @@ export class Hasher extends WasmModuleBase implements IHasher {
     if (input.length > this.wasmModule.arity()) {
       throw new Error("Input too large");
     }
-    return new Scalar(
-      this.wasmModule.poseidon_hash(flatUint8(input.map((s) => s.bytes)))
+    return Promise.resolve(
+      new Scalar(
+        this.wasmModule.poseidon_hash(flatUint8(input.map((s) => s.bytes)))
+      )
     );
+  }
+
+  poseidonRate(): Promise<number> {
+    // TODO: implement when wasm module has this function
+    throw new Error("Method not implemented.");
   }
 }

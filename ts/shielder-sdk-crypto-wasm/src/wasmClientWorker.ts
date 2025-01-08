@@ -14,7 +14,7 @@ const exposed = new Proxy(wasmClientWorker, {
   get(target, prop: string | symbol) {
     // Handle init method separately since it's on the worker itself
     if (prop === "init") {
-      return target.init;
+      return void target.init;
     }
 
     // For module properties (hasher, converter, etc.),
@@ -44,7 +44,8 @@ export const initWasmWorker = async (
   // Wrap the worker with Comlink to enable cross-thread method calls
   // Because of the previous construction, wrapper worker is
   // not of type Remote<WasmClient> but of type WasmClient
-  const wrappedWorker: WasmClient = wrap<WasmClient>(worker) as any;
+  // @ts-ignore: wrap<WasmClient> is not compatible with WasmClient
+  const wrappedWorker = wrap<WasmClient>(worker) as unknown as WasmClient;
 
   try {
     // Initialize with single or multi-threaded mode

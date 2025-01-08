@@ -7,18 +7,18 @@ export class NoteTreeConfig extends WasmModuleBase implements INoteTreeConfig {
     super.init(caller);
   }
 
-  async treeHeight(): Promise<number> {
+  treeHeight(): Promise<number> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    return this.wasmModule.tree_height();
+    return Promise.resolve(this.wasmModule.tree_height());
   }
 
   async arity(): Promise<number> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    return this.wasmModule.arity();
+    return Promise.resolve(this.wasmModule.arity());
   }
 }
 

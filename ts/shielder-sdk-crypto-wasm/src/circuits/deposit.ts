@@ -1,8 +1,11 @@
-import { Proof, DepositValues, DepositPubInputs } from "shielder-sdk-crypto";
-import { Hasher } from "../hasher";
+import {
+  Proof,
+  DepositAdvice,
+  DepositPubInputs,
+  DepositCircuit as IDepositCircuit
+} from "shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
-import { DepositCircuit as IDepositCircuit } from "shielder-sdk-crypto";
 
 type WasmDepositCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").DepositCircuit
@@ -19,20 +22,22 @@ export class DepositCircuit
     );
   }
 
-  async prove(values: DepositValues): Promise<Proof> {
+  prove(values: DepositAdvice): Promise<Proof> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    return this.wasmCircuit.prove(
-      values.id.bytes,
-      values.nonce.bytes,
-      values.nullifierOld.bytes,
-      values.trapdoorOld.bytes,
-      values.accountBalanceOld.bytes,
-      values.path,
-      values.value.bytes,
-      values.nullifierNew.bytes,
-      values.trapdoorNew.bytes
+    return Promise.resolve(
+      this.wasmCircuit.prove(
+        values.id.bytes,
+        values.nonce.bytes,
+        values.nullifierOld.bytes,
+        values.trapdoorOld.bytes,
+        values.accountBalanceOld.bytes,
+        values.path,
+        values.value.bytes,
+        values.nullifierNew.bytes,
+        values.trapdoorNew.bytes
+      )
     );
   }
 
@@ -41,13 +46,15 @@ export class DepositCircuit
       throw new Error("Circuit not initialized");
     }
     try {
-      this.wasmCircuit.verify(
-        pubInputs.idHiding.bytes,
-        pubInputs.merkleRoot.bytes,
-        pubInputs.hNullifierOld.bytes,
-        pubInputs.hNoteNew.bytes,
-        pubInputs.value.bytes,
-        proof
+      await Promise.resolve(
+        this.wasmCircuit.verify(
+          pubInputs.idHiding.bytes,
+          pubInputs.merkleRoot.bytes,
+          pubInputs.hNullifierOld.bytes,
+          pubInputs.hNoteNew.bytes,
+          pubInputs.value.bytes,
+          proof
+        )
       );
     } catch (e) {
       console.error(e);
