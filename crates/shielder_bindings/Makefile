@@ -1,11 +1,3 @@
-# `sed -i` is used differently under MacOS
-OS := $(shell uname)
-ifeq ($(OS), Darwin)
-	SED_CMD := sed -i ''
-else
-	SED_CMD := sed -i
-endif
-
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
 	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
@@ -33,7 +25,7 @@ build-pkg-wasm:
 
 .PHONY: update-package-web
 update-package-web:
-	$(SED_CMD) "s|import initWbg, { wbg_rayon_start_worker } from '../../../';|import initWbg, { wbg_rayon_start_worker } from '../../../shielder_bindings';|g" pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.worker.js
+    ./update-worker-helpers.sh
 
 .PHONY: remove-unused-files-wasm
 remove-unused-files-wasm:

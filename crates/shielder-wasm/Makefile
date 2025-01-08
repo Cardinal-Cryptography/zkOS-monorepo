@@ -28,3 +28,4 @@ remove-unused-files:
 .PHONY: test
 test:
 	cargo test --release
+
