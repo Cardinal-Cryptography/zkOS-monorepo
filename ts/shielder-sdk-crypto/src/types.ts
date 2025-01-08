@@ -8,7 +8,7 @@ export type NewAccountPubInputs = {
   initialDeposit: Scalar;
 };
 
-export type NewAccountValues = {
+export type NewAccountAdvice = {
   id: Scalar;
   nullifier: Scalar;
   trapdoor: Scalar;
@@ -23,7 +23,7 @@ export type DepositPubInputs = {
   value: Scalar;
 };
 
-export type DepositValues = {
+export type DepositAdvice = {
   id: Scalar;
   nonce: Scalar;
   nullifierOld: Scalar;
@@ -44,7 +44,7 @@ export type WithdrawPubInputs = {
   commitment: Scalar;
 };
 
-export type WithdrawValues = {
+export type WithdrawAdvice = {
   id: Scalar;
   nonce: Scalar;
   nullifierOld: Scalar;

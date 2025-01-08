@@ -1,0 +1,19 @@
+{
+  "name": "shielder-bindings",
+  "version": "0.0.1",
+  "description": "WASM bindings for zkOS cryptography. Intended for use in web applications.",
+  "license": "Apache-2.0",
+  "author": "Cardinal",
+  "contributors": [
+    {
+      "name": "Piotr Roslaniec",
+      "email": "p.roslaniec@gmail.com"
+    }
+  ],
+  "exports": {
+    "./web-singlethreaded": "./pkg-web-singlethreaded/shielder_bindings.js",
+    "./web-multithreaded": "./pkg-web-multithreaded/shielder_bindings.js"
+  },
+  "files": ["pkg-web-singlethreaded/**/*.*", "pkg-web-multithreaded/**/*.*"],
+  "sideEffects": ["pkg-web-multithreaded/snippets/**/*.*"]
+}

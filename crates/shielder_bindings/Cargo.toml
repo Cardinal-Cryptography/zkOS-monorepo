@@ -1,0 +1,59 @@
+[package]
+name = "shielder_bindings"
+version = "0.1.0"
+description = "WASM and mobile bindings for shielder-circuits"
+
+edition.workspace = true
+authors = ["Cardinal", "Piotr Roslaniec <p.roslaniec@gmail.com>"]
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+getrandom = { workspace = true, optional = true }
+halo2_proofs = { workspace = true }
+rand = { workspace = true, features = ["small_rng"] }
+rand_chacha = { workspace = true }
+rand_core = { workspace = true }
+rayon = { workspace = true, optional = true }
+shielder-circuits = { workspace = true }
+shielder-rust-sdk = { workspace = true, features = [
+    "account",
+    "conversion",
+    "parameter_generation",
+] }
+uniffi = { workspace = true, features = ["cli"], optional = true }
+wasm-bindgen-rayon = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }
+
+[build-dependencies]
+rand = { workspace = true, features = ["small_rng"] }
+shielder-circuits = { workspace = true }
+shielder-rust-sdk = { workspace = true, features = [
+    "parameter_generation",
+    "powers_of_tau",
+] }
+
+[features]
+default = ["std"]
+std = []
+build-wasm = ["wasm-bindgen", "getrandom/js"]
+build-uniffi = ["uniffi", "rayon", "shielder-circuits/multithreading"]
+multithreading-wasm = [
+    "rayon",
+    "wasm-bindgen-rayon",
+    "shielder-circuits/multithreading",
+]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-O4', '-g']
+
+# binary for generating uniffi language bindings
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["build-uniffi"]
