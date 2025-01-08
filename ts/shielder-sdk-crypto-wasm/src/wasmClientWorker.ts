@@ -14,7 +14,8 @@ const exposed = new Proxy(wasmClientWorker, {
   get(target, prop: string | symbol) {
     // Handle init method separately since it's on the worker itself
     if (prop === "init") {
-      return void target.init;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      return target.init;
     }
 
     // For module properties (hasher, converter, etc.),
@@ -33,8 +34,10 @@ expose(exposed);
 
 // Creates and initializes a worker from the main thread.
 // Returns a Comlink-wrapped worker that implements CryptoClient.
+// pass wasm_url only if you know what you are doing
 export const initWasmWorker = async (
-  threads: number
+  threads: number,
+  wasm_url?: string
 ): Promise<CryptoClient> => {
   // Create a new worker instance
   const worker = new Worker(new URL("./wasmClientWorker", import.meta.url), {
@@ -50,7 +53,7 @@ export const initWasmWorker = async (
   try {
     // Initialize with single or multi-threaded mode
     const caller = threads === 1 ? "web_singlethreaded" : "web_multithreaded";
-    await wrappedWorker.init(caller, threads);
+    await wrappedWorker.init(caller, threads, wasm_url);
     return wrappedWorker;
   } catch (error) {
     console.error("Failed to initialize WASM worker:", error);

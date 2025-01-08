@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+# Build regular version
 tsc --project tsconfig.json
 tsc-alias -p tsconfig.json
 
@@ -9,3 +10,7 @@ tsc-alias -p tsconfig.json
 mkdir -p dist/crates/shielder-wasm/
 cp -r ../../crates/shielder-wasm/pkg dist/crates/shielder-wasm/
 node update-imports.mjs
+
+# Create Vite-specific build
+./patches/vite-patch.sh
+

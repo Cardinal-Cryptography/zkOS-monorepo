@@ -32,13 +32,17 @@ export class WasmClient implements CryptoClient {
     this.noteTreeConfig = new NoteTreeConfig();
   }
 
-  async init(caller: Caller, threads: number): Promise<void> {
+  async init(
+    caller: Caller,
+    threads: number,
+    wasm_url?: string
+  ): Promise<void> {
     const time = Date.now();
     this.threads = threads;
     if (caller == "web_singlethreaded") {
-      await singlethreaded_wasm.default();
+      await singlethreaded_wasm.default(wasm_url);
     } else if (caller == "web_multithreaded") {
-      await multithreaded_wasm.default();
+      await multithreaded_wasm.default(wasm_url);
       await multithreaded_wasm.initThreadPool(threads);
     } else {
       throw new Error("Invalid caller");

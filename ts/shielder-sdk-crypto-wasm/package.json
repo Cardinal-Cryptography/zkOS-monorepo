@@ -19,10 +19,20 @@
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./__internal__": {
-      "import": "./dist/internal.js",
-      "require": "./dist/internal.js",
-      "types": "./dist/internal.d.ts"
+    "./vite": {
+      "import": "./dist-vite/index.js",
+      "require": "./dist-vite/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./singlethreaded_wasm": {
+      "import": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm",
+      "require": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm",
+      "types": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm.d.ts"
+    },
+    "./multithreaded_wasm": {
+      "import": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm",
+      "require": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm",
+      "types": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm.d.ts"
     }
   },
   "devDependencies": {
