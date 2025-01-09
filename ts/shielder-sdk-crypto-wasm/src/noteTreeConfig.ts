@@ -24,8 +24,3 @@ export class NoteTreeConfig
     return Promise.resolve(this.wasmModule.arity());
   }
 }
-
-/**
- * Objects of this type are passed through `wrap` from `comlink`.
- * As long as they don't have methods, it works.
- */

@@ -22,8 +22,3 @@ export class SecretGenerator
     });
   }
 }
-
-/**
- * Objects of this type are passed through `wrap` from `comlink`.
- * As long as they don't have methods, it works.
- */
