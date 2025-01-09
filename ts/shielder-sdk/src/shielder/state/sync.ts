@@ -7,10 +7,7 @@ import {
   ShielderTransaction,
   StateManager
 } from "@/shielder/state";
-import {
-  newStateByEvent,
-  stateChangingEvents
-} from "@/shielder/state/chainEvents";
+import { StateEventsFilter } from "@/shielder/state/events";
 import { Mutex } from "async-mutex";
 import { isVersionSupported } from "@/utils";
 
@@ -24,17 +21,20 @@ export class StateSynchronizer {
   private contract: IContract;
   private stateManager: StateManager;
   private cryptoClient: CryptoClient;
+  private stateEventsFilter: StateEventsFilter;
   private syncCallback?: (shielderTransaction: ShielderTransaction) => unknown;
   private mutex: Mutex;
   constructor(
     stateManager: StateManager,
     contract: IContract,
     cryptoClient: CryptoClient,
+    stateEventsFilter: StateEventsFilter,
     syncCallback?: (shielderTransaction: ShielderTransaction) => unknown
   ) {
     this.stateManager = stateManager;
     this.contract = contract;
     this.cryptoClient = cryptoClient;
+    this.stateEventsFilter = stateEventsFilter;
     this.syncCallback = syncCallback;
     this.mutex = new Mutex();
   }
@@ -52,7 +52,10 @@ export class StateSynchronizer {
         if (!event) {
           break;
         }
-        const newState = await newStateByEvent(state, event);
+        const newState = await this.stateEventsFilter.newStateByEvent(
+          state,
+          event
+        );
         if (!newState) {
           throw new Error("State is null, this should not happen");
         }
@@ -73,7 +76,10 @@ export class StateSynchronizer {
     while (true) {
       const event = await this.findStateTransitionEvent(state);
       if (!event) break;
-      const newState = await newStateByEvent(state, event);
+      const newState = await this.stateEventsFilter.newStateByEvent(
+        state,
+        event
+      );
       if (!newState) {
         throw new Error("State is null, this should not happen");
       }
@@ -96,7 +102,7 @@ export class StateSynchronizer {
   }
 
   private async getNoteEventForBlock(state: AccountState, block: bigint) {
-    const events = await stateChangingEvents(
+    const events = await this.stateEventsFilter.stateChangingEvents(
       state,
       await this.contract.getNoteEventsFromBlock(block)
     );

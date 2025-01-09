@@ -84,9 +84,9 @@ importers:
       prettier:
         specifier: ^3.3.3
         version: 3.4.2
-      shielder-wasm:
-        specifier: link:../../crates/shielder-wasm/pkg
-        version: link:../../crates/shielder-wasm/pkg
+      shielder-sdk-crypto:
+        specifier: workspace:*
+        version: link:../shielder-sdk-crypto
       ts-jest:
         specifier: ^29.2.5
         version: 29.2.5(@babel/core@7.26.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.7.0(@types/node@22.10.5)(node-notifier@10.0.1))(typescript@5.7.2)

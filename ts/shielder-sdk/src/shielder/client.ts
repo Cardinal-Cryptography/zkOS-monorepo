@@ -28,6 +28,7 @@ import { Calldata } from "@/shielder/actions";
 import { contractVersion } from "@/constants";
 import { CustomError } from "ts-custom-error";
 import { CryptoClient } from "shielder-sdk-crypto";
+import { StateEventsFilter } from "@/shielder/state/events";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
 
@@ -176,13 +177,19 @@ export class ShielderClient {
       internalStorage,
       cryptoClient
     );
-    this.newAccountAction = new NewAccountAction(contract);
-    this.depositAction = new DepositAction(contract);
-    this.withdrawAction = new WithdrawAction(contract, relayer);
+    this.newAccountAction = new NewAccountAction(contract, cryptoClient);
+    this.depositAction = new DepositAction(contract, cryptoClient);
+    this.withdrawAction = new WithdrawAction(contract, relayer, cryptoClient);
+    const stateEventsFilter = new StateEventsFilter(
+      this.newAccountAction,
+      this.depositAction,
+      this.withdrawAction
+    );
     this.stateSynchronizer = new StateSynchronizer(
       this.stateManager,
       contract,
       cryptoClient,
+      stateEventsFilter,
       callbacks.onNewTransaction
     );
     this.relayer = relayer;
