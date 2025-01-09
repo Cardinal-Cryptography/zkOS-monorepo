@@ -8,8 +8,14 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Cardinal",
+  "contributors": [
+    {
+      "name": "Piotr Roslaniec",
+      "email": "p.roslaniec@gmail.com"
+    }
+  ],
+  "license": "Apache-2.0",
   "files": [
     "/dist"
   ],

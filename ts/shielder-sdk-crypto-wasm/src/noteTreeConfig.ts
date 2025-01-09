@@ -1,8 +1,11 @@
 import { Caller } from "./wasmClient";
-import { WasmModuleBase } from "./utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
 import { NoteTreeConfig as INoteTreeConfig } from "shielder-sdk-crypto";
 
-export class NoteTreeConfig extends WasmModuleBase implements INoteTreeConfig {
+export class NoteTreeConfig
+  extends WasmClientModuleBase
+  implements INoteTreeConfig
+{
   init(caller: Caller) {
     super.init(caller);
   }
@@ -21,8 +24,3 @@ export class NoteTreeConfig extends WasmModuleBase implements INoteTreeConfig {
     return Promise.resolve(this.wasmModule.arity());
   }
 }
-
-/**
- * Objects of this type are passed through `wrap` from `comlink`.
- * As long as they don't have methods, it works.
- */

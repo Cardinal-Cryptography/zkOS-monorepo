@@ -1,10 +1,10 @@
 import { Scalar } from "shielder-sdk-crypto";
 import { Caller } from "./wasmClient";
-import { WasmModuleBase } from "./utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
 import { Hex } from "viem";
 import { Converter as IConverter } from "shielder-sdk-crypto";
 
-export class Converter extends WasmModuleBase implements IConverter {
+export class Converter extends WasmClientModuleBase implements IConverter {
   init(caller: Caller) {
     super.init(caller);
   }

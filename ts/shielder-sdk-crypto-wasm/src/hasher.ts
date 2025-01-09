@@ -1,10 +1,10 @@
 import { Scalar } from "shielder-sdk-crypto";
 import { Caller } from "./wasmClient";
-import { WasmModuleBase } from "./utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
 import { flatUint8 } from "./utils";
 import { Hasher as IHasher } from "shielder-sdk-crypto";
 
-export class Hasher extends WasmModuleBase implements IHasher {
+export class Hasher extends WasmClientModuleBase implements IHasher {
   init(caller: Caller) {
     super.init(caller);
   }
