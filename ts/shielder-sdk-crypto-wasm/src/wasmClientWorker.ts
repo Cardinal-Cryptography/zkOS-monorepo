@@ -32,9 +32,16 @@ const exposed = new Proxy(wasmClientWorker, {
 // Make the proxied worker available to the main thread
 expose(exposed);
 
-// Creates and initializes a worker from the main thread.
-// Returns a Comlink-wrapped worker that implements CryptoClient.
-// pass wasm_url only if you know what you are doing
+/**
+ * Creates and initializes a worker from the main thread.
+ * Returns a Comlink-wrapped worker that implements CryptoClient.
+ * Pass `wasm_url` only if you need the special setup (such as vite-patched distribution).
+ *
+ * @param threads - The number of threads to use (1 for single-threaded, >1 for multi-threaded).
+ * @param wasm_url - Optional URL to the WASM binary.
+ * @returns A promise that resolves to a Comlink-wrapped worker implementing CryptoClient.
+ * @throws Will throw an error if the worker initialization fails.
+ */
 export const initWasmWorker = async (
   threads: number,
   wasm_url?: string
