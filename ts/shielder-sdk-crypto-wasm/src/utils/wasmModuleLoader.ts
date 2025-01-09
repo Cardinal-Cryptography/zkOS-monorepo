@@ -21,6 +21,7 @@ export abstract class WasmClientModuleBase {
   protected caller: Caller | undefined;
   protected wasmModule: WasmModule | undefined;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   init(caller: Caller, ...args: any[]) {
     this.caller = caller;
     this.wasmModule = getWasmModule(caller);

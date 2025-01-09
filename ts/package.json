@@ -5,6 +5,15 @@
   "keywords": [],
   "author": "Cardinal",
   "license": "Apache-2.0",
+  "packageManager": "pnpm@8.15.1",
+  "scripts": {
+    "build": "pnpm build:crypto && pnpm build:crypto-wasm && pnpm build:sdk",
+    "build:crypto": "pnpm --filter shielder-sdk-crypto build",
+    "build:crypto-wasm": "pnpm --filter shielder-sdk-crypto-wasm build",
+    "build:sdk": "pnpm --filter shielder-sdk build",
+    "lint": "pnpm -r lint",
+    "install-deps": "pnpm install --frozen-lockfile"
+  },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@types/node": "^22.10.0",

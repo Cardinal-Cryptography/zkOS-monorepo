@@ -22,6 +22,7 @@ export default tseslint.config(
   {
     ignores: [
       "**/dist/",
+      "**/dist-vite/",
       "**/src/_generated/",
       "eslint.config.mjs",
       "**/update-imports.mjs"
