@@ -1,6 +1,6 @@
 import { CustomError } from "ts-custom-error";
 import { IContract } from "@/chain/contract";
-import { scalarToBigint } from "@/crypto/scalar";
+import { CryptoClient, scalarToBigint } from "shielder-sdk-crypto";
 import {
   AccountState,
   eventToTransaction,
@@ -11,7 +11,6 @@ import {
   newStateByEvent,
   stateChangingEvents
 } from "@/shielder/state/chainEvents";
-import { wasmClientWorker } from "@/wasmClientWorker";
 import { Mutex } from "async-mutex";
 import { isVersionSupported } from "@/utils";
 
@@ -22,17 +21,20 @@ export class UnexpectedVersionInEvent extends CustomError {
 }
 
 export class StateSynchronizer {
-  contract: IContract;
-  stateManager: StateManager;
-  syncCallback?: (shielderTransaction: ShielderTransaction) => unknown;
-  mutex: Mutex;
+  private contract: IContract;
+  private stateManager: StateManager;
+  private cryptoClient: CryptoClient;
+  private syncCallback?: (shielderTransaction: ShielderTransaction) => unknown;
+  private mutex: Mutex;
   constructor(
     stateManager: StateManager,
     contract: IContract,
+    cryptoClient: CryptoClient,
     syncCallback?: (shielderTransaction: ShielderTransaction) => unknown
   ) {
     this.stateManager = stateManager;
     this.contract = contract;
+    this.cryptoClient = cryptoClient;
     this.syncCallback = syncCallback;
     this.mutex = new Mutex();
   }
@@ -83,8 +85,12 @@ export class StateSynchronizer {
 
   private async getNullifier(state: AccountState) {
     if (state.nonce > 0n) {
-      return (await wasmClientWorker.getSecrets(state.id, state.nonce - 1n))
-        .nullifier;
+      return (
+        await this.cryptoClient.secretManager.getSecrets(
+          state.id,
+          Number(state.nonce - 1n)
+        )
+      ).nullifier;
     }
     return state.id;
   }
@@ -115,7 +121,7 @@ export class StateSynchronizer {
     const nullifier = await this.getNullifier(state);
 
     const block = await this.contract.nullifierBlock(
-      scalarToBigint(await wasmClientWorker.poseidonHash([nullifier]))
+      scalarToBigint(await this.cryptoClient.hasher.poseidonHash([nullifier]))
     );
     if (!block) {
       /// this is the last shielder transaction

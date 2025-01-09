@@ -27,6 +27,7 @@ import {
 import { Calldata } from "@/shielder/actions";
 import { contractVersion } from "@/constants";
 import { CustomError } from "ts-custom-error";
+import { CryptoClient } from "shielder-sdk-crypto";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
 
@@ -106,6 +107,7 @@ export const createShielderClient = (
   contractAddress: Address,
   relayerUrl: string,
   storage: InjectedStorageInterface,
+  cryptoClient: CryptoClient,
   callbacks: ShielderCallbacks = {}
 ): ShielderClient => {
   const publicClient = createPublicClient({
@@ -134,6 +136,7 @@ export const createShielderClient = (
     relayer,
     storage,
     publicClient,
+    cryptoClient,
     callbacks
   );
 };
@@ -164,12 +167,14 @@ export class ShielderClient {
     relayer: IRelayer,
     storage: InjectedStorageInterface,
     publicClient: PublicClient,
+    cryptoClient: CryptoClient,
     callbacks: ShielderCallbacks = {}
   ) {
     const internalStorage = createStorage(storage);
     this.stateManager = new StateManager(
       shielderSeedPrivateKey,
-      internalStorage
+      internalStorage,
+      cryptoClient
     );
     this.newAccountAction = new NewAccountAction(contract);
     this.depositAction = new DepositAction(contract);
@@ -177,6 +182,7 @@ export class ShielderClient {
     this.stateSynchronizer = new StateSynchronizer(
       this.stateManager,
       contract,
+      cryptoClient,
       callbacks.onNewTransaction
     );
     this.relayer = relayer;

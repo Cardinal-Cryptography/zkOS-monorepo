@@ -1,5 +1,9 @@
-import { Scalar, scalarsEqual, scalarToBigint } from "@/crypto/scalar";
-import { wasmClientWorker } from "@/wasmClientWorker";
+import {
+  CryptoClient,
+  Scalar,
+  scalarsEqual,
+  scalarToBigint
+} from "shielder-sdk-crypto";
 import { Address, Hex } from "viem";
 import storageSchema, {
   InjectedStorageInterface,
@@ -55,13 +59,19 @@ export const eventToTransaction = (event: NoteEvent): ShielderTransaction => {
 
 export class StateManager {
   private storage: StorageInterface;
-  privateKey: Hex;
-  id: Scalar | undefined;
-  idHash: Scalar | undefined;
+  private privateKey: Hex;
+  private id: Scalar | undefined;
+  private idHash: Scalar | undefined;
+  private cryptoClient: CryptoClient;
 
-  constructor(privateKey: Hex, storage: StorageInterface) {
+  constructor(
+    privateKey: Hex,
+    storage: StorageInterface,
+    cryptoClient: CryptoClient
+  ) {
     this.privateKey = privateKey;
     this.storage = storage;
+    this.cryptoClient = cryptoClient;
   }
 
   async accountState(): Promise<AccountState> {
@@ -103,7 +113,7 @@ export class StateManager {
     }
     await this.storage.setItem("accountState", {
       idHash: scalarToBigint(
-        await wasmClientWorker.poseidonHash([accountState.id])
+        await this.cryptoClient.hasher.poseidonHash([accountState.id])
       ),
       nonce: accountState.nonce,
       balance: accountState.balance,
@@ -119,13 +129,17 @@ export class StateManager {
 
   private async getId(): Promise<Scalar> {
     if (!this.id) {
-      this.id = await wasmClientWorker.privateKeyToScalar(this.privateKey);
+      this.id = await this.cryptoClient.converter.privateKeyToScalar(
+        this.privateKey
+      );
     }
     return this.id;
   }
   private async getIdHash(): Promise<Scalar> {
     if (!this.idHash) {
-      this.idHash = await wasmClientWorker.poseidonHash([await this.getId()]);
+      this.idHash = await this.cryptoClient.hasher.poseidonHash([
+        await this.getId()
+      ]);
     }
     return this.idHash;
   }
