@@ -1,8 +1,11 @@
 import { Caller } from "./wasmClient";
-import { WasmModuleBase } from "./utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
 import { NoteTreeConfig as INoteTreeConfig } from "shielder-sdk-crypto";
 
-export class NoteTreeConfig extends WasmModuleBase implements INoteTreeConfig {
+export class NoteTreeConfig
+  extends WasmClientModuleBase
+  implements INoteTreeConfig
+{
   init(caller: Caller) {
     super.init(caller);
   }

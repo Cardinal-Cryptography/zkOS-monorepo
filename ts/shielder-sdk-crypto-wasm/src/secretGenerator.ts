@@ -1,9 +1,12 @@
 import { Scalar, ShielderActionSecrets } from "shielder-sdk-crypto";
 import { Caller } from "./wasmClient";
-import { WasmModuleBase } from "./utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
 import { SecretManager as ISecretManager } from "shielder-sdk-crypto";
 
-export class SecretGenerator extends WasmModuleBase implements ISecretManager {
+export class SecretGenerator
+  extends WasmClientModuleBase
+  implements ISecretManager
+{
   init(caller: Caller) {
     super.init(caller);
   }
