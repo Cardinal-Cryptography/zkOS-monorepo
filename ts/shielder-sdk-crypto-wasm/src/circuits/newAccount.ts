@@ -5,21 +5,23 @@ import {
   NewAccountCircuit as INewAccountCircuit
 } from "shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
-import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
 type WasmNewAccountCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").NewAccountCircuit
   | typeof import("shielder-wasm/web-multithreaded").NewAccountCircuit;
 
 export class NewAccountCircuit
-  extends CircuitBase<InstanceType<WasmNewAccountCircuit>>
+  extends WasmClientModuleBase
   implements INewAccountCircuit
 {
+  private wasmCircuit: InstanceType<WasmNewAccountCircuit> | undefined;
   init(caller: Caller) {
-    super.init(
-      caller,
-      (wasmModule: WasmModule) => new wasmModule.NewAccountCircuit()
-    );
+    super.init(caller);
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    this.wasmCircuit = new this.wasmModule.NewAccountCircuit();
   }
 
   prove(values: NewAccountAdvice): Promise<Proof> {

@@ -5,21 +5,23 @@ import {
   DepositCircuit as IDepositCircuit
 } from "shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
-import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
 type WasmDepositCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").DepositCircuit
   | typeof import("shielder-wasm/web-multithreaded").DepositCircuit;
 
 export class DepositCircuit
-  extends CircuitBase<InstanceType<WasmDepositCircuit>>
+  extends WasmClientModuleBase
   implements IDepositCircuit
 {
+  private wasmCircuit: InstanceType<WasmDepositCircuit> | undefined;
   init(caller: Caller) {
-    super.init(
-      caller,
-      (wasmModule: WasmModule) => new wasmModule.DepositCircuit()
-    );
+    super.init(caller);
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    this.wasmCircuit = new this.wasmModule.DepositCircuit();
   }
 
   prove(values: DepositAdvice): Promise<Proof> {

@@ -21,19 +21,8 @@ export abstract class WasmClientModuleBase {
   protected caller: Caller | undefined;
   protected wasmModule: WasmModule | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   init(caller: Caller, ...args: any[]) {
     this.caller = caller;
     this.wasmModule = getWasmModule(caller);
-  }
-}
-
-export abstract class CircuitBase<T> extends WasmClientModuleBase {
-  protected wasmCircuit: T | undefined;
-
-  init(caller: Caller, createCircuit: (module: WasmModule) => T) {
-    super.init(caller);
-    const wasmModule = getWasmModule(caller);
-    this.wasmCircuit = createCircuit(wasmModule);
   }
 }
