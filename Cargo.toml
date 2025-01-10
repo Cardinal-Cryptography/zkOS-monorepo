@@ -78,3 +78,4 @@ evm-utils = { path = "crates/evm-utils" }
 halo2_solidity_verifier = { path = "crates/halo2-verifier" }
 shielder-relayer = { path = "crates/shielder-relayer" }
 shielder-rust-sdk = { path = "crates/shielder-rust-sdk" }
+type-conversions = { path = "crates/type-conversions" }

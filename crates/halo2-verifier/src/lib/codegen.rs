@@ -8,7 +8,7 @@ use halo2_proofs::{
 use itertools::{chain, Itertools};
 pub use pcs::BatchOpenScheme;
 use ruint::aliases::U256;
-use shielder_rust_sdk::conversion::field_to_u256;
+use type_conversions::field_to_u256;
 
 use crate::codegen::{
     evaluator::Evaluator,

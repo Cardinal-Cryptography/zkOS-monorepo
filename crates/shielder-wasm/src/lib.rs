@@ -16,7 +16,7 @@ use shielder_circuits::{
     poseidon::off_circuit::hash,
     FieldExt, F,
 };
-use shielder_rust_sdk::conversion::bytes_to_field;
+use type_conversions::bytes_to_field;
 #[cfg(feature = "multithreading")]
 pub use wasm_bindgen_rayon::init_thread_pool;
 

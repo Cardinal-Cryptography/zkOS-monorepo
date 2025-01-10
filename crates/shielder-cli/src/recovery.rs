@@ -18,9 +18,9 @@ use shielder_rust_sdk::{
             NewAccountNative, ShielderContractEvents, WithdrawNative,
         },
     },
-    conversion::{field_to_u256, u256_to_field},
 };
 use tracing::{error, info};
+use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::app_state::AppState;
 

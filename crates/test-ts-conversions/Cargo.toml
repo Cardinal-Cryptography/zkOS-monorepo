@@ -12,4 +12,5 @@ repository.workspace = true
 clap = { workspace = true, features = ["derive"] }
 halo2_proofs = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "conversion", "parameter_generation"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "parameter_generation"] }
+type-conversions = { workspace = true }

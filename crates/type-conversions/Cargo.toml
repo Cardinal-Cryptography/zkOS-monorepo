@@ -1,0 +1,14 @@
+[package]
+name = "type-conversions"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+alloy-primitives = { workspace = true, features = ["serde"] }
+halo2curves = { workspace = true }
+thiserror = { workspace = true }

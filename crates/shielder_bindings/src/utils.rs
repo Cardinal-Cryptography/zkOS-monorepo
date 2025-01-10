@@ -8,7 +8,7 @@ use shielder_circuits::{
     poseidon::off_circuit::hash,
     FieldExt, F,
 };
-use shielder_rust_sdk::conversion::bytes_to_field;
+use type_conversions::bytes_to_field;
 
 /// Hashes a variable-length input using const-length Poseidon
 pub fn hash_variable_length<F: FieldExt>(input: &[F]) -> F {
@@ -35,7 +35,7 @@ pub fn vec_to_f(v: Vec<u8>) -> F {
 
 pub fn vec_to_path(v: Vec<u8>) -> [[F; ARITY]; NOTE_TREE_HEIGHT] {
     assert_eq!(
-        (NOTE_TREE_HEIGHT * ARITY * F::size()),
+        NOTE_TREE_HEIGHT * ARITY * F::size(),
         v.len(),
         "Vector length must be divisible by TREE_HEIGHT * ARITY * F::size()"
     );

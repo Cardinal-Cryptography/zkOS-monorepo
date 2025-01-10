@@ -3,8 +3,8 @@ use alloc::vec::Vec;
 use shielder_rust_sdk::{
     account::secrets::{nullifier, trapdoor},
     alloy_primitives::U256,
-    conversion::{bytes_to_u256, u256_to_bytes},
 };
+use type_conversions::{bytes_to_u256, u256_to_bytes};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 /// Provides a way to print debug messages from Rust code to browser console.

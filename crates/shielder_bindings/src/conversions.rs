@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
 use halo2_proofs::halo2curves::bn256::Fr;
-use shielder_rust_sdk::conversion::private_key_to_field;
+use type_conversions::private_key_to_field;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 

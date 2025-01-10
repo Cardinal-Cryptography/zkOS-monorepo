@@ -5,7 +5,7 @@ use shielder_circuits::{
     consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
     F,
 };
-use shielder_rust_sdk::conversion::private_key_to_field;
+use type_conversions::private_key_to_field;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{hash_variable_length, vec_to_f};
