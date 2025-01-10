@@ -6,12 +6,11 @@ sol! {
 
 #[cfg(test)]
 mod tests {
-
     use alloy_primitives::{address, U256};
     use alloy_sol_types::{SolCall, SolValue};
     use halo2_proofs::halo2curves::bn256::Fr;
     use rstest::rstest;
-    use shielder_rust_sdk::conversion::{address_to_field, field_to_u256};
+    use type_conversions::{address_to_field, field_to_u256};
 
     use crate::{
         address_conversion::addressToUInt256Call,
