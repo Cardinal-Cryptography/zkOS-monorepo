@@ -66,10 +66,6 @@ pub mod consts {
 #[cfg(feature = "contract")]
 pub mod contract;
 
-/// Utilities for reading in Perpetual Powers of Tau (.ptau) files.
-#[cfg(feature = "powers_of_tau")]
-pub mod powers_of_tau;
-
 /// Local shielder account management.
 #[cfg(feature = "account")]
 pub mod account;

@@ -1,0 +1,19 @@
+[package]
+name = "powers-of-tau"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+byteorder = { workspace = true }
+halo2_proofs = { workspace = true }
+halo2curves = { workspace = true }
+num-bigint = { workspace = true }
+shielder-circuits = { workspace = true }

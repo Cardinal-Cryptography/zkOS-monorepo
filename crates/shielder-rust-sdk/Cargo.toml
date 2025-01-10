@@ -19,11 +19,8 @@ alloy-signer-local = { workspace = true, optional = true }
 alloy-sol-types = { workspace = true, optional = true }
 alloy-transport = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
-byteorder = { workspace = true, optional = true }
-halo2_proofs = { workspace = true, optional = true }
 halo2curves = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
-num-bigint = { workspace = true, optional = true }
 rand = { workspace = true, features = ["small_rng"], optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
 sha3 = { workspace = true, optional = true }
@@ -68,10 +65,3 @@ parameter_generation = [
     "rand"
 ]
 eip_155 = []
-powers_of_tau = [
-    "byteorder",
-    "halo2_proofs",
-    "halo2curves",
-    "num-bigint",
-    "shielder-circuits"
-]

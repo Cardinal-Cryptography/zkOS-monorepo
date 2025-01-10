@@ -2165,6 +2165,7 @@ dependencies = [
  "evm-utils",
  "halo2_proofs",
  "itertools 0.13.0",
+ "powers-of-tau",
  "ruint",
  "shielder-circuits",
  "shielder-rust-sdk",
@@ -2756,6 +2757,7 @@ dependencies = [
  "halo2_proofs",
  "halo2_solidity_verifier",
  "hex",
+ "powers-of-tau",
  "rand",
  "rstest",
  "shielder-circuits",
@@ -3549,6 +3551,17 @@ name = "powerfmt"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
+
+[[package]]
+name = "powers-of-tau"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "halo2_proofs",
+ "halo2curves",
+ "num-bigint",
+ "shielder-circuits",
+]
 
 [[package]]
 name = "ppv-lite86"
@@ -4580,7 +4593,6 @@ dependencies = [
 name = "shielder-cli"
 version = "0.1.0"
 dependencies = [
- "alloy-eips",
  "alloy-primitives",
  "alloy-provider",
  "alloy-rpc-types-eth",
@@ -4590,6 +4602,7 @@ dependencies = [
  "clap",
  "content-encryption",
  "inquire",
+ "powers-of-tau",
  "reqwest",
  "serde",
  "serde_json",
@@ -4642,11 +4655,8 @@ dependencies = [
  "alloy-sol-types",
  "alloy-transport",
  "anyhow",
- "byteorder",
- "halo2_proofs",
  "halo2curves",
  "log",
- "num-bigint",
  "rand",
  "serde",
  "sha3 0.10.8",
@@ -4664,6 +4674,7 @@ dependencies = [
  "console_error_panic_hook",
  "getrandom",
  "halo2_proofs",
+ "powers-of-tau",
  "rand",
  "rand_chacha",
  "rand_core",
@@ -4684,7 +4695,6 @@ dependencies = [
  "halo2_proofs",
  "rayon",
  "shielder-circuits",
- "shielder-rust-sdk",
  "type-conversions",
  "uniffi",
  "wasm-bindgen",

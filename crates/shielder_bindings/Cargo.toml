@@ -18,10 +18,6 @@ getrandom = { workspace = true, optional = true }
 halo2_proofs = { workspace = true }
 rayon = { workspace = true, optional = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = [
-    "account",
-    "parameter_generation",
-] }
 type-conversions = { workspace = true }
 uniffi = { workspace = true, features = ["cli"], optional = true }
 wasm-bindgen-rayon = { workspace = true, optional = true }
@@ -29,10 +25,6 @@ wasm-bindgen = { workspace = true, optional = true }
 
 [build-dependencies]
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = [
-    "parameter_generation",
-    "powers_of_tau",
-] }
 
 [features]
 default = ["std"]
