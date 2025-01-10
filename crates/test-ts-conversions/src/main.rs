@@ -3,10 +3,8 @@ use std::error::Error;
 use clap::{Parser, Subcommand};
 use halo2_proofs::halo2curves::{bn256::Fr, ff::PrimeField};
 use shielder_circuits::{consts::POSEIDON_RATE, poseidon::off_circuit::hash, FieldExt};
-use shielder_rust_sdk::{
-    account::secrets::{nullifier, trapdoor},
-    conversion::{bytes_to_field, bytes_to_u256},
-};
+use shielder_rust_sdk::account::secrets::{nullifier, trapdoor};
+use type_conversions::{bytes_to_field, bytes_to_u256};
 
 /// Hashes a variable-length input using const-length Poseidon
 fn hash_variable_length<F: FieldExt>(input: &[F]) -> F {

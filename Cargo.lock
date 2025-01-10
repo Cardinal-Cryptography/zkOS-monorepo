@@ -1046,22 +1046,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
-name = "bitcoin-io"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b47c4ab7a93edb0c7198c5535ed9b52b63095f4e9b45279c6736cec4b856baf"
-
-[[package]]
-name = "bitcoin_hashes"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb18c03d0db0247e147a21a6faafd5a7eb851c743db062de72018b6b7e8e4d16"
-dependencies = [
- "bitcoin-io",
- "hex-conservative",
-]
-
-[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2184,6 +2168,7 @@ dependencies = [
  "ruint",
  "shielder-circuits",
  "shielder-rust-sdk",
+ "type-conversions",
 ]
 
 [[package]]
@@ -2257,15 +2242,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "hex-conservative"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5313b072ce3c597065a808dbf612c4c8e8590bdbf8b579508bf7a762c5eae6cd"
-dependencies = [
- "arrayvec",
 ]
 
 [[package]]
@@ -2784,6 +2760,7 @@ dependencies = [
  "rstest",
  "shielder-circuits",
  "shielder-rust-sdk",
+ "type-conversions",
 ]
 
 [[package]]
@@ -3980,7 +3957,7 @@ dependencies = [
  "once_cell",
  "revm-primitives",
  "ripemd",
- "secp256k1 0.29.1",
+ "secp256k1",
  "sha2",
  "substrate-bn",
 ]
@@ -4348,17 +4325,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "secp256k1"
-version = "0.30.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b50c5943d326858130af85e049f2661ba3c78b26589b8ab98e65e80ae44a1252"
-dependencies = [
- "bitcoin_hashes",
- "rand",
- "secp256k1-sys",
-]
-
-[[package]]
 name = "secp256k1-sys"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4634,6 +4600,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "type-conversions",
 ]
 
 [[package]]
@@ -4678,18 +4645,16 @@ dependencies = [
  "byteorder",
  "halo2_proofs",
  "halo2curves",
- "hex",
- "lazy_static",
  "log",
  "num-bigint",
  "rand",
- "secp256k1 0.30.0",
  "serde",
  "sha3 0.10.8",
  "shielder-circuits",
  "static_assertions",
  "thiserror 2.0.9",
  "tracing",
+ "type-conversions",
 ]
 
 [[package]]
@@ -4706,6 +4671,7 @@ dependencies = [
  "sha2",
  "shielder-circuits",
  "shielder-rust-sdk",
+ "type-conversions",
  "wasm-bindgen",
  "wasm-bindgen-rayon",
 ]
@@ -4716,12 +4682,10 @@ version = "0.1.0"
 dependencies = [
  "getrandom",
  "halo2_proofs",
- "rand",
- "rand_chacha",
- "rand_core",
  "rayon",
  "shielder-circuits",
  "shielder-rust-sdk",
+ "type-conversions",
  "uniffi",
  "wasm-bindgen",
  "wasm-bindgen-rayon",
@@ -5054,6 +5018,7 @@ dependencies = [
  "halo2_proofs",
  "shielder-circuits",
  "shielder-rust-sdk",
+ "type-conversions",
 ]
 
 [[package]]
@@ -5476,6 +5441,15 @@ name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
+
+[[package]]
+name = "type-conversions"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "halo2curves",
+ "thiserror 2.0.9",
+]
 
 [[package]]
 name = "typenum"

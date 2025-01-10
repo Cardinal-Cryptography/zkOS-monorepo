@@ -31,4 +31,5 @@ tracing-subscriber = { workspace = true, features = ["fmt", "json", "env-filter"
 content-encryption = { workspace = true, features = ["std"] }
 shielder-circuits = { workspace = true }
 shielder-relayer = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "contract", "conversion", "powers_of_tau"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "contract", "powers_of_tau"] }
+type-conversions = { workspace = true }

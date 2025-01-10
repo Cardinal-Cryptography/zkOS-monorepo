@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use alloy_sol_types::{private::Bytes, sol, SolCall};
 use halo2_proofs::halo2curves::bn256::Fr;
-use shielder_rust_sdk::conversion::field_to_u256;
+use type_conversions::field_to_u256;
 
 sol! {
     function verifyProof(
