@@ -40,10 +40,12 @@ rand = { workspace = true }
 [features]
 account = [
     "alloy-primitives",
+    "halo2curves",
     "serde",
     "sha3",
     "shielder-circuits",
     "static_assertions",
+    "type-conversions",
 ]
 contract = [
     "alloy-primitives",
