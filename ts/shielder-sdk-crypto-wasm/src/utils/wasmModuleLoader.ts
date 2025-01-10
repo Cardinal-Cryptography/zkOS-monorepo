@@ -26,13 +26,3 @@ export abstract class WasmClientModuleBase {
     this.wasmModule = getWasmModule(caller);
   }
 }
-
-export abstract class CircuitBase<T> extends WasmClientModuleBase {
-  protected wasmCircuit: T | undefined;
-
-  init(caller: Caller, createCircuit: (module: WasmModule) => T) {
-    super.init(caller);
-    const wasmModule = getWasmModule(caller);
-    this.wasmCircuit = createCircuit(wasmModule);
-  }
-}

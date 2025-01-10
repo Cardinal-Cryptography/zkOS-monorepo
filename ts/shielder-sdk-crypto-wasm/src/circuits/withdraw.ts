@@ -5,21 +5,23 @@ import {
   WithdrawCircuit as IWithdrawCircuit
 } from "shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
-import { CircuitBase, WasmModule } from "../utils/wasmModuleLoader";
+import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
 type WasmWithdrawCircuit =
   | typeof import("shielder-wasm/web-singlethreaded").WithdrawCircuit
   | typeof import("shielder-wasm/web-multithreaded").WithdrawCircuit;
 
 export class WithdrawCircuit
-  extends CircuitBase<InstanceType<WasmWithdrawCircuit>>
+  extends WasmClientModuleBase
   implements IWithdrawCircuit
 {
+  private wasmCircuit: InstanceType<WasmWithdrawCircuit> | undefined;
   init(caller: Caller) {
-    super.init(
-      caller,
-      (wasmModule: WasmModule) => new wasmModule.WithdrawCircuit()
-    );
+    super.init(caller);
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    this.wasmCircuit = new this.wasmModule.WithdrawCircuit();
   }
 
   prove(values: WithdrawAdvice): Promise<Proof> {
