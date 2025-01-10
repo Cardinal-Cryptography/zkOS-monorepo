@@ -1,0 +1,62 @@
+{
+  "name": "shielder-sdk-crypto-wasm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "./build.sh",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0"
+  },
+  "keywords": [],
+  "author": "Cardinal",
+  "contributors": [
+    {
+      "name": "Piotr Roslaniec",
+      "email": "p.roslaniec@gmail.com"
+    }
+  ],
+  "license": "Apache-2.0",
+  "files": [
+    "/dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./vite": {
+      "import": "./dist-vite/index.js",
+      "require": "./dist-vite/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./singlethreaded_wasm": {
+      "import": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm",
+      "require": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm",
+      "types": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm.d.ts"
+    },
+    "./multithreaded_wasm": {
+      "import": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm",
+      "require": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm",
+      "types": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm.d.ts"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.12.0",
+    "prettier": "^3.4.1",
+    "shielder-wasm": "link:../../crates/shielder-wasm/pkg",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0",
+    "viem": "^2.21.51"
+  },
+  "dependencies": {
+    "comlink": "^4.4.2",
+    "shielder-sdk-crypto": "workspace:*"
+  }
+}

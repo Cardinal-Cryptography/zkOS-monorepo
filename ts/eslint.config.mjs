@@ -11,30 +11,39 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.jest,
-        ...globals.node,
+        ...globals.node
       },
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
+        tsconfigRootDir: import.meta.dirname
+      }
+    }
   },
   {
     ignores: [
-      "dist/",
-      "src/_generated/",
+      "**/dist/",
+      "**/src/_generated/",
       "eslint.config.mjs",
-      "update-imports.mjs",
-    ],
+      "**/update-imports.mjs"
+    ]
   },
   {
     rules: {
       "@typescript-eslint/unbound-method": [
         "error",
         {
-          ignoreStatic: true,
-        },
+          ignoreStatic: true
+        }
       ],
-    },
-  },
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": "allow-with-description",
+          "ts-nocheck": "allow-with-description",
+          "ts-check": "allow-with-description"
+        }
+      ]
+    }
+  }
 );
