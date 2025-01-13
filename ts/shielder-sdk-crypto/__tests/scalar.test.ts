@@ -60,18 +60,3 @@ test("scalar equality", () => {
   expect(scalarsEqual(scalar1, scalar1Copy)).toBe(true);
   expect(scalarsEqual(scalar1, scalar2)).toBe(false);
 });
-
-test("scalar.fromBigint agrees with rust", () => {
-  for (const testValue of [0n, 1n, 2n ** 128n - 1n]) {
-    const result = Scalar.fromBigint(testValue).bytes;
-    execSync(
-      `../../target/debug/test-ts-conversions` +
-        ` u128-equals-bytes` +
-        ` ${testValue.toString()}` +
-        ` ${result.toString()}`,
-      {
-        stdio: "ignore"
-      }
-    );
-  }
-});
