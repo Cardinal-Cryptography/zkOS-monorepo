@@ -25,7 +25,9 @@ export default tseslint.config(
       "**/dist-vite/",
       "**/src/_generated/",
       "eslint.config.mjs",
-      "**/update-imports.mjs"
+      "**/update-imports.mjs",
+      "**/jest.config.ts",
+      "**/__tests/"
     ]
   },
   {
