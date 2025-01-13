@@ -8,6 +8,7 @@ import {
   NewAccountPubInputs,
   NoteTreeConfig,
   Proof,
+  r,
   Scalar,
   scalarsEqual,
   scalarToBigint,
@@ -17,19 +18,24 @@ import {
 } from "shielder-sdk-crypto";
 import { hexToBigInt } from "viem";
 
-const SCALAR_MODULO = 2n ** 64n;
+const SCALAR_MODULO = r;
 export const ARITY = 7;
 export const NOTE_VERSION = 0n;
 
-const mockedHash = (inputs: Scalar[]): Scalar => {
-  const sum = inputs.reduce(
-    (acc, input) => (acc + scalarToBigint(input) ** 2n) % SCALAR_MODULO,
-    BigInt(0)
+const mockedHash = async (inputs: Scalar[]): Promise<Scalar> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(JSON.stringify(inputs));
+  const hash = await crypto.subtle.digest("SHA-256", data);
+
+  const hashArray = new Uint8Array(hash);
+  const sum = hashArray.reduce(
+    (acc, byte) => (acc * 256n + BigInt(byte)) % SCALAR_MODULO,
+    0n
   );
   return Scalar.fromBigint(sum);
 };
 
-const fullArityHash = (inputs: Scalar[]): Scalar => {
+const fullArityHash = async (inputs: Scalar[]): Promise<Scalar> => {
   const scalarArray: Scalar[] = new Array<Scalar>(ARITY).fill(
     Scalar.fromBigint(0n)
   );
@@ -39,18 +45,18 @@ const fullArityHash = (inputs: Scalar[]): Scalar => {
   return mockedHash(scalarArray);
 };
 
-export const hashedNote = (
+export const hashedNote = async (
   id: Scalar,
   nullifier: Scalar,
   trapdoor: Scalar,
   amount: Scalar
-): Scalar => {
+): Promise<Scalar> => {
   return mockedHash([
     Scalar.fromBigint(NOTE_VERSION),
     id,
     nullifier,
     trapdoor,
-    fullArityHash([amount])
+    await fullArityHash([amount])
   ]);
 };
 
@@ -117,22 +123,22 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
     return Promise.resolve(data);
   }
 
-  verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
+  async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
     const proofString = new TextDecoder().decode(proof);
     const advice: NewAccountAdvice = JSON.parse(proofString);
 
-    return Promise.resolve(
-      scalarsEqual(pubInputs.hId, mockedHash([advice.id])) &&
-        scalarsEqual(
-          pubInputs.hNote,
-          hashedNote(
-            advice.id,
-            advice.nullifier,
-            advice.trapdoor,
-            advice.initialDeposit
-          )
-        ) &&
-        scalarsEqual(pubInputs.initialDeposit, advice.initialDeposit)
+    return (
+      scalarsEqual(pubInputs.hId, await mockedHash([advice.id])) &&
+      scalarsEqual(
+        pubInputs.hNote,
+        await hashedNote(
+          advice.id,
+          advice.nullifier,
+          advice.trapdoor,
+          advice.initialDeposit
+        )
+      ) &&
+      scalarsEqual(pubInputs.initialDeposit, advice.initialDeposit)
     );
   }
 }

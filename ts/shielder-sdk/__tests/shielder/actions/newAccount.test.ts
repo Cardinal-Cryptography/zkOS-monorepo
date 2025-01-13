@@ -59,7 +59,7 @@ describe("NewAccountAction", () => {
             Number(state.nonce)
           );
         // Note should be hash of [version, id, nullifier, trapdoor, amount]
-        const expectedNote = hashedNote(
+        const expectedNote = await hashedNote(
           state.id,
           nullifier,
           trapdoor,
@@ -95,7 +95,12 @@ describe("NewAccountAction", () => {
       expect(
         scalarsEqual(
           pubInputs.hNote,
-          hashedNote(state.id, nullifier, trapdoor, Scalar.fromBigint(amount))
+          await hashedNote(
+            state.id,
+            nullifier,
+            trapdoor,
+            Scalar.fromBigint(amount)
+          )
         )
       ).toBe(true);
     });
