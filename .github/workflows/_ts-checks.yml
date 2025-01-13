@@ -73,3 +73,7 @@ jobs:
       - name: Run lint checks (workspace)
         run: pnpm lint
         working-directory: ts
+
+      - name: Run ts tests (workspace)
+        run: pnpm test
+        working-directory: ts
