@@ -4682,9 +4682,13 @@ version = "0.1.0"
 dependencies = [
  "getrandom",
  "halo2_proofs",
+ "rand",
+ "rand_chacha",
+ "rand_core",
  "rayon",
  "shielder-circuits",
  "shielder-rust-sdk",
+ "thiserror 2.0.9",
  "type-conversions",
  "uniffi",
  "wasm-bindgen",

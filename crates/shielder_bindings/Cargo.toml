@@ -16,12 +16,16 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 getrandom = { workspace = true, optional = true }
 halo2_proofs = { workspace = true }
+rand = { workspace = true, features = ["small_rng"] }
+rand_chacha = { workspace = true }
+rand_core = { workspace = true }
 rayon = { workspace = true, optional = true }
 shielder-circuits = { workspace = true }
 shielder-rust-sdk = { workspace = true, features = [
     "account",
     "parameter_generation",
 ] }
+thiserror = { workspace = true }
 type-conversions = { workspace = true }
 uniffi = { workspace = true, features = ["cli"], optional = true }
 wasm-bindgen-rayon = { workspace = true, optional = true }
