@@ -11,7 +11,6 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-alloy-eips = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-provider = { workspace = true }
 alloy-rpc-types-eth = { workspace = true }
@@ -29,7 +28,8 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["fmt", "json", "env-filter"] }
 
 content-encryption = { workspace = true, features = ["std"] }
+powers-of-tau = { workspace = true }
 shielder-circuits = { workspace = true }
 shielder-relayer = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "contract", "powers_of_tau"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "contract"] }
 type-conversions = { workspace = true }
