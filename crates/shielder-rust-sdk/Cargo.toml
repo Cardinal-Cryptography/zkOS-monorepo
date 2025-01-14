@@ -39,6 +39,7 @@ rand = { workspace = true }
 account = [
     "alloy-primitives",
     "halo2curves",
+    "rand",
     "serde",
     "sha3",
     "shielder-circuits",
