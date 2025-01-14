@@ -1,8 +1,8 @@
-/// This script builds artifacts, which are later
-/// embedded into the wasm binary.
-/// To speedup the build process, we cache the artifacts after the first build.
-///
-/// When working locally, the `artifacts/` directory should be cleaned after the circuits are changed.
+//! This script builds artifacts, which are later
+//! embedded into the wasm binary.
+//! To speedup the build process, we cache the artifacts after the first build.
+//!
+//! When working locally, the `artifacts/` directory should be cleaned after the circuits are changed.
 use shielder_circuits::{
     circuits::Params,
     consts::RANGE_PROOF_CHUNK_SIZE,
@@ -52,6 +52,7 @@ fn generate_withdraw(full_params: &Params) {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=../shielder-circuits");
     let full_params = read_setup_parameters(
         get_ptau_file_path(MAX_K, Format::PerpetualPowersOfTau),
         Format::PerpetualPowersOfTau,
@@ -61,5 +62,4 @@ fn main() {
     gen_deposit(&full_params);
     generate_new_account(&full_params);
     generate_withdraw(&full_params);
-    println!("cargo:rerun-if-changed=../shielder-circuits");
 }
