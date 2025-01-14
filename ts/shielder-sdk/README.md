@@ -11,7 +11,7 @@ A TypeScript package for interacting with Shielder, a part of zkOS privacy engin
 
 ## Usage
 
-The main entry point is the `createShielderClient` function which provides methods for interacting with the Shielder protocol.
+The main entry point is the `createShielderClient` function, which provides methods for interacting with the Shielder protocol.
 
 ### Basic Example
 
@@ -21,14 +21,14 @@ import { CryptoClient } from "shielder-sdk-crypto";
 
 // Initialize the client
 const shielderClient = createShielderClient(
-  shielderSeedPrivateKey, // 32-byte hex format private key
-  chainId, // blockchain chain ID
-  rpcHttpEndpoint, // blockchain RPC endpoint
-  contractAddress, // Shielder contract address
-  relayerUrl, // URL of the relayer service
+  "0xprivatekey", // 32-byte hex format private key
+  12345, // blockchain chain ID
+  "https://rpc.url", // blockchain RPC endpoint
+  "0xcontractaddr", // Shielder contract address
+  "https://relayer.url", // URL of the relayer service
   storage, // Storage interface for managing state
   cryptoClient, // Instance of CryptoClient
-  callbacks // Optional callbacks for monitoring operations
+  { ... } // Optional callbacks for monitoring operations
 );
 
 // Shield tokens
