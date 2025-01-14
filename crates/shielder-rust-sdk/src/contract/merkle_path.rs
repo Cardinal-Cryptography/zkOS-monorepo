@@ -1,7 +1,6 @@
 use alloy_primitives::U256;
-
+use shielder_setup::consts::{ARITY, TREE_HEIGHT};
 use crate::{
-    consts::{ARITY, TREE_HEIGHT},
     contract::{call_type::DryRun, ContractResult, ShielderUser},
 };
 

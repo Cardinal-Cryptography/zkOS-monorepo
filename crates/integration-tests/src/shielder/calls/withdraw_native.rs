@@ -7,9 +7,8 @@ use shielder_rust_sdk::{
         ShielderAccount,
     },
     contract::ShielderContract::withdrawNativeCall,
-    version::ContractVersion,
 };
-
+use shielder_setup::version::ContractVersion;
 use crate::shielder::{
     deploy::{Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS},
     invoke_shielder_call,

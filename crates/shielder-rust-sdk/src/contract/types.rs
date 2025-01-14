@@ -6,11 +6,11 @@ use std::fmt::Debug;
 use alloy_contract::CallDecoder;
 use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolCall};
+use shielder_setup::version::{contract_version, ContractVersion};
 use ShielderContract::*;
 
 use crate::{
     contract::ShielderContractError,
-    version::{contract_version, ContractVersion},
 };
 
 sol! {

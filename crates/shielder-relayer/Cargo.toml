@@ -24,7 +24,8 @@ metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
 serde = { workspace = true, features = ["derive"] }
-shielder-rust-sdk = { workspace = true, features = ["contract", "native_token"] }
+shielder-rust-sdk = { workspace = true, features = ["contract"] }
+shielder-setup = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 tower-http = { workspace = true, features = ["cors"] }
 tracing = { workspace = true }
