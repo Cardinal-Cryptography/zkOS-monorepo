@@ -4668,26 +4668,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shielder-wasm"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "getrandom",
- "halo2_proofs",
- "powers-of-tau",
- "rand",
- "rand_chacha",
- "rand_core",
- "rayon",
- "sha2",
- "shielder-circuits",
- "shielder-rust-sdk",
- "type-conversions",
- "wasm-bindgen",
- "wasm-bindgen-rayon",
-]
-
-[[package]]
 name = "shielder_bindings"
 version = "0.1.0"
 dependencies = [
