@@ -1,6 +1,6 @@
 import { expose, wrap } from "comlink";
 import { WasmClient } from "./wasmClient";
-import { CryptoClient } from "shielder-sdk-crypto";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 // Create worker instance
 const wasmClientWorker = new WasmClient();

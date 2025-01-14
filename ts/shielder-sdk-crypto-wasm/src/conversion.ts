@@ -1,15 +1,16 @@
-import { Scalar } from "shielder-sdk-crypto";
+import {
+  Scalar,
+  Converter as IConverter
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "./wasmClient";
 import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
-import { Hex } from "viem";
-import { Converter as IConverter } from "shielder-sdk-crypto";
 
 export class Converter extends WasmClientModuleBase implements IConverter {
   init(caller: Caller) {
     super.init(caller);
   }
 
-  privateKeyToScalar(hex: Hex): Promise<Scalar> {
+  privateKeyToScalar(hex: `0x${string}`): Promise<Scalar> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }

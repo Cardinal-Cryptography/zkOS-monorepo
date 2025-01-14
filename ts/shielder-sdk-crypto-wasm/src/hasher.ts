@@ -1,8 +1,10 @@
-import { Scalar } from "shielder-sdk-crypto";
+import {
+  Scalar,
+  Hasher as IHasher
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "./wasmClient";
 import { WasmClientModuleBase } from "./utils/wasmModuleLoader";
 import { flatUint8 } from "./utils";
-import { Hasher as IHasher } from "shielder-sdk-crypto";
 
 export class Hasher extends WasmClientModuleBase implements IHasher {
   init(caller: Caller) {
@@ -10,7 +12,6 @@ export class Hasher extends WasmClientModuleBase implements IHasher {
   }
 
   poseidonHash(input: Scalar[]): Promise<Scalar> {
-    console.log("Hasher.poseidonHash", input, this.caller, this.wasmModule);
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }

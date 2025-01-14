@@ -27,7 +27,7 @@ import {
 import { Calldata } from "@/shielder/actions";
 import { contractVersion } from "@/constants";
 import { CustomError } from "ts-custom-error";
-import { CryptoClient } from "shielder-sdk-crypto";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { StateEventsFilter } from "@/shielder/state/events";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";

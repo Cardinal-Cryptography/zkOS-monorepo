@@ -1,6 +1,9 @@
 import { CustomError } from "ts-custom-error";
 import { IContract } from "@/chain/contract";
-import { CryptoClient, scalarToBigint } from "shielder-sdk-crypto";
+import {
+  CryptoClient,
+  scalarToBigint
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import {
   AccountState,
   eventToTransaction,
