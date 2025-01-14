@@ -14,13 +14,13 @@ export class NoteTreeConfig
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    return Promise.resolve(this.wasmModule.tree_height());
+    return Promise.resolve(this.wasmModule.note_tree_height());
   }
 
   async arity(): Promise<number> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    return Promise.resolve(this.wasmModule.arity());
+    return Promise.resolve(this.wasmModule.note_arity());
   }
 }

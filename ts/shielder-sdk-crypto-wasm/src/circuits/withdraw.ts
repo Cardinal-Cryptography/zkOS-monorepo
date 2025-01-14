@@ -8,8 +8,8 @@ import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
 type WasmWithdrawCircuit =
-  | typeof import("shielder-wasm/web-singlethreaded").WithdrawCircuit
-  | typeof import("shielder-wasm/web-multithreaded").WithdrawCircuit;
+  | typeof import("shielder_bindings/web-singlethreaded").WithdrawCircuit
+  | typeof import("shielder_bindings/web-multithreaded").WithdrawCircuit;
 
 export class WithdrawCircuit
   extends WasmClientModuleBase
