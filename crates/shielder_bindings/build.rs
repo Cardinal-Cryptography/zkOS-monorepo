@@ -3,6 +3,7 @@
 //! To speedup the build process, we cache the artifacts after the first build.
 //!
 //! When working locally, the `artifacts/` directory should be cleaned after the circuits are changed.
+use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::Params,
     consts::RANGE_PROOF_CHUNK_SIZE,
@@ -13,7 +14,6 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
     Circuit, F, MAX_K,
 };
-use shielder_rust_sdk::powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 
 /// This function is used to generate the artifacts for the circuit, i.e. hardcoded keys
 /// and parameters. Saves results to `params.bin` and `pk.bin`.

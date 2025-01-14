@@ -4693,6 +4693,7 @@ version = "0.1.0"
 dependencies = [
  "getrandom",
  "halo2_proofs",
+ "powers-of-tau",
  "rand",
  "rand_chacha",
  "rand_core",

@@ -33,46 +33,31 @@ pub struct Circuit<PK: ProverKnowledge<F>> {
     _phantom: PhantomData<PK>,
 }
 
-impl WasmCircuit for Circuit<DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>> {
-    fn load_files() -> (Params, ProvingKey, u32) {
-        let params = unmarshall_params(include_bytes!("../../artifacts/deposit/params.bin"))
-            .expect("Failed to unmarshall params");
+macro_rules! impl_load_files {
+    ($circuit_type:ty, $circuit_name:literal) => {
+        impl WasmCircuit for Circuit<$circuit_type> {
+            fn load_files() -> (Params, ProvingKey, u32) {
+                let params = unmarshall_params(include_bytes!(concat!(
+                    "../../artifacts/",
+                    $circuit_name,
+                    "/params.bin"
+                )))
+                .expect("Failed to unmarshall params");
 
-        let (k, pk) = unmarshall_pk::<
-            <DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE> as ProverKnowledge<F>>::Circuit,
-        >(include_bytes!("../../artifacts/deposit/pk.bin"))
-        .expect("Failed to unmarshall pk");
+                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge<F>>::Circuit>(
+                    include_bytes!(concat!("../../artifacts/", $circuit_name, "/pk.bin")),
+                )
+                .expect("Failed to unmarshall pk");
 
-        (params, pk, k)
-    }
+                (params, pk, k)
+            }
+        }
+    };
 }
 
-impl WasmCircuit for Circuit<NewAccountProverKnowledge<F>> {
-    fn load_files() -> (Params, ProvingKey, u32) {
-        let params = unmarshall_params(include_bytes!("../../artifacts/new_account/params.bin"))
-            .expect("Failed to unmarshall params");
-        let (k, pk) =
-            unmarshall_pk::<<NewAccountProverKnowledge<F> as ProverKnowledge<F>>::Circuit>(
-                include_bytes!("../../artifacts/new_account/pk.bin"),
-            )
-            .expect("Failed to unmarshall pk");
-
-        (params, pk, k)
-    }
-}
-
-impl WasmCircuit for Circuit<WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>> {
-    fn load_files() -> (Params, ProvingKey, u32) {
-        let params = unmarshall_params(include_bytes!("../../artifacts/withdraw/params.bin"))
-            .expect("Failed to unmarshall params");
-        let (k, pk) = unmarshall_pk::<
-            <WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE> as ProverKnowledge<F>>::Circuit,
-        >(include_bytes!("../../artifacts/withdraw/pk.bin"))
-        .expect("Failed to unmarshall pk");
-
-        (params, pk, k)
-    }
-}
+impl_load_files!(DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>, "deposit");
+impl_load_files!(NewAccountProverKnowledge<F>, "new_account");
+impl_load_files!(WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>, "withdraw");
 
 impl<PK: ProverKnowledge<F>> Circuit<PK>
 where
@@ -156,7 +141,7 @@ mod tests {
     use shielder_circuits::{
         consts::RANGE_PROOF_CHUNK_SIZE, deposit::DepositProverKnowledge,
         new_account::NewAccountProverKnowledge, withdraw::WithdrawProverKnowledge, ProverKnowledge,
-        PublicInputProvider, F,
+        F,
     };
 
     use super::{DepositCircuit, NewAccountCircuit, WithdrawCircuit};
@@ -164,7 +149,7 @@ mod tests {
     #[test]
     fn deposit_pronto() {
         let mut rng = rand::thread_rng();
-        let mut circuit = DepositCircuit::new_pronto();
+        let circuit = DepositCircuit::new_pronto();
         let values =
             DepositProverKnowledge::<F, RANGE_PROOF_CHUNK_SIZE>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
@@ -174,7 +159,7 @@ mod tests {
     #[test]
     fn new_account_pronto() {
         let mut rng = rand::thread_rng();
-        let mut circuit = NewAccountCircuit::new_pronto();
+        let circuit = NewAccountCircuit::new_pronto();
         let values = NewAccountProverKnowledge::<F>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
@@ -183,7 +168,7 @@ mod tests {
     #[test]
     fn withdraw_pronto() {
         let mut rng = rand::thread_rng();
-        let mut circuit = WithdrawCircuit::new_pronto();
+        let circuit = WithdrawCircuit::new_pronto();
         let values =
             WithdrawProverKnowledge::<F, RANGE_PROOF_CHUNK_SIZE>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
