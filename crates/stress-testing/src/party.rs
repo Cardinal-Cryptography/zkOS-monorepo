@@ -11,8 +11,8 @@ use shielder_rust_sdk::{
     account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
     alloy_primitives::U256,
     contract::merkle_path::get_current_merkle_path,
-    version::contract_version,
 };
+use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
 

@@ -13,8 +13,8 @@ use shielder_rust_sdk::{
     contract::{
         events::get_event, merkle_path::get_current_merkle_path, ShielderContract::WithdrawNative,
     },
-    version::contract_version,
 };
+use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
 

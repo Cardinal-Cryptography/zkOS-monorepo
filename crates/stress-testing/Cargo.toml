@@ -22,4 +22,5 @@ tokio = { workspace = true, features = ["full"] }
 
 shielder-circuits = { workspace = true }
 shielder-relayer = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "contract", "native_token", "parameter_generation"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "contract"] }
+shielder-setup = { workspace = true }

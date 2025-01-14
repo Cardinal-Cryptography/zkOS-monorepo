@@ -6,10 +6,8 @@ use rand::Rng;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
 use shielder_relayer::RelayQuery;
-use shielder_rust_sdk::{
-    alloy_primitives::{Address, Bytes, U256},
-    version::contract_version,
-};
+use shielder_rust_sdk::alloy_primitives::{Address, Bytes, U256};
+use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
     ImageExt, TestcontainersError,

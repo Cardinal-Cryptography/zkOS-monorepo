@@ -21,7 +21,7 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
     Circuit, F, MAX_K,
 };
-use shielder_rust_sdk::parameter_generation;
+use shielder_setup::parameter_generation;
 
 /// This function is used to generate the artifacts for the circuit, i.e. hardcoded keys
 /// and parameters. Saves results to `params.bin` and `pk.bin`.
