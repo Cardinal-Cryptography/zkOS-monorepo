@@ -5,6 +5,7 @@ use halo2_proofs::{
     poly::kzg::commitment::ParamsKZG,
 };
 use halo2_solidity_verifier::{BatchOpenScheme::Bdfg21, SolidityGenerator};
+use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::{generate_keys_with_min_k, Params},
     consts::RANGE_PROOF_CHUNK_SIZE,
@@ -13,7 +14,6 @@ use shielder_circuits::{
     withdraw::WithdrawProverKnowledge,
     EnumCount, ProverKnowledge, MAX_K,
 };
-use shielder_rust_sdk::powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 
 const CONTRACTS_DIR: &str = "./contracts";
 

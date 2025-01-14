@@ -12,7 +12,7 @@ mod tests {
     use evm_utils::{EvmRunner, SuccessResult};
     use halo2_proofs::halo2curves::bn256::Fr;
     use shielder_circuits::poseidon::off_circuit::hash;
-    use shielder_rust_sdk::conversion::field_to_u256;
+    use type_conversions::field_to_u256;
 
     use super::hashCall;
     use crate::deploy_contract;

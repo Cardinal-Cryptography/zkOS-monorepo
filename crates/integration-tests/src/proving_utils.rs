@@ -1,4 +1,5 @@
 use halo2_proofs::plonk::Circuit;
+use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use rand::{RngCore, SeedableRng};
 use rstest::fixture;
 use shielder_circuits::{
@@ -11,10 +12,7 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
     ProverKnowledge, F, MAX_K,
 };
-use shielder_rust_sdk::{
-    parameter_generation,
-    powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format},
-};
+use shielder_rust_sdk::parameter_generation;
 
 /// Given circuit type `C`, construct a correct relation instance and generate a proof, accompanied
 /// by the corresponding public input.

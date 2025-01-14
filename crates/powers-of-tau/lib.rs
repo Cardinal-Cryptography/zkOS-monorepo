@@ -1,3 +1,5 @@
+//! Utilities for reading in Perpetual Powers of Tau (.ptau) files.
+
 use std::{
     fs::File,
     io,

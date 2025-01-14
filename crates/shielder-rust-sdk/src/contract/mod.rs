@@ -5,9 +5,10 @@ use alloy_sol_types::SolValue;
 use alloy_transport::TransportError;
 pub use api::ShielderUser;
 pub use connection::{ConnectionPolicy, NoProvider};
+use type_conversions::address_to_u256;
 pub use types::*;
 
-use crate::{conversion::address_to_u256, version::ContractVersion};
+use crate::version::ContractVersion;
 
 mod api;
 pub mod call_type;

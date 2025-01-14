@@ -23,14 +23,16 @@ rand_core = { workspace = true }
 rayon = { workspace = true, optional = true }
 sha2 = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "conversion", "parameter_generation"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "parameter_generation"] }
+type-conversions = { workspace = true }
 wasm-bindgen-rayon = { workspace = true, optional = true }
 wasm-bindgen.workspace = true
 
 [build-dependencies]
+powers-of-tau = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["parameter_generation", "powers_of_tau"] }
+shielder-rust-sdk = { workspace = true, features = ["parameter_generation"] }
 
 [features]
 default = ["std", "merkle"]

@@ -11,6 +11,7 @@ use shielder_circuits::{
     withdraw::WithdrawProverKnowledge,
     Field, ProverKnowledge, PublicInputProvider, F,
 };
+use type_conversions::{field_to_u256, u256_to_field};
 
 use super::secrets::id_hiding_nonce;
 use crate::{
@@ -19,7 +20,6 @@ use crate::{
         ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
         WithdrawCommitment,
     },
-    conversion::{field_to_u256, u256_to_field},
     version::{contract_version, ContractVersion},
 };
 

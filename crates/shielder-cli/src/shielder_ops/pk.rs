@@ -1,6 +1,7 @@
 use std::{fs, path::PathBuf, str::FromStr};
 
 use anyhow::Result;
+use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     consts::RANGE_PROOF_CHUNK_SIZE,
@@ -11,7 +12,6 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
     Params as _, F, MAX_K,
 };
-use shielder_rust_sdk::powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use tracing::debug;
 
 const NEW_ACCOUNT_PK_FILE: &str = "~/shielder-cli/new_account_pk";
