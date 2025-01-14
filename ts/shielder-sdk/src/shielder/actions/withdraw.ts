@@ -5,7 +5,7 @@ import {
   Scalar,
   scalarToBigint,
   WithdrawPubInputs
-} from "shielder-sdk-crypto";
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/shielder/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";

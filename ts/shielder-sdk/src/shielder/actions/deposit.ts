@@ -5,7 +5,7 @@ import {
   Proof,
   Scalar,
   scalarToBigint
-} from "shielder-sdk-crypto";
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { SendShielderTransaction } from "@/shielder/client";
 import { Calldata } from "@/shielder/actions";
 import { NoteAction } from "@/shielder/actions/utils";
