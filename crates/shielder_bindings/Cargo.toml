@@ -23,8 +23,8 @@ rayon = { workspace = true, optional = true }
 shielder-circuits = { workspace = true }
 shielder-rust-sdk = { workspace = true, features = [
     "account",
-    "parameter_generation",
 ] }
+shielder-setup = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }
 uniffi = { workspace = true, features = ["cli"], optional = true }

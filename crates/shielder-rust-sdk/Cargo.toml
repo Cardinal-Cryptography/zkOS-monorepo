@@ -25,7 +25,7 @@ rand = { workspace = true, features = ["small_rng"], optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
 sha3 = { workspace = true, optional = true }
 shielder-circuits = { workspace = true, optional = true }
-shielder-setup = { workspace = true }
+shielder-setup = { workspace = true, optional = true }
 static_assertions = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
@@ -58,6 +58,7 @@ contract = [
     "anyhow",
     "log",
     "rand",
+    "shielder-setup",
     "thiserror",
     "tracing",
     "type-conversions",
