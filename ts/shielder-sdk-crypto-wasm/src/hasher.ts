@@ -12,7 +12,6 @@ export class Hasher extends WasmClientModuleBase implements IHasher {
   }
 
   poseidonHash(input: Scalar[]): Promise<Scalar> {
-    console.log("Hasher.poseidonHash", input, this.caller, this.wasmModule);
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }

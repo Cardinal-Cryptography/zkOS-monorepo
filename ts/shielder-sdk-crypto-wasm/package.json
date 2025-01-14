@@ -1,6 +1,6 @@
 {
   "name": "@cardinal-cryptography/shielder-sdk-crypto-wasm",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,8 @@
   ],
   "license": "Apache-2.0",
   "files": [
-    "/dist"
+    "/dist",
+    "/dist-vite"
   ],
   "exports": {
     ".": {
@@ -52,11 +53,10 @@
     "shielder-wasm": "link:../../crates/shielder-wasm/pkg",
     "tsc-alias": "^1.8.10",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.16.0",
-    "viem": "^2.21.51"
+    "typescript-eslint": "^8.16.0"
   },
   "dependencies": {
-    "comlink": "^4.4.2",
-    "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*"
+    "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*",
+    "comlink": "^4.4.2"
   }
 }
