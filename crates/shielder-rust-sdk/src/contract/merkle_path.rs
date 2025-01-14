@@ -1,8 +1,7 @@
 use alloy_primitives::U256;
 use shielder_setup::consts::{ARITY, TREE_HEIGHT};
-use crate::{
-    contract::{call_type::DryRun, ContractResult, ShielderUser},
-};
+
+use crate::contract::{call_type::DryRun, ContractResult, ShielderUser};
 
 /// Query the contract for the current merkle path to the leaf at `leaf_index`. Translate the
 /// response to a structured format over the field type `F`.

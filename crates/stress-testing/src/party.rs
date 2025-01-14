@@ -13,6 +13,7 @@ use shielder_rust_sdk::{
     contract::merkle_path::get_current_merkle_path,
 };
 use shielder_setup::version::contract_version;
+
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
 
 pub async fn enter_pandemonium(config: &Config, actors: Vec<Actor>) -> Result<()> {

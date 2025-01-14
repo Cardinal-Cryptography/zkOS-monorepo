@@ -9,9 +9,7 @@ use alloy_sol_types::{sol, SolCall};
 use shielder_setup::version::{contract_version, ContractVersion};
 use ShielderContract::*;
 
-use crate::{
-    contract::ShielderContractError,
-};
+use crate::contract::ShielderContractError;
 
 sol! {
     #[sol(rpc, all_derives = true)]
