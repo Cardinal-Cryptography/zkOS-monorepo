@@ -3,13 +3,8 @@
 /// To speedup the build process, we cache the artifacts after the first build.
 ///
 /// When working locally, the `artifacts/` directory should be cleaned after the circuits are changed.
-use shielder_circuits::circuits::Params;
-/// This script builds artifacts, which are later
-/// embedded into the wasm binary.
-/// To speedup the build process, we cache the artifacts after the first build.
-///
-/// When working locally, the `artifacts/` directory should be cleaned after the circuits are changed.
 use shielder_circuits::{
+    circuits::Params,
     consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositCircuit,
     generate_keys_with_min_k,
