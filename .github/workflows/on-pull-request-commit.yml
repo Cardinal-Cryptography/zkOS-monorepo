@@ -55,7 +55,7 @@ jobs:
       - uses: geekyeggo/delete-artifact@v5
         with:
           name: |
-            crates-shielder-wasm-pkg
+            wasm-pkg
 
   measure-gas-usage:
     name: Measure gas usage
