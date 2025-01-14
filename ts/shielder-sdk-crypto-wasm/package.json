@@ -1,6 +1,6 @@
 {
-  "name": "shielder-sdk-crypto-wasm",
-  "version": "1.0.0",
+  "name": "@cardinal-cryptography/shielder-sdk-crypto-wasm",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -57,6 +57,6 @@
   },
   "dependencies": {
     "comlink": "^4.4.2",
-    "shielder-sdk-crypto": "workspace:*"
+    "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*"
   }
 }
