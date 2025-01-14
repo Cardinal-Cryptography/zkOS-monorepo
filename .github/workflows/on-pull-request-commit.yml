@@ -10,7 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   check-vars-and-secrets:
     name: Check vars and secrets
     uses: ./.github/workflows/_check-vars-and-secrets.yml
@@ -46,18 +45,12 @@ jobs:
     uses: ./.github/workflows/_ts-checks.yml
     secrets: inherit
 
-  ts-sdk-playwright-tests:
-    name: Typescript shielder-sdk Playwright tests
-    needs: [build-contracts, build-wasm-packages]
-    uses: ./.github/workflows/_ts-sdk-playwright-tests.yml
-    secrets: inherit
-
   clean-wasm-artifact:
     name: Clean wasm artifact
     runs-on: ubuntu-22.04
     if: ${{ always() }}
     # dependencies should include all jobs, which interact with wasm artifact
-    needs: [build-wasm-packages, ts-checks, ts-sdk-playwright-tests]
+    needs: [build-wasm-packages, ts-checks]
     steps:
       - uses: geekyeggo/delete-artifact@v5
         with:

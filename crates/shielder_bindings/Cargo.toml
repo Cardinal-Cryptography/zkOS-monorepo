@@ -33,10 +33,6 @@ wasm-bindgen = { workspace = true, optional = true }
 
 [build-dependencies]
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = [
-    "parameter_generation",
-    "powers_of_tau",
-] }
 
 [features]
 default = ["std"]

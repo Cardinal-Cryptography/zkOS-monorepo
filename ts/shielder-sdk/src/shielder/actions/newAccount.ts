@@ -1,26 +1,30 @@
 import { IContract } from "@/chain/contract";
-import { Scalar, scalarToBigint } from "@/crypto/scalar";
+import {
+  CryptoClient,
+  NewAccountPubInputs,
+  Proof,
+  Scalar,
+  scalarToBigint
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { SendShielderTransaction } from "@/shielder/client";
-import { rawAction } from "@/shielder/actions/utils";
+import { NoteAction } from "@/shielder/actions/utils";
 import { AccountState } from "@/shielder/state";
-import { NewAccountReturn } from "@/wasmClient";
-import { wasmClientWorker } from "@/wasmClientWorker";
 
 export interface NewAccountCalldata {
-  calldata: NewAccountReturn;
+  calldata: {
+    pubInputs: NewAccountPubInputs;
+    proof: Proof;
+  };
   expectedContractVersion: `0x${string}`;
   provingTimeMillis: number;
   amount: bigint;
 }
 
-export class NewAccountAction {
+export class NewAccountAction extends NoteAction {
   contract: IContract;
-  constructor(contract: IContract) {
+  constructor(contract: IContract, cryptoClient: CryptoClient) {
+    super(cryptoClient);
     this.contract = contract;
-  }
-
-  static #balanceChange(currentBalance: bigint, amount: bigint) {
-    return amount;
   }
 
   /**
@@ -30,11 +34,28 @@ export class NewAccountAction {
    * @param amount initial deposit
    * @returns updated state
    */
-  static async rawNewAccount(
+  async rawNewAccount(
     stateOld: AccountState,
     amount: bigint
   ): Promise<AccountState | null> {
-    return await rawAction(stateOld, amount, NewAccountAction.#balanceChange);
+    return await this.rawAction(
+      stateOld,
+      amount,
+      (currentBalance: bigint, amount: bigint) => amount
+    );
+  }
+
+  async preparePubInputs(state: AccountState, amount: bigint) {
+    const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
+    const newState = await this.rawNewAccount(state, amount);
+
+    if (newState === null) {
+      throw new Error(
+        "Failed to create new account, possibly due to negative balance"
+      );
+    }
+    const hNote = newState.currentNote;
+    return { hId, hNote, initialDeposit: Scalar.fromBigint(amount) };
   }
 
   /**
@@ -48,13 +69,14 @@ export class NewAccountAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
-    const { nullifier, trapdoor } = await wasmClientWorker.getSecrets(
-      state.id,
-      state.nonce
-    );
+    const { nullifier, trapdoor } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce)
+      );
     const time = Date.now();
-    const calldata = await wasmClientWorker
-      .proveAndVerifyNewAccount({
+    const proof = await this.cryptoClient.newAccountCircuit
+      .prove({
         id: state.id,
         nullifier,
         trapdoor,
@@ -64,10 +86,17 @@ export class NewAccountAction {
         console.error(e);
         throw new Error(`Failed to prove new account: ${e}`);
       });
+    const pubInputs = await this.preparePubInputs(state, amount);
+    if (!(await this.cryptoClient.newAccountCircuit.verify(proof, pubInputs))) {
+      throw new Error("New account proof verification failed");
+    }
     const provingTime = Date.now() - time;
     return {
       expectedContractVersion,
-      calldata,
+      calldata: {
+        pubInputs,
+        proof
+      },
       provingTimeMillis: provingTime,
       amount
     };

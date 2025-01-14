@@ -62,14 +62,14 @@ jobs:
         with:
           version: latest
 
-      - name: Install dependencies (shielder-sdk)
-        run: pnpm install --frozen-lockfile
-        working-directory: ts/shielder-sdk
+      - name: Install dependencies (workspace)
+        run: pnpm install-deps
+        working-directory: ts
 
-      - name: Build shielder-sdk
+      - name: Build all (workspace)
         run: pnpm build
-        working-directory: ts/shielder-sdk
+        working-directory: ts
 
-      - name: Run lint checks (shielder-sdk)
+      - name: Run lint checks (workspace)
         run: pnpm lint
-        working-directory: ts/shielder-sdk
+        working-directory: ts

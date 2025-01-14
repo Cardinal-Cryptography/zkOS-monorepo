@@ -1,5 +1,5 @@
 [package]
-name = "type-conversions"
+name = "powers-of-tau"
 version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
@@ -12,6 +12,8 @@ repository.workspace = true
 path = "lib.rs"
 
 [dependencies]
-alloy-primitives = { workspace = true, features = ["serde"] }
+byteorder = { workspace = true }
+halo2_proofs = { workspace = true }
 halo2curves = { workspace = true }
-thiserror = { workspace = true }
+num-bigint = { workspace = true }
+shielder-circuits = { workspace = true }

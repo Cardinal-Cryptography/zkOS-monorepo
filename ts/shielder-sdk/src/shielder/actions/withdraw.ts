@@ -1,32 +1,42 @@
 import { IContract } from "@/chain/contract";
-import { Scalar, scalarToBigint } from "@/crypto/scalar";
+import {
+  CryptoClient,
+  Proof,
+  Scalar,
+  scalarToBigint,
+  WithdrawPubInputs
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/shielder/state";
-import { wasmClientWorker } from "@/wasmClientWorker";
-import { Address } from "viem";
+import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
-import { rawAction } from "@/shielder/actions/utils";
-import { WithdrawReturn } from "@/crypto/circuits/withdraw";
+import { NoteAction } from "@/shielder/actions/utils";
+import { idHidingNonce } from "@/utils";
+import { contractVersion } from "@/constants";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
-  calldata: WithdrawReturn;
+  calldata: {
+    pubInputs: WithdrawPubInputs;
+    proof: Proof;
+  };
   provingTimeMillis: number;
   amount: bigint;
   address: Address;
   merkleRoot: Scalar;
 }
 
-export class WithdrawAction {
+export class WithdrawAction extends NoteAction {
   contract: IContract;
   relayer: IRelayer;
 
-  constructor(contract: IContract, relayer: IRelayer) {
+  constructor(
+    contract: IContract,
+    relayer: IRelayer,
+    cryptoClient: CryptoClient
+  ) {
+    super(cryptoClient);
     this.contract = contract;
     this.relayer = relayer;
-  }
-
-  static #balanceChange(currentBalance: bigint, amount: bigint) {
-    return currentBalance - amount;
   }
 
   /**
@@ -36,11 +46,75 @@ export class WithdrawAction {
    * @param amount amount to withdraw
    * @returns updated state
    */
-  static async rawWithdraw(
+  async rawWithdraw(
     stateOld: AccountState,
     amount: bigint
   ): Promise<AccountState | null> {
-    return await rawAction(stateOld, amount, WithdrawAction.#balanceChange);
+    return await this.rawAction(
+      stateOld,
+      amount,
+      (currentBalance: bigint, amount: bigint) => currentBalance - amount
+    );
+  }
+
+  calculateCommitment(
+    address: Scalar,
+    relayerAddress: Scalar,
+    relayerFee: Scalar
+  ): Scalar {
+    const encodingHash = hexToBigInt(
+      keccak256(
+        encodePacked(
+          ["bytes3", "uint256", "uint256", "uint256"],
+          [
+            contractVersion,
+            scalarToBigint(address),
+            scalarToBigint(relayerAddress),
+            scalarToBigint(relayerFee)
+          ]
+        )
+      )
+    );
+
+    // Truncating to fit in the field size, as in the contract.
+    const commitment = encodingHash >> 4n;
+
+    return Scalar.fromBigint(commitment);
+  }
+
+  async preparePubInputs(
+    state: AccountState,
+    amount: bigint,
+    nonce: Scalar,
+    nullifierOld: Scalar,
+    merkleRoot: Scalar,
+    commitment: Scalar
+  ): Promise<WithdrawPubInputs> {
+    const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
+    const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
+
+    const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
+      nullifierOld
+    ]);
+
+    const newNote = await this.rawWithdraw(state, amount);
+
+    if (newNote === null) {
+      throw new Error(
+        "Failed to withdraw, possibly due to insufficient balance"
+      );
+    }
+
+    const hNoteNew = newNote.currentNote;
+
+    return {
+      hNullifierOld,
+      hNoteNew,
+      idHiding,
+      merkleRoot,
+      value: Scalar.fromBigint(amount),
+      commitment
+    };
   }
 
   /**
@@ -61,9 +135,11 @@ export class WithdrawAction {
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
     const lastNodeIndex = state.currentNoteIndex!;
-    const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
+    const [path, merkleRoot] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
     );
+
+    const nonce = idHidingNonce();
 
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
@@ -80,39 +156,59 @@ export class WithdrawAction {
     const time = Date.now();
 
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
-      await wasmClientWorker.getSecrets(state.id, state.nonce - 1n);
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce - 1n)
+      );
     const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
-      await wasmClientWorker.getSecrets(state.id, state.nonce);
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce)
+      );
 
-    const accountBalanceNew = WithdrawAction.#balanceChange(
-      state.balance,
-      amount
-    );
-
-    const calldata = await wasmClientWorker
-      .proveAndVerifyWithdraw({
+    const proof = await this.cryptoClient.withdrawCircuit
+      .prove({
         id: state.id,
+        nonce,
         nullifierOld,
         trapdoorOld,
         accountBalanceOld: Scalar.fromBigint(state.balance),
-        merkleRoot,
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
         trapdoorNew,
-        accountBalanceNew: Scalar.fromBigint(accountBalanceNew),
-        relayerAddress: Scalar.fromAddress(await this.relayer.address()),
-        relayerFee: Scalar.fromBigint(totalFee),
-        address: Scalar.fromAddress(address)
+        commitment: this.calculateCommitment(
+          Scalar.fromAddress(address),
+          Scalar.fromAddress(await this.relayer.address()),
+          Scalar.fromBigint(totalFee)
+        )
       })
       .catch((e) => {
         console.error(e);
         throw new Error(`Failed to prove withdrawal: ${e}`);
       });
+    const pubInputs = await this.preparePubInputs(
+      state,
+      amount,
+      nonce,
+      nullifierOld,
+      merkleRoot,
+      this.calculateCommitment(
+        Scalar.fromAddress(address),
+        Scalar.fromAddress(await this.relayer.address()),
+        Scalar.fromBigint(totalFee)
+      )
+    );
+    if (!(await this.cryptoClient.withdrawCircuit.verify(proof, pubInputs))) {
+      throw new Error("Withdrawal proof verification failed");
+    }
     const provingTime = Date.now() - time;
     return {
       expectedContractVersion,
-      calldata,
+      calldata: {
+        pubInputs,
+        proof
+      },
       provingTimeMillis: provingTime,
       amount,
       address,

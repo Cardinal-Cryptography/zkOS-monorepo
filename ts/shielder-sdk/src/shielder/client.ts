@@ -27,6 +27,8 @@ import {
 import { Calldata } from "@/shielder/actions";
 import { contractVersion } from "@/constants";
 import { CustomError } from "ts-custom-error";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { StateEventsFilter } from "@/shielder/state/events";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
 
@@ -106,6 +108,7 @@ export const createShielderClient = (
   contractAddress: Address,
   relayerUrl: string,
   storage: InjectedStorageInterface,
+  cryptoClient: CryptoClient,
   callbacks: ShielderCallbacks = {}
 ): ShielderClient => {
   const publicClient = createPublicClient({
@@ -134,6 +137,7 @@ export const createShielderClient = (
     relayer,
     storage,
     publicClient,
+    cryptoClient,
     callbacks
   );
 };
@@ -164,19 +168,28 @@ export class ShielderClient {
     relayer: IRelayer,
     storage: InjectedStorageInterface,
     publicClient: PublicClient,
+    cryptoClient: CryptoClient,
     callbacks: ShielderCallbacks = {}
   ) {
     const internalStorage = createStorage(storage);
     this.stateManager = new StateManager(
       shielderSeedPrivateKey,
-      internalStorage
+      internalStorage,
+      cryptoClient
     );
-    this.newAccountAction = new NewAccountAction(contract);
-    this.depositAction = new DepositAction(contract);
-    this.withdrawAction = new WithdrawAction(contract, relayer);
+    this.newAccountAction = new NewAccountAction(contract, cryptoClient);
+    this.depositAction = new DepositAction(contract, cryptoClient);
+    this.withdrawAction = new WithdrawAction(contract, relayer, cryptoClient);
+    const stateEventsFilter = new StateEventsFilter(
+      this.newAccountAction,
+      this.depositAction,
+      this.withdrawAction
+    );
     this.stateSynchronizer = new StateSynchronizer(
       this.stateManager,
       contract,
+      cryptoClient,
+      stateEventsFilter,
       callbacks.onNewTransaction
     );
     this.relayer = relayer;
