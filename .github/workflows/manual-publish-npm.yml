@@ -2,7 +2,6 @@
 name: "Build and publish packages to npm"
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       package:
