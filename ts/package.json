@@ -11,6 +11,9 @@
     "build:crypto": "pnpm --filter shielder-sdk-crypto build",
     "build:crypto-wasm": "pnpm --filter shielder-sdk-crypto-wasm build",
     "build:sdk": "pnpm --filter shielder-sdk build",
+    "build-package:crypto": "pnpm build:crypto",
+    "build-package:crypto-wasm": "pnpm build:crypto && pnpm build:crypto-wasm",
+    "build-package:sdk": "pnpm build:crypto && pnpm build:sdk",
     "lint": "pnpm -r lint",
     "install-deps": "pnpm install --frozen-lockfile"
   },

@@ -1,0 +1,97 @@
+---
+name: "Build and publish packages to npm"
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package to publish"
+        required: true
+        type: choice
+        options:
+          - shielder-sdk
+          - shielder-sdk-crypto
+          - shielder-sdk-crypto-wasm
+      tag:
+        description: "NPM tag"
+        required: true
+        type: choice
+        options:
+          - develop
+          - latest
+
+jobs:
+  publish:
+    name: Build and push ${{ github.event.inputs.package }}
+    runs-on: [self-hosted, Linux, X64, medium]
+    steps:
+      - name: GIT | Checkout
+        uses: actions/checkout@v4
+
+      # Rust setup for shielder-sdk-crypto-wasm
+      - name: Prepare Rust env
+        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm'
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install wasm-pack
+        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm'
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      # Foundry setup for shielder-sdk
+      - name: Install Foundry
+        if: github.event.inputs.package == 'shielder-sdk'
+        uses: foundry-rs/foundry-toolchain@v1.2.0
+        with:
+          cache-key: custom-seed-coverage-${{ github.ref_name }}
+          cache-restore-keys: |-
+            contract-suite
+          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
+
+      - name: Install deps and compile contracts
+        if: github.event.inputs.package == 'shielder-sdk'
+        run: |
+          make deps
+          make compile-contracts
+
+      # Common Node.js setup
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      # Build steps
+      - name: Build shielder-wasm
+        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm'
+        run: make all
+        working-directory: crates/shielder-wasm
+
+      - name: Install dependencies (workspace)
+        run: pnpm install-deps
+        working-directory: ts
+
+      - name: Build package
+        run: |
+          if [ "${{ github.event.inputs.package }}" = "shielder-sdk" ]; then
+            pnpm build-package:sdk
+          elif [ "${{ github.event.inputs.package }}" = "shielder-sdk-crypto" ]; then
+            pnpm build-package:crypto
+          else
+            pnpm build-package:crypto-wasm
+          fi
+        working-directory: ts
+
+      # Publish
+      - name: Add .npmrc with publish token
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISHING_KEY }}" > .npmrc
+        working-directory: ts/${{ github.event.inputs.package }}
+
+      - name: Publish package
+        run: pnpm publish --access restricted --no-git-checks --tag ${{ github.event.inputs.tag }}
+        working-directory: ts/${{ github.event.inputs.package }}
