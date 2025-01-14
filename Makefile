@@ -87,15 +87,3 @@ format-rust:
 lint-rust: # Lint all rust crates
 lint-rust:
 	cargo clippy --release -- -D warnings
-
-.PHONY: generate-tooling-dev
-generate-tooling-dev: # Generate tooling-dev package
-generate-tooling-dev:
-	cp tooling-e2e-tests/local_env.sh tooling-dev/
-	cp crates/shielder-relayer/run-relayer.sh tooling-dev/
-	cp package.json tooling-dev/
-	cp package-lock.json tooling-dev/
-	cp foundry.toml tooling-dev/
-	cp -r contracts tooling-dev/
-	cp -r scripts tooling-dev/
-	git rev-parse --short=7 HEAD > tooling-dev/.git-sha
