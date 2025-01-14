@@ -28,9 +28,11 @@ jobs:
       - name: GIT | Checkout
         uses: actions/checkout@v4
 
-      # Rust setup for shielder-sdk-crypto-wasm
+      # Rust setup for shielder-sdk-crypto-wasm and shielder-sdk
       - name: Prepare Rust env
-        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm'
+        if: |
+          github.event.inputs.package == 'shielder-sdk-crypto-wasm' ||
+          github.event.inputs.package == 'shielder-sdk'
         uses: ./.github/actions/prepare-rust-env
         with:
           poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
