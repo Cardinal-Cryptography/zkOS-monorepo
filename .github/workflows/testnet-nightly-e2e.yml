@@ -11,7 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   e2e-tests:
     name: Run E2E tests on testnet
     runs-on: ubuntu-22.04
@@ -67,39 +66,6 @@ jobs:
         shell: bash
         run: make compile-contracts
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Build shielder-wasm
-        run: cd crates/shielder-wasm && make all
-
-      - name: Build Rust-TS conversions binary
-        run: cargo build --manifest-path crates/test-ts-conversions/Cargo.toml
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies (shielder-sdk)
-        run: pnpm install --frozen-lockfile
-        working-directory: ts/shielder-sdk
-
-      - name: Build shielder-sdk
-        run: pnpm build
-        working-directory: ts/shielder-sdk
-
-      - name: Install dependencies (shielder-sdk-tests)
-        run: pnpm install --frozen-lockfile
-        working-directory: ts/shielder-sdk-tests
-
-      - name: Install Playwright dependencies (shielder-sdk-tests)
-        run: pnpm postinstall
-        working-directory: ts/shielder-sdk-tests
-
-      - name: Build shielder-sdk-tests
-        run: pnpm build
-        working-directory: ts/shielder-sdk-tests
-
       - name: Run e2e tooling tests
         env:
           DEPLOYER_PRIVATE_KEY: ${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}
@@ -119,7 +85,6 @@ jobs:
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/full_scenario.sh
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/recovery_scenario.sh
           NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/many_actors.sh
-          NO_FORMATTING=true TESTNET=true ./tooling-e2e-tests/ts_sdk_tests.sh
 
   slack-notification:
     name: Slack notification

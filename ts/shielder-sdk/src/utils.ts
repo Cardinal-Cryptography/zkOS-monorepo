@@ -1,4 +1,4 @@
-import { Scalar } from "@/crypto/scalar";
+import { Scalar } from "shielder-sdk-crypto";
 import { contractVersion } from "@/constants";
 
 export function flatUint8(arr: Uint8Array[]) {

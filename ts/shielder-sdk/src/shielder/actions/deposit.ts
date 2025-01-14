@@ -1,27 +1,32 @@
 import { IContract, VersionRejectedByContract } from "@/chain/contract";
-import { Scalar, scalarToBigint } from "@/crypto/scalar";
+import {
+  CryptoClient,
+  DepositPubInputs,
+  Proof,
+  Scalar,
+  scalarToBigint
+} from "shielder-sdk-crypto";
 import { SendShielderTransaction } from "@/shielder/client";
 import { Calldata } from "@/shielder/actions";
-import { rawAction } from "@/shielder/actions/utils";
+import { NoteAction } from "@/shielder/actions/utils";
 import { AccountState } from "@/shielder/state";
-import { DepositReturn } from "@/wasmClient";
-import { wasmClientWorker } from "@/wasmClientWorker";
+import { idHidingNonce } from "@/utils";
 
 export interface DepositCalldata extends Calldata {
-  calldata: DepositReturn;
+  calldata: {
+    pubInputs: DepositPubInputs;
+    proof: Proof;
+  };
   expectedContractVersion: `0x${string}`;
   amount: bigint;
   merkleRoot: Scalar;
 }
 
-export class DepositAction {
-  contract: IContract;
-  constructor(contract: IContract) {
+export class DepositAction extends NoteAction {
+  private contract: IContract;
+  constructor(contract: IContract, cryptoClient: CryptoClient) {
+    super(cryptoClient);
     this.contract = contract;
-  }
-
-  static #balanceChange(currentBalance: bigint, amount: bigint) {
-    return currentBalance + amount;
   }
 
   /**
@@ -31,11 +36,45 @@ export class DepositAction {
    * @param amount amount to deposit
    * @returns updated state
    */
-  static async rawDeposit(
+  async rawDeposit(
     stateOld: AccountState,
     amount: bigint
   ): Promise<AccountState | null> {
-    return await rawAction(stateOld, amount, this.#balanceChange);
+    return await this.rawAction(
+      stateOld,
+      amount,
+      (currentBalance: bigint, amount: bigint) => currentBalance + amount
+    );
+  }
+
+  async preparePubInputs(
+    state: AccountState,
+    amount: bigint,
+    nonce: Scalar,
+    nullifierOld: Scalar,
+    merkleRoot: Scalar
+  ) {
+    const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
+    const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
+
+    const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
+      nullifierOld
+    ]);
+    const newState = await this.rawDeposit(state, amount);
+    if (newState === null) {
+      throw new Error(
+        "Failed to deposit, possibly due to insufficient balance"
+      );
+    }
+    const hNoteNew = newState.currentNote;
+    return {
+      hNullifierOld,
+      hNoteNew,
+      nonce,
+      idHiding,
+      merkleRoot,
+      value: Scalar.fromBigint(amount)
+    };
   }
 
   /**
@@ -50,9 +89,10 @@ export class DepositAction {
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
     const lastNodeIndex = state.currentNoteIndex!;
-    const [path, merkleRoot] = await wasmClientWorker.merklePathAndRoot(
+    const [path, merkleRoot] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
     );
+    const nonce = idHidingNonce();
 
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
@@ -61,35 +101,48 @@ export class DepositAction {
     const time = Date.now();
 
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
-      await wasmClientWorker.getSecrets(state.id, state.nonce - 1n);
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce - 1n)
+      );
     const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
-      await wasmClientWorker.getSecrets(state.id, state.nonce);
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce)
+      );
 
-    const accountBalanceNew = DepositAction.#balanceChange(
-      state.balance,
-      amount
-    );
-
-    const calldata = await wasmClientWorker
-      .proveAndVerifyDeposit({
+    const proof = await this.cryptoClient.depositCircuit
+      .prove({
         id: state.id,
+        nonce,
         nullifierOld,
         trapdoorOld,
         accountBalanceOld: Scalar.fromBigint(state.balance),
-        merkleRoot,
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
-        trapdoorNew,
-        accountBalanceNew: Scalar.fromBigint(accountBalanceNew)
+        trapdoorNew
       })
       .catch((e) => {
         console.error(e);
         throw new Error(`Failed to prove deposit: ${e}`);
       });
+    const pubInputs = await this.preparePubInputs(
+      state,
+      amount,
+      nonce,
+      nullifierOld,
+      merkleRoot
+    );
+    if (!(await this.cryptoClient.depositCircuit.verify(proof, pubInputs))) {
+      throw new Error("Deposit proof verification failed");
+    }
     const provingTime = Date.now() - time;
     return {
-      calldata,
+      calldata: {
+        pubInputs,
+        proof
+      },
       expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
