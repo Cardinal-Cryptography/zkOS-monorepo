@@ -7,7 +7,7 @@ import { Hasher } from "@/hasher";
 import { SecretGenerator } from "@/secretGenerator";
 import { Converter } from "@/conversion";
 import { NoteTreeConfig } from "@/noteTreeConfig";
-import { CryptoClient } from "shielder-sdk-crypto";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 export type Caller = "web_singlethreaded" | "web_multithreaded";
 

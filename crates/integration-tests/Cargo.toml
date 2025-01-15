@@ -25,5 +25,6 @@ powers-of-tau = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rstest = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "contract", "parameter_generation"] }
+shielder-rust-sdk = { workspace = true, features = ["account", "contract"] }
+shielder-setup = { workspace = true }
 type-conversions = { workspace = true}

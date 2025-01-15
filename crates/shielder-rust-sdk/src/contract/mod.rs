@@ -5,10 +5,9 @@ use alloy_sol_types::SolValue;
 use alloy_transport::TransportError;
 pub use api::ShielderUser;
 pub use connection::{ConnectionPolicy, NoProvider};
+use shielder_setup::version::ContractVersion;
 use type_conversions::address_to_u256;
 pub use types::*;
-
-use crate::version::ContractVersion;
 
 mod api;
 pub mod call_type;
@@ -102,8 +101,9 @@ mod tests {
     use alloy_primitives::{Address, U256};
     use halo2curves::ff::PrimeField;
     use rand::{thread_rng, Rng};
+    use shielder_setup::version::ContractVersion;
 
-    use crate::{contract::WithdrawCommitment, version::ContractVersion};
+    use crate::contract::WithdrawCommitment;
 
     fn sample_commitment() -> WithdrawCommitment {
         let mut rng = thread_rng();

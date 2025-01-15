@@ -4,8 +4,8 @@ use shielder_relayer::RelayQuery;
 use shielder_rust_sdk::{
     alloy_primitives::{Address, TxHash, U256},
     contract::ShielderContractError,
-    version::ContractVersion,
 };
+use shielder_setup::version::ContractVersion;
 use tracing::{error, info};
 
 use crate::metrics::{WITHDRAW_DRY_RUN_FAILURE, WITHDRAW_FAILURE, WITHDRAW_SUCCESS};

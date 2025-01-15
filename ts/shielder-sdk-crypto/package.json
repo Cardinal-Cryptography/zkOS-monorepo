@@ -1,6 +1,6 @@
 {
-  "name": "shielder-sdk-crypto",
-  "version": "0.0.1",
+  "name": "@cardinal-cryptography/shielder-sdk-crypto",
+  "version": "0.2.0-alpha.1",
   "description": "",
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
@@ -15,6 +15,9 @@
   ],
   "type": "module",
   "main": "dist/index.js",
+  "dependencies": {
+    "viem": "^2.22.2"
+  },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@jest/globals": "^29.7.0",
@@ -29,7 +32,6 @@
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.10",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.16.0",
-    "viem": "^2.21.51"
+    "typescript-eslint": "^8.16.0"
   }
 }
