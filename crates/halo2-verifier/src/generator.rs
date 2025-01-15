@@ -78,7 +78,7 @@ mod test {
         withdraw::WithdrawProverKnowledge,
         ProverKnowledge,
     };
-    use shielder_rust_sdk::parameter_generation::rng;
+    use shielder_setup::parameter_generation::rng;
 
     use crate::generate_solidity_verification_bundle;
 

@@ -1,4 +1,7 @@
-import { CryptoClient, Scalar } from "shielder-sdk-crypto";
+import {
+  CryptoClient,
+  Scalar
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/shielder/state";
 import { noteVersion } from "@/utils";
 

@@ -3,7 +3,7 @@ import { DepositAction } from "@/shielder/actions/deposit";
 import { NewAccountAction } from "@/shielder/actions/newAccount";
 import { WithdrawAction } from "@/shielder/actions/withdraw";
 import { NoteEvent } from "@/chain/contract";
-import { scalarToBigint } from "shielder-sdk-crypto";
+import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 export class StateEventsFilter {
   newAccountAction: NewAccountAction;

@@ -17,7 +17,7 @@ import {
   SecretManager,
   ShielderActionSecrets,
   WithdrawCircuit
-} from "shielder-sdk-crypto";
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { hexToBigInt } from "viem";
 
 const SCALAR_MODULO = r;

@@ -77,3 +77,16 @@ jobs:
       - name: Run ts tests (workspace)
         run: pnpm test
         working-directory: ts
+
+      - name: Generate coverage data
+        run: pnpm coverage-report
+        working-directory: ts/shielder-sdk
+
+      - name: Generate coverage markdown report
+        run: node __tests/generate-coverage-report.js
+        working-directory: ts/shielder-sdk
+
+      - name: Post coverage report as PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: ts/shielder-sdk/coverage/coverage-report.md

@@ -3,7 +3,7 @@ import {
   NewAccountAdvice,
   NewAccountPubInputs,
   NewAccountCircuit as INewAccountCircuit
-} from "shielder-sdk-crypto";
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
