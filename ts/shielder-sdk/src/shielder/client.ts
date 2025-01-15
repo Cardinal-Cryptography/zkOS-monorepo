@@ -189,7 +189,12 @@ export class ShielderClient {
       cryptoClient,
       nonceGenerator
     );
-    this.withdrawAction = new WithdrawAction(contract, relayer, cryptoClient);
+    this.withdrawAction = new WithdrawAction(
+      contract,
+      relayer,
+      cryptoClient,
+      nonceGenerator
+    );
     const stateEventsFilter = new StateEventsFilter(
       this.newAccountAction,
       this.depositAction,

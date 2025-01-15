@@ -171,7 +171,7 @@ describe("DepositAction", () => {
         merkleRoot
       );
 
-      pubInputsCorrect(
+      await pubInputsCorrect(
         pubInputs,
         cryptoClient,
         prevNullifier,
@@ -216,7 +216,7 @@ describe("DepositAction", () => {
       );
 
       // Verify the public inputs
-      pubInputsCorrect(
+      await pubInputsCorrect(
         calldata.calldata.pubInputs,
         cryptoClient,
         nullifier,
@@ -258,6 +258,17 @@ describe("DepositAction", () => {
           expectedVersion
         )
       ).rejects.toThrow("currentNoteIndex must be set");
+    });
+
+    it("should throw on incorrect merkle path length", async () => {
+      const amount = 100n;
+      const expectedVersion = "0xversion" as `0x${string}`;
+      contract.getMerklePath = jest
+        .fn<(idx: bigint) => Promise<readonly bigint[]>>()
+        .mockResolvedValue([0n]);
+      expect(
+        action.generateCalldata(state, amount, expectedVersion)
+      ).rejects.toThrow("Wrong path length");
     });
 
     it("should throw on incorrect prover inputs", async () => {
@@ -364,7 +375,7 @@ describe("DepositAction", () => {
 
       expect(
         action.sendCalldata(calldata, mockSendTransaction, mockAddress)
-      ).rejects.toThrow("Failed to deposit: ");
+      ).rejects.toThrow("Failed to deposit: Error: some error");
     });
   });
 });
