@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { Scalar, scalarsEqual, scalarToBigint } from "shielder-sdk-crypto";
+import {
+  Scalar,
+  scalarsEqual,
+  scalarToBigint
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 
 import { MockedCryptoClient, hashedNote } from "../../helpers";
 

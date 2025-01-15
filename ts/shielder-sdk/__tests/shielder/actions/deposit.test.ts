@@ -6,7 +6,7 @@ import {
   Scalar,
   scalarsEqual,
   scalarToBigint
-} from "shielder-sdk-crypto";
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 
 import { MockedCryptoClient, hashedNote } from "../../helpers";
 
