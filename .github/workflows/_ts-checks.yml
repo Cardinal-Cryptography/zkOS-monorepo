@@ -77,3 +77,9 @@ jobs:
       - name: Run ts tests (workspace)
         run: pnpm test
         working-directory: ts
+      # ArtiomTr/jest-coverage-report-action@v2
+      - name: Run jest coverage report (shielder-sdk)
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          test-script: pnpm coverage
+          working-directory: ts/shielder-sdk
