@@ -1,9 +1,11 @@
 import { test, expect } from "@jest/globals";
+import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 import {
-  Scalar,
-  scalarToBigint
-} from "@cardinal-cryptography/shielder-sdk-crypto";
-import { flatUint8, idHidingNonce, noteVersion } from "../src/utils";
+  flatUint8,
+  idHidingNonce,
+  isVersionSupported,
+  noteVersion
+} from "../src/utils";
 import { NOTE_VERSION } from "./helpers";
 
 test("flatUint8", () => {
@@ -33,4 +35,9 @@ test("idHidingNonce randomness", () => {
 test("note version", () => {
   const result = scalarToBigint(noteVersion());
   expect(result).toBe(NOTE_VERSION);
+});
+
+test("isVersionSupported", () => {
+  expect(isVersionSupported("0x000001")).toBe(true);
+  expect(isVersionSupported("0x000002")).toBe(false);
 });
