@@ -8,9 +8,8 @@ import {
 } from "shielder-sdk-crypto";
 import { SendShielderTransaction } from "@/shielder/client";
 import { Calldata } from "@/shielder/actions";
-import { NoteAction } from "@/shielder/actions/utils";
+import { INonceGenerator, NoteAction } from "@/shielder/actions/utils";
 import { AccountState } from "@/shielder/state";
-import { idHidingNonce } from "@/utils";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -24,9 +23,15 @@ export interface DepositCalldata extends Calldata {
 
 export class DepositAction extends NoteAction {
   private contract: IContract;
-  constructor(contract: IContract, cryptoClient: CryptoClient) {
+  private nonceGenerator: INonceGenerator;
+  constructor(
+    contract: IContract,
+    cryptoClient: CryptoClient,
+    nonceGenerator: INonceGenerator
+  ) {
     super(cryptoClient);
     this.contract = contract;
+    this.nonceGenerator = nonceGenerator;
   }
 
   /**
@@ -53,7 +58,7 @@ export class DepositAction extends NoteAction {
     nonce: Scalar,
     nullifierOld: Scalar,
     merkleRoot: Scalar
-  ) {
+  ): Promise<DepositPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
 
@@ -70,7 +75,6 @@ export class DepositAction extends NoteAction {
     return {
       hNullifierOld,
       hNoteNew,
-      nonce,
       idHiding,
       merkleRoot,
       value: Scalar.fromBigint(amount)
@@ -92,7 +96,7 @@ export class DepositAction extends NoteAction {
     const [path, merkleRoot] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
     );
-    const nonce = idHidingNonce();
+    const nonce = this.nonceGenerator.randomIdHidingNonce();
 
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");

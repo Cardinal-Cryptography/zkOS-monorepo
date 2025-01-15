@@ -29,6 +29,8 @@ import { contractVersion } from "@/constants";
 import { CustomError } from "ts-custom-error";
 import { CryptoClient } from "shielder-sdk-crypto";
 import { StateEventsFilter } from "@/shielder/state/events";
+import { INonceGenerator } from "./actions/utils";
+import { idHidingNonce } from "@/utils";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
 
@@ -138,6 +140,9 @@ export const createShielderClient = (
     storage,
     publicClient,
     cryptoClient,
+    {
+      randomIdHidingNonce: () => idHidingNonce()
+    },
     callbacks
   );
 };
@@ -169,6 +174,7 @@ export class ShielderClient {
     storage: InjectedStorageInterface,
     publicClient: PublicClient,
     cryptoClient: CryptoClient,
+    nonceGenerator: INonceGenerator,
     callbacks: ShielderCallbacks = {}
   ) {
     const internalStorage = createStorage(storage);
@@ -178,7 +184,11 @@ export class ShielderClient {
       cryptoClient
     );
     this.newAccountAction = new NewAccountAction(contract, cryptoClient);
-    this.depositAction = new DepositAction(contract, cryptoClient);
+    this.depositAction = new DepositAction(
+      contract,
+      cryptoClient,
+      nonceGenerator
+    );
     this.withdrawAction = new WithdrawAction(contract, relayer, cryptoClient);
     const stateEventsFilter = new StateEventsFilter(
       this.newAccountAction,
