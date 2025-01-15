@@ -1,5 +1,8 @@
 import { test, expect } from "@jest/globals";
-import { Scalar, scalarToBigint } from "shielder-sdk-crypto";
+import {
+  Scalar,
+  scalarToBigint
+} from "@cardinal-cryptography/shielder-sdk-crypto";
 import { flatUint8, idHidingNonce, noteVersion } from "../src/utils";
 import { NOTE_VERSION } from "./helpers";
 
