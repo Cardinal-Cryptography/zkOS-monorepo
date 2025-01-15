@@ -77,9 +77,16 @@ jobs:
       - name: Run ts tests (workspace)
         run: pnpm test
         working-directory: ts
-      # ArtiomTr/jest-coverage-report-action@v2
+
       - name: Run jest coverage report (shielder-sdk)
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
           test-script: pnpm coverage
           working-directory: ts/shielder-sdk
+          output: report-markdown
+
+      - name: Comment on PR with coverage report
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          # pass output from the previous step by id.
+          message: ${{ steps.coverage.outputs.report }}
