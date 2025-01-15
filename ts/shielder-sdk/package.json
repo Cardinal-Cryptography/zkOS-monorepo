@@ -20,7 +20,8 @@
     "build": "./build.sh",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
-    "coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
+    "coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "coverage-report": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --ci --json --coverage --testLocationInResults --outputFile=report.json"
   },
   "exports": {
     ".": {

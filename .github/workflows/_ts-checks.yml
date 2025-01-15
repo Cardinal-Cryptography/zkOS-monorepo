@@ -79,14 +79,15 @@ jobs:
         working-directory: ts
 
       - name: Run jest coverage report (shielder-sdk)
+        run: pnpm coverage-report
+        working-directory: ts/shielder-sdk
+
+      - name: Run jest coverage report (shielder-sdk)
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
-          test-script: pnpm coverage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          coverage-file: report.json
+          base-coverage-file: report.json
           working-directory: ts/shielder-sdk
-          output: report-markdown
+          skip-step: all
 
-      - name: Comment on PR with coverage report
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          # pass output from the previous step by id.
-          message: ${{ steps.coverage.outputs.report }}
