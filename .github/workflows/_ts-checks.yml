@@ -78,16 +78,15 @@ jobs:
         run: pnpm test
         working-directory: ts
 
-      - name: Run jest coverage report (shielder-sdk)
+      - name: Generate coverage data
         run: pnpm coverage-report
         working-directory: ts/shielder-sdk
 
-      - name: Run jest coverage report (shielder-sdk)
-        uses: ArtiomTr/jest-coverage-report-action@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          coverage-file: report.json
-          base-coverage-file: report.json
-          working-directory: ts/shielder-sdk
-          skip-step: all
+      - name: Generate coverage markdown report
+        run: node __tests/generate-coverage-report.js
+        working-directory: ts/shielder-sdk
 
+      - name: Post coverage report as PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: ts/shielder-sdk/coverage/coverage-report.md
