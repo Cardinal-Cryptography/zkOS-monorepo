@@ -8,8 +8,8 @@ use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceRes
 use shielder_rust_sdk::{
     alloy_primitives::{Address, U256},
     contract::ShielderContract::withdrawNativeCall,
-    version::{contract_version, ContractVersion},
 };
+use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;

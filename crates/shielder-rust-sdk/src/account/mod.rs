@@ -11,9 +11,8 @@ mod shielder_action;
 
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{note_hash, Note};
+use shielder_setup::version::contract_version;
 use type_conversions::{field_to_u256, u256_to_field};
-
-use crate::version::contract_version;
 
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {

@@ -1,3 +1,5 @@
 dist/
 node_modules/
 src/_generated/
+coverage/
+report.json
