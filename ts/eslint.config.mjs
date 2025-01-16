@@ -27,7 +27,8 @@ export default tseslint.config(
       "eslint.config.mjs",
       "**/update-imports.mjs",
       "**/jest.config.ts",
-      "**/__tests/"
+      "**/__tests/",
+      "**/coverage/"
     ]
   },
   {
