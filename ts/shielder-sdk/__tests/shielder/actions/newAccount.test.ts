@@ -89,6 +89,9 @@ describe("NewAccountAction", () => {
       const result = await action.rawNewAccount(mockedState, amount);
 
       expect(result).not.toBeNull();
+      if (!result) {
+        throw new Error("result is null");
+      }
       expect(result.balance).toBe(amount);
       expect(result.nonce).toBe(mockedStateNonce + 1n);
       // Nullifier and trapdoor should be secret manager's output

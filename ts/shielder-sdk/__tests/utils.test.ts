@@ -6,7 +6,6 @@ import {
   isVersionSupported,
   noteVersion
 } from "../src/utils";
-import { NOTE_VERSION } from "./helpers";
 
 test("flatUint8", () => {
   const arr = [
@@ -34,7 +33,7 @@ test("idHidingNonce randomness", () => {
 
 test("note version", () => {
   const result = scalarToBigint(noteVersion());
-  expect(result).toBe(NOTE_VERSION);
+  expect(result).toBe(0n);
 });
 
 test("isVersionSupported", () => {
