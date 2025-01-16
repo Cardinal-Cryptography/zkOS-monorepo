@@ -12,7 +12,10 @@ import { MockedCryptoClient, hashedNote } from "../../helpers";
 
 import { NewAccountAction } from "../../../src/shielder/actions/newAccount";
 import { AccountState } from "../../../src/shielder/state";
-import { IContract } from "../../../src/chain/contract";
+import {
+  IContract,
+  VersionRejectedByContract
+} from "../../../src/chain/contract";
 import { SendShielderTransaction } from "../../../src/shielder/client";
 
 const expectPubInputsCorrect = async (
@@ -233,6 +236,39 @@ describe("NewAccountAction", () => {
       });
 
       expect(txHash).toBe("0xtxHash");
+    });
+
+    it("should throw on rejected contract version during simulation", async () => {
+      const amount = 100n;
+      const expectedVersion = "0xversio" as `0x${string}`;
+      const calldata = await action.generateCalldata(
+        mockedState,
+        amount,
+        expectedVersion
+      );
+
+      const mockedErr = new VersionRejectedByContract();
+
+      contract.newAccountCalldata = jest
+        .fn<
+          (
+            expectedContractVersion: `0x${string}`,
+            from: `0x${string}`,
+            newNote: bigint,
+            idHash: bigint,
+            amount: bigint,
+            proof: Uint8Array
+          ) => Promise<`0x${string}`>
+        >()
+        .mockRejectedValue(mockedErr);
+
+      const mockSendTransaction = jest
+        .fn<SendShielderTransaction>()
+        .mockResolvedValue("0xtxHash" as `0x${string}`);
+
+      expect(
+        action.sendCalldata(calldata, mockSendTransaction, mockAddress)
+      ).rejects.toThrowError(mockedErr);
     });
 
     it("should throw an error at sending errors", async () => {

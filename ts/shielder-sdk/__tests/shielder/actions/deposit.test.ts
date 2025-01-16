@@ -18,7 +18,7 @@ import {
 } from "../../../src/chain/contract";
 import { SendShielderTransaction } from "../../../src/shielder/client";
 
-const pubInputsCorrect = async (
+const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
   cryptoClient: CryptoClient,
   prevNullifier: Scalar,
@@ -137,24 +137,25 @@ describe("DepositAction", () => {
       const result = await action.rawDeposit(state, amount);
 
       expect(result).not.toBeNull();
-      if (result) {
-        expect(result.balance).toBe(expectedAmount);
-        expect(result.nonce).toBe(2n);
-        // Nullifier and trapdoor should be secret manager's output
-        const { nullifier: newNullifier, trapdoor: newTrapdoor } =
-          await cryptoClient.secretManager.getSecrets(
-            state.id,
-            Number(state.nonce)
-          );
-        // Note should be hash of [version, id, nullifier, trapdoor, amount]
-        const expectedNote = await hashedNote(
-          state.id,
-          newNullifier,
-          newTrapdoor,
-          Scalar.fromBigint(expectedAmount)
-        );
-        expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);
+      if (!result) {
+        throw new Error("result is null");
       }
+      expect(result.balance).toBe(expectedAmount);
+      expect(result.nonce).toBe(2n);
+      // Nullifier and trapdoor should be secret manager's output
+      const { nullifier: newNullifier, trapdoor: newTrapdoor } =
+        await cryptoClient.secretManager.getSecrets(
+          state.id,
+          Number(state.nonce)
+        );
+      // Note should be hash of [version, id, nullifier, trapdoor, amount]
+      const expectedNote = await hashedNote(
+        state.id,
+        newNullifier,
+        newTrapdoor,
+        Scalar.fromBigint(expectedAmount)
+      );
+      expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);
     });
   });
 
@@ -171,7 +172,7 @@ describe("DepositAction", () => {
         merkleRoot
       );
 
-      await pubInputsCorrect(
+      await expectPubInputsCorrect(
         pubInputs,
         cryptoClient,
         prevNullifier,
@@ -216,7 +217,7 @@ describe("DepositAction", () => {
       );
 
       // Verify the public inputs
-      await pubInputsCorrect(
+      await expectPubInputsCorrect(
         calldata.calldata.pubInputs,
         cryptoClient,
         nullifier,
@@ -340,7 +341,43 @@ describe("DepositAction", () => {
       expect(txHash).toBe("0xtxHash");
     });
 
-    it("should throw on rejected contract version", async () => {
+    it("should throw on rejected contract version during simulation", async () => {
+      const amount = 100n;
+      const expectedVersion = "0xversio" as `0x${string}`;
+
+      const calldata = await action.generateCalldata(
+        state,
+        amount,
+        expectedVersion
+      );
+
+      const mockedErr = new VersionRejectedByContract();
+
+      contract.depositCalldata = jest
+        .fn<
+          (
+            expectedContractVersion: `0x${string}`,
+            from: `0x${string}`,
+            idHiding: bigint,
+            oldNoteNullifierHash: bigint,
+            newNote: bigint,
+            merkleRoot: bigint,
+            amount: bigint,
+            proof: Uint8Array
+          ) => Promise<`0x${string}`>
+        >()
+        .mockRejectedValue(mockedErr);
+
+      const mockSendTransaction = jest
+        .fn<SendShielderTransaction>()
+        .mockResolvedValue("0xtxHash" as `0x${string}`);
+
+      expect(
+        action.sendCalldata(calldata, mockSendTransaction, mockAddress)
+      ).rejects.toThrowError(mockedErr);
+    });
+
+    it("should throw on rejected contract version during sending", async () => {
       const amount = 100n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const calldata = await action.generateCalldata(

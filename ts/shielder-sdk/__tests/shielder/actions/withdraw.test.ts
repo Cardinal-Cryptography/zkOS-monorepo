@@ -19,9 +19,8 @@ import {
   WithdrawResponse
 } from "../../../src/chain/relayer";
 import { encodePacked, hexToBigInt, keccak256 } from "viem";
-import { SendShielderTransaction } from "../../../src/shielder/client";
 
-const pubInputsCorrect = async (
+const expectPubInputsCorrect = async (
   pubInputs: WithdrawPubInputs,
   cryptoClient: CryptoClient,
   prevNullifier: Scalar,
@@ -168,24 +167,25 @@ describe("WithdrawAction", () => {
       const result = await action.rawWithdraw(state, amount);
 
       expect(result).not.toBeNull();
-      if (result) {
-        expect(result.balance).toBe(expectedAmount);
-        expect(result.nonce).toBe(2n);
-        // Nullifier and trapdoor should be secret manager's output
-        const { nullifier: newNullifier, trapdoor: newTrapdoor } =
-          await cryptoClient.secretManager.getSecrets(
-            state.id,
-            Number(state.nonce)
-          );
-        // Note should be hash of [version, id, nullifier, trapdoor, amount]
-        const expectedNote = await hashedNote(
-          state.id,
-          newNullifier,
-          newTrapdoor,
-          Scalar.fromBigint(expectedAmount)
-        );
-        expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);
+      if (!result) {
+        throw new Error("result is null");
       }
+      expect(result.balance).toBe(expectedAmount);
+      expect(result.nonce).toBe(2n);
+      // Nullifier and trapdoor should be secret manager's output
+      const { nullifier: newNullifier, trapdoor: newTrapdoor } =
+        await cryptoClient.secretManager.getSecrets(
+          state.id,
+          Number(state.nonce)
+        );
+      // Note should be hash of [version, id, nullifier, trapdoor, amount]
+      const expectedNote = await hashedNote(
+        state.id,
+        newNullifier,
+        newTrapdoor,
+        Scalar.fromBigint(expectedAmount)
+      );
+      expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);
     });
   });
 
@@ -204,7 +204,7 @@ describe("WithdrawAction", () => {
         commitment
       );
 
-      await pubInputsCorrect(
+      await expectPubInputsCorrect(
         pubInputs,
         cryptoClient,
         prevNullifier,
@@ -257,7 +257,7 @@ describe("WithdrawAction", () => {
       );
 
       // Verify the public inputs
-      await pubInputsCorrect(
+      await expectPubInputsCorrect(
         calldata.calldata.pubInputs,
         cryptoClient,
         nullifier,
