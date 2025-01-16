@@ -1,18 +1,14 @@
 import { CustomError } from "ts-custom-error";
-import { IContract } from "@/chain/contract";
+import { IContract, NoteEvent } from "@/chain/contract";
 import {
   CryptoClient,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import {
-  AccountState,
-  eventToTransaction,
-  ShielderTransaction,
-  StateManager
-} from "@/shielder/state";
-import { StateEventsFilter } from "@/shielder/state/events";
+import { StateEventsFilter } from "@/state/events";
 import { Mutex } from "async-mutex";
 import { isVersionSupported } from "@/utils";
+import { StateManager } from "./manager";
+import { AccountState, ShielderTransaction } from "./types";
 
 export class UnexpectedVersionInEvent extends CustomError {
   public constructor(message: string) {
@@ -111,7 +107,6 @@ export class StateSynchronizer {
     );
 
     if (events.length != 1) {
-      console.error(events);
       throw new Error(
         `Unexpected number of events: ${events.length}, expected 1 event`
       );
@@ -146,3 +141,13 @@ export class StateSynchronizer {
     return event;
   }
 }
+
+const eventToTransaction = (event: NoteEvent): ShielderTransaction => {
+  return {
+    type: event.name,
+    amount: event.amount,
+    to: event.to,
+    txHash: event.txHash,
+    block: event.block
+  };
+};

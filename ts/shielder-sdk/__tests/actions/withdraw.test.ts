@@ -8,16 +8,16 @@ import {
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 
-import { MockedCryptoClient, hashedNote } from "../../helpers";
+import { MockedCryptoClient, hashedNote } from "../helpers";
 
-import { WithdrawAction } from "../../../src/shielder/actions/withdraw";
-import { AccountState } from "../../../src/shielder/state";
-import { IContract } from "../../../src/chain/contract";
+import { WithdrawAction } from "../../src/actions/withdraw";
+import { AccountState } from "../../src/state";
+import { IContract } from "../../src/chain/contract";
 import {
   IRelayer,
   VersionRejectedByRelayer,
   WithdrawResponse
-} from "../../../src/chain/relayer";
+} from "../../src/chain/relayer";
 import { encodePacked, hexToBigInt, keccak256 } from "viem";
 
 const expectPubInputsCorrect = async (

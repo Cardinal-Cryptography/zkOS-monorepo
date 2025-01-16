@@ -6,10 +6,10 @@ import {
   scalarToBigint,
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountState } from "@/shielder/state";
+import { AccountState } from "@/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
-import { INonceGenerator, NoteAction } from "@/shielder/actions/utils";
+import { INonceGenerator, NoteAction } from "@/actions/utils";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
@@ -189,7 +189,6 @@ export class WithdrawAction extends NoteAction {
         commitment
       })
       .catch((e) => {
-        console.error(e);
         throw new Error(`Failed to prove withdrawal: ${e}`);
       });
     const pubInputs = await this.preparePubInputs(
@@ -247,7 +246,6 @@ export class WithdrawAction extends NoteAction {
         if (e instanceof VersionRejectedByRelayer) {
           throw e;
         }
-        console.error(e);
         throw new Error(`Failed to withdraw: ${e}`);
       });
     return txHash as `0x${string}`;

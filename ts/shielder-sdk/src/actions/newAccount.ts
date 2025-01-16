@@ -6,9 +6,9 @@ import {
   Scalar,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { SendShielderTransaction } from "@/shielder/client";
-import { NoteAction } from "@/shielder/actions/utils";
-import { AccountState } from "@/shielder/state";
+import { SendShielderTransaction } from "@/client";
+import { NoteAction } from "@/actions/utils";
+import { AccountState } from "@/state";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -83,7 +83,6 @@ export class NewAccountAction extends NoteAction {
         initialDeposit: Scalar.fromBigint(amount)
       })
       .catch((e) => {
-        console.error(e);
         throw new Error(`Failed to prove new account: ${e}`);
       });
     const pubInputs = await this.preparePubInputs(state, amount);
@@ -132,7 +131,6 @@ export class NewAccountAction extends NoteAction {
       to: this.contract.getAddress(),
       value: amount
     }).catch((e) => {
-      console.error(e);
       throw new Error(`Failed to create new account: ${e}`);
     });
     return txHash;
