@@ -15,7 +15,7 @@ import { AccountState } from "../../../src/shielder/state";
 import { IContract } from "../../../src/chain/contract";
 import { SendShielderTransaction } from "../../../src/shielder/client";
 
-const pubInputsCorrect = async (
+const expectPubInputsCorrect = async (
   pubInputs: NewAccountPubInputs,
   state: AccountState,
   amount: bigint,
@@ -89,24 +89,22 @@ describe("NewAccountAction", () => {
       const result = await action.rawNewAccount(mockedState, amount);
 
       expect(result).not.toBeNull();
-      if (result) {
-        expect(result.balance).toBe(amount);
-        expect(result.nonce).toBe(mockedStateNonce + 1n);
-        // Nullifier and trapdoor should be secret manager's output
-        const { nullifier, trapdoor } =
-          await cryptoClient.secretManager.getSecrets(
-            mockedState.id,
-            Number(mockedState.nonce)
-          );
-        // Note should be hash of [version, id, nullifier, trapdoor, amount]
-        const expectedNote = await hashedNote(
+      expect(result.balance).toBe(amount);
+      expect(result.nonce).toBe(mockedStateNonce + 1n);
+      // Nullifier and trapdoor should be secret manager's output
+      const { nullifier, trapdoor } =
+        await cryptoClient.secretManager.getSecrets(
           mockedState.id,
-          nullifier,
-          trapdoor,
-          Scalar.fromBigint(amount)
+          Number(mockedState.nonce)
         );
-        expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);
-      }
+      // Note should be hash of [version, id, nullifier, trapdoor, amount]
+      const expectedNote = await hashedNote(
+        mockedState.id,
+        nullifier,
+        trapdoor,
+        Scalar.fromBigint(amount)
+      );
+      expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);
     });
   });
 
@@ -115,7 +113,12 @@ describe("NewAccountAction", () => {
       const amount = 100n;
       const pubInputs = await action.preparePubInputs(mockedState, amount);
 
-      await pubInputsCorrect(pubInputs, mockedState, amount, cryptoClient);
+      await expectPubInputsCorrect(
+        pubInputs,
+        mockedState,
+        amount,
+        cryptoClient
+      );
     });
 
     it("should throw an error at negative amount", async () => {
@@ -139,7 +142,7 @@ describe("NewAccountAction", () => {
       );
 
       // Verify the public inputs
-      await pubInputsCorrect(
+      await expectPubInputsCorrect(
         calldata.calldata.pubInputs,
         mockedState,
         amount,
