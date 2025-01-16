@@ -25,7 +25,7 @@ export abstract class NoteAction {
       return null;
     }
     const scalarArray: Scalar[] = new Array<Scalar>(
-      await this.cryptoClient.noteTreeConfig.arity()
+      await this.cryptoClient.hasher.poseidonRate()
     ).fill(Scalar.fromBigint(0n));
     scalarArray[0] = Scalar.fromBigint(balanceNew);
     const hAccountBalanceNew =
@@ -71,4 +71,8 @@ export abstract class NoteAction {
     const root = mappedPath[mappedPath.length - 1];
     return [path, root];
   }
+}
+
+export interface INonceGenerator {
+  randomIdHidingNonce(): Scalar;
 }

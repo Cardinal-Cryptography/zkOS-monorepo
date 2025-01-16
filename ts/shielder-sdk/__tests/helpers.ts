@@ -1,7 +1,9 @@
 import {
   Converter,
   CryptoClient,
+  DepositAdvice,
   DepositCircuit,
+  DepositPubInputs,
   Hasher,
   NewAccountAdvice,
   NewAccountCircuit,
@@ -19,7 +21,7 @@ import {
 import { hexToBigInt } from "viem";
 
 const SCALAR_MODULO = r;
-export const ARITY = 7;
+export const HASH_RATE = 7;
 export const NOTE_VERSION = 0n;
 
 const mockedHash = async (inputs: Scalar[]): Promise<Scalar> => {
@@ -36,7 +38,7 @@ const mockedHash = async (inputs: Scalar[]): Promise<Scalar> => {
 };
 
 const fullArityHash = async (inputs: Scalar[]): Promise<Scalar> => {
-  const scalarArray: Scalar[] = new Array<Scalar>(ARITY).fill(
+  const scalarArray: Scalar[] = new Array<Scalar>(HASH_RATE).fill(
     Scalar.fromBigint(0n)
   );
   inputs.forEach((input, index) => {
@@ -86,7 +88,7 @@ class MockedHasher implements Hasher {
   }
 
   poseidonRate(): Promise<number> {
-    return Promise.resolve(7);
+    return Promise.resolve(HASH_RATE);
   }
 }
 
@@ -107,48 +109,30 @@ class MockedConverter implements Converter {
 
 class MockedNoteTreeConfig implements NoteTreeConfig {
   treeHeight(): Promise<number> {
-    return Promise.resolve(13);
+    return Promise.resolve(1);
   }
 
   arity(): Promise<number> {
-    return Promise.resolve(7);
+    return Promise.resolve(2);
   }
 }
 
 class MockedNewAccountCircuit implements NewAccountCircuit {
   prove(values: NewAccountAdvice): Promise<Proof> {
-    const string = JSON.stringify(values);
-    const encoder = new TextEncoder();
-    const data = encoder.encode(string);
-    return Promise.resolve(data);
+    return Promise.resolve(new Uint8Array());
   }
 
   async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
-    const proofString = new TextDecoder().decode(proof);
-    const advice: NewAccountAdvice = JSON.parse(proofString);
-
-    return (
-      scalarsEqual(pubInputs.hId, await mockedHash([advice.id])) &&
-      scalarsEqual(
-        pubInputs.hNote,
-        await hashedNote(
-          advice.id,
-          advice.nullifier,
-          advice.trapdoor,
-          advice.initialDeposit
-        )
-      ) &&
-      scalarsEqual(pubInputs.initialDeposit, advice.initialDeposit)
-    );
+    return Promise.resolve(true);
   }
 }
 
 class MockedDepositCircuit implements DepositCircuit {
-  prove(): Promise<Proof> {
+  prove(values: DepositAdvice): Promise<Proof> {
     return Promise.resolve(new Uint8Array());
   }
 
-  verify(): Promise<boolean> {
+  async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
     return Promise.resolve(true);
   }
 }
