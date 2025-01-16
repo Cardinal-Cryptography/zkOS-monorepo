@@ -93,11 +93,19 @@ class MockedHasher implements Hasher {
 }
 
 class MockedSecretManager implements SecretManager {
-  getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
-    return Promise.resolve({
-      nullifier: Scalar.fromBigint(scalarToBigint(id) + BigInt(nonce) * 2n),
-      trapdoor: Scalar.fromBigint(scalarToBigint(id) + BigInt(nonce) * 2n + 1n)
-    });
+  async getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
+    return {
+      nullifier: await mockedHash([
+        id,
+        Scalar.fromBigint(BigInt(nonce)),
+        Scalar.fromBigint(0n)
+      ]),
+      trapdoor: await mockedHash([
+        id,
+        Scalar.fromBigint(BigInt(nonce)),
+        Scalar.fromBigint(1n)
+      ])
+    };
   }
 }
 
