@@ -14,8 +14,10 @@ test("isBigintScalar assertion", () => {
   for (const testTuple of [
     [0n, true],
     [2n ** 128n, true],
-    [2n ** 254n, false],
-    [r, false]
+    [2n ** 253n, true],
+    [r - 1n, true],
+    [r, false],
+    [2n ** 254n, false]
   ]) {
     const testValue = testTuple[0] as bigint;
     const result = isBigintScalar(testValue);
@@ -30,6 +32,15 @@ test("scalar from bigint conversion", () => {
 
   for (const testTuple of [
     [0n, new Uint8Array(32)],
+    [2n ** 128n, Object.assign(new Uint8Array(32), { 16: 1 })],
+    [2n ** 253n, Object.assign(new Uint8Array(32), { 31: 32 })],
+    [
+      r - 1n,
+      new Uint8Array([
+        0, 0, 0, 240, 147, 245, 225, 67, 145, 112, 185, 121, 72, 232, 51, 40,
+        93, 88, 129, 129, 182, 69, 80, 184, 41, 160, 49, 225, 114, 78, 100, 48
+      ])
+    ],
     [1n, Object.assign(new Uint8Array(32), { 0: 1 })]
   ]) {
     const testValue = testTuple[0] as bigint;
