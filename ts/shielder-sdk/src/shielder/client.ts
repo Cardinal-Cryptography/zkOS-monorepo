@@ -94,13 +94,13 @@ export type QuotedFees = {
 
 /**
  * Factory method to create ShielderClient with the original configuration
- * @param {`0x${string}`} accountPrivateKey - private key of the account, in 32-byte hex format of ethereum's private key
  * @param {`0x${string}`} shielderSeedPrivateKey - seed private key for the shielder account, in 32-byte hex format of ethereum's private key
  * @param {number} chainId - chain id of the blockchain
  * @param {string} rpcHttpEndpoint - rpc http endpoint of the blockchain
  * @param {Address} contractAddress - address of the shielder contract
  * @param {string} relayerUrl - url of the relayer
  * @param {InjectedStorageInterface} storage - storage interface to manage the shielder state, must be isolated per shielder account
+ * @param {CryptoClient} cryptoClient - crypto client instance
  * @param {ShielderCallbacks} callbacks - callbacks for the shielder actions
  */
 export const createShielderClient = (
@@ -164,8 +164,10 @@ export class ShielderClient {
    * @param {IContract} contract - shielder contract, initialized with the public account actions
    * @param {IRelayer} relayer - relayer instance
    * @param {InjectedStorageInterface} storage - storage interface to manage the shielder state, must be isolated per shielder account
+   * @param {PublicClient} publicClient - viem's public client instance, used for waiting for the transaction receipt
+   * @param {CryptoClient} cryptoClient - crypto client instance
+   * @param {INonceGenerator} nonceGenerator - nonce generator instance
    * @param {ShielderCallbacks} callbacks - callbacks for the shielder actions
-   * @param {PublicClient} [publicClient] - viem's public client instance, used for waiting for the transaction receipt
    */
   constructor(
     shielderSeedPrivateKey: `0x${string}`,

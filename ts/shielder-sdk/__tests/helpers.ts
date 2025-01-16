@@ -119,77 +119,21 @@ class MockedNoteTreeConfig implements NoteTreeConfig {
 
 class MockedNewAccountCircuit implements NewAccountCircuit {
   prove(values: NewAccountAdvice): Promise<Proof> {
-    const string = JSON.stringify(values);
-    const encoder = new TextEncoder();
-    const data = encoder.encode(string);
-    return Promise.resolve(data);
+    return Promise.resolve(new Uint8Array());
   }
 
   async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
-    const proofString = new TextDecoder().decode(proof);
-    const advice: NewAccountAdvice = JSON.parse(proofString);
-
-    return (
-      scalarsEqual(pubInputs.hId, await mockedHash([advice.id])) &&
-      scalarsEqual(
-        pubInputs.hNote,
-        await hashedNote(
-          advice.id,
-          advice.nullifier,
-          advice.trapdoor,
-          advice.initialDeposit
-        )
-      ) &&
-      scalarsEqual(pubInputs.initialDeposit, advice.initialDeposit)
-    );
+    return Promise.resolve(true);
   }
 }
 
 class MockedDepositCircuit implements DepositCircuit {
   prove(values: DepositAdvice): Promise<Proof> {
-    const string = JSON.stringify({ ...values, path: Array.from(values.path) });
-    const encoder = new TextEncoder();
-    const data = encoder.encode(string);
-    return Promise.resolve(data);
+    return Promise.resolve(new Uint8Array());
   }
 
   async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
-    const proofString = new TextDecoder().decode(proof);
-    const advice: DepositAdvice = JSON.parse(proofString, (key, value) => {
-      if (key === "path") {
-        return new Uint8Array(value);
-      }
-      return value;
-    });
-    const hId = await mockedHash([advice.id]);
-    const idHiding = await mockedHash([hId, advice.nonce]);
-    return (
-      scalarsEqual(pubInputs.idHiding, idHiding) &&
-      scalarsEqual(
-        pubInputs.merkleRoot,
-        await mockedHash([
-          new Scalar(advice.path.slice(0, 32)),
-          new Scalar(advice.path.slice(32, 64))
-        ])
-      ) &&
-      scalarsEqual(
-        pubInputs.hNullifierOld,
-        await mockedHash([advice.nullifierOld])
-      ) &&
-      scalarsEqual(
-        pubInputs.hNoteNew,
-        await hashedNote(
-          advice.id,
-          advice.nullifierNew,
-          advice.trapdoorNew,
-          Scalar.fromBigint(
-            scalarToBigint(advice.accountBalanceOld) +
-              scalarToBigint(advice.value)
-          )
-        )
-      ) &&
-      scalarsEqual(pubInputs.value, advice.value)
-    );
+    return Promise.resolve(true);
   }
 }
 

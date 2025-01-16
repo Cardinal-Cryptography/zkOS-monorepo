@@ -131,7 +131,7 @@ describe("DepositAction", () => {
   });
 
   describe("rawDeposit", () => {
-    it("should create new account state with initial deposit", async () => {
+    it("should transform an existing state", async () => {
       const amount = 100n;
       const expectedAmount = amount + state.balance;
       const result = await action.rawDeposit(state, amount);

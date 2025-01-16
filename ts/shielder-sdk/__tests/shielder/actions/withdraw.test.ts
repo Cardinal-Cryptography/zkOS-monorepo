@@ -161,7 +161,7 @@ describe("WithdrawAction", () => {
   });
 
   describe("rawWithdraw", () => {
-    it("should create new account state with initial deposit", async () => {
+    it("should transform an existing state", async () => {
       const amount = 2n;
       const expectedAmount = state.balance - amount;
       const result = await action.rawWithdraw(state, amount);
