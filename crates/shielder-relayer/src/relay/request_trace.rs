@@ -1,10 +1,10 @@
 use std::time::{Duration, Instant};
 
-use shielder_relayer::RelayQuery;
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, TxHash, U256},
-    contract::ShielderContractError,
+    ShielderContractError,
 };
+use shielder_relayer::RelayQuery;
 use shielder_setup::version::ContractVersion;
 use tracing::{error, info};
 

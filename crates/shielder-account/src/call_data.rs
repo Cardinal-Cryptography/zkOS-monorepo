@@ -11,17 +11,15 @@ use shielder_circuits::{
     withdraw::WithdrawProverKnowledge,
     Field, ProverKnowledge, PublicInputProvider, F,
 };
+use shielder_contract::{
+    ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
+    WithdrawCommitment,
+};
 use shielder_setup::version::{contract_version, ContractVersion};
 use type_conversions::{field_to_u256, u256_to_field};
 
 use super::secrets::id_hiding_nonce;
-use crate::{
-    account::ShielderAccount,
-    contract::{
-        ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
-        WithdrawCommitment,
-    },
-};
+use crate::ShielderAccount;
 
 struct ActionSecrets {
     nullifier_old: U256,

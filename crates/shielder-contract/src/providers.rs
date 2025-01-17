@@ -11,7 +11,7 @@ use alloy_provider::{
 use alloy_signer_local::PrivateKeySigner;
 use alloy_transport::{Transport, TransportResult};
 
-use crate::contract::{ContractResult, ShielderContractError};
+use crate::{ContractResult, ShielderContractError};
 
 /// Creates a provider for the given RPC URL. This is a simple provider, without any fillers or
 /// signer configuration (apart from some devnet-specific defaults). It is suitable for doing

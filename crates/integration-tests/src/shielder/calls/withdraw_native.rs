@@ -1,13 +1,11 @@
 use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
-use shielder_rust_sdk::{
-    account::{
-        call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
-        ShielderAccount,
-    },
-    contract::ShielderContract::withdrawNativeCall,
+use shielder_account::{
+    call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+    ShielderAccount,
 };
+use shielder_contract::ShielderContract::withdrawNativeCall;
 use shielder_setup::version::ContractVersion;
 
 use crate::shielder::{
@@ -99,13 +97,11 @@ mod tests {
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
+    use shielder_account::ShielderAccount;
     use shielder_circuits::F;
-    use shielder_rust_sdk::{
-        account::ShielderAccount,
-        contract::ShielderContract::{
-            withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, WithdrawNative,
-            WrongContractVersion,
-        },
+    use shielder_contract::ShielderContract::{
+        withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, WithdrawNative,
+        WrongContractVersion,
     };
 
     use crate::{

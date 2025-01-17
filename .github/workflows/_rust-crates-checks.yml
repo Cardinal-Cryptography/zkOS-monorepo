@@ -54,9 +54,6 @@ jobs:
           make lint-rust
           make format-rust
 
-      - name: Run tests for Shielder Rust SDK
-        run: cargo test --release -p shielder-rust-sdk --all-features
-
       - name: Run tests for halo2-verifier
         run: cd crates/halo2-verifier && make test
 
@@ -65,6 +62,12 @@ jobs:
 
       - name: Run tests for shielder_bindings
         run: cd crates/shielder_bindings && make test
+
+      - name: Run tests for other Shielder libs
+        run: |
+          cargo test --release -p shielder-account --all-features
+          cargo test --release -p shielder-contract --all-features
+          cargo test --release -p shielder-setup --all-features
 
       - name: Run integration tests
         run: make deps && cargo test --release -p integration-tests

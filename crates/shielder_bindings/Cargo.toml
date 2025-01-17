@@ -14,16 +14,15 @@ repository.workspace = true
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
+alloy-primitives = { workspace = true }
 getrandom = { workspace = true, optional = true }
 halo2_proofs = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rand_chacha = { workspace = true }
 rand_core = { workspace = true }
 rayon = { workspace = true, optional = true }
+shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = [
-    "account",
-] }
 shielder-setup = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }

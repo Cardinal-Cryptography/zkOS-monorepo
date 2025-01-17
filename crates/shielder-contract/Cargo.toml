@@ -1,0 +1,29 @@
+[package]
+name = "shielder-contract"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+alloy-contract = { workspace = true }
+alloy-network = { workspace = true }
+alloy-primitives = { workspace = true, features = ["serde", "rand"] }
+alloy-provider = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-signer-local = { workspace = true }
+alloy-sol-types = { workspace = true }
+alloy-transport = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true, features = ["small_rng"] }
+thiserror = { workspace = true }
+shielder-setup = { workspace = true }
+tracing = { workspace = true }
+type-conversions = { workspace = true }
+
+[dev-dependencies]
+halo2curves = { workspace = true }

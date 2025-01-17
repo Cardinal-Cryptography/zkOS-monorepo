@@ -1,9 +1,7 @@
 use alloy_primitives::U256;
 use anyhow::Result;
-use shielder_rust_sdk::{
-    account::{call_data::NewAccountCallType, ShielderAction},
-    contract::{call_type::Call, events::get_event, ShielderContract::NewAccountNative},
-};
+use shielder_account::{call_data::NewAccountCallType, ShielderAction};
+use shielder_contract::{call_type::Call, events::get_event, ShielderContract::NewAccountNative};
 use tracing::{debug, info};
 
 use crate::{

@@ -2,7 +2,7 @@ use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use alloy_sol_types::SolCall;
 
-use crate::contract::{
+use crate::{
     call_type::CallType,
     connection::{Connection, ConnectionPolicy, NoProvider},
     ContractResult,

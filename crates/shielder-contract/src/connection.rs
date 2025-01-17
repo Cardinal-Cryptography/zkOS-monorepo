@@ -7,7 +7,7 @@ use alloy_provider::{Provider, RootProvider};
 use alloy_signer_local::PrivateKeySigner;
 use alloy_transport::BoxTransport;
 
-use crate::contract::{
+use crate::{
     call_type::CallType, providers::create_provider_with_signer, ContractResult, ShielderContract,
     ShielderContractCall,
 };

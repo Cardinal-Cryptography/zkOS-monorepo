@@ -4,11 +4,11 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceResponse};
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, U256},
-    contract::ShielderContract::withdrawNativeCall,
+    ShielderContract::withdrawNativeCall,
 };
+use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 

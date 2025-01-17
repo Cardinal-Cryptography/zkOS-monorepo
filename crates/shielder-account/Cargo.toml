@@ -1,0 +1,24 @@
+[package]
+name = "shielder-account"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+description = "Shielder account management"
+
+[dependencies]
+alloy-primitives = { workspace = true, features = ["serde"] }
+halo2curves = { workspace = true }
+rand = { workspace = true, features = ["small_rng"] }
+serde = { workspace = true, features = ["derive"] }
+sha3 = { workspace = true }
+shielder-circuits = { workspace = true }
+shielder-contract = { workspace = true, optional = true }
+shielder-setup = { workspace = true }
+type-conversions = { workspace = true }
+
+[features]
+contract = [ "shielder-contract" ]

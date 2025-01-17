@@ -3,7 +3,7 @@ use alloy_provider::Provider;
 use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
 
-use crate::contract::{ContractResult, ShielderContractError};
+use crate::{ContractResult, ShielderContractError};
 
 /// Look at the logs of `tx_hash` in `block_hash` and return the first event of type `Event`.
 pub async fn get_event<Event: SolEvent>(

@@ -77,7 +77,8 @@ content-encryption = { path = "crates/content-encryption", default-features = fa
 evm-utils = { path = "crates/evm-utils" }
 halo2_solidity_verifier = { path = "crates/halo2-verifier" }
 powers-of-tau = { path = "crates/powers-of-tau" }
+shielder-account = { path = "crates/shielder-account" }
+shielder-contract = { path = "crates/shielder-contract" }
 shielder-relayer = { path = "crates/shielder-relayer" }
-shielder-rust-sdk = { path = "crates/shielder-rust-sdk" }
 shielder-setup = { path = "crates/shielder-setup" }
 type-conversions = { path = "crates/type-conversions" }

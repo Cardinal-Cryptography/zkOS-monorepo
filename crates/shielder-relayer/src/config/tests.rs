@@ -1,5 +1,5 @@
+use alloy_primitives::address;
 use shielder_relayer::{RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV};
-use shielder_rust_sdk::alloy_primitives::address;
 
 use super::*;
 

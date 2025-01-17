@@ -1,4 +1,5 @@
 use alloy_contract::Error;
+pub use alloy_primitives;
 use alloy_primitives::{keccak256, Address, TxHash, U256};
 use alloy_signer_local::LocalSignerError;
 use alloy_sol_types::SolValue;
@@ -103,7 +104,7 @@ mod tests {
     use rand::{thread_rng, Rng};
     use shielder_setup::version::ContractVersion;
 
-    use crate::contract::WithdrawCommitment;
+    use crate::WithdrawCommitment;
 
     fn sample_commitment() -> WithdrawCommitment {
         let mut rng = thread_rng();
