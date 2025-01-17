@@ -8,8 +8,8 @@ import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
 type WasmDepositCircuit =
-  | typeof import("shielder-wasm/web-singlethreaded").DepositCircuit
-  | typeof import("shielder-wasm/web-multithreaded").DepositCircuit;
+  | typeof import("shielder_bindings/web-singlethreaded").DepositCircuit
+  | typeof import("shielder_bindings/web-multithreaded").DepositCircuit;
 
 export class DepositCircuit
   extends WasmClientModuleBase

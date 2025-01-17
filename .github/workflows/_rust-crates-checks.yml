@@ -60,8 +60,8 @@ jobs:
       - name: Run tests for shielder-cli
         run: cd crates/shielder-cli && make test
 
-      - name: Run tests for shielder-wasm
-        run: cd crates/shielder-wasm && make test
+      - name: Run tests for shielder_bindings
+        run: cd crates/shielder_bindings && make test
 
       - name: Run tests for other Shielder libs
         run: |

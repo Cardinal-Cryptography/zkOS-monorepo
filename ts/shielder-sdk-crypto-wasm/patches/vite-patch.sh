@@ -45,7 +45,7 @@ in_block && /\);/ {
   next
 }
 !in_block { print }
-' dist-vite/crates/shielder-wasm/pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js > temp && mv temp dist-vite/crates/shielder-wasm/pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js
+' dist-vite/crates/shielder_bindings/pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js > temp && mv temp dist-vite/crates/shielder_bindings/pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js
 
 # Add imports at the top of files
 $SED_CMD '1i\
@@ -54,4 +54,4 @@ import InlineWorker from "./wasmClientWorker?worker&inline";
 
 $SED_CMD '1i\
 import InlineWorker from "./workerHelpers.worker.js?worker&inline";
-' dist-vite/crates/shielder-wasm/pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js
+' dist-vite/crates/shielder_bindings/pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js
