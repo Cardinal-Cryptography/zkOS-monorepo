@@ -1,11 +1,13 @@
 use alloy_primitives::{TxHash, U256};
-use shielder_account::{call_data::DepositCallType, ShielderAccount};
+use shielder_account::{
+    call_data::{DepositCallType, MerkleProof},
+    ShielderAccount,
+};
 use shielder_contract::ShielderContract::depositNativeCall;
 
 use crate::shielder::{
     deploy::Deployment, invoke_shielder_call, merkle::get_merkle_args, CallResult,
 };
-
 pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,

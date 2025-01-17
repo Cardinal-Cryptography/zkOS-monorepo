@@ -4692,6 +4692,7 @@ dependencies = [
 name = "shielder-wasm"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
  "console_error_panic_hook",
  "getrandom",
  "halo2_proofs",
@@ -4713,6 +4714,7 @@ dependencies = [
 name = "shielder_bindings"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
  "getrandom",
  "halo2_proofs",
  "powers-of-tau",
