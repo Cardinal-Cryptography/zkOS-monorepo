@@ -9,5 +9,18 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-thiserror = "2.0.10"
-rand = "0.9.0-beta.1"
+alloy-contract = { workspace = true }
+alloy-network = { workspace = true }
+alloy-primitives = { workspace = true, features = ["serde"] }
+alloy-provider = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-signer-local = { workspace = true }
+alloy-sol-types = { workspace = true }
+alloy-transport = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true, features = ["small_rng"] }
+thiserror = { workspace = true }
+shielder-setup = { workspace = true }
+tracing = { workspace = true }
+type-conversions = { workspace = true }
