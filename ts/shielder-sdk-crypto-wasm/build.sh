@@ -6,9 +6,9 @@ set -euo pipefail
 tsc --project tsconfig.json
 tsc-alias -p tsconfig.json
 
-# bundle shielder-wasm and update imports
-mkdir -p dist/crates/shielder-wasm/
-cp -r ../../crates/shielder-wasm/pkg dist/crates/shielder-wasm/
+# bundle shielder_bindings and update imports
+mkdir -p dist/crates/shielder_bindings/
+cp -r ../../crates/shielder_bindings/pkg dist/crates/shielder_bindings/
 node update-imports.mjs
 
 # Create Vite-specific build

@@ -18,7 +18,7 @@ export class Hasher extends WasmClientModuleBase implements IHasher {
     if (input.length == 0) {
       throw new Error("Empty input");
     }
-    if (input.length > this.wasmModule.arity()) {
+    if (input.length > this.wasmModule.poseidon_rate()) {
       throw new Error("Input too large");
     }
     return Promise.resolve(
