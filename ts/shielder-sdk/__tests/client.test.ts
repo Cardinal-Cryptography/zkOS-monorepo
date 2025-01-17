@@ -9,13 +9,7 @@ import {
   MockedFunction
 } from "vitest";
 
-import {
-  Address,
-  createPublicClient,
-  defineChain,
-  Hash,
-  PublicClient
-} from "viem";
+import { Address, createPublicClient, Hash, PublicClient } from "viem";
 import { MockedCryptoClient } from "./helpers";
 import {
   ShielderClient,
@@ -23,11 +17,7 @@ import {
   ShielderCallbacks,
   createShielderClient
 } from "../src/client";
-import {
-  Contract,
-  NoteEvent,
-  VersionRejectedByContract
-} from "../src/chain/contract";
+import { Contract, VersionRejectedByContract } from "../src/chain/contract";
 import { Relayer, VersionRejectedByRelayer } from "../src/chain/relayer";
 import { createStorage, UnexpectedVersionInEvent } from "../src/state";
 import { idHidingNonce } from "../src/utils";
@@ -53,8 +43,8 @@ describe("ShielderClient", () => {
   let mockContract: Mocked<Contract>;
   let mockRelayer: Mocked<Relayer>;
   let mockPublicClient: Mocked<PublicClient>;
-  let mockStorage: ReturnType<typeof createStorage>;
   let callbacks: Mocked<ShielderCallbacks>;
+  let mockState: Mocked<AccountState>;
   const mockCryptoClient = new MockedCryptoClient();
 
   const mockShielderSeedPrivateKey =
@@ -82,7 +72,6 @@ describe("ShielderClient", () => {
         .fn<(key: string, value: string) => Promise<void>>()
         .mockResolvedValue(undefined)
     };
-    mockStorage = createStorage(mockStorageInterface);
     callbacks = {
       onCalldataGenerated: vitest.fn(),
       onCalldataSent: vitest.fn(),
@@ -102,6 +91,16 @@ describe("ShielderClient", () => {
       },
       callbacks
     );
+
+    mockState = {} as AccountState;
+
+    vitest.spyOn(client["stateSynchronizer"], "syncAccountState");
+
+    vitest
+      .spyOn(client["stateManager"], "accountState")
+      .mockImplementation(() => {
+        return mockState;
+      });
   });
 
   describe("createShielderClient", () => {
@@ -121,13 +120,11 @@ describe("ShielderClient", () => {
         .fn<(key: string, value: string) => Promise<void>>()
         .mockImplementation(async () => {})
     };
+    let client: ShielderClient;
 
     beforeEach(() => {
       vitest.clearAllMocks();
-    });
-
-    it("should create ShielderClient with correct parameters", () => {
-      const client = createShielderClient(
+      client = createShielderClient(
         mockShielderSeedPrivateKey,
         mockChainId,
         mockRpcHttpEndpoint,
@@ -136,7 +133,9 @@ describe("ShielderClient", () => {
         mockStorageInterface,
         mockCryptoClient
       );
+    });
 
+    it("should create ShielderClient with correct parameters", () => {
       expect(client).toBeInstanceOf(ShielderClient);
       expect(createPublicClient).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -158,16 +157,6 @@ describe("ShielderClient", () => {
     });
 
     it("should create ShielderClient with default callbacks", () => {
-      const client = createShielderClient(
-        mockShielderSeedPrivateKey,
-        mockChainId,
-        mockRpcHttpEndpoint,
-        mockContractAddress,
-        mockRelayerUrl,
-        mockStorageInterface,
-        mockCryptoClient
-      );
-
       expect(client).toBeInstanceOf(ShielderClient);
       // Verify that the client was created with empty callbacks object
       expect(client["callbacks"]).toEqual({});
@@ -181,7 +170,7 @@ describe("ShielderClient", () => {
         onError: vitest.fn()
       };
 
-      const client = createShielderClient(
+      client = createShielderClient(
         mockShielderSeedPrivateKey,
         mockChainId,
         mockRpcHttpEndpoint,
@@ -229,10 +218,6 @@ describe("ShielderClient", () => {
 
   describe("syncShielder", () => {
     it("should call stateSynchronizer", async () => {
-      vitest
-        .spyOn(client["stateSynchronizer"], "syncAccountState")
-        .mockImplementationOnce(async () => {});
-
       await client.syncShielder();
 
       expect(
@@ -240,36 +225,28 @@ describe("ShielderClient", () => {
       ).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw OutdatedSdkError when version is not supported", async () => {
-      vitest
-        .spyOn(client["stateSynchronizer"], "syncAccountState")
-        .mockRejectedValue(new UnexpectedVersionInEvent("123"));
-
-      // spy on client.callbacks.onError callback
-      vitest.spyOn(callbacks, "onError");
-
-      await expect(client.syncShielder()).rejects.toThrow(OutdatedSdkError);
-
-      expect(callbacks.onError).toHaveBeenCalledWith(
-        new OutdatedSdkError(),
-        "syncing",
-        "sync"
-      );
-    });
-
-    it("should rethrow general error", async () => {
-      const mockedError = new Error("123");
+    it.each([
+      {
+        mockedError: new Error("123"),
+        expectedError: new Error("123"),
+        name: "general error"
+      },
+      {
+        mockedError: new UnexpectedVersionInEvent("123"),
+        expectedError: new OutdatedSdkError(),
+        name: "version not supported error"
+      }
+    ])("error handling: $name", async ({ mockedError, expectedError }) => {
       vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockRejectedValue(mockedError);
 
-      // spy on client.callbacks.onError callback
       vitest.spyOn(callbacks, "onError");
 
-      await expect(client.syncShielder()).rejects.toThrow(mockedError);
+      await expect(client.syncShielder()).rejects.toThrow(expectedError);
 
       expect(callbacks.onError).toHaveBeenCalledWith(
-        mockedError,
+        expectedError,
         "syncing",
         "sync"
       );
@@ -278,16 +255,13 @@ describe("ShielderClient", () => {
 
   describe("accountState", () => {
     it("should return current account state", async () => {
-      const mockState: AccountState = {
+      mockState = {
         id: {} as any,
         nonce: 1n,
         balance: 1000n,
         currentNote: {} as any,
         storageSchemaVersion: 1
       };
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
 
       const state = await client.accountState();
 
@@ -327,8 +301,18 @@ describe("ShielderClient", () => {
       expect(transactions).toEqual(mockTransactions);
     });
 
-    it("should rethrow general error", async () => {
-      const mockedError = new Error("123");
+    it.each([
+      {
+        mockedError: new Error("123"),
+        expectedError: new Error("123"),
+        name: "general error"
+      },
+      {
+        mockedError: new UnexpectedVersionInEvent("123"),
+        expectedError: new OutdatedSdkError(),
+        name: "version not supported error"
+      }
+    ])("error handling: $name", async ({ mockedError, expectedError }) => {
       vitest
         .spyOn(client["stateSynchronizer"], "getShielderTransactions")
         .mockImplementation(async function* () {
@@ -340,43 +324,23 @@ describe("ShielderClient", () => {
         for await (const _ of client.scanChainForShielderTransactions()) {
           // Should throw before yielding any transactions
         }
-      }).rejects.toThrow(mockedError);
+      }).rejects.toThrow(expectedError);
 
       expect(callbacks.onError).toHaveBeenCalledWith(
-        mockedError,
-        "syncing",
-        "sync"
-      );
-    });
-
-    it("should throw OutdatedSdkError when version is not supported", async () => {
-      vitest
-        .spyOn(client["stateSynchronizer"], "getShielderTransactions")
-        .mockImplementation(async function* () {
-          throw new UnexpectedVersionInEvent("123");
-        });
-
-      // spy on client.callbacks.onError callback
-      vitest.spyOn(callbacks, "onError");
-
-      await expect(async () => {
-        for await (const _ of client.scanChainForShielderTransactions()) {
-          // Should throw before yielding any transactions
-        }
-      }).rejects.toThrow(OutdatedSdkError);
-
-      expect(callbacks.onError).toHaveBeenCalledWith(
-        new OutdatedSdkError(),
+        expectedError,
         "syncing",
         "sync"
       );
     });
   });
 
-  describe("shield", () => {
+  describe("actions", () => {
     const mockAmount = 1000n;
     const mockFrom = "0x1234567890123456789012345678901234567890" as const;
     const mockTxHash = "0x9876543210" as Hash;
+    const mockTotalFee = 100n;
+    const mockAddress = "0x1234567890123456789012345678901234567890" as Address;
+
     const mockSendTransaction = vitest
       .fn<
         (params: {
@@ -393,206 +357,194 @@ describe("ShielderClient", () => {
       }) => Promise<Hash>
     >;
 
-    it("should create new account when nonce is 0", async () => {
-      // Mock state with nonce 0
-      const mockState = { nonce: 0n } as AccountState;
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
+    beforeEach(() => {
+      for (const action of [
+        "newAccountAction",
+        "depositAction",
+        "withdrawAction"
+      ]) {
+        vitest
+          .spyOn(client[action], "generateCalldata")
+          .mockResolvedValue({} as any);
+        vitest
+          .spyOn(client[action], "sendCalldata")
+          .mockResolvedValue(mockTxHash);
+      }
+    });
+    describe("shield", () => {
+      it("should create new account when nonce is 0", async () => {
+        // Mock state with nonce 0
+        mockState = { nonce: 0n } as AccountState;
 
-      vitest
-        .spyOn(client["newAccountAction"], "generateCalldata")
-        .mockResolvedValue({} as any);
+        const txHash = await client.shield(
+          mockAmount,
+          mockSendTransaction,
+          mockFrom
+        );
 
-      vitest
-        .spyOn(client["newAccountAction"], "sendCalldata")
-        .mockResolvedValue(mockTxHash);
-
-      vitest
-        .spyOn(client["stateSynchronizer"], "syncAccountState")
-        .mockImplementation(async () => {});
-
-      const txHash = await client.shield(
-        mockAmount,
-        mockSendTransaction,
-        mockFrom
-      );
-
-      expect(txHash).toBe(mockTxHash);
-      expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith({
-        hash: mockTxHash
+        expect(txHash).toBe(mockTxHash);
+        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
+          {
+            hash: mockTxHash
+          }
+        );
+        // check that newAccountAction.generateCalldata was called with the correct arguments
+        expect(
+          client["newAccountAction"].generateCalldata
+        ).toHaveBeenCalledWith(mockState, mockAmount, contractVersion);
+        // check that newAccountAction.sendCalldata was called with the correct arguments
+        expect(client["newAccountAction"].sendCalldata).toHaveBeenCalledWith(
+          expect.any(Object),
+          mockSendTransaction,
+          mockFrom
+        );
+        // shielder.sync() should be called after the transaction is sent
+        expect(
+          client["stateSynchronizer"].syncAccountState
+        ).toHaveBeenCalledTimes(1);
       });
-      // check that newAccountAction.generateCalldata was called with the correct arguments
-      expect(client["newAccountAction"].generateCalldata).toHaveBeenCalledWith(
-        mockState,
-        mockAmount,
-        contractVersion
-      );
-      // check that newAccountAction.sendCalldata was called with the correct arguments
-      expect(client["newAccountAction"].sendCalldata).toHaveBeenCalledWith(
-        expect.any(Object),
-        mockSendTransaction,
-        mockFrom
-      );
-      // shielder.sync() should be called after the transaction is sent
-      expect(
-        client["stateSynchronizer"].syncAccountState
-      ).toHaveBeenCalledTimes(1);
-    });
 
-    it("should deposit when nonce is not 0", async () => {
-      // Mock state with non-zero nonce
-      const mockState = { nonce: 1n } as AccountState;
+      it("should deposit when nonce is not 0", async () => {
+        // Mock state with non-zero nonce
+        mockState = { nonce: 1n } as AccountState;
 
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
+        const txHash = await client.shield(
+          mockAmount,
+          mockSendTransaction,
+          mockFrom
+        );
 
-      vitest
-        .spyOn(client["depositAction"], "generateCalldata")
-        .mockResolvedValue({} as any);
-
-      vitest
-        .spyOn(client["depositAction"], "sendCalldata")
-        .mockResolvedValue(mockTxHash);
-
-      vitest
-        .spyOn(client["stateSynchronizer"], "syncAccountState")
-        .mockImplementation(async () => {});
-
-      const txHash = await client.shield(
-        mockAmount,
-        mockSendTransaction,
-        mockFrom
-      );
-
-      expect(txHash).toBe(mockTxHash);
-      expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith({
-        hash: mockTxHash
+        expect(txHash).toBe(mockTxHash);
+        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
+          {
+            hash: mockTxHash
+          }
+        );
+        // check that depositAction.generateCalldata was called with the correct arguments
+        expect(client["depositAction"].generateCalldata).toHaveBeenCalledWith(
+          mockState,
+          mockAmount,
+          contractVersion
+        );
+        // check that depositAction.sendCalldata was called with the correct arguments
+        expect(client["depositAction"].sendCalldata).toHaveBeenCalledWith(
+          expect.any(Object),
+          mockSendTransaction,
+          mockFrom
+        );
+        // shielder.sync() should be called after the transaction is sent
+        expect(
+          client["stateSynchronizer"].syncAccountState
+        ).toHaveBeenCalledTimes(1);
       });
-      // check that depositAction.generateCalldata was called with the correct arguments
-      expect(client["depositAction"].generateCalldata).toHaveBeenCalledWith(
-        mockState,
-        mockAmount,
-        contractVersion
-      );
-      // check that depositAction.sendCalldata was called with the correct arguments
-      expect(client["depositAction"].sendCalldata).toHaveBeenCalledWith(
-        expect.any(Object),
-        mockSendTransaction,
-        mockFrom
-      );
-      // shielder.sync() should be called after the transaction is sent
-      expect(
-        client["stateSynchronizer"].syncAccountState
-      ).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw OutdatedSdkError when version is not supported on newAccount", async () => {
-      // Mock state
-      const mockState = { nonce: 0n } as AccountState;
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
+    describe("withdraw", () => {
+      it("should successfully withdraw funds", async () => {
+        // Mock state
+        mockState = { nonce: 1n } as AccountState;
 
-      vitest
-        .spyOn(client["newAccountAction"], "generateCalldata")
-        .mockRejectedValue(new VersionRejectedByContract());
+        const txHash = await client.withdraw(
+          mockAmount,
+          mockTotalFee,
+          mockAddress
+        );
 
-      await expect(
-        client.shield(mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow(OutdatedSdkError);
-    });
-
-    it("should throw OutdatedSdkError when version is not supported on deposit", async () => {
-      // Mock state
-      const mockState = { nonce: 1n } as AccountState;
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
-
-      vitest
-        .spyOn(client["depositAction"], "generateCalldata")
-        .mockRejectedValue(new VersionRejectedByContract());
-
-      await expect(
-        client.shield(mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow(OutdatedSdkError);
-    });
-  });
-
-  describe("withdraw", () => {
-    const mockAmount = 1000n;
-    const mockTotalFee = 100n;
-    const mockAddress = "0x1234567890123456789012345678901234567890" as Address;
-    const mockTxHash = "0x9876543210" as Hash;
-
-    it("should successfully withdraw funds", async () => {
-      // Mock state
-      const mockState = { nonce: 1n } as AccountState;
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
-
-      // Mock withdraw action
-      vitest
-        .spyOn(client["withdrawAction"], "generateCalldata")
-        .mockResolvedValue({} as any);
-      vitest
-        .spyOn(client["withdrawAction"], "sendCalldata")
-        .mockResolvedValue(mockTxHash);
-
-      vitest
-        .spyOn(client["stateSynchronizer"], "syncAccountState")
-        .mockImplementation(async () => {});
-
-      const txHash = await client.withdraw(
-        mockAmount,
-        mockTotalFee,
-        mockAddress
-      );
-
-      expect(txHash).toBe(mockTxHash);
-      expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith({
-        hash: mockTxHash
+        expect(txHash).toBe(mockTxHash);
+        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
+          {
+            hash: mockTxHash
+          }
+        );
+        // check that withdrawAction.generateCalldata was called with the correct arguments
+        expect(client["withdrawAction"].generateCalldata).toHaveBeenCalledWith(
+          mockState,
+          mockAmount,
+          mockTotalFee,
+          mockAddress,
+          contractVersion
+        );
+        // check that withdrawAction.sendCalldata was called with the correct arguments
+        expect(client["withdrawAction"].sendCalldata).toHaveBeenCalledWith(
+          expect.any(Object)
+        );
+        // shielder.sync() should be called after the transaction is sent
+        expect(
+          client["stateSynchronizer"].syncAccountState
+        ).toHaveBeenCalledTimes(1);
       });
-      // check that withdrawAction.generateCalldata was called with the correct arguments
-      expect(client["withdrawAction"].generateCalldata).toHaveBeenCalledWith(
-        mockState,
-        mockAmount,
-        mockTotalFee,
-        mockAddress,
-        contractVersion
-      );
-      // check that withdrawAction.sendCalldata was called with the correct arguments
-      expect(client["withdrawAction"].sendCalldata).toHaveBeenCalledWith(
-        expect.any(Object)
-      );
-      // shielder.sync() should be called after the transaction is sent
-      expect(
-        client["stateSynchronizer"].syncAccountState
-      ).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw OutdatedSdkError when version is not supported", async () => {
-      // Mock state
-      const mockState = { nonce: 1n } as AccountState;
-      vitest
-        .spyOn(client["stateManager"], "accountState")
-        .mockResolvedValue(mockState);
+    describe("version error handling", () => {
+      it.each([
+        {
+          mockedError: new VersionRejectedByContract(),
+          expectedError: new OutdatedSdkError(),
+          action: "newAccountAction",
+          stage: "generateCalldata",
+          clientTarget: "shield",
+          nonce: 0n
+        },
+        {
+          mockedError: new VersionRejectedByContract(),
+          expectedError: new OutdatedSdkError(),
+          action: "depositAction",
+          stage: "generateCalldata",
+          clientTarget: "shield",
+          nonce: 1n
+        },
+        {
+          mockedError: new VersionRejectedByContract(),
+          expectedError: new OutdatedSdkError(),
+          action: "newAccountAction",
+          stage: "sendCalldata",
+          clientTarget: "shield",
+          nonce: 0n
+        },
+        {
+          mockedError: new VersionRejectedByContract(),
+          expectedError: new OutdatedSdkError(),
+          action: "depositAction",
+          stage: "sendCalldata",
+          clientTarget: "shield",
+          nonce: 1n
+        },
+        {
+          mockedError: new VersionRejectedByRelayer("123"),
+          expectedError: new OutdatedSdkError(),
+          action: "withdrawAction",
+          stage: "sendCalldata",
+          clientTarget: "withdraw",
+          nonce: 1n
+        }
+      ])(
+        "should throw OutdatedSdkError when version is not supported",
+        async ({
+          mockedError,
+          expectedError,
+          action,
+          stage,
+          clientTarget,
+          nonce
+        }) => {
+          // Mock state
+          mockState = { nonce } as AccountState;
 
-      // Mock withdraw action
-      vitest
-        .spyOn(client["withdrawAction"], "generateCalldata")
-        .mockResolvedValue({} as any);
+          vitest.spyOn(client[action], stage).mockRejectedValue(mockedError);
 
-      vitest
-        .spyOn(client["withdrawAction"], "sendCalldata")
-        .mockRejectedValue(new VersionRejectedByContract());
+          vitest.spyOn(callbacks, "onError");
 
-      await expect(
-        client.withdraw(mockAmount, mockTotalFee, mockAddress)
-      ).rejects.toThrow(OutdatedSdkError);
+          await expect(
+            client[clientTarget](mockAmount, mockSendTransaction, mockFrom)
+          ).rejects.toThrow(expectedError);
+
+          expect(callbacks.onError).toHaveBeenCalledWith(
+            expectedError,
+            stage === "generateCalldata" ? "generation" : "sending",
+            clientTarget
+          );
+        }
+      );
     });
   });
 });
