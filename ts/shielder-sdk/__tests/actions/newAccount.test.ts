@@ -8,15 +8,12 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 
-import { MockedCryptoClient, hashedNote } from "../../helpers";
+import { MockedCryptoClient, hashedNote } from "../helpers";
 
-import { NewAccountAction } from "../../../src/shielder/actions/newAccount";
-import { AccountState } from "../../../src/shielder/state";
-import {
-  IContract,
-  VersionRejectedByContract
-} from "../../../src/chain/contract";
-import { SendShielderTransaction } from "../../../src/shielder/client";
+import { NewAccountAction } from "../../src/actions/newAccount";
+import { AccountState } from "../../src/state";
+import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
+import { SendShielderTransaction } from "../../src/client";
 
 const expectPubInputsCorrect = async (
   pubInputs: NewAccountPubInputs,

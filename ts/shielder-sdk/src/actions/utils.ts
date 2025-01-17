@@ -2,7 +2,7 @@ import {
   CryptoClient,
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountState } from "@/shielder/state";
+import { AccountState } from "@/state";
 import { noteVersion } from "@/utils";
 
 export abstract class NoteAction {

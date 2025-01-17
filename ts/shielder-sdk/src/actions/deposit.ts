@@ -6,10 +6,10 @@ import {
   Scalar,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { SendShielderTransaction } from "@/shielder/client";
-import { Calldata } from "@/shielder/actions";
-import { INonceGenerator, NoteAction } from "@/shielder/actions/utils";
-import { AccountState } from "@/shielder/state";
+import { SendShielderTransaction } from "@/client";
+import { Calldata } from "@/actions";
+import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { AccountState } from "@/state";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -128,7 +128,6 @@ export class DepositAction extends NoteAction {
         trapdoorNew
       })
       .catch((e) => {
-        console.error(e);
         throw new Error(`Failed to prove deposit: ${e}`);
       });
     const pubInputs = await this.preparePubInputs(
@@ -190,7 +189,6 @@ export class DepositAction extends NoteAction {
       if (e instanceof VersionRejectedByContract) {
         throw e;
       }
-      console.error(e);
       throw new Error(`Failed to deposit: ${e}`);
     });
     return txHash;

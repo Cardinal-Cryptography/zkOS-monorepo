@@ -1,8 +1,5 @@
-import {
-  Contract,
-  IContract,
-  VersionRejectedByContract
-} from "@/chain/contract";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { CustomError } from "ts-custom-error";
 import {
   Address,
   createPublicClient,
@@ -11,26 +8,31 @@ import {
   http,
   PublicClient
 } from "viem";
-import { IRelayer, Relayer, VersionRejectedByRelayer } from "@/chain/relayer";
-import { ShielderTransaction, StateManager } from "@/shielder/state";
-import { NewAccountAction } from "@/shielder/actions/newAccount";
-import { DepositAction } from "@/shielder/actions/deposit";
-import { WithdrawAction } from "@/shielder/actions/withdraw";
+
 import {
-  StateSynchronizer,
-  UnexpectedVersionInEvent
-} from "@/shielder/state/sync";
+  Contract,
+  IContract,
+  VersionRejectedByContract
+} from "@/chain/contract";
+import { IRelayer, Relayer, VersionRejectedByRelayer } from "@/chain/relayer";
+import {
+  NewAccountAction,
+  DepositAction,
+  WithdrawAction,
+  INonceGenerator,
+  Calldata
+} from "@/actions";
+import { contractVersion } from "@/constants";
+import { idHidingNonce } from "@/utils";
 import {
   createStorage,
-  InjectedStorageInterface
-} from "@/shielder/state/storageSchema";
-import { Calldata } from "@/shielder/actions";
-import { contractVersion } from "@/constants";
-import { CustomError } from "ts-custom-error";
-import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { StateEventsFilter } from "@/shielder/state/events";
-import { INonceGenerator } from "./actions/utils";
-import { idHidingNonce } from "@/utils";
+  InjectedStorageInterface,
+  ShielderTransaction,
+  StateEventsFilter,
+  StateManager,
+  StateSynchronizer,
+  UnexpectedVersionInEvent
+} from "@/state";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
 

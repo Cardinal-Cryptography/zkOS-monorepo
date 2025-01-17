@@ -4,58 +4,10 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { Address, Hex } from "viem";
-import storageSchema, {
-  InjectedStorageInterface,
-  StorageInterface
-} from "./storageSchema";
-import { NoteEvent } from "@/chain/contract";
+import { StorageInterface } from "./storageSchema";
+import { Hex } from "viem";
+import { AccountState } from "./types";
 import { storageSchemaVersion } from "@/constants";
-
-export type AccountState = {
-  /**
-   * Account id, a scalar derived from the private key.
-   */
-  id: Scalar;
-  /**
-   * Account nonce, increments for each new action.
-   */
-  nonce: bigint;
-  /**
-   * Account balance, in wei.
-   */
-  balance: bigint;
-  /**
-   * Hash of the last note.
-   */
-  currentNote: Scalar;
-  /**
-   * Merkle tree index of the last note.
-   */
-  currentNoteIndex?: bigint;
-  /**
-   * Version of the storage schema.
-   */
-  storageSchemaVersion: number;
-};
-
-export type ShielderTransaction = {
-  type: "NewAccountNative" | "DepositNative" | "WithdrawNative";
-  amount: bigint;
-  to?: Address;
-  txHash: Hex;
-  block: bigint;
-};
-
-export const eventToTransaction = (event: NoteEvent): ShielderTransaction => {
-  return {
-    type: event.name,
-    amount: event.amount,
-    to: event.to,
-    txHash: event.txHash,
-    block: event.block
-  };
-};
 
 export class StateManager {
   private storage: StorageInterface;
@@ -155,5 +107,3 @@ const emptyAccountState = (id: Scalar): AccountState => {
     storageSchemaVersion
   };
 };
-
-export { storageSchema, InjectedStorageInterface, emptyAccountState };
