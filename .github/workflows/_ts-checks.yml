@@ -56,7 +56,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 23
 
       - uses: pnpm/action-setup@v4
         with:
@@ -73,3 +73,20 @@ jobs:
       - name: Run lint checks (workspace)
         run: pnpm lint
         working-directory: ts
+
+      - name: Run ts tests (workspace)
+        run: pnpm test
+        working-directory: ts
+
+      - name: Generate coverage data
+        run: pnpm coverage-report
+        working-directory: ts/shielder-sdk
+
+      - name: Generate coverage markdown report
+        run: node __tests/generate-coverage-report.js
+        working-directory: ts/shielder-sdk
+
+      - name: Post coverage report as PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: ts/shielder-sdk/coverage/coverage-report.md

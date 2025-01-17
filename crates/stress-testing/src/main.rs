@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use shielder_rust_sdk::native_token::ONE_TZERO;
+use shielder_setup::native_token::ONE_TZERO;
 
 mod actor;
 mod config;

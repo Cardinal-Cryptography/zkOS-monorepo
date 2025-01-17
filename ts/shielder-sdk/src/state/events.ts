@@ -1,7 +1,7 @@
-import { AccountState } from "@/shielder/state";
-import { DepositAction } from "@/shielder/actions/deposit";
-import { NewAccountAction } from "@/shielder/actions/newAccount";
-import { WithdrawAction } from "@/shielder/actions/withdraw";
+import { AccountState } from "@/state";
+import { DepositAction } from "@/actions/deposit";
+import { NewAccountAction } from "@/actions/newAccount";
+import { WithdrawAction } from "@/actions/withdraw";
 import { NoteEvent } from "@/chain/contract";
 import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 

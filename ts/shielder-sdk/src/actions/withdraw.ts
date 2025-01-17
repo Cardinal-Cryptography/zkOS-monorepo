@@ -6,12 +6,10 @@ import {
   scalarToBigint,
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountState } from "@/shielder/state";
+import { AccountState } from "@/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
-import { NoteAction } from "@/shielder/actions/utils";
-import { idHidingNonce } from "@/utils";
-import { contractVersion } from "@/constants";
+import { INonceGenerator, NoteAction } from "@/actions/utils";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
@@ -26,17 +24,20 @@ export interface WithdrawCalldata {
 }
 
 export class WithdrawAction extends NoteAction {
-  contract: IContract;
-  relayer: IRelayer;
+  private contract: IContract;
+  private relayer: IRelayer;
+  private nonceGenerator: INonceGenerator;
 
   constructor(
     contract: IContract,
     relayer: IRelayer,
-    cryptoClient: CryptoClient
+    cryptoClient: CryptoClient,
+    nonceGenerator: INonceGenerator
   ) {
     super(cryptoClient);
     this.contract = contract;
     this.relayer = relayer;
+    this.nonceGenerator = nonceGenerator;
   }
 
   /**
@@ -58,19 +59,20 @@ export class WithdrawAction extends NoteAction {
   }
 
   calculateCommitment(
-    address: Scalar,
-    relayerAddress: Scalar,
-    relayerFee: Scalar
+    expectedContractVersion: `0x${string}`,
+    address: `0x${string}`,
+    relayerAddress: `0x${string}`,
+    relayerFee: bigint
   ): Scalar {
     const encodingHash = hexToBigInt(
       keccak256(
         encodePacked(
           ["bytes3", "uint256", "uint256", "uint256"],
           [
-            contractVersion,
-            scalarToBigint(address),
-            scalarToBigint(relayerAddress),
-            scalarToBigint(relayerFee)
+            expectedContractVersion,
+            hexToBigInt(address),
+            hexToBigInt(relayerAddress),
+            relayerFee
           ]
         )
       )
@@ -139,7 +141,7 @@ export class WithdrawAction extends NoteAction {
       await this.contract.getMerklePath(lastNodeIndex)
     );
 
-    const nonce = idHidingNonce();
+    const nonce = this.nonceGenerator.randomIdHidingNonce();
 
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
@@ -166,6 +168,13 @@ export class WithdrawAction extends NoteAction {
         Number(state.nonce)
       );
 
+    const commitment = this.calculateCommitment(
+      expectedContractVersion,
+      address,
+      await this.relayer.address(),
+      totalFee
+    );
+
     const proof = await this.cryptoClient.withdrawCircuit
       .prove({
         id: state.id,
@@ -177,14 +186,9 @@ export class WithdrawAction extends NoteAction {
         value: Scalar.fromBigint(amount),
         nullifierNew,
         trapdoorNew,
-        commitment: this.calculateCommitment(
-          Scalar.fromAddress(address),
-          Scalar.fromAddress(await this.relayer.address()),
-          Scalar.fromBigint(totalFee)
-        )
+        commitment
       })
       .catch((e) => {
-        console.error(e);
         throw new Error(`Failed to prove withdrawal: ${e}`);
       });
     const pubInputs = await this.preparePubInputs(
@@ -193,11 +197,7 @@ export class WithdrawAction extends NoteAction {
       nonce,
       nullifierOld,
       merkleRoot,
-      this.calculateCommitment(
-        Scalar.fromAddress(address),
-        Scalar.fromAddress(await this.relayer.address()),
-        Scalar.fromBigint(totalFee)
-      )
+      commitment
     );
     if (!(await this.cryptoClient.withdrawCircuit.verify(proof, pubInputs))) {
       throw new Error("Withdrawal proof verification failed");
@@ -246,7 +246,6 @@ export class WithdrawAction extends NoteAction {
         if (e instanceof VersionRejectedByRelayer) {
           throw e;
         }
-        console.error(e);
         throw new Error(`Failed to withdraw: ${e}`);
       });
     return txHash as `0x${string}`;

@@ -12,7 +12,7 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
     ProverKnowledge, F, MAX_K,
 };
-use shielder_rust_sdk::parameter_generation;
+use shielder_setup::parameter_generation;
 
 /// Given circuit type `C`, construct a correct relation instance and generate a proof, accompanied
 /// by the corresponding public input.

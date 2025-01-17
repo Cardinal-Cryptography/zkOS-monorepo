@@ -54,8 +54,9 @@ const createStorage = (
     try {
       return storageSchema[key].parse(JSON.parse(storedValue));
     } catch (error) {
-      console.error(`Failed to parse storage value for key ${key}:`, error);
-      return null;
+      throw new Error(
+        `Failed to parse storage value for key ${key}: ${(error as Error).message}`
+      );
     }
   };
   const setItem = async <K extends StateManagerStorageKeys>(

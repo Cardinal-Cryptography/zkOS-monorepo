@@ -32,4 +32,5 @@ powers-of-tau = { workspace = true }
 shielder-circuits = { workspace = true }
 shielder-relayer = { workspace = true }
 shielder-rust-sdk = { workspace = true, features = ["account", "contract"] }
+shielder-setup = { workspace = true }
 type-conversions = { workspace = true }
