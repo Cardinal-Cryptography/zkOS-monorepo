@@ -104,7 +104,7 @@ mod tests {
     use rand::{thread_rng, Rng};
     use shielder_setup::version::ContractVersion;
 
-    use crate::contract::WithdrawCommitment;
+    use crate::WithdrawCommitment;
 
     fn sample_commitment() -> WithdrawCommitment {
         let mut rng = thread_rng();

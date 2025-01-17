@@ -12,6 +12,7 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
+alloy-primitives = { workspace = true }
 alloy-provider = { workspace = true }
 alloy-rpc-types = { workspace = true }
 alloy-signer = { workspace = true }

@@ -11,7 +11,7 @@ repository.workspace = true
 [dependencies]
 alloy-contract = { workspace = true }
 alloy-network = { workspace = true }
-alloy-primitives = { workspace = true, features = ["serde"] }
+alloy-primitives = { workspace = true, features = ["serde", "rand"] }
 alloy-provider = { workspace = true }
 alloy-rpc-types = { workspace = true }
 alloy-signer-local = { workspace = true }
@@ -24,3 +24,6 @@ thiserror = { workspace = true }
 shielder-setup = { workspace = true }
 tracing = { workspace = true }
 type-conversions = { workspace = true }
+
+[dev-dependencies]
+halo2curves = { workspace = true }
