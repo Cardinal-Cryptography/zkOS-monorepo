@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
   CryptoClient,
   NewAccountAdvice,
@@ -59,8 +59,8 @@ describe("NewAccountAction", () => {
   beforeEach(() => {
     cryptoClient = new MockedCryptoClient();
     contract = {
-      getAddress: jest.fn().mockReturnValue(mockAddress),
-      newAccountCalldata: jest
+      getAddress: vitest.fn().mockReturnValue(mockAddress),
+      newAccountCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -166,7 +166,7 @@ describe("NewAccountAction", () => {
     it("should throw an error at proving failure", async () => {
       const amount = 100n;
       const expectedVersion = "0xversion" as `0x${string}`;
-      const mockProve = jest
+      const mockProve = vitest
         .fn<(values: NewAccountAdvice) => Promise<Uint8Array>>()
         .mockRejectedValue(new Error("mocked prove failure"));
       cryptoClient.newAccountCircuit.prove = mockProve;
@@ -181,7 +181,7 @@ describe("NewAccountAction", () => {
     it("should throw an error at verification failure", async () => {
       const amount = 100n;
       const expectedVersion = "0xversion" as `0x${string}`;
-      const mockVerify = jest
+      const mockVerify = vitest
         .fn<
           (
             proof: Uint8Array,
@@ -207,7 +207,7 @@ describe("NewAccountAction", () => {
         expectedVersion
       );
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockResolvedValue("0xtxHash" as `0x${string}`);
 
@@ -246,7 +246,7 @@ describe("NewAccountAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      contract.newAccountCalldata = jest
+      contract.newAccountCalldata = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -259,11 +259,11 @@ describe("NewAccountAction", () => {
         >()
         .mockRejectedValue(mockedErr);
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockResolvedValue("0xtxHash" as `0x${string}`);
 
-      expect(
+      await expect(
         action.sendCalldata(calldata, mockSendTransaction, mockAddress)
       ).rejects.toThrowError(mockedErr);
     });
@@ -277,7 +277,7 @@ describe("NewAccountAction", () => {
         expectedVersion
       );
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockRejectedValue(new Error("mocked contract rejection"));
 

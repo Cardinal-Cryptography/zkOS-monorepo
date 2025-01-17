@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
   CryptoClient,
   Scalar,
@@ -100,8 +100,8 @@ describe("WithdrawAction", () => {
       Scalar.fromBigint(1n)
     ]);
     contract = {
-      getAddress: jest.fn().mockReturnValue(mockAddress),
-      depositCalldata: jest
+      getAddress: vitest.fn().mockReturnValue(mockAddress),
+      depositCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -115,15 +115,15 @@ describe("WithdrawAction", () => {
           ) => Promise<`0x${string}`>
         >()
         .mockResolvedValue("0xmockedCalldata"),
-      getMerklePath: jest
+      getMerklePath: vitest
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([...mockedPath, scalarToBigint(mockedMerkleRoot)])
     } as unknown as IContract;
     relayer = {
-      address: jest
+      address: vitest
         .fn<() => Promise<`0x${string}`>>()
         .mockResolvedValue(mockRelayerAddress),
-      withdraw: jest
+      withdraw: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -221,7 +221,7 @@ describe("WithdrawAction", () => {
       const nonce = 123n;
       const commitment = Scalar.fromBigint(3n);
       const merkleRoot = Scalar.fromBigint(4n);
-      expect(
+      await expect(
         action.preparePubInputs(
           state,
           amount,
@@ -305,7 +305,7 @@ describe("WithdrawAction", () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
-      expect(
+      await expect(
         action.generateCalldata(
           {
             ...state,
@@ -323,7 +323,7 @@ describe("WithdrawAction", () => {
       const amount = 6n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
-      expect(
+      await expect(
         action.generateCalldata(
           state,
           amount,
@@ -338,7 +338,7 @@ describe("WithdrawAction", () => {
       const amount = 1n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 2n;
-      expect(
+      await expect(
         action.generateCalldata(
           state,
           amount,
@@ -354,11 +354,11 @@ describe("WithdrawAction", () => {
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
 
-      cryptoClient.withdrawCircuit.prove = jest
+      cryptoClient.withdrawCircuit.prove = vitest
         .fn<(values: WithdrawAdvice) => Promise<Uint8Array>>()
         .mockRejectedValue("error");
 
-      expect(
+      await expect(
         action.generateCalldata(
           state,
           amount,
@@ -374,13 +374,13 @@ describe("WithdrawAction", () => {
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
 
-      cryptoClient.withdrawCircuit.verify = jest
+      cryptoClient.withdrawCircuit.verify = vitest
         .fn<
           (proof: Uint8Array, values: WithdrawPubInputs) => Promise<boolean>
         >()
         .mockResolvedValue(false);
 
-      expect(
+      await expect(
         action.generateCalldata(
           state,
           amount,
@@ -435,7 +435,7 @@ describe("WithdrawAction", () => {
 
       const mockedErr = new VersionRejectedByRelayer("rejected version");
 
-      relayer.withdraw = jest
+      relayer.withdraw = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -450,7 +450,9 @@ describe("WithdrawAction", () => {
         >()
         .mockRejectedValue(mockedErr);
 
-      expect(action.sendCalldata(calldata)).rejects.toThrowError(mockedErr);
+      await expect(action.sendCalldata(calldata)).rejects.toThrowError(
+        mockedErr
+      );
     });
 
     it("should throw on other errors during send", async () => {
@@ -465,7 +467,7 @@ describe("WithdrawAction", () => {
         expectedVersion
       );
 
-      relayer.withdraw = jest
+      relayer.withdraw = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -480,7 +482,7 @@ describe("WithdrawAction", () => {
         >()
         .mockRejectedValue(new Error("mocked contract rejection"));
 
-      expect(action.sendCalldata(calldata)).rejects.toThrow(
+      await expect(action.sendCalldata(calldata)).rejects.toThrow(
         "Failed to withdraw: Error: mocked contract rejection"
       );
     });

@@ -1,10 +1,27 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { Address, Hash, PublicClient } from "viem";
+import {
+  describe,
+  it,
+  expect,
+  vitest,
+  beforeEach,
+  Mocked,
+  Mock,
+  MockedFunction
+} from "vitest";
+
+import {
+  Address,
+  createPublicClient,
+  defineChain,
+  Hash,
+  PublicClient
+} from "viem";
 import { MockedCryptoClient } from "./helpers";
 import {
   ShielderClient,
   OutdatedSdkError,
-  ShielderCallbacks
+  ShielderCallbacks,
+  createShielderClient
 } from "../src/client";
 import {
   Contract,
@@ -18,19 +35,26 @@ import { InjectedStorageInterface } from "../src/state/storageSchema";
 import { AccountState, ShielderTransaction } from "../src/state/types";
 import { contractVersion } from "../src/constants";
 
-// Mock dependencies
-jest.mock("viem");
-jest.mock("../src/chain/contract");
-jest.mock("../src/chain/relayer");
-jest.mock("../src/state");
+vitest.mock("../src/chain/contract");
+vitest.mock("../src/chain/relayer");
+vitest.mock("../src/state");
+vitest.mock("viem", async () => {
+  const orig = await vitest.importActual("viem");
+  return {
+    ...orig,
+    createPublicClient: vitest.fn().mockReturnValue({
+      waitForTransactionReceipt: vitest.fn()
+    })
+  };
+});
 
 describe("ShielderClient", () => {
   let client: ShielderClient;
-  let mockContract: jest.Mocked<Contract>;
-  let mockRelayer: jest.Mocked<Relayer>;
-  let mockPublicClient: jest.Mocked<PublicClient>;
+  let mockContract: Mocked<Contract>;
+  let mockRelayer: Mocked<Relayer>;
+  let mockPublicClient: Mocked<PublicClient>;
   let mockStorage: ReturnType<typeof createStorage>;
-  let callbacks: jest.Mocked<ShielderCallbacks>;
+  let callbacks: Mocked<ShielderCallbacks>;
   const mockCryptoClient = new MockedCryptoClient();
 
   const mockShielderSeedPrivateKey =
@@ -38,31 +62,31 @@ describe("ShielderClient", () => {
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vitest.clearAllMocks();
 
     // Setup mocks
     mockContract = new Contract(
       null as any,
       "0x" as Address
-    ) as jest.Mocked<Contract>;
-    mockRelayer = new Relayer("http://localhost") as jest.Mocked<Relayer>;
+    ) as Mocked<Contract>;
+    mockRelayer = new Relayer("http://localhost") as Mocked<Relayer>;
     mockPublicClient = {
-      waitForTransactionReceipt: jest.fn()
-    } as unknown as jest.Mocked<PublicClient>;
+      waitForTransactionReceipt: vitest.fn()
+    } as unknown as Mocked<PublicClient>;
 
     const mockStorageInterface: InjectedStorageInterface = {
-      getItem: jest
+      getItem: vitest
         .fn<(key: string) => Promise<string | null>>()
         .mockResolvedValue(null),
-      setItem: jest
+      setItem: vitest
         .fn<(key: string, value: string) => Promise<void>>()
         .mockResolvedValue(undefined)
     };
     mockStorage = createStorage(mockStorageInterface);
     callbacks = {
-      onCalldataGenerated: jest.fn(),
-      onCalldataSent: jest.fn(),
-      onError: jest.fn()
+      onCalldataGenerated: vitest.fn(),
+      onCalldataSent: vitest.fn(),
+      onError: vitest.fn()
     };
 
     // Create client instance
@@ -80,6 +104,100 @@ describe("ShielderClient", () => {
     );
   });
 
+  describe("createShielderClient", () => {
+    const mockShielderSeedPrivateKey =
+      "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
+    const mockChainId = 1;
+    const mockRpcHttpEndpoint = "http://localhost:8545";
+    const mockContractAddress =
+      "0x1234567890123456789012345678901234567890" as Address;
+    const mockRelayerUrl = "http://localhost:3000";
+    const mockCryptoClient = new MockedCryptoClient();
+    const mockStorageInterface: InjectedStorageInterface = {
+      getItem: vitest
+        .fn<(key: string) => Promise<string | null>>()
+        .mockImplementation(async () => null),
+      setItem: vitest
+        .fn<(key: string, value: string) => Promise<void>>()
+        .mockImplementation(async () => {})
+    };
+
+    beforeEach(() => {
+      vitest.clearAllMocks();
+    });
+
+    it("should create ShielderClient with correct parameters", () => {
+      const client = createShielderClient(
+        mockShielderSeedPrivateKey,
+        mockChainId,
+        mockRpcHttpEndpoint,
+        mockContractAddress,
+        mockRelayerUrl,
+        mockStorageInterface,
+        mockCryptoClient
+      );
+
+      expect(client).toBeInstanceOf(ShielderClient);
+      expect(createPublicClient).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chain: expect.objectContaining({
+            id: mockChainId,
+            rpcUrls: expect.objectContaining({
+              default: {
+                http: [mockRpcHttpEndpoint]
+              }
+            })
+          })
+        })
+      );
+      expect(Contract).toHaveBeenCalledWith(
+        expect.anything(),
+        mockContractAddress
+      );
+      expect(Relayer).toHaveBeenCalledWith(mockRelayerUrl);
+    });
+
+    it("should create ShielderClient with default callbacks", () => {
+      const client = createShielderClient(
+        mockShielderSeedPrivateKey,
+        mockChainId,
+        mockRpcHttpEndpoint,
+        mockContractAddress,
+        mockRelayerUrl,
+        mockStorageInterface,
+        mockCryptoClient
+      );
+
+      expect(client).toBeInstanceOf(ShielderClient);
+      // Verify that the client was created with empty callbacks object
+      expect(client["callbacks"]).toEqual({});
+    });
+
+    it("should create ShielderClient with provided callbacks", () => {
+      const mockCallbacks = {
+        onCalldataGenerated: vitest.fn(),
+        onCalldataSent: vitest.fn(),
+        onNewTransaction: vitest.fn(),
+        onError: vitest.fn()
+      };
+
+      const client = createShielderClient(
+        mockShielderSeedPrivateKey,
+        mockChainId,
+        mockRpcHttpEndpoint,
+        mockContractAddress,
+        mockRelayerUrl,
+        mockStorageInterface,
+        mockCryptoClient,
+        mockCallbacks
+      );
+
+      expect(client).toBeInstanceOf(ShielderClient);
+      // Verify that the client was created with the provided callbacks
+      expect(client["callbacks"]).toEqual(mockCallbacks);
+    });
+  });
+
   describe("getWithdrawFees", () => {
     it("should return quoted fees from relayer", async () => {
       const mockFees = {
@@ -88,7 +206,7 @@ describe("ShielderClient", () => {
         total_fee: 1500n
       };
 
-      mockRelayer.quoteFees = jest
+      mockRelayer.quoteFees = vitest
         .fn<
           () => Promise<{
             base_fee: bigint;
@@ -111,7 +229,7 @@ describe("ShielderClient", () => {
 
   describe("syncShielder", () => {
     it("should call stateSynchronizer", async () => {
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockImplementationOnce(async () => {});
 
@@ -123,12 +241,12 @@ describe("ShielderClient", () => {
     });
 
     it("should throw OutdatedSdkError when version is not supported", async () => {
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockRejectedValue(new UnexpectedVersionInEvent("123"));
 
       // spy on client.callbacks.onError callback
-      jest.spyOn(callbacks, "onError");
+      vitest.spyOn(callbacks, "onError");
 
       await expect(client.syncShielder()).rejects.toThrow(OutdatedSdkError);
 
@@ -141,12 +259,12 @@ describe("ShielderClient", () => {
 
     it("should rethrow general error", async () => {
       const mockedError = new Error("123");
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockRejectedValue(mockedError);
 
       // spy on client.callbacks.onError callback
-      jest.spyOn(callbacks, "onError");
+      vitest.spyOn(callbacks, "onError");
 
       await expect(client.syncShielder()).rejects.toThrow(mockedError);
 
@@ -167,7 +285,7 @@ describe("ShielderClient", () => {
         currentNote: {} as any,
         storageSchemaVersion: 1
       };
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
@@ -193,7 +311,7 @@ describe("ShielderClient", () => {
           block: 2n
         }
       ];
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "getShielderTransactions")
         .mockImplementation(async function* () {
           for (const tx of mockTransactions) {
@@ -209,15 +327,37 @@ describe("ShielderClient", () => {
       expect(transactions).toEqual(mockTransactions);
     });
 
+    it("should rethrow general error", async () => {
+      const mockedError = new Error("123");
+      vitest
+        .spyOn(client["stateSynchronizer"], "getShielderTransactions")
+        .mockImplementation(async function* () {
+          throw mockedError;
+        });
+      vitest.spyOn(callbacks, "onError");
+
+      await expect(async () => {
+        for await (const _ of client.scanChainForShielderTransactions()) {
+          // Should throw before yielding any transactions
+        }
+      }).rejects.toThrow(mockedError);
+
+      expect(callbacks.onError).toHaveBeenCalledWith(
+        mockedError,
+        "syncing",
+        "sync"
+      );
+    });
+
     it("should throw OutdatedSdkError when version is not supported", async () => {
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "getShielderTransactions")
         .mockImplementation(async function* () {
           throw new UnexpectedVersionInEvent("123");
         });
 
       // spy on client.callbacks.onError callback
-      jest.spyOn(callbacks, "onError");
+      vitest.spyOn(callbacks, "onError");
 
       await expect(async () => {
         for await (const _ of client.scanChainForShielderTransactions()) {
@@ -237,7 +377,7 @@ describe("ShielderClient", () => {
     const mockAmount = 1000n;
     const mockFrom = "0x1234567890123456789012345678901234567890" as const;
     const mockTxHash = "0x9876543210" as Hash;
-    const mockSendTransaction = jest
+    const mockSendTransaction = vitest
       .fn<
         (params: {
           data: `0x${string}`;
@@ -245,7 +385,7 @@ describe("ShielderClient", () => {
           value: bigint;
         }) => Promise<Hash>
       >()
-      .mockResolvedValue(mockTxHash) as jest.MockedFunction<
+      .mockResolvedValue(mockTxHash) as MockedFunction<
       (params: {
         data: `0x${string}`;
         to: `0x${string}`;
@@ -256,19 +396,19 @@ describe("ShielderClient", () => {
     it("should create new account when nonce is 0", async () => {
       // Mock state with nonce 0
       const mockState = { nonce: 0n } as AccountState;
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
-      jest
+      vitest
         .spyOn(client["newAccountAction"], "generateCalldata")
         .mockResolvedValue({} as any);
 
-      jest
+      vitest
         .spyOn(client["newAccountAction"], "sendCalldata")
         .mockResolvedValue(mockTxHash);
 
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockImplementation(async () => {});
 
@@ -304,19 +444,19 @@ describe("ShielderClient", () => {
       // Mock state with non-zero nonce
       const mockState = { nonce: 1n } as AccountState;
 
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
-      jest
+      vitest
         .spyOn(client["depositAction"], "generateCalldata")
         .mockResolvedValue({} as any);
 
-      jest
+      vitest
         .spyOn(client["depositAction"], "sendCalldata")
         .mockResolvedValue(mockTxHash);
 
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockImplementation(async () => {});
 
@@ -351,11 +491,11 @@ describe("ShielderClient", () => {
     it("should throw OutdatedSdkError when version is not supported on newAccount", async () => {
       // Mock state
       const mockState = { nonce: 0n } as AccountState;
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
-      jest
+      vitest
         .spyOn(client["newAccountAction"], "generateCalldata")
         .mockRejectedValue(new VersionRejectedByContract());
 
@@ -367,11 +507,11 @@ describe("ShielderClient", () => {
     it("should throw OutdatedSdkError when version is not supported on deposit", async () => {
       // Mock state
       const mockState = { nonce: 1n } as AccountState;
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
-      jest
+      vitest
         .spyOn(client["depositAction"], "generateCalldata")
         .mockRejectedValue(new VersionRejectedByContract());
 
@@ -390,19 +530,19 @@ describe("ShielderClient", () => {
     it("should successfully withdraw funds", async () => {
       // Mock state
       const mockState = { nonce: 1n } as AccountState;
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
       // Mock withdraw action
-      jest
+      vitest
         .spyOn(client["withdrawAction"], "generateCalldata")
         .mockResolvedValue({} as any);
-      jest
+      vitest
         .spyOn(client["withdrawAction"], "sendCalldata")
         .mockResolvedValue(mockTxHash);
 
-      jest
+      vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockImplementation(async () => {});
 
@@ -437,16 +577,16 @@ describe("ShielderClient", () => {
     it("should throw OutdatedSdkError when version is not supported", async () => {
       // Mock state
       const mockState = { nonce: 1n } as AccountState;
-      jest
+      vitest
         .spyOn(client["stateManager"], "accountState")
         .mockResolvedValue(mockState);
 
       // Mock withdraw action
-      jest
+      vitest
         .spyOn(client["withdrawAction"], "generateCalldata")
         .mockResolvedValue({} as any);
 
-      jest
+      vitest
         .spyOn(client["withdrawAction"], "sendCalldata")
         .mockRejectedValue(new VersionRejectedByContract());
 

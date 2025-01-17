@@ -1,4 +1,4 @@
-import { it, expect, jest, describe, beforeEach } from "@jest/globals";
+import { it, expect, vitest, describe, beforeEach, Mocked } from "vitest";
 import storageSchema, {
   createStorage,
   type InjectedStorageInterface
@@ -106,12 +106,12 @@ describe("storageSchema", () => {
 });
 
 describe("createStorage", () => {
-  let mockInjectedStorage: jest.Mocked<InjectedStorageInterface>;
+  let mockInjectedStorage: Mocked<InjectedStorageInterface>;
 
   beforeEach(() => {
     mockInjectedStorage = {
-      getItem: jest.fn(),
-      setItem: jest.fn()
+      getItem: vitest.fn(),
+      setItem: vitest.fn()
     };
   });
 

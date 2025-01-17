@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { beforeEach, describe, expect, vitest, it } from "vitest";
 import {
   CryptoClient,
   DepositAdvice,
@@ -89,8 +89,8 @@ describe("DepositAction", () => {
       Scalar.fromBigint(1n)
     ]);
     contract = {
-      getAddress: jest.fn().mockReturnValue(mockAddress),
-      depositCalldata: jest
+      getAddress: vitest.fn().mockReturnValue(mockAddress),
+      depositCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -104,7 +104,7 @@ describe("DepositAction", () => {
           ) => Promise<`0x${string}`>
         >()
         .mockResolvedValue("0xmockedCalldata"),
-      getMerklePath: jest
+      getMerklePath: vitest
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([...mockedPath, scalarToBigint(mockedMerkleRoot)])
     } as unknown as IContract;
@@ -184,7 +184,7 @@ describe("DepositAction", () => {
       const amount = -100n;
       const nonce = 123n;
       const merkleRoot = Scalar.fromBigint(3n);
-      expect(
+      await expect(
         action.preparePubInputs(
           state,
           amount,
@@ -246,7 +246,7 @@ describe("DepositAction", () => {
     it("should throw on undefined currentNoteIndex", async () => {
       const amount = 100n;
       const expectedVersion = "0xversion" as `0x${string}`;
-      expect(
+      await expect(
         action.generateCalldata(
           {
             ...state,
@@ -261,10 +261,10 @@ describe("DepositAction", () => {
     it("should throw on incorrect merkle path length", async () => {
       const amount = 100n;
       const expectedVersion = "0xversion" as `0x${string}`;
-      contract.getMerklePath = jest
+      contract.getMerklePath = vitest
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([0n]);
-      expect(
+      await expect(
         action.generateCalldata(state, amount, expectedVersion)
       ).rejects.toThrow("Wrong path length");
     });
@@ -274,11 +274,11 @@ describe("DepositAction", () => {
       const expectedVersion = "0xversion" as `0x${string}`;
 
       // mock cryptoClient to throw on cryptoClient.depositCircuit.prove
-      cryptoClient.depositCircuit.prove = jest
+      cryptoClient.depositCircuit.prove = vitest
         .fn<(values: DepositAdvice) => Promise<Uint8Array>>()
         .mockRejectedValue("error");
 
-      expect(
+      await expect(
         action.generateCalldata(state, amount, expectedVersion)
       ).rejects.toThrow("Failed to prove deposit:");
     });
@@ -288,11 +288,11 @@ describe("DepositAction", () => {
       const expectedVersion = "0xversion" as `0x${string}`;
 
       // mock cryptoClient to throw on cryptoClient.depositCircuit.prove
-      cryptoClient.depositCircuit.verify = jest
+      cryptoClient.depositCircuit.verify = vitest
         .fn<(proof: Uint8Array, values: DepositPubInputs) => Promise<boolean>>()
         .mockResolvedValue(false);
 
-      expect(
+      await expect(
         action.generateCalldata(state, amount, expectedVersion)
       ).rejects.toThrow("Deposit proof verification failed");
     });
@@ -308,7 +308,7 @@ describe("DepositAction", () => {
         expectedVersion
       );
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockResolvedValue("0xtxHash" as `0x${string}`);
 
@@ -350,7 +350,7 @@ describe("DepositAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      contract.depositCalldata = jest
+      contract.depositCalldata = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -365,11 +365,11 @@ describe("DepositAction", () => {
         >()
         .mockRejectedValue(mockedErr);
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockResolvedValue("0xtxHash" as `0x${string}`);
 
-      expect(
+      await expect(
         action.sendCalldata(calldata, mockSendTransaction, mockAddress)
       ).rejects.toThrowError(mockedErr);
     });
@@ -385,11 +385,11 @@ describe("DepositAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockRejectedValue(mockedErr);
 
-      expect(
+      await expect(
         action.sendCalldata(calldata, mockSendTransaction, mockAddress)
       ).rejects.toThrowError(mockedErr);
     });
@@ -403,11 +403,11 @@ describe("DepositAction", () => {
         expectedVersion
       );
 
-      const mockSendTransaction = jest
+      const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()
         .mockRejectedValue(new Error("some error"));
 
-      expect(
+      await expect(
         action.sendCalldata(calldata, mockSendTransaction, mockAddress)
       ).rejects.toThrow("Failed to deposit: Error: some error");
     });
