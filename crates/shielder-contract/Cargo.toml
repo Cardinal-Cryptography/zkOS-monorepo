@@ -17,8 +17,6 @@ alloy-rpc-types = { workspace = true }
 alloy-signer-local = { workspace = true }
 alloy-sol-types = { workspace = true }
 alloy-transport = { workspace = true }
-anyhow = { workspace = true }
-log = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 thiserror = { workspace = true }
 shielder-setup = { workspace = true }
