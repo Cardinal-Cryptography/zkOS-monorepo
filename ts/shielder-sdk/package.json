@@ -21,7 +21,7 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
-    "coverage-report": "vitest run --coverage --coverage.reporter json"
+    "coverage-report": "vitest run --coverage --coverage.reporter json-summary"
   },
   "exports": {
     ".": {

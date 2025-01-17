@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     coverage: {
       include: ["src/**/*.ts"],
-      reporter: ["text", "json"]
+      reporter: ["text", "json-summary"]
     }
   },
   resolve: {
