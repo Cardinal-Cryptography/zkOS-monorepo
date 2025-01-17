@@ -21,6 +21,6 @@ export class NoteTreeConfig
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    return Promise.resolve(this.wasmModule.note_arity());
+    return Promise.resolve(this.wasmModule.note_tree_arity());
   }
 }

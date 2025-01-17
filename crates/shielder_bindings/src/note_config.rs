@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn note_arity() -> u32 {
+pub fn note_tree_arity() -> u32 {
     ARITY.try_into().unwrap()
 }
 
