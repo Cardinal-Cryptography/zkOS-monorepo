@@ -1,4 +1,5 @@
 use alloy_contract::Error;
+pub use alloy_primitives;
 use alloy_primitives::{keccak256, Address, TxHash, U256};
 use alloy_signer_local::LocalSignerError;
 use alloy_sol_types::SolValue;
@@ -87,7 +88,7 @@ impl WithdrawCommitment {
             )
                 .abi_encode_packed(),
         )
-            .into();
+        .into();
 
         // shifting right by 4 bits, same as in the contract
         hash >> 4

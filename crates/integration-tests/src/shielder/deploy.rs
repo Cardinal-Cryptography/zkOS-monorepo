@@ -8,7 +8,7 @@ use evm_utils::{
     EvmRunner,
 };
 use rstest::{fixture, rstest};
-use shielder_rust_sdk::contract::ShielderContract::initializeCall;
+use shielder_contract::ShielderContract::initializeCall;
 
 use crate::{
     deploy_contract,

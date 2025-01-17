@@ -1,6 +1,6 @@
 use alloy_signer_local::PrivateKeySigner;
 use clap::Parser;
-use shielder_rust_sdk::alloy_primitives::Address;
+use shielder_contract::alloy_primitives::Address;
 
 #[derive(Parser)]
 pub struct Config {
@@ -28,7 +28,7 @@ mod parsing {
 
     use alloy_signer_local::PrivateKeySigner;
     use anyhow::{anyhow, Result};
-    use shielder_rust_sdk::alloy_primitives::Address;
+    use shielder_contract::alloy_primitives::Address;
 
     pub fn parse_address(string: &str) -> Result<Address> {
         Address::from_str(string).map_err(|e| anyhow!(e))

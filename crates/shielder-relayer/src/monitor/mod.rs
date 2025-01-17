@@ -1,9 +1,9 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use alloy_provider::Provider;
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, U256},
-    contract::providers::create_simple_provider,
+    providers::create_simple_provider,
 };
 use tokio::sync::RwLock;
 

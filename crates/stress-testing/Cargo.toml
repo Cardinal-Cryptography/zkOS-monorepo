@@ -20,7 +20,7 @@ rand = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 
-shielder-account = { workspace = true }
+shielder-account = { workspace = true, features = ["contract"] }
 shielder-circuits = { workspace = true }
 shielder-contract = { workspace = true }
 shielder-relayer = { workspace = true }

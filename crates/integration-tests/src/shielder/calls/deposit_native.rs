@@ -1,11 +1,6 @@
 use alloy_primitives::{TxHash, U256};
-use shielder_rust_sdk::{
-    account::{
-        call_data::{DepositCallType, MerkleProof},
-        ShielderAccount,
-    },
-    contract::ShielderContract::depositNativeCall,
-};
+use shielder_account::{call_data::DepositCallType, ShielderAccount};
+use shielder_contract::ShielderContract::depositNativeCall;
 
 use crate::shielder::{
     deploy::Deployment, invoke_shielder_call, merkle::get_merkle_args, CallResult,
@@ -66,13 +61,11 @@ mod tests {
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
+    use shielder_account::ShielderAccount;
     use shielder_circuits::F;
-    use shielder_rust_sdk::{
-        account::ShielderAccount,
-        contract::ShielderContract::{
-            depositNativeCall, DepositNative, ShielderContractErrors, ShielderContractEvents,
-            WrongContractVersion,
-        },
+    use shielder_contract::ShielderContract::{
+        depositNativeCall, DepositNative, ShielderContractErrors, ShielderContractEvents,
+        WrongContractVersion,
     };
 
     use crate::{

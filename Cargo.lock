@@ -4574,6 +4574,7 @@ dependencies = [
  "serde",
  "sha3 0.10.8",
  "shielder-circuits",
+ "shielder-contract",
  "shielder-setup",
  "type-conversions",
 ]

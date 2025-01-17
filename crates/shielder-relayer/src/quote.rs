@@ -1,7 +1,7 @@
 use alloy_provider::Provider;
 use axum::{extract::State, http::status::StatusCode, response::IntoResponse};
+use shielder_contract::{alloy_primitives::U256, providers::create_simple_provider};
 use shielder_relayer::{server_error, QuoteFeeResponse};
-use shielder_rust_sdk::{alloy_primitives::U256, contract::providers::create_simple_provider};
 use tracing::error;
 
 use crate::AppState;

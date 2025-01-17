@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::U256;
 use alloy_sol_types::{SolCall, SolValue};
-use shielder_rust_sdk::contract::ShielderContract::{depositLimitCall, setDepositLimitCall};
+use shielder_contract::ShielderContract::{depositLimitCall, setDepositLimitCall};
 
 use super::deploy::DEPLOYER_ADDRESS;
 use crate::{shielder::deploy::Deployment, Address};

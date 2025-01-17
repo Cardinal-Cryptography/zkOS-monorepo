@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
-use shielder_rust_sdk::alloy_primitives::U256;
+use shielder_contract::alloy_primitives::U256;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
 use crate::monitor::{healthy, Balances};

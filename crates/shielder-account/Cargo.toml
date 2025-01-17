@@ -16,5 +16,9 @@ rand = { workspace = true, features = ["small_rng"] }
 serde = { workspace = true, features = ["derive"] }
 sha3 = { workspace = true }
 shielder-circuits = { workspace = true }
+shielder-contract = { workspace = true, optional = true }
 shielder-setup = { workspace = true }
 type-conversions = { workspace = true }
+
+[features]
+contract = [ "shielder-contract" ]

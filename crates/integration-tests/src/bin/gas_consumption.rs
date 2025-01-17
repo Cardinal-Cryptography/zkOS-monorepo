@@ -19,10 +19,6 @@ use integration_tests::{
     deposit_native_proving_params, new_account_native_proving_params,
     withdraw_native_proving_params,
 };
-use shielder_rust_sdk::{
-    account::ShielderAccount,
-    contract::ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
-};
 
 #[derive(Debug)]
 enum Calldata {

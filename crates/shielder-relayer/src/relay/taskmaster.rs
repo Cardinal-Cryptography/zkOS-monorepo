@@ -1,13 +1,11 @@
 use alloy_provider::Provider;
 use anyhow::Result;
 use async_channel::{Receiver as MPMCReceiver, Sender as MPMCSender};
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, TxHash},
-    contract::{
-        call_type::{DryRun, Submit},
-        ShielderContract::withdrawNativeCall,
-        ShielderContractError, ShielderUser,
-    },
+    call_type::{DryRun, Submit},
+    ShielderContract::withdrawNativeCall,
+    ShielderContractError, ShielderUser,
 };
 use tokio::sync::{
     mpsc::Sender as MPSCSender,

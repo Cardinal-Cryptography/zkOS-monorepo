@@ -24,7 +24,7 @@ hex = { workspace = true }
 powers-of-tau = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rstest = { workspace = true }
-shielder-account = { workspace = true }
+shielder-account = { workspace = true, features = ["contract"] }
 shielder-circuits = { workspace = true }
 shielder-contract = { workspace = true }
 shielder-setup = { workspace = true }

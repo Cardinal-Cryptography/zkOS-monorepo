@@ -1,13 +1,11 @@
 use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
-use shielder_rust_sdk::{
-    account::{
-        call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
-        ShielderAccount,
-    },
-    contract::ShielderContract::withdrawNativeCall,
+use shielder_account::{
+    call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+    ShielderAccount,
 };
+use shielder_contract::ShielderContract::withdrawNativeCall;
 use shielder_setup::version::ContractVersion;
 
 use crate::shielder::{

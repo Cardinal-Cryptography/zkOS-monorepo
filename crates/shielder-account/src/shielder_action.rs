@@ -1,6 +1,5 @@
 use alloy_primitives::{Address, TxHash, U256};
 use serde::{Deserialize, Serialize};
-
 #[cfg(feature = "contract")]
 use shielder_contract::ShielderContract::{
     DepositNative, NewAccountNative, ShielderContractEvents, WithdrawNative,

@@ -1,8 +1,6 @@
 use alloy_primitives::{TxHash, U256};
-use shielder_rust_sdk::{
-    account::{call_data::NewAccountCallType, ShielderAccount},
-    contract::ShielderContract::{newAccountNativeCall, ShielderContractErrors},
-};
+use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
+use shielder_contract::ShielderContract::{newAccountNativeCall, ShielderContractErrors};
 
 use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
 
@@ -59,12 +57,10 @@ mod tests {
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
+    use shielder_account::ShielderAccount;
     use shielder_circuits::F;
-    use shielder_rust_sdk::{
-        account::ShielderAccount,
-        contract::ShielderContract::{
-            NewAccountNative, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
-        },
+    use shielder_contract::ShielderContract::{
+        NewAccountNative, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
     };
 
     use crate::{
