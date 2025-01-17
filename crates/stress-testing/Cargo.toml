@@ -20,7 +20,8 @@ rand = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 
+shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
+shielder-contract = { workspace = true }
 shielder-relayer = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account", "contract"] }
 shielder-setup = { workspace = true }

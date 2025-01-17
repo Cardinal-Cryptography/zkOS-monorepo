@@ -2775,8 +2775,9 @@ dependencies = [
  "powers-of-tau",
  "rand 0.8.5",
  "rstest",
+ "shielder-account",
  "shielder-circuits",
- "shielder-rust-sdk",
+ "shielder-contract",
  "shielder-setup",
  "type-conversions",
 ]
@@ -4614,6 +4615,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "shielder-account"
+version = "0.1.0"
+dependencies = [
+ "alloy-contract",
+ "alloy-network",
+ "alloy-primitives",
+ "alloy-provider",
+ "alloy-rpc-types",
+ "alloy-signer-local",
+ "alloy-sol-types",
+ "alloy-transport",
+ "anyhow",
+ "halo2curves",
+ "log",
+ "rand 0.8.5",
+ "serde",
+ "sha3 0.10.8",
+ "shielder-circuits",
+ "shielder-setup",
+ "static_assertions",
+ "thiserror 2.0.11",
+ "tracing",
+ "type-conversions",
+]
+
+[[package]]
 name = "shielder-circuits"
 version = "0.1.0"
 source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
@@ -4654,9 +4681,10 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
+ "shielder-account",
  "shielder-circuits",
+ "shielder-contract",
  "shielder-relayer",
- "shielder-rust-sdk",
  "shielder-setup",
  "tokio",
  "tracing",
@@ -4690,39 +4718,13 @@ dependencies = [
  "rand 0.8.5",
  "reqwest",
  "serde",
- "shielder-rust-sdk",
+ "shielder-contract",
  "shielder-setup",
  "testcontainers",
  "tokio",
  "tower-http",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "shielder-rust-sdk"
-version = "0.1.0"
-dependencies = [
- "alloy-contract",
- "alloy-network",
- "alloy-primitives",
- "alloy-provider",
- "alloy-rpc-types",
- "alloy-signer-local",
- "alloy-sol-types",
- "alloy-transport",
- "anyhow",
- "halo2curves",
- "log",
- "rand 0.8.5",
- "serde",
- "sha3 0.10.8",
- "shielder-circuits",
- "shielder-setup",
- "static_assertions",
- "thiserror 2.0.11",
- "tracing",
- "type-conversions",
 ]
 
 [[package]]
@@ -4747,8 +4749,8 @@ dependencies = [
  "rand_core 0.6.4",
  "rayon",
  "sha2",
+ "shielder-account",
  "shielder-circuits",
- "shielder-rust-sdk",
  "shielder-setup",
  "type-conversions",
  "wasm-bindgen",
@@ -4766,8 +4768,8 @@ dependencies = [
  "rand_chacha 0.3.1",
  "rand_core 0.6.4",
  "rayon",
+ "shielder-account",
  "shielder-circuits",
- "shielder-rust-sdk",
  "shielder-setup",
  "thiserror 2.0.11",
  "type-conversions",
@@ -4919,9 +4921,10 @@ dependencies = [
  "clap",
  "rand 0.8.5",
  "reqwest",
+ "shielder-account",
  "shielder-circuits",
+ "shielder-contract",
  "shielder-relayer",
- "shielder-rust-sdk",
  "shielder-setup",
  "tokio",
 ]
@@ -5102,8 +5105,8 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "halo2_proofs",
+ "shielder-account",
  "shielder-circuits",
- "shielder-rust-sdk",
  "shielder-setup",
  "type-conversions",
 ]

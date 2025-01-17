@@ -22,8 +22,8 @@ rand_chacha = { workspace = true }
 rand_core = { workspace = true }
 rayon = { workspace = true, optional = true }
 sha2 = { workspace = true }
+shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-rust-sdk = { workspace = true, features = ["account"] }
 type-conversions = { workspace = true }
 wasm-bindgen-rayon = { workspace = true, optional = true }
 wasm-bindgen.workspace = true

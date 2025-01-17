@@ -87,7 +87,7 @@ impl WithdrawCommitment {
             )
                 .abi_encode_packed(),
         )
-        .into();
+            .into();
 
         // shifting right by 4 bits, same as in the contract
         hash >> 4
