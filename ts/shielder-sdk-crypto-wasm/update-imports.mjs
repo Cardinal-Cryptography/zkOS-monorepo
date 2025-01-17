@@ -3,12 +3,12 @@ import * as path from "path";
 
 // Configuration
 const basePatterns = [
-  'from "shielder-wasm/web-singlethreaded"',
-  'from "shielder-wasm/web-multithreaded"'
+  'from "shielder_bindings/web-singlethreaded"',
+  'from "shielder_bindings/web-multithreaded"'
 ];
 const targetPaths = [
-  "crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm.js",
-  "crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm.js"
+  "crates/shielder_bindings/pkg/pkg-web-singlethreaded/shielder_bindings.js",
+  "crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings.js"
 ];
 
 function getRelativePath(fromPath, toPath) {

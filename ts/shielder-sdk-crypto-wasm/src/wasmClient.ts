@@ -1,5 +1,5 @@
-import * as singlethreaded_wasm from "shielder-wasm/web-singlethreaded";
-import * as multithreaded_wasm from "shielder-wasm/web-multithreaded";
+import * as singlethreaded_wasm from "shielder_bindings/web-singlethreaded";
+import * as multithreaded_wasm from "shielder_bindings/web-multithreaded";
 import { NewAccountCircuit } from "@/circuits/newAccount";
 import { DepositCircuit } from "@/circuits/deposit";
 import { WithdrawCircuit } from "@/circuits/withdraw";
@@ -56,10 +56,10 @@ export class WasmClient implements CryptoClient {
     this.noteTreeConfig.init(caller);
     this.initialized = true;
     if (caller == "web_singlethreaded") {
-      console.log(`Initialized shielder-wasm in ${Date.now() - time}ms`);
+      console.log(`Initialized shielder_bindings in ${Date.now() - time}ms`);
     } else {
       console.log(
-        `Initialized shielder-wasm with ${threads} threads in ${Date.now() - time}ms`
+        `Initialized shielder_bindings with ${threads} threads in ${Date.now() - time}ms`
       );
     }
   }
