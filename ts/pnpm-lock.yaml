@@ -188,9 +188,9 @@ importers:
       prettier:
         specifier: ^3.4.1
         version: 3.4.2
-      shielder-wasm:
-        specifier: link:../../crates/shielder-wasm/pkg
-        version: link:../../crates/shielder-wasm/pkg
+      shielder_bindings:
+        specifier: link:../../crates/shielder_bindings/pkg
+        version: link:../../crates/shielder_bindings/pkg
       tsc-alias:
         specifier: ^1.8.10
         version: 1.8.10

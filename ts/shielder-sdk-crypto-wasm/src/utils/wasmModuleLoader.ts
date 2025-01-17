@@ -1,5 +1,5 @@
-import * as singleThreadedWasm from "shielder-wasm/web-singlethreaded";
-import * as multiThreadedWasm from "shielder-wasm/web-multithreaded";
+import * as singleThreadedWasm from "shielder_bindings/web-singlethreaded";
+import * as multiThreadedWasm from "shielder_bindings/web-multithreaded";
 import { Caller } from "../wasmClient";
 
 export type WasmModule = typeof singleThreadedWasm | typeof multiThreadedWasm;

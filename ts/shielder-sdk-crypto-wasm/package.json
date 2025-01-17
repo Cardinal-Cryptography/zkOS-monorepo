@@ -32,14 +32,14 @@
       "types": "./dist/index.d.ts"
     },
     "./singlethreaded_wasm": {
-      "import": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm",
-      "require": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm",
-      "types": "./dist/crates/shielder-wasm/pkg/pkg-web-singlethreaded/shielder_wasm_bg.wasm.d.ts"
+      "import": "./dist/crates/shielder_bindings/pkg/pkg-web-singlethreaded/shielder_bindings_bg.wasm",
+      "require": "./dist/crates/shielder_bindings/pkg/pkg-web-singlethreaded/shielder_bindings_bg.wasm",
+      "types": "./dist/crates/shielder_bindings/pkg/pkg-web-singlethreaded/shielder_bindings_bg.wasm.d.ts"
     },
     "./multithreaded_wasm": {
-      "import": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm",
-      "require": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm",
-      "types": "./dist/crates/shielder-wasm/pkg/pkg-web-multithreaded/shielder_wasm_bg.wasm.d.ts"
+      "import": "./dist/crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings_bg.wasm",
+      "require": "./dist/crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings_bg.wasm",
+      "types": "./dist/crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings_bg.wasm.d.ts"
     }
   },
   "devDependencies": {
@@ -50,7 +50,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "globals": "^15.12.0",
     "prettier": "^3.4.1",
-    "shielder-wasm": "link:../../crates/shielder-wasm/pkg",
+    "shielder_bindings": "link:../../crates/shielder_bindings/pkg",
     "tsc-alias": "^1.8.10",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.16.0"

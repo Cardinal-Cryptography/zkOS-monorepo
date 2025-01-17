@@ -1,5 +1,5 @@
 {
-  "name": "shielder-bindings",
+  "name": "shielder_bindings",
   "version": "0.0.1",
   "description": "WASM bindings for zkOS cryptography. Intended for use in web applications.",
   "license": "Apache-2.0",

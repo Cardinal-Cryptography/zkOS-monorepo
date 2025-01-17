@@ -8,8 +8,8 @@ import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
 
 type WasmNewAccountCircuit =
-  | typeof import("shielder-wasm/web-singlethreaded").NewAccountCircuit
-  | typeof import("shielder-wasm/web-multithreaded").NewAccountCircuit;
+  | typeof import("shielder_bindings/web-singlethreaded").NewAccountCircuit
+  | typeof import("shielder_bindings/web-multithreaded").NewAccountCircuit;
 
 export class NewAccountCircuit
   extends WasmClientModuleBase
