@@ -13,5 +13,4 @@ clap = { workspace = true, features = ["derive"] }
 halo2_proofs = { workspace = true }
 shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
-shielder-setup = { workspace = true }
 type-conversions = { workspace = true }
