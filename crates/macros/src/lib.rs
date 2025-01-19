@@ -7,12 +7,12 @@ mod args;
 mod bridging;
 mod meta_utils;
 mod registration;
-mod types;
+mod utils;
 
 use args::parse_arguments;
 use bridging::generate_bridging_fn;
 use registration::generate_registration;
-use types::{get_type_name, is_valid_constructor, should_export_method};
+use utils::{get_type_name, is_valid_constructor, should_export_method};
 
 /// Generate exported function code
 fn gen_jsonized_fn(
