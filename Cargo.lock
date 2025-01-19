@@ -1532,6 +1532,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ctor"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32a2785755761f3ddc1492979ce1e48d2c00d09311c39e4466429188f3dd6501"
+dependencies = [
+ "quote",
+ "syn 2.0.89",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2957,12 +2967,32 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
+dependencies = [
+ "ctor",
+ "macros-core",
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "macros"
+version = "0.1.0"
 source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
 dependencies = [
  "darling",
  "proc-macro2",
  "quote",
  "syn 2.0.89",
+]
+
+[[package]]
+name = "macros-core"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+ "serde_json",
 ]
 
 [[package]]
@@ -3618,9 +3648,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.92"
+version = "1.0.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37d3544b3f2748c54e147655edb5025752e2303145b5aefb3c3ea2c78b973bb0"
+checksum = "60946a68e5f9d28b0dc1c21bb8a97ee7d018a8b322fa57838ba31cc878e22d99"
 dependencies = [
  "unicode-ident",
 ]
@@ -3720,9 +3750,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.37"
+version = "1.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af"
+checksum = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc"
 dependencies = [
  "proc-macro2",
 ]
@@ -4592,7 +4622,7 @@ dependencies = [
  "halo2_poseidon",
  "halo2_proofs",
  "human_bytes",
- "macros",
+ "macros 0.1.0 (git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f)",
  "once_cell",
  "rand",
  "rand_chacha",
@@ -4697,14 +4727,23 @@ name = "shielder_bindings"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "axum",
+ "ctor",
  "getrandom",
  "halo2_proofs",
+ "macros 0.1.0",
+ "macros-core",
+ "once_cell",
  "powers-of-tau",
  "rand",
  "rayon",
+ "serde",
+ "serde_json",
  "shielder-account",
  "shielder-circuits",
  "thiserror 2.0.11",
+ "tokio",
+ "tower-http",
  "type-conversions",
  "uniffi",
  "wasm-bindgen",

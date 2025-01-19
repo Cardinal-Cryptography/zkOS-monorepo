@@ -4,6 +4,7 @@ use alloc::{format, string::String};
 use wasm_bindgen::JsValue;
 
 #[cfg_attr(feature = "build-uniffi", derive(uniffi::Error))]
+#[cfg_attr(feature = "build-server", derive(serde::Serialize))]
 #[derive(Debug, thiserror::Error)]
 pub enum VerificationError {
     #[error("Verification failed: {message}")]

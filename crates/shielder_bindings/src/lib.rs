@@ -1,8 +1,10 @@
-#![cfg_attr(not(feature = "build-uniffi"), no_std)]
+#![cfg_attr(not(any(feature = "build-uniffi", feature = "build-server")), no_std)]
 
 #[cfg(feature = "build-uniffi")]
 uniffi::setup_scaffolding!();
 
+#[cfg(feature = "build-server")]
+pub use macros_core::EXPORTED_FUNCTIONS;
 #[cfg(feature = "multithreading-wasm")]
 pub use wasm_bindgen_rayon::init_thread_pool;
 
