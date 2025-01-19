@@ -75,7 +75,7 @@ pub fn jsonize(_attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn jsonize_singleton(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr_args = parse_macro_input!(attr as AttributeArgs);
-    let constructor = find_constructor(attr_args)
+    let constructor_name = find_constructor(attr_args)
         .expect("Missing `constructor` argument for `jsonize_singleton`");
     let impl_block = parse_macro_input!(item as ItemImpl);
     let self_ty = &impl_block.self_ty;
@@ -87,7 +87,7 @@ pub fn jsonize_singleton(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     for item in &impl_block.items {
         if let ImplItem::Method(method) = item {
-            if is_valid_constructor(&constructor, method) {
+            if is_valid_constructor(&constructor_name, method) {
                 has_constructor = true;
                 continue;
             }
@@ -108,10 +108,13 @@ pub fn jsonize_singleton(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     if !has_constructor {
-        panic!("No zero-arg `{}` found for type {}", constructor, type_name);
+        panic!(
+            "No zero-arg `{}` found for type {}",
+            constructor_name, type_name
+        );
     }
 
-    let constructor_ident = quote::format_ident!("{}", constructor);
+    let constructor_ident = quote::format_ident!("{}", constructor_name);
     let instance_code = quote! {
         ::once_cell::sync::Lazy::new(|| {
             #self_ty::#constructor_ident()
