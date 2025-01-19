@@ -1,18 +1,18 @@
+use meta_utils::find_constructor;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, AttributeArgs, ImplItem, ItemFn, ItemImpl, ReturnType, Signature};
 
 mod args;
 mod bridging;
+mod meta_utils;
 mod registration;
 mod types;
-mod utils;
 
 use args::parse_arguments;
 use bridging::generate_bridging_fn;
 use registration::generate_registration;
 use types::{get_type_name, is_valid_constructor, should_export_method};
-use utils::find_constructor;
 
 /// Generate exported function code
 fn gen_jsonized_fn(
