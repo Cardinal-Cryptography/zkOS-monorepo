@@ -1,3 +1,7 @@
+//! This is a simple server that exposes the functions defined in the `shielder_bindings` crate.
+//! It uses `axum` to create a REST API that can be called to execute the functions.
+//! Functions are exposed through the `EXPORTED_FUNCTIONS` static vector, which is lazily populated
+//! with the functions and singletons that are annotated with the `#[jsonize]` or `#[jsonize_singleton]` macro.
 use axum::{extract::Json, routing::post, Router};
 use serde_json::Value;
 use shielder_bindings::EXPORTED_FUNCTIONS;
