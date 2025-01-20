@@ -1,8 +1,8 @@
 use alloy_provider::Provider;
 use anyhow::Result;
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, U256},
-    contract::providers::create_simple_provider,
+    providers::create_simple_provider,
 };
 use tokio::time::{interval, Duration};
 use tracing::error;

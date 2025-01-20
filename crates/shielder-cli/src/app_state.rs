@@ -5,11 +5,9 @@ use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use shielder_rust_sdk::{
-    account::ShielderAccount,
-    contract::{
-        providers::create_simple_provider, ConnectionPolicy, ShielderContractError, ShielderUser,
-    },
+use shielder_account::ShielderAccount;
+use shielder_contract::{
+    providers::create_simple_provider, ConnectionPolicy, ShielderContractError, ShielderUser,
 };
 use tracing::{debug, warn};
 

@@ -1,9 +1,7 @@
 use alloc::vec::Vec;
 
-use shielder_rust_sdk::{
-    account::secrets::{nullifier, trapdoor},
-    alloy_primitives::U256,
-};
+use alloy_primitives::U256;
+use shielder_account::secrets::{nullifier, trapdoor};
 use type_conversions::{bytes_to_u256, u256_to_bytes};
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;

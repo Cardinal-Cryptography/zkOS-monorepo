@@ -10,11 +10,10 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, U256},
-    contract::{
-        providers::create_provider_with_nonce_caching_signer, ConnectionPolicy, ShielderUser,
-    },
+    providers::create_provider_with_nonce_caching_signer,
+    ConnectionPolicy, ShielderUser,
 };
 use tower_http::cors::CorsLayer;
 use tracing::info;

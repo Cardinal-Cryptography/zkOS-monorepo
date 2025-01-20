@@ -4,16 +4,14 @@ use alloy_primitives::{Address, BlockHash, TxHash, U256};
 use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
-use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse};
-use shielder_rust_sdk::{
-    account::{
-        call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
-        ShielderAction,
-    },
-    contract::{
-        events::get_event, merkle_path::get_current_merkle_path, ShielderContract::WithdrawNative,
-    },
+use shielder_account::{
+    call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+    ShielderAction,
 };
+use shielder_contract::{
+    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::WithdrawNative,
+};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};

@@ -4,9 +4,9 @@ use alloy_provider::{network::TransactionBuilder, Provider};
 use alloy_rpc_types::TransactionRequest;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{bail, Result};
-use shielder_rust_sdk::{
+use shielder_contract::{
     alloy_primitives::{Address, U256},
-    contract::providers::create_provider_with_nonce_caching_signer,
+    providers::create_provider_with_nonce_caching_signer,
 };
 use tokio::sync::mpsc::{self, Receiver as MPSCReceiver, Sender as MPSCSender};
 use tracing::{error, info};

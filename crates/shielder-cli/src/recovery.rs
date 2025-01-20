@@ -6,17 +6,15 @@ use alloy_provider::{
 use alloy_rpc_types_eth::{Transaction, TransactionTrait};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, bail, Result};
+use shielder_account::{ShielderAccount, ShielderAction};
 use shielder_circuits::{poseidon::off_circuit::hash, F};
-use shielder_rust_sdk::{
-    account::{ShielderAccount, ShielderAction},
-    contract::{
-        call_type::DryRun,
-        events::get_event,
-        providers::create_simple_provider,
-        ShielderContract::{
-            depositNativeCall, newAccountNativeCall, withdrawNativeCall, DepositNative,
-            NewAccountNative, ShielderContractEvents, WithdrawNative,
-        },
+use shielder_contract::{
+    call_type::DryRun,
+    events::get_event,
+    providers::create_simple_provider,
+    ShielderContract::{
+        depositNativeCall, newAccountNativeCall, withdrawNativeCall, DepositNative,
+        NewAccountNative, ShielderContractEvents, WithdrawNative,
     },
 };
 use tracing::{error, info};

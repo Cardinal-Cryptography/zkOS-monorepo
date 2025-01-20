@@ -5,7 +5,7 @@ use alloy_primitives::{BlockHash, TxHash};
 use alloy_provider::Provider;
 use alloy_transport::Transport;
 
-use crate::contract::{ContractResult, ShielderContractCall, ShielderContractError};
+use crate::{ContractResult, ShielderContractCall, ShielderContractError};
 
 /// Submit the transaction to the network and wait for the block inclusion.
 pub struct Call;

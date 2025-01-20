@@ -1,17 +1,14 @@
 use std::time::Instant;
 
 use anyhow::Result;
+use shielder_account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     consts::RANGE_PROOF_CHUNK_SIZE,
     withdraw::WithdrawCircuit,
 };
+use shielder_contract::{alloy_primitives::U256, merkle_path::get_current_merkle_path};
 use shielder_relayer::{QuoteFeeResponse, RelayQuery};
-use shielder_rust_sdk::{
-    account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
-    alloy_primitives::U256,
-    contract::merkle_path::get_current_merkle_path,
-};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};

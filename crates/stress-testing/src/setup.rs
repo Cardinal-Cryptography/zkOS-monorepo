@@ -6,14 +6,11 @@ use alloy_provider::{
 use alloy_rpc_types::TransactionRequest;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, Result};
+use shielder_account::ShielderAction;
 use shielder_circuits::new_account::NewAccountCircuit;
-use shielder_rust_sdk::{
-    account::ShielderAction,
-    alloy_primitives::U256,
-    contract::{
-        call_type::Call, events::get_event, providers::create_simple_provider,
-        ShielderContract::NewAccountNative,
-    },
+use shielder_contract::{
+    alloy_primitives::U256, call_type::Call, events::get_event, providers::create_simple_provider,
+    ShielderContract::NewAccountNative,
 };
 
 use crate::{actor::Actor, config::Config, util::proving_keys, INITIAL_BALANCE, SHIELDED_BALANCE};

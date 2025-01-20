@@ -2,7 +2,7 @@ use alloy_primitives::{Address, U256};
 use alloy_sol_types::{SolCall, SolValue};
 use evm_utils::EvmRunner;
 use shielder_circuits::consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT};
-use shielder_rust_sdk::contract::ShielderContract::getMerklePathCall;
+use shielder_contract::ShielderContract::getMerklePathCall;
 
 pub fn get_merkle_args(
     shielder_address: Address,
@@ -42,7 +42,7 @@ mod tests {
 
     use alloy_primitives::U256;
     use rstest::rstest;
-    use shielder_rust_sdk::contract::ShielderContract::getMerklePathCall;
+    use shielder_contract::ShielderContract::getMerklePathCall;
 
     use crate::shielder::{
         calls::new_account_native,

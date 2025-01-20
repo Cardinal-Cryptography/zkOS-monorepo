@@ -7,7 +7,7 @@ use deploy::{
     RECIPIENT_INITIAL_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
-use shielder_rust_sdk::contract::ShielderContract::{
+use shielder_contract::ShielderContract::{
     unpauseCall, ShielderContractErrors, ShielderContractEvents,
 };
 

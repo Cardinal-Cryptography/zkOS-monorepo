@@ -1,10 +1,12 @@
 use alloy_signer_local::PrivateKeySigner;
 use rand::{rngs::StdRng, SeedableRng};
+use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
 use shielder_circuits::circuits::{Params, ProvingKey};
-use shielder_rust_sdk::{
-    account::{call_data::NewAccountCallType, ShielderAccount},
+use shielder_contract::{
     alloy_primitives::{Address, U256},
-    contract::{ConnectionPolicy, ShielderContract::newAccountNativeCall, ShielderUser},
+    ConnectionPolicy,
+    ShielderContract::newAccountNativeCall,
+    ShielderUser,
 };
 
 pub struct Actor {
