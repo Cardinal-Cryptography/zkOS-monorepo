@@ -10,7 +10,7 @@ pub type JsonFnPointer = fn(Value) -> Value;
 pub struct JsonizedFunction {
     /// The function name as a string.
     pub name: &'static str,
-    // You could store more metadata here (e.g., param types, function pointer, etc.).
+    /// Pointer to the bridging function.
     pub func: JsonFnPointer,
 }
 
