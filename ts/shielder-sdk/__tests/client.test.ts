@@ -5,8 +5,8 @@ import {
   vitest,
   beforeEach,
   Mocked,
-  Mock,
-  MockedFunction
+  MockedFunction,
+  assert
 } from "vitest";
 
 import { Address, createPublicClient, Hash, PublicClient } from "viem";
@@ -19,7 +19,7 @@ import {
 } from "../src/client";
 import { Contract, VersionRejectedByContract } from "../src/chain/contract";
 import { Relayer, VersionRejectedByRelayer } from "../src/chain/relayer";
-import { createStorage, UnexpectedVersionInEvent } from "../src/state";
+import { UnexpectedVersionInEvent } from "../src/state";
 import { idHidingNonce } from "../src/utils";
 import { InjectedStorageInterface } from "../src/state/storageSchema";
 import { AccountState, ShielderTransaction } from "../src/state/types";
@@ -37,6 +37,8 @@ vitest.mock("viem", async () => {
     })
   };
 });
+
+import { StateSynchronizer } from "../src/state";
 
 describe("ShielderClient", () => {
   let client: ShielderClient;
@@ -184,6 +186,14 @@ describe("ShielderClient", () => {
       expect(client).toBeInstanceOf(ShielderClient);
       // Verify that the client was created with the provided callbacks
       expect(client["callbacks"]).toEqual(mockCallbacks);
+      // Verify that the StateSynchronizer was created with the onNewTransaction callback
+      expect(StateSynchronizer).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        mockCallbacks.onNewTransaction
+      );
     });
   });
 
@@ -323,6 +333,7 @@ describe("ShielderClient", () => {
       await expect(async () => {
         for await (const _ of client.scanChainForShielderTransactions()) {
           // Should throw before yielding any transactions
+          assert(false, "Should not reach this point");
         }
       }).rejects.toThrow(expectedError);
 
@@ -372,71 +383,61 @@ describe("ShielderClient", () => {
       }
     });
     describe("shield", () => {
-      it("should create new account when nonce is 0", async () => {
-        // Mock state with nonce 0
-        mockState = { nonce: 0n } as AccountState;
+      it.each([
+        {
+          nonce: 0n,
+          action: "newAccountAction"
+        },
+        {
+          nonce: 1n,
+          action: "depositAction"
+        }
+      ])(
+        "should call $action when nonce is $nonce",
+        async ({ nonce, action }) => {
+          // Mock state with non-zero nonce
+          mockState = { nonce } as AccountState;
 
-        const txHash = await client.shield(
-          mockAmount,
-          mockSendTransaction,
-          mockFrom
-        );
+          const txHash = await client.shield(
+            mockAmount,
+            mockSendTransaction,
+            mockFrom
+          );
 
-        expect(txHash).toBe(mockTxHash);
-        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
-          {
+          expect(txHash).toBe(mockTxHash);
+          expect(
+            mockPublicClient.waitForTransactionReceipt
+          ).toHaveBeenCalledWith({
             hash: mockTxHash
-          }
-        );
-        // check that newAccountAction.generateCalldata was called with the correct arguments
-        expect(
-          client["newAccountAction"].generateCalldata
-        ).toHaveBeenCalledWith(mockState, mockAmount, contractVersion);
-        // check that newAccountAction.sendCalldata was called with the correct arguments
-        expect(client["newAccountAction"].sendCalldata).toHaveBeenCalledWith(
-          expect.any(Object),
-          mockSendTransaction,
-          mockFrom
-        );
-        // shielder.sync() should be called after the transaction is sent
-        expect(
-          client["stateSynchronizer"].syncAccountState
-        ).toHaveBeenCalledTimes(1);
-      });
-
-      it("should deposit when nonce is not 0", async () => {
-        // Mock state with non-zero nonce
-        mockState = { nonce: 1n } as AccountState;
-
-        const txHash = await client.shield(
-          mockAmount,
-          mockSendTransaction,
-          mockFrom
-        );
-
-        expect(txHash).toBe(mockTxHash);
-        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
-          {
-            hash: mockTxHash
-          }
-        );
-        // check that depositAction.generateCalldata was called with the correct arguments
-        expect(client["depositAction"].generateCalldata).toHaveBeenCalledWith(
-          mockState,
-          mockAmount,
-          contractVersion
-        );
-        // check that depositAction.sendCalldata was called with the correct arguments
-        expect(client["depositAction"].sendCalldata).toHaveBeenCalledWith(
-          expect.any(Object),
-          mockSendTransaction,
-          mockFrom
-        );
-        // shielder.sync() should be called after the transaction is sent
-        expect(
-          client["stateSynchronizer"].syncAccountState
-        ).toHaveBeenCalledTimes(1);
-      });
+          });
+          // check that depositAction.generateCalldata was called with the correct arguments
+          expect(client[action].generateCalldata).toHaveBeenCalledWith(
+            mockState,
+            mockAmount,
+            contractVersion
+          );
+          // check that callback onCalldataGenerated was called
+          expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
+            expect.any(Object),
+            "shield"
+          );
+          // check that depositAction.sendCalldata was called with the correct arguments
+          expect(client[action].sendCalldata).toHaveBeenCalledWith(
+            expect.any(Object),
+            mockSendTransaction,
+            mockFrom
+          );
+          // check that callback onCalldataSent was called
+          expect(callbacks.onCalldataSent).toHaveBeenCalledWith(
+            mockTxHash,
+            "shield"
+          );
+          // shielder.sync() should be called after the transaction is sent
+          expect(
+            client["stateSynchronizer"].syncAccountState
+          ).toHaveBeenCalledTimes(1);
+        }
+      );
     });
 
     describe("withdraw", () => {
@@ -464,9 +465,19 @@ describe("ShielderClient", () => {
           mockAddress,
           contractVersion
         );
-        // check that withdrawAction.sendCalldata was called with the correct arguments
+        // check that callback onCalldataGenerated was called
+        expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
+          expect.any(Object),
+          "withdraw"
+        );
+        // check that withdrawAction.sendCalldata was called
         expect(client["withdrawAction"].sendCalldata).toHaveBeenCalledWith(
           expect.any(Object)
+        );
+        // check that callback onCalldataSent was called
+        expect(callbacks.onCalldataSent).toHaveBeenCalledWith(
+          mockTxHash,
+          "withdraw"
         );
         // shielder.sync() should be called after the transaction is sent
         expect(
@@ -537,6 +548,14 @@ describe("ShielderClient", () => {
           await expect(
             client[clientTarget](mockAmount, mockSendTransaction, mockFrom)
           ).rejects.toThrow(expectedError);
+
+          // check that the correct callbacks were called
+          if (stage === "sendCalldata") {
+            expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
+              expect.any(Object),
+              clientTarget
+            );
+          }
 
           expect(callbacks.onError).toHaveBeenCalledWith(
             expectedError,
