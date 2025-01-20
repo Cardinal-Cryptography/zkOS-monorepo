@@ -36,15 +36,15 @@ export class StateManager {
         throw new Error("Id hash in storage does not matched the configured.");
       }
       const obj = res;
+      if (obj.currentNoteIndex === undefined) {
+        throw new Error("currentNoteIndex must be set.");
+      }
       return {
         id,
         nonce: BigInt(obj.nonce),
         balance: BigInt(obj.balance),
         currentNote: Scalar.fromBigint(BigInt(obj.currentNote)),
-        currentNoteIndex:
-          obj.currentNoteIndex !== undefined
-            ? BigInt(obj.currentNoteIndex)
-            : undefined,
+        currentNoteIndex: BigInt(obj.currentNoteIndex),
         storageSchemaVersion: obj.storageSchemaVersion
       };
     }
