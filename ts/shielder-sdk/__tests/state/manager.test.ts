@@ -1,4 +1,4 @@
-import { it, expect, describe, beforeEach } from "@jest/globals";
+import { it, expect, describe, beforeEach } from "vitest";
 import { StateManager } from "../../src/state/manager";
 import { MockedCryptoClient } from "../helpers";
 import { StorageInterface } from "../../src/state/storageSchema";

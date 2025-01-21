@@ -1,4 +1,4 @@
-import { test, expect } from "@jest/globals";
+import { test, expect } from "vitest";
 import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 import {
   flatUint8,

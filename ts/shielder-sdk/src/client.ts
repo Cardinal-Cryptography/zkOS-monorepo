@@ -273,9 +273,7 @@ export class ShielderClient {
     } catch (error) {
       // Rethrow to produce `OutdatedSdkError` if needed.
       try {
-        await this.handleVersionErrors(() => {
-          throw error;
-        });
+        throw this.wrapVersionErrors(error);
       } catch (error) {
         this.callbacks.onError?.(error, "syncing", "sync");
         throw error;
@@ -406,18 +404,22 @@ export class ShielderClient {
     }
   }
 
+  private wrapVersionErrors(err: unknown) {
+    if (
+      err instanceof VersionRejectedByContract ||
+      err instanceof VersionRejectedByRelayer ||
+      err instanceof UnexpectedVersionInEvent
+    ) {
+      return new OutdatedSdkError();
+    }
+    return err;
+  }
+
   private async handleVersionErrors<T>(func: () => Promise<T>): Promise<T> {
     try {
       return await func();
     } catch (err) {
-      if (
-        err instanceof VersionRejectedByContract ||
-        err instanceof VersionRejectedByRelayer ||
-        err instanceof UnexpectedVersionInEvent
-      ) {
-        throw new OutdatedSdkError();
-      }
-      throw err;
+      throw this.wrapVersionErrors(err);
     }
   }
 }

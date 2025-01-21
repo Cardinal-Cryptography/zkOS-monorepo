@@ -26,7 +26,7 @@ export default tseslint.config(
       "**/src/_generated/",
       "eslint.config.mjs",
       "**/update-imports.mjs",
-      "**/jest.config.ts",
+      "**/vitest.config.ts",
       "**/__tests/",
       "**/coverage/"
     ]

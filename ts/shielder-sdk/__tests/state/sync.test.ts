@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, vitest, beforeEach, Mock, Mocked } from "vitest";
 import {
   Scalar,
   scalarToBigint
@@ -92,7 +92,7 @@ describe("StateSynchronizer", () => {
   let stateManager: StateManager;
   let stateEventsFilter: MockStateEventsFilter;
   let synchronizer: StateSynchronizer;
-  let syncCallback: jest.Mock;
+  let syncCallback: Mock;
 
   const setupTestEnvironment = () => {
     const cryptoClient = new MockedCryptoClient();
@@ -101,18 +101,20 @@ describe("StateSynchronizer", () => {
       "0x123" as `0x${string}`,
       {} as any,
       cryptoClient
-    ) as jest.Mocked<StateManager>;
+    ) as Mocked<StateManager>;
 
     const defaultState = createAccountState();
 
-    jest.spyOn(stateManager, "accountState").mockResolvedValue(defaultState);
-    jest
+    vitest.spyOn(stateManager, "accountState").mockResolvedValue(defaultState);
+    vitest
       .spyOn(stateManager, "emptyAccountState")
       .mockResolvedValue(defaultState);
-    jest.spyOn(stateManager, "updateAccountState").mockResolvedValue(undefined);
+    vitest
+      .spyOn(stateManager, "updateAccountState")
+      .mockResolvedValue(undefined);
 
     const stateEventsFilter = new MockStateEventsFilter();
-    const syncCallback = jest.fn();
+    const syncCallback = vitest.fn();
     const synchronizer = new StateSynchronizer(
       stateManager,
       contract as unknown as IContract,
@@ -149,8 +151,10 @@ describe("StateSynchronizer", () => {
       const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(initialState);
-      jest
+      vitest
+        .spyOn(stateManager, "accountState")
+        .mockResolvedValue(initialState);
+      vitest
         .spyOn(stateEventsFilter, "newStateByEvent")
         .mockResolvedValue(newState);
       contract.setNoteEvent(1n, event);
@@ -194,7 +198,7 @@ describe("StateSynchronizer", () => {
       ];
 
       // Setup mocks
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(states[0]);
+      vitest.spyOn(stateManager, "accountState").mockResolvedValue(states[0]);
       contract.setNoteEvent(1n, events[0]);
       contract.setNoteEvent(2n, events[1]);
       contract.setNullifierBlock(
@@ -213,7 +217,7 @@ describe("StateSynchronizer", () => {
         2n
       ); // Second nullifier hash -> block 2
 
-      jest
+      vitest
         .spyOn(stateEventsFilter, "newStateByEvent")
         .mockResolvedValueOnce(states[1])
         .mockResolvedValueOnce(states[2]);
@@ -249,7 +253,7 @@ describe("StateSynchronizer", () => {
         "0x000002"
       ); // Unsupported version
 
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(state);
+      vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
       contract.setNoteEvent(1n, event);
       contract.setNullifierBlock(
         // first nullifier is actually id
@@ -267,8 +271,10 @@ describe("StateSynchronizer", () => {
       const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(state);
-      jest.spyOn(stateEventsFilter, "newStateByEvent").mockResolvedValue(null);
+      vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
+      vitest
+        .spyOn(stateEventsFilter, "newStateByEvent")
+        .mockResolvedValue(null);
       contract.setNoteEvent(1n, event);
       contract.setNullifierBlock(
         // first nullifier is actually id
@@ -285,7 +291,7 @@ describe("StateSynchronizer", () => {
       const state = createAccountState();
 
       // Setup mocks
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(state);
+      vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
       contract.setNullifierBlock(
         // first nullifier is actually id
         scalarToBigint(await cryptoClient.hasher.poseidonHash([state.id])),
@@ -319,7 +325,7 @@ describe("StateSynchronizer", () => {
       ];
 
       // Setup mocks
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(states[0]);
+      vitest.spyOn(stateManager, "accountState").mockResolvedValue(states[0]);
       contract.setNoteEvent(1n, events[0]);
       contract.setNoteEvent(2n, events[1]);
       contract.setNullifierBlock(
@@ -338,7 +344,7 @@ describe("StateSynchronizer", () => {
         2n
       ); // Second nullifier hash -> block 2
 
-      jest
+      vitest
         .spyOn(stateEventsFilter, "newStateByEvent")
         .mockResolvedValueOnce(states[1])
         .mockResolvedValueOnce(states[2]);
@@ -366,7 +372,7 @@ describe("StateSynchronizer", () => {
 
     it("should handle empty transaction history", async () => {
       const emptyState = createAccountState();
-      jest
+      vitest
         .spyOn(stateManager, "emptyAccountState")
         .mockResolvedValue(emptyState);
       contract.setNullifierBlock(1n, null); // No transactions
@@ -382,8 +388,10 @@ describe("StateSynchronizer", () => {
       const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
-      jest.spyOn(stateManager, "accountState").mockResolvedValue(state);
-      jest.spyOn(stateEventsFilter, "newStateByEvent").mockResolvedValue(null);
+      vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
+      vitest
+        .spyOn(stateEventsFilter, "newStateByEvent")
+        .mockResolvedValue(null);
       contract.setNoteEvent(1n, event);
       contract.setNullifierBlock(
         // first nullifier is actually id
