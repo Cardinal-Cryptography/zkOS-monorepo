@@ -395,7 +395,6 @@ describe("ShielderClient", () => {
       ])(
         "should call $action when nonce is $nonce",
         async ({ nonce, action }) => {
-          // Mock state with non-zero nonce
           mockState = { nonce } as AccountState;
 
           const txHash = await client.shield(
@@ -410,7 +409,7 @@ describe("ShielderClient", () => {
           ).toHaveBeenCalledWith({
             hash: mockTxHash
           });
-          // check that depositAction.generateCalldata was called with the correct arguments
+          // check that action.generateCalldata was called with the correct arguments
           expect(client[action].generateCalldata).toHaveBeenCalledWith(
             mockState,
             mockAmount,
@@ -421,7 +420,7 @@ describe("ShielderClient", () => {
             expect.any(Object),
             "shield"
           );
-          // check that depositAction.sendCalldata was called with the correct arguments
+          // check that action.sendCalldata was called with the correct arguments
           expect(client[action].sendCalldata).toHaveBeenCalledWith(
             expect.any(Object),
             mockSendTransaction,
