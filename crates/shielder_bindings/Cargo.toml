@@ -21,6 +21,7 @@ rand = { workspace = true, features = ["small_rng"] }
 rayon = { workspace = true, optional = true }
 shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
+shielder-circuits-v0_1_0 = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }
 uniffi = { workspace = true, features = ["cli"], optional = true }
@@ -31,6 +32,7 @@ wasm-bindgen = { workspace = true, optional = true }
 powers-of-tau = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 shielder-circuits = { workspace = true }
+shielder-circuits-v0_1_0 = { workspace = true }
 
 [features]
 default = ["std"]

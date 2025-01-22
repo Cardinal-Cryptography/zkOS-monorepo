@@ -14,6 +14,7 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
     Circuit, F, MAX_K,
 };
+use shielder_circuits_v0_1_0::deposit::DepositCircuit as DepositCircuitV0_1_0;
 
 /// This function is used to generate the artifacts for the circuit, i.e. hardcoded keys
 /// and parameters. Saves results to `params.bin` and `pk.bin`.
@@ -42,17 +43,21 @@ fn gen_deposit(full_params: &Params) {
 }
 
 /// This function is used to generate the artifacts for the NewAccountCircuit
-fn generate_new_account(full_params: &Params) {
+fn gen_new_account(full_params: &Params) {
     gen_params_pk::<NewAccountCircuit<F>>("new_account", full_params);
 }
 
 /// This function is used to generate the artifacts for the WithdrawCircuit
-fn generate_withdraw(full_params: &Params) {
+fn gen_withdraw(full_params: &Params) {
     gen_params_pk::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>("withdraw", full_params);
 }
 
+fn gen_depositv_0_1_0(full_params: &Params) {
+    gen_params_pk::<DepositCircuitV0_1_0>("deposit_v0_1_0", full_params);
+}
+
 fn main() {
-    println!("cargo:rerun-if-changed=../shielder-circuits");
+    println!("cargo:rerun-if-changed=build.rs");
     let full_params = read_setup_parameters(
         get_ptau_file_path(MAX_K, Format::PerpetualPowersOfTau),
         Format::PerpetualPowersOfTau,
@@ -60,6 +65,7 @@ fn main() {
     .expect("failed to read parameters from the ptau file");
 
     gen_deposit(&full_params);
-    generate_new_account(&full_params);
-    generate_withdraw(&full_params);
+    gen_new_account(&full_params);
+    gen_withdraw(&full_params);
+    gen_depositv_0_1_0(&full_params);
 }
