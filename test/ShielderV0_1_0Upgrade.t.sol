@@ -3,11 +3,12 @@ pragma solidity 0.8.26;
 
 import { Test } from "forge-std/Test.sol";
 import { CustomUpgrades } from "./Utils.sol";
-import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import { Shielder } from "../contracts/Shielder.sol";
 import { ShielderV0_1_0 } from "../contracts/ShielderV0_1_0.sol";
 
+// solhint-disable-next-line contract-name-camelcase
 contract ShielderV0_1_0Upgrade is Test {
     address public owner;
     uint256 public depositLimit = 100e18;
@@ -49,6 +50,7 @@ contract ShielderV0_1_0Upgrade is Test {
             allowedErrors
         );
 
+        // solhint-disable-next-line var-name-mixedcase
         ShielderV0_1_0 shielderV0_1_0 = ShielderV0_1_0(shielderProxy);
 
         bytes3 newVersion = shielderV0_1_0.CONTRACT_VERSION();
@@ -63,6 +65,7 @@ contract ShielderV0_1_0Upgrade is Test {
         uint256 newDepositLimit = shielderV0_1_0.depositLimit();
         vm.assertEq(newDepositLimit, currentDepositLimit);
 
+        // solhint-disable-next-line var-name-mixedcase
         (, uint256 nextFreeLeafIdV0_1_0, , ) = shielderV0_1_0.merkleTree();
         vm.assertEq(nextFreeLeafId, nextFreeLeafIdV0_1_0);
 

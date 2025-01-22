@@ -10,6 +10,7 @@ import { ShielderV0_1_0 } from "../contracts/ShielderV0_1_0.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /* solhint-disable no-console */
+// solhint-disable-next-line contract-name-camelcase
 contract DeployShielderV0_1_0Script is Script {
     function run() external {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
@@ -34,6 +35,7 @@ contract DeployShielderV0_1_0Script is Script {
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));
 
+        // solhint-disable-next-line var-name-mixedcase
         address shielderV0_1_0Implementation = address(new ShielderV0_1_0());
 
         console2.log(
@@ -41,6 +43,7 @@ contract DeployShielderV0_1_0Script is Script {
             address(shielderV0_1_0Implementation)
         );
 
+        // solhint-disable-next-line var-name-mixedcase
         bytes memory dataV0_1_0 = abi.encodeWithSignature("initialize()");
 
         UUPSUpgradeable(proxy).upgradeToAndCall(

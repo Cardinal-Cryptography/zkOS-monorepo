@@ -20,6 +20,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @custom:oz-upgrades-from Shielder
  * @custom:oz-upgrades-unsafe-allow external-library-linking
  */
+// solhint-disable-next-line contract-name-camelcase
 contract ShielderV0_1_0 is
     Initializable,
     UUPSUpgradeable,
