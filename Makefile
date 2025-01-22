@@ -89,11 +89,7 @@ generate-verifier-contracts-v0_1_0:
 
 .PHONY: generate-contracts
 generate-contracts: # Generate poseidon & relation verifier contracts
-generate-contracts: generate-poseidon-contracts generate-verifier-contracts
-
-.PHONY: generate-contracts-v0_1_0
-generate-contracts-v0_1_0: # Generate poseidon & relation verifier contracts
-generate-contracts-v0_1_0: generate-poseidon-contracts generate-verifier-contracts-v0_1_0
+generate-contracts: generate-poseidon-contracts generate-verifier-contracts generate-verifier-contracts-v0_1_0
 
 .PHONY: measure-gas
 measure-gas: # measure shielder gas usage
