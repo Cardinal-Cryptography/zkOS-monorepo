@@ -57,6 +57,7 @@ impl DepositCircuitV0_1_0 {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
         id_hiding: Vec<u8>,
