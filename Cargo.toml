@@ -53,6 +53,8 @@ sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
 # https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/7743b2f084d80685041c1b16718e6388226e9631
 shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "7743b2f" }
+# https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/4f413a87dac5ceb7cf7581691e1b799c2914cdcc
+shielder-circuits-v0_1_0 = { package = "shielder-circuits", git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "4f413a8" }
 testcontainers = { version = "0.19.0" }
 thiserror = { version = "2.0.9" }
 tokio = { version = "1.38.0" }

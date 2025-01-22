@@ -8,7 +8,7 @@ import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import { Shielder } from "../contracts/Shielder.sol";
 import { ShielderV2Mock } from "../contracts/ShielderV2Mock.sol";
 
-contract ShielderUpgrade is Test {
+contract ShielderMockUpgrade is Test {
     address public owner;
 
     uint256 public depositLimit = 100e18;

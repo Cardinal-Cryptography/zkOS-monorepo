@@ -9,7 +9,7 @@ target/
 .DS_Store
 .vscode/
 contracts/*Key.sol
-contracts/*Verifier.sol
+contracts/*Verifier*.sol
 contracts/Poseidon2T8Assembly.sol
 **/*output.log
 *.txt

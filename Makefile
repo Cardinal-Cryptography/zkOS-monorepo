@@ -56,6 +56,16 @@ else
 	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
 endif
 
+.PHONY: deploy-contracts-v0_1_0
+deploy-contracts-v0_1_0: # Deploy solidity contracts
+deploy-contracts-v0_1_0:
+ifeq ($(NETWORK),anvil)
+	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
+	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderV0_1_0Script --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
+else
+	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderV0_1_0Script --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
+endif
+
 .PHONY: generate-poseidon-contracts
 generate-poseidon-contracts: # Generate Poseidon contract
 generate-poseidon-contracts:
@@ -69,9 +79,21 @@ generate-verifier-contracts:
 	cargo run --release --bin halo2_solidity_verifier_generator
 	$(MAKE) format-contracts
 
+
+.PHONY: generate-verifier-contracts-v0_1_0
+generate-verifier-contracts-v0_1_0: # Generate relation verifier contracts for v0_1_0 contract
+generate-verifier-contracts-v0_1_0:
+	cd crates/halo2-verifier
+	cargo run --release --bin halo2_solidity_verifier_generator_v0_1_0
+	$(MAKE) format-contracts
+
 .PHONY: generate-contracts
 generate-contracts: # Generate poseidon & relation verifier contracts
 generate-contracts: generate-poseidon-contracts generate-verifier-contracts
+
+.PHONY: generate-contracts-v0_1_0
+generate-contracts-v0_1_0: # Generate poseidon & relation verifier contracts
+generate-contracts-v0_1_0: generate-poseidon-contracts generate-verifier-contracts-v0_1_0
 
 .PHONY: measure-gas
 measure-gas: # measure shielder gas usage
