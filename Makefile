@@ -56,9 +56,9 @@ else
 	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
 endif
 
-.PHONY: deploy-contracts-v0_1_0
-deploy-contracts-v0_1_0: # Deploy solidity contracts
-deploy-contracts-v0_1_0:
+.PHONY: deploy-contracts-and-migrate
+deploy-contracts-and-migrate: # Deploy solidity contracts
+deploy-contracts-and-migrate:
 	NETWORK=$(NETWORK) PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) ./scripts/deploy-all-migrations.sh
 
 .PHONY: generate-poseidon-contracts
