@@ -22,7 +22,8 @@ if [ "$NETWORK" = "anvil" ]; then
         forge script DeployShielderScript --broadcast --rpc-url anvil --sender "$SENDER" \
         | grep 'Shielder deployed at:' | awk '{print $NF}'
     )
-    SHIELDER_PROXY=$SHIELDER_PROXY PRIVATE_KEY=$PRIVATE_KEY OWNER_ADDRESS=$OWNER_ADDRESS \
+    SHIELDER_PROXY=$SHIELDER_PROXY \
+    PRIVATE_KEY=$PRIVATE_KEY \
     forge script AddTokenSupport --broadcast --rpc-url anvil --sender "$SENDER"
 else
     # Get the sender address from private key
@@ -35,6 +36,7 @@ else
         forge script DeployShielderScript --broadcast --rpc-url "$NETWORK" --sender "$SENDER" \
         | grep 'Shielder deployed at:' | awk '{print $NF}'
     )
-    SHIELDER_PROXY=$SHIELDER_PROXY PRIVATE_KEY=$PRIVATE_KEY OWNER_ADDRESS=$OWNER_ADDRESS \
+    SHIELDER_PROXY=$SHIELDER_PROXY \
+    PRIVATE_KEY=$PRIVATE_KEY \
     forge script DeployShielderV0_1_0Script --broadcast --rpc-url "$NETWORK" --sender "$SENDER"
 fi

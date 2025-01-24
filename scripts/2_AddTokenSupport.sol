@@ -12,7 +12,6 @@ contract AddTokenSupport is Script {
     function run() external {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
 
-        address owner = vm.envAddress("OWNER_ADDRESS");
         address broadcaster = vm.addr(privateKey);
         address proxy = vm.envAddress("SHIELDER_PROXY");
         console2.log("Using", broadcaster, "as broadcaster");
