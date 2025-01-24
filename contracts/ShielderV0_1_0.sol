@@ -65,7 +65,7 @@ contract ShielderV0_1_0 is
         uint256 newNote,
         uint256 newNoteIndex
     );
-    event DepositNative(
+    event Deposit(
         bytes3 contractVersion,
         uint256 idHiding,
         uint256 amount,
@@ -193,37 +193,19 @@ contract ShielderV0_1_0 is
         fieldElement(newNote)
     {
         uint256 amount = msg.value;
-        if (amount == 0) revert ZeroAmount();
-        if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
-        if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
 
-        // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](5);
-        publicInputs[0] = idHiding;
-        publicInputs[1] = merkleRoot;
-        publicInputs[2] = oldNullifierHash;
-        publicInputs[3] = newNote;
-        publicInputs[4] = amount;
-        publicInputs[5] = 0; // token index
-
-        bool success = DepositVerifier.verifyProof(proof, publicInputs);
-
-        if (!success) revert DepositVerificationFailed();
-
-        uint256 newNoteIndex = _addNote(newNote);
-        _registerNullifier(oldNullifierHash);
-
-        emit DepositNative(
-            CONTRACT_VERSION,
+        deposit(
             idHiding,
-            amount,
+            oldNullifierHash,
             newNote,
-            newNoteIndex,
-            0
+            merkleRoot,
+            amount,
+            0,
+            proof
         );
     }
 
@@ -241,15 +223,13 @@ contract ShielderV0_1_0 is
         bytes calldata proof
     )
         external
+        whenNotPaused
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
     {
-        if (amount == 0) revert ZeroAmount();
         if (amount > depositLimit()) revert AmountOverDepositLimit();
-        if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
-        if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         address tokenAddress = getTokenAddress(tokenIndex);
         if (tokenAddress == address(0)) revert TokenDoesNotExist();
         // transfer the tokens to the contract
@@ -259,6 +239,30 @@ contract ShielderV0_1_0 is
         ) {
             revert ContractBalanceLimitReached();
         }
+
+        deposit(
+            idHiding,
+            oldNullifierHash,
+            newNote,
+            merkleRoot,
+            amount,
+            tokenIndex,
+            proof
+        );
+    }
+
+    function deposit(
+        uint256 idHiding,
+        uint256 oldNullifierHash,
+        uint256 newNote,
+        uint256 merkleRoot,
+        uint256 amount,
+        uint256 tokenIndex,
+        bytes calldata proof
+    ) internal {
+        if (amount == 0) revert ZeroAmount();
+        if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
+        if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](5);
         publicInputs[0] = idHiding;
@@ -275,7 +279,7 @@ contract ShielderV0_1_0 is
         uint256 newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        emit DepositNative(
+        emit Deposit(
             CONTRACT_VERSION,
             idHiding,
             amount,
