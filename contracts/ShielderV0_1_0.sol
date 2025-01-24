@@ -15,13 +15,13 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title ShielderV0_1_0
+ * @title Shielder
  * @author CardinalCryptography
- * @custom:oz-upgrades-from Shielder
+ * @custom:oz-upgrades-from contracts/Shielder.sol:Shielder
  * @custom:oz-upgrades-unsafe-allow external-library-linking
  */
 // solhint-disable-next-line contract-name-camelcase
-contract ShielderV0_1_0 is
+contract Shielder is
     Initializable,
     UUPSUpgradeable,
     Ownable2StepUpgradeable,
@@ -386,17 +386,7 @@ contract ShielderV0_1_0 is
         _setDepositLimit(_depositLimit);
     }
 
-    /*
-     * Add a token to the list
-     */
-    function addTokenToList(address _token) external onlyOwner {
-        _addTokenToList(_token);
-    }
-
-    /*
-     * Remove the last token from the list
-     */
-    function removeLastToken() external onlyOwner {
-        _removeLastToken();
+    function setTokenList(address[] calldata _tokens) external onlyOwner {
+        _setTokenList(_tokens);
     }
 }
