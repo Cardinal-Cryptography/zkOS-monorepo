@@ -52,7 +52,7 @@ fn gen_withdraw(full_params: &Params) {
     gen_params_pk::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>("withdraw", full_params);
 }
 
-fn gen_depositv_0_1_0(full_params: &Params) {
+fn gen_deposit_v0_1_0(full_params: &Params) {
     gen_params_pk::<DepositCircuitV0_1_0>("deposit_v0_1_0", full_params);
 }
 
@@ -67,5 +67,5 @@ fn main() {
     gen_deposit(&full_params);
     gen_new_account(&full_params);
     gen_withdraw(&full_params);
-    gen_depositv_0_1_0(&full_params);
+    gen_deposit_v0_1_0(&full_params);
 }
