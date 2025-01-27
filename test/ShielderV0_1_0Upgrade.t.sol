@@ -5,8 +5,8 @@ import { Test } from "forge-std/Test.sol";
 import { CustomUpgrades } from "./Utils.sol";
 import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-import { Shielder } from "../contracts/Shielder.sol";
-import { ShielderV0_1_0 } from "../contracts/ShielderV0_1_0.sol";
+import { Shielder as ShielderPrev } from "../contracts/Shielder.sol";
+import { Shielder as ShielderNext } from "../contracts/ShielderV0_1_0.sol";
 
 // solhint-disable-next-line contract-name-camelcase
 contract ShielderV0_1_0Upgrade is Test {
@@ -23,63 +23,90 @@ contract ShielderV0_1_0Upgrade is Test {
         // Deploy upgradeable Shielder
         address shielderProxy = Upgrades.deployUUPSProxy(
             "Shielder.sol:Shielder",
-            abi.encodeCall(Shielder.initialize, (owner, depositLimit))
+            abi.encodeCall(ShielderPrev.initialize, (owner, depositLimit))
         );
-        Shielder shielder = Shielder(shielderProxy);
+        ShielderPrev shielderPrev = ShielderPrev(shielderProxy);
 
-        bytes3 version = shielder.CONTRACT_VERSION();
-        vm.assertEq(version, bytes3(0x000001));
+        bytes3 prevVersion = shielderPrev.CONTRACT_VERSION();
+        vm.assertEq(prevVersion, bytes3(0x000001));
 
-        address currentOwner = shielder.owner();
-        vm.assertEq(currentOwner, owner);
+        address prevOwner = shielderPrev.owner();
+        vm.assertEq(prevOwner, owner);
 
-        bool paused = shielder.paused();
-        vm.assertEq(paused, true);
+        bool prevPaused = shielderPrev.paused();
+        vm.assertEq(prevPaused, true);
 
-        uint256 currentDepositLimit = shielder.depositLimit();
-        vm.assertEq(currentDepositLimit, depositLimit);
+        uint256 prevDepositLimit = shielderPrev.depositLimit();
+        vm.assertEq(prevDepositLimit, depositLimit);
 
-        (, uint256 nextFreeLeafId, , ) = shielder.merkleTree();
-        vm.assertNotEq(nextFreeLeafId, 0);
+        (, uint256 prevFreeLeafId, , ) = shielderPrev.merkleTree();
+        vm.assertNotEq(prevFreeLeafId, 0);
 
-        // upgrade Shielder
+        // upgrade to v0.1.0
         CustomUpgrades.upgradeProxyWithErrors(
             shielderProxy,
-            "ShielderV0_1_0.sol:ShielderV0_1_0",
+            "ShielderV0_1_0.sol:Shielder",
             abi.encodeWithSignature("initialize()"),
             allowedErrors
         );
 
-        // solhint-disable-next-line var-name-mixedcase
-        ShielderV0_1_0 shielderV0_1_0 = ShielderV0_1_0(shielderProxy);
+        ShielderNext shielderNext = ShielderNext(shielderProxy);
 
-        bytes3 newVersion = shielderV0_1_0.CONTRACT_VERSION();
+        bytes3 newVersion = shielderNext.CONTRACT_VERSION();
         vm.assertEq(newVersion, bytes3(0x000100));
 
-        address newOwner = shielderV0_1_0.owner();
-        vm.assertEq(newOwner, currentOwner);
+        address newOwner = shielderNext.owner();
+        vm.assertEq(newOwner, prevOwner);
 
-        bool newPaused = shielderV0_1_0.paused();
-        vm.assertEq(newPaused, paused);
+        bool newPaused = shielderNext.paused();
+        vm.assertEq(newPaused, prevPaused);
 
-        uint256 newDepositLimit = shielderV0_1_0.depositLimit();
-        vm.assertEq(newDepositLimit, currentDepositLimit);
+        uint256 newDepositLimit = shielderNext.depositLimit();
+        vm.assertEq(newDepositLimit, prevDepositLimit);
 
-        // solhint-disable-next-line var-name-mixedcase
-        (, uint256 nextFreeLeafIdV0_1_0, , ) = shielderV0_1_0.merkleTree();
-        vm.assertEq(nextFreeLeafId, nextFreeLeafIdV0_1_0);
+        (, uint256 newFreeLeafId, , ) = shielderNext.merkleTree();
+        vm.assertEq(newFreeLeafId, prevFreeLeafId);
 
-        shielderV0_1_0.addTokenToList(address(1234));
-        address tokenAddress = shielderV0_1_0.getTokenAddress(1);
+        // test TokenList
+
+        address[] memory tokensToSet = new address[](1);
+        tokensToSet[0] = address(1234);
+
+        shielderNext.setTokenList(tokensToSet);
+        address tokenAddress = shielderNext.getTokenAddress(1);
         vm.assertEq(tokenAddress, address(1234));
 
-        address[] memory tokens = shielderV0_1_0.getTokens();
+        address[] memory tokens = shielderNext.getTokens();
         vm.assertEq(tokens.length, 2);
         vm.assertEq(tokens[0], address(0)); // native token
         vm.assertEq(tokens[1], address(1234)); // added token
 
-        shielderV0_1_0.removeLastToken();
-        tokenAddress = shielderV0_1_0.getTokenAddress(1);
-        vm.assertEq(tokenAddress, address(0));
+        // reset tokens to other token
+        {
+            address[] memory tokensToSet = new address[](1);
+            tokensToSet[0] = address(5678);
+
+            shielderNext.setTokenList(tokensToSet);
+            address tokenAddress = shielderNext.getTokenAddress(1);
+            vm.assertEq(tokenAddress, address(5678));
+
+            address[] memory tokens = shielderNext.getTokens();
+            vm.assertEq(tokens.length, 2);
+            vm.assertEq(tokens[0], address(0)); // native token
+            vm.assertEq(tokens[1], address(5678)); // added token
+        }
+
+        // reset tokens to empty
+        {
+            address[] memory tokensToSet = new address[](0);
+
+            shielderNext.setTokenList(tokensToSet);
+            address tokenAddress = shielderNext.getTokenAddress(1);
+            vm.assertEq(tokenAddress, address(0));
+
+            address[] memory tokens = shielderNext.getTokens();
+            vm.assertEq(tokens.length, 1);
+            vm.assertEq(tokens[0], address(0)); // native token
+        }
     }
 }

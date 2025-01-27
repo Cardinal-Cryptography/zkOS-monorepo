@@ -56,15 +56,10 @@ else
 	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
 endif
 
-.PHONY: deploy-contracts-v0_1_0
-deploy-contracts-v0_1_0: # Deploy solidity contracts
-deploy-contracts-v0_1_0:
-ifeq ($(NETWORK),anvil)
-	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
-	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderV0_1_0Script --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
-else
-	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderV0_1_0Script --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
-endif
+.PHONY: deploy-contracts-and-migrate
+deploy-contracts-and-migrate: # Deploy solidity contracts
+deploy-contracts-and-migrate:
+	NETWORK=$(NETWORK) PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) ./scripts/deploy-all-migrations.sh
 
 .PHONY: generate-poseidon-contracts
 generate-poseidon-contracts: # Generate Poseidon contract

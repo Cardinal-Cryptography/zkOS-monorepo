@@ -14,7 +14,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * @dev This is a mock version on ShielderV2 for testing purposes only.
  *      Most of the functionality has been removed for clarity.
  *
- * @custom:oz-upgrades-from Shielder
+ * @custom:oz-upgrades-from contracts/Shielder.sol:Shielder
  * @custom:oz-upgrades-unsafe-allow external-library-linking
  */
 contract ShielderV2Mock is

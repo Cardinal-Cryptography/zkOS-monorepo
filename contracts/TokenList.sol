@@ -47,22 +47,17 @@ abstract contract TokenList is Initializable {
         return tokens;
     }
 
-    /*
-     * Add a token to the list
-     */
-    function _addTokenToList(address _token) internal {
+    function _setTokenList(address[] memory _tokens) public {
         TokenListStorage storage $ = _getTokenListStorage();
-        $.tokenAddressByIndex[$.tokensNumber] = _token;
-        $.tokensNumber++;
-    }
 
-    function _removeLastToken() internal {
-        TokenListStorage storage $ = _getTokenListStorage();
-        if ($.tokensNumber == 1) {
-            // cannot remove the native token
-            return;
+        // clear the previous list
+        for (uint256 i = 1; i < $.tokensNumber; i++) {
+            delete $.tokenAddressByIndex[i];
         }
-        delete $.tokenAddressByIndex[$.tokensNumber - 1];
-        $.tokensNumber--;
+
+        $.tokensNumber = _tokens.length + 1; // reserve the first index for the native token
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            $.tokenAddressByIndex[i + 1] = _tokens[i];
+        }
     }
 }
