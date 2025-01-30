@@ -12,7 +12,7 @@ use shielder_circuits::{
     Field, ProverKnowledge, PublicInputProvider, F,
 };
 use shielder_contract::{
-    ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
+    ShielderContract::{depositTokenCall, newAccountTokenCall, withdrawTokenCall},
     WithdrawCommitment,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
@@ -58,7 +58,7 @@ pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
     type Extra = ();
     type ProverKnowledge = NewAccountProverKnowledge<F>;
-    type Calldata = newAccountNativeCall;
+    type Calldata = newAccountTokenCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -79,8 +79,10 @@ impl CallType for NewAccountCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
-        newAccountNativeCall {
+        newAccountTokenCall {
             expectedContractVersion: contract_version().to_bytes(),
+            tokenAddress: Address::ZERO,
+            amount: field_to_u256(prover_knowledge.compute_public_input(InitialDeposit)),
             newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
             proof: Bytes::from(proof),
@@ -98,7 +100,7 @@ impl CallType for DepositCallType {
     type Extra = MerkleProof;
     type ProverKnowledge = DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
 
-    type Calldata = depositNativeCall;
+    type Calldata = depositTokenCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -134,8 +136,10 @@ impl CallType for DepositCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
-        depositNativeCall {
+        depositTokenCall {
             expectedContractVersion: contract_version().to_bytes(),
+            tokenAddress: Address::ZERO,
+            amount: field_to_u256(pk.compute_public_input(DepositValue)),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
             oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
@@ -157,7 +161,7 @@ pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
     type ProverKnowledge = WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
-    type Calldata = withdrawNativeCall;
+    type Calldata = withdrawTokenCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -201,9 +205,10 @@ impl CallType for WithdrawCallType {
         extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
-        withdrawNativeCall {
+        withdrawTokenCall {
             expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
+            tokenAddress: Address::ZERO,
             amount: field_to_u256(pk.compute_public_input(WithdrawalValue)),
             withdrawAddress: extra.to,
             merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),

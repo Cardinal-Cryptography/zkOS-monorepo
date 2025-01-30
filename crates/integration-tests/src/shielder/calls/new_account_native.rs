@@ -1,6 +1,6 @@
 use alloy_primitives::{TxHash, U256};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
-use shielder_contract::ShielderContract::{newAccountNativeCall, ShielderContractErrors};
+use shielder_contract::ShielderContract::{newAccountTokenCall, ShielderContractErrors};
 
 use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
 
@@ -8,7 +8,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> newAccountNativeCall {
+) -> newAccountTokenCall {
     let (params, pk) = deployment.new_account_native_proving_params.clone();
     shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, amount, &())
 }
@@ -17,7 +17,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &newAccountNativeCall,
+    calldata: &newAccountTokenCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
@@ -40,6 +40,7 @@ pub fn create_account_and_call(
     let mut shielder_account = ShielderAccount::new(id);
 
     let calldata = prepare_call(deployment, &mut shielder_account, initial_amount);
+    println!("Calldata: {:?}", calldata);
     let result = invoke_call(deployment, &mut shielder_account, initial_amount, &calldata);
 
     match result {
@@ -106,7 +107,7 @@ mod tests {
             vec![ShielderContractEvents::NewAccount(NewAccount {
                 contractVersion: FixedBytes([0, 0, 1]),
                 idHash: calldata.idHash,
-                tokenAddress: Address::from_word(U256::ZERO.into()),
+                tokenAddress: Address::ZERO,
                 amount,
                 newNote: calldata.newNote,
                 newNoteIndex: U256::ZERO,
@@ -211,8 +212,13 @@ mod tests {
     }
 
     #[rstest]
-    fn correctly_handles_max_u256_value(mut deployment: Deployment) {
-        let result = create_account_and_call(&mut deployment, U256::from(1), U256::MAX);
+    fn correctly_handles_max_value(mut deployment: Deployment) {
+        set_deposit_limit(&mut deployment, Address::ZERO, U256::MAX);
+        let result = create_account_and_call(
+            &mut deployment,
+            U256::from(1),
+            U256::from(2).pow(U256::from(112)),
+        );
 
         assert_matches!(
             result,
@@ -252,7 +258,7 @@ mod tests {
         assert_eq!(old_limit, U256::MAX);
 
         let new_limit = U256::from(100);
-        set_deposit_limit(&mut deployment, new_limit);
+        set_deposit_limit(&mut deployment, Address::ZERO, new_limit);
 
         let returned_new_limit = get_deposit_limit(&mut deployment);
 

@@ -73,7 +73,7 @@ contract Shielder is
         uint256 idHiding,
         address tokenAddress,
         uint256 amount,
-        address to,
+        address withdrawAddress,
         uint256 newNote,
         uint256 newNoteIndex,
         address relayerAddress,
@@ -94,6 +94,7 @@ contract Shielder is
     error ContractBalanceLimitReached();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
     error NotAFieldElement();
+    error IncorrectNativeAmount();
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
         if (expectedByCaller != CONTRACT_VERSION) {
@@ -135,56 +136,11 @@ contract Shielder is
     }
 
     /*
-     * Creates a fresh note, with an optional native token deposit.
+     * Creates a fresh note, with an optional token deposit.
      *
      * This transaction serves as the entrypoint to the Shielder.
      */
-    function newAccountNative(
-        bytes3 expectedContractVersion,
-        uint256 newNote,
-        uint256 idHash,
-        bytes calldata proof
-    ) external payable whenNotPaused {
-        uint256 amount = msg.value;
-        // `address(this).balance` already includes `msg.value`.
-        if (address(this).balance > MAX_CONTRACT_BALANCE) {
-            revert ContractBalanceLimitReached();
-        }
-
-        newAccount(
-            expectedContractVersion,
-            address(0),
-            amount,
-            newNote,
-            idHash,
-            proof
-        );
-    }
-
-    function newAccountERC20(
-        bytes3 expectedContractVersion,
-        address tokenAddress,
-        uint256 amount,
-        uint256 newNote,
-        uint256 idHash,
-        bytes calldata proof
-    ) external whenNotPaused {
-        IERC20 token = IERC20(tokenAddress);
-        token.transferFrom(msg.sender, address(this), amount);
-        if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
-            revert ContractBalanceLimitReached();
-        }
-        newAccount(
-            expectedContractVersion,
-            tokenAddress,
-            amount,
-            newNote,
-            idHash,
-            proof
-        );
-    }
-
-    function newAccount(
+    function newAccountToken(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -192,12 +148,29 @@ contract Shielder is
         uint256 idHash,
         bytes calldata proof
     )
-        internal
+        external
+        payable
+        whenNotPaused
         withinDepositLimit(amount, tokenAddress)
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
     {
+        if (tokenAddress == address(0)) {
+            if (amount != msg.value) {
+                revert IncorrectNativeAmount();
+            }
+            if (address(this).balance > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            token.transferFrom(msg.sender, address(this), amount);
+            if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        }
+
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](3);
@@ -225,60 +198,9 @@ contract Shielder is
     }
 
     /*
-     * Make a native token deposit into the Shielder
+     * Make a token deposit into the Shielder
      */
-    function depositNative(
-        bytes3 expectedContractVersion,
-        uint256 idHiding,
-        uint256 oldNullifierHash,
-        uint256 newNote,
-        uint256 merkleRoot,
-        bytes calldata proof
-    ) external payable whenNotPaused {
-        uint256 amount = msg.value;
-        if (address(this).balance > MAX_CONTRACT_BALANCE) {
-            revert ContractBalanceLimitReached();
-        }
-        deposit(
-            expectedContractVersion,
-            address(0),
-            amount,
-            idHiding,
-            oldNullifierHash,
-            newNote,
-            merkleRoot,
-            proof
-        );
-    }
-
-    function depositERC20(
-        bytes3 expectedContractVersion,
-        address tokenAddress,
-        uint256 amount,
-        uint256 idHiding,
-        uint256 oldNullifierHash,
-        uint256 newNote,
-        uint256 merkleRoot,
-        bytes calldata proof
-    ) external whenNotPaused {
-        IERC20 token = IERC20(tokenAddress);
-        token.transferFrom(msg.sender, address(this), amount);
-        if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
-            revert ContractBalanceLimitReached();
-        }
-        deposit(
-            expectedContractVersion,
-            tokenAddress,
-            amount,
-            idHiding,
-            oldNullifierHash,
-            newNote,
-            merkleRoot,
-            proof
-        );
-    }
-
-    function deposit(
+    function depositToken(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -288,13 +210,29 @@ contract Shielder is
         uint256 merkleRoot,
         bytes calldata proof
     )
-        internal
+        external
+        payable
         withinDepositLimit(amount, tokenAddress)
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
+        whenNotPaused
     {
+        if (tokenAddress == address(0)) {
+            if (amount != msg.value) {
+                revert IncorrectNativeAmount();
+            }
+            if (address(this).balance > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            token.transferFrom(msg.sender, address(this), amount);
+            if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        }
         if (amount == 0) revert ZeroAmount();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
@@ -327,80 +265,9 @@ contract Shielder is
     }
 
     /*
-     * Withdraw shielded native funds
+     * Withdraw shielded funds
      */
-    function withdrawNative(
-        bytes3 expectedContractVersion,
-        uint256 idHiding,
-        uint256 amount,
-        address withdrawAddress,
-        uint256 merkleRoot,
-        uint256 oldNullifierHash,
-        uint256 newNote,
-        bytes calldata proof,
-        address relayerAddress,
-        uint256 relayerFee
-    ) external whenNotPaused {
-        withdraw(
-            expectedContractVersion,
-            idHiding,
-            address(0),
-            amount,
-            withdrawAddress,
-            merkleRoot,
-            oldNullifierHash,
-            newNote,
-            proof,
-            relayerAddress,
-            relayerFee
-        );
-        // return the tokens
-        (bool nativeTransferSuccess, ) = withdrawAddress.call{
-            value: amount - relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
-
-        // pay out the fee
-        (nativeTransferSuccess, ) = relayerAddress.call{
-            value: relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
-    }
-
-    function withdrawERC20(
-        bytes3 expectedContractVersion,
-        uint256 idHiding,
-        address tokenAddress,
-        uint256 amount,
-        address withdrawAddress,
-        uint256 merkleRoot,
-        uint256 oldNullifierHash,
-        uint256 newNote,
-        bytes calldata proof,
-        address relayerAddress,
-        uint256 relayerFee
-    ) external whenNotPaused {
-        withdraw(
-            expectedContractVersion,
-            idHiding,
-            tokenAddress,
-            amount,
-            withdrawAddress,
-            merkleRoot,
-            oldNullifierHash,
-            newNote,
-            proof,
-            relayerAddress,
-            relayerFee
-        );
-        IERC20 token = IERC20(tokenAddress);
-        token.transfer(withdrawAddress, amount - relayerFee);
-        token.transfer(relayerAddress, relayerFee);
-    }
-
-    function withdraw(
+    function withdrawToken(
         bytes3 expectedContractVersion,
         uint256 idHiding,
         address tokenAddress,
@@ -413,7 +280,8 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     )
-        internal
+        external
+        whenNotPaused
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
@@ -463,6 +331,31 @@ contract Shielder is
             relayerAddress,
             relayerFee
         );
+
+        if (tokenAddress == address(0)) {
+            // return the tokens
+            (bool nativeTransferSuccess, ) = withdrawAddress.call{
+                value: amount - relayerFee,
+                gas: GAS_LIMIT
+            }("");
+            if (!nativeTransferSuccess) revert NativeTransferFailed();
+
+            // pay out the fee
+            (nativeTransferSuccess, ) = relayerAddress.call{
+                value: relayerFee,
+                gas: GAS_LIMIT
+            }("");
+            if (!nativeTransferSuccess) revert NativeTransferFailed();
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            bool transferSuccess = token.transfer(
+                withdrawAddress,
+                amount - relayerFee
+            );
+            if (!transferSuccess) revert NativeTransferFailed();
+
+            transferSuccess = token.transfer(relayerAddress, relayerFee);
+        }
     }
 
     function addressToUInt256(address addr) public pure returns (uint256) {
@@ -479,7 +372,10 @@ contract Shielder is
     /*
      * Set the deposit limit for the maximal amount
      */
-    function setDepositLimit(uint256 _depositLimit) external onlyOwner {
-        _setDepositLimit(_depositLimit);
+    function setDepositLimit(
+        address tokenAddress,
+        uint256 _depositLimit
+    ) external onlyOwner {
+        _setDepositLimit(tokenAddress, _depositLimit);
     }
 }

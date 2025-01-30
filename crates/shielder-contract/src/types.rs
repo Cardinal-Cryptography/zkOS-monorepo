@@ -58,6 +58,7 @@ sol! {
         error PrecompileCallFailed();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
+        error IncorrectNativeAmount();
 
         function depositLimit() external view returns (uint256);
 
@@ -71,55 +72,34 @@ sol! {
         function pause() external;
         function unpause() external;
 
-        function newAccountNative(
+        function newAccountToken(
             bytes3 expectedContractVersion,
+            address tokenAddress,
+            uint256 amount,
             uint256 newNote,
             uint256 idHash,
             bytes calldata proof
         ) external payable;
-        function depositNative(
-            bytes3 expectedContractVersion,
-            uint256 idHiding,
-            uint256 oldNullifierHash,
-            uint256 newNote,
-            uint256 merkleRoot,
-            bytes calldata proof,
-        ) external payable;
-        function withdrawNative(
-            bytes3 expectedContractVersion,
-            uint256 idHiding,
-            uint256 amount,
-            address withdrawAddress,
-            uint256 merkleRoot,
-            uint256 oldNullifierHash,
-            uint256 newNote,
-            bytes calldata proof,
-            address relayerAddress,
-            uint256 relayerFee,
-        ) external;
-
-        function newAccountToken(
-            address tokenOwner,
-            address token,
-            uint256 amount,
-            uint256 nonce,
-            uint256 deadline,
-            bytes calldata signature
-        ) external;
-
         function depositToken(
-            address tokenOwner,
-            address token,
+            bytes3 expectedContractVersion,
+            address tokenAddress,
             uint256 amount,
-            uint256 nonce,
-            uint256 deadline,
-            bytes calldata signature
-        ) external;
-
+            uint256 idHiding,
+            uint256 oldNullifierHash,
+            uint256 newNote,
+            uint256 merkleRoot,
+            bytes calldata proof
+        ) external payable;
         function withdrawToken(
-            address token,
+            bytes3 expectedContractVersion,
+            uint256 idHiding,
+            address tokenAddress,
             uint256 amount,
             address withdrawAddress,
+            uint256 merkleRoot,
+            uint256 oldNullifierHash,
+            uint256 newNote,
+            bytes calldata proof,
             address relayerAddress,
             uint256 relayerFee
         ) external;
@@ -128,7 +108,10 @@ sol! {
             uint256 id
         ) external view returns (uint256[] memory);
 
-        function setDepositLimit(uint256 _depositLimit) external;
+        function setDepositLimit(
+            address tokenAddress,
+            uint256 _depositLimit
+        ) external;
     }
 }
 
@@ -203,9 +186,9 @@ macro_rules! impl_unit_call {
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
 
-impl_unit_call!(newAccountNativeCall);
-impl_unit_call!(depositNativeCall);
-impl_unit_call!(withdrawNativeCall);
+impl_unit_call!(newAccountTokenCall);
+impl_unit_call!(depositTokenCall);
+impl_unit_call!(withdrawTokenCall);
 
 impl ShielderContractCall for getMerklePathCall {
     type UnwrappedResult = Vec<U256>;

@@ -10,7 +10,8 @@ abstract contract DepositLimit is Initializable {
 
     /// @custom:storage-location erc7201:zkos.storage.DepositLimit
     struct DepositLimitStorage {
-        uint256 depositLimit;
+        uint256 depositLimit; // native token deposit limit
+        mapping(address => uint256) tokenDepositLimit; // token deposit limit
     }
 
     error AmountOverDepositLimit();
@@ -34,8 +35,7 @@ abstract contract DepositLimit is Initializable {
     function __DepositLimit_init(
         uint256 _depositLimit
     ) internal onlyInitializing {
-        DepositLimitStorage storage $ = _getDepositLimitStorage();
-        $.depositLimit = _depositLimit;
+        _setDepositLimit(address(0), _depositLimit);
     }
 
     /// The temporary limit for the maximal deposit amount in the MVP version.
@@ -47,8 +47,15 @@ abstract contract DepositLimit is Initializable {
     /*
      * Set the deposit limit for the maximal amount
      */
-    function _setDepositLimit(uint256 _depositLimit) internal {
+    function _setDepositLimit(
+        address tokenAddress,
+        uint256 _depositLimit
+    ) internal {
         DepositLimitStorage storage $ = _getDepositLimitStorage();
-        $.depositLimit = _depositLimit;
+        if (tokenAddress != address(0)) {
+            $.tokenDepositLimit[tokenAddress] = _depositLimit;
+        } else {
+            $.depositLimit = _depositLimit;
+        }
     }
 }
