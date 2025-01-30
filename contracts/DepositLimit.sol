@@ -25,8 +25,8 @@ abstract contract DepositLimit is Initializable {
         }
     }
 
-    modifier withinDepositLimit() {
-        if (msg.value > depositLimit()) revert AmountOverDepositLimit();
+    modifier withinDepositLimit(uint256 amount, address token) {
+        if (amount > depositLimit()) revert AmountOverDepositLimit();
         _;
     }
 
