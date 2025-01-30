@@ -77,6 +77,13 @@ pub struct RelayQuery {
     pub nullifier_hash: U256,
     pub new_note: U256,
     pub proof: Bytes,
+    pub fee_token: FeeToken,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum FeeToken {
+    Native,
+    ERC20(Address),
 }
 
 pub fn server_error(msg: &str) -> Response {
