@@ -20,6 +20,7 @@ pub const DRY_RUNNING_ENV: &str = "DRY_RUNNING";
 pub const RELAY_COUNT_FOR_RECHARGE_ENV: &str = "RELAY_COUNT_FOR_RECHARGE";
 pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
 pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
+pub const FEE_TOKENS_ENV: &str = "FEE_TOKENS";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]

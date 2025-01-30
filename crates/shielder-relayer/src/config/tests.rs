@@ -49,7 +49,7 @@ fn config_resolution() {
             nonce_policy,                  // default
             dry_running,                   // from CLI
             relay_count_for_recharge,      // default
-            fee_tokens,                    // from CLI
+            fee_tokens,                    // from env
         },
     };
 
@@ -69,7 +69,7 @@ fn config_resolution() {
         relay_count_for_recharge: None,
         total_fee: Some(total_fee),
         relay_gas: None,
-        fee_tokens: vec!["1111111111111111111111111111111111111111".to_string()],
+        fee_tokens: None,
     };
 
     // ---- Environment variables. -----------------------------------------------------------
@@ -82,6 +82,7 @@ fn config_resolution() {
         std::env::set_var(FEE_DESTINATION_KEY_ENV, fee_destination_key);
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
         std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
+        std::env::set_var(FEE_TOKENS_ENV, "1111111111111111111111111111111111111111");
     }
 
     // ---- Test. ------------------------------------------------------------------------------
