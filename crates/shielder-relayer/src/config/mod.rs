@@ -9,7 +9,7 @@ use defaults::{
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
+    BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV, FEE_TOKENS_ENV,
     LOGGING_FORMAT_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV, RELAYER_HOST_ENV,
     RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV,
     RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOTAL_FEE_ENV,
@@ -52,12 +52,13 @@ pub struct ChainConfig {
     pub relay_gas: u64,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
     pub balance_monitor_interval_secs: u64,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
+    pub fee_tokens: Vec<Address>,
 }
 
 /// Resolved configuration for the Shielder relayer. Order of precedence is:
@@ -96,6 +97,7 @@ fn resolve_config_from_cli_config(
         relay_count_for_recharge,
         total_fee,
         relay_gas,
+        fee_tokens,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -136,6 +138,16 @@ fn resolve_config_from_cli_config(
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
     };
 
+    let fee_tokens = fee_tokens
+        .unwrap_or_else(|| {
+            std::env::var(FEE_TOKENS_ENV)
+                .map(|env| env.split(',').map(|s| s.to_string()).collect())
+                .unwrap_or_default()
+        })
+        .iter()
+        .map(|a| to_address(a))
+        .collect();
+
     let operational_config = OperationalConfig {
         balance_monitor_interval_secs: resolve_value(
             balance_monitor_interval_secs,
@@ -149,6 +161,7 @@ fn resolve_config_from_cli_config(
             RELAY_COUNT_FOR_RECHARGE_ENV,
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
+        fee_tokens,
     };
 
     ServerConfig {

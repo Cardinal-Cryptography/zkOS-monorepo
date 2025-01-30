@@ -73,6 +73,12 @@ impl RequestTrace {
         self.finish("❌ VERSION FAILURE");
     }
 
+    pub fn record_incorrect_token_fee(&mut self, requested_token: &Address) {
+        metrics::counter!(WITHDRAW_FAILURE).increment(1);
+        error!("Requested token fee is not supported: {requested_token}");
+        self.finish("❌ FEE TOKEN FAILURE");
+    }
+
     pub fn record_failure(&mut self, err: ShielderContractError) {
         metrics::counter!(WITHDRAW_FAILURE).increment(1);
         error!("Relay failed: {err}");

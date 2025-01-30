@@ -43,6 +43,7 @@ pub struct AppState {
     pub signer_addresses: Vec<Address>,
     pub taskmaster: Taskmaster,
     pub balances: Balances,
+    pub fee_tokens: Vec<Address>,
 }
 
 struct Signers {
@@ -136,6 +137,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
             config.operations.dry_running,
             report_for_recharge,
         ),
+        fee_tokens: config.operations.fee_tokens.clone(),
     };
 
     let app = Router::new()

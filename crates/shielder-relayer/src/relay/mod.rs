@@ -8,7 +8,7 @@ use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceResponse};
+use shielder_relayer::{server_error, FeeToken, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 
@@ -31,6 +31,9 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
     let mut request_trace = RequestTrace::new(&query);
 
     if let Err(response) = check_expected_version(&query, &mut request_trace) {
+        return response;
+    }
+    if let Err(response) = check_fee_token(&app_state.fee_tokens, &query, &mut request_trace) {
         return response;
     }
 
@@ -102,4 +105,20 @@ fn check_expected_version(
         )));
     }
     Ok(())
+}
+
+fn check_fee_token(
+    permissible_tokens: &[Address],
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    match &query.fee_token {
+        FeeToken::ERC20(erc20) if !permissible_tokens.contains(erc20) => {
+            request_trace.record_incorrect_token_fee(erc20);
+            Err(bad_request(&format!(
+                "Fee token {erc20} is not allowed. Only native and {permissible_tokens:?} tokens are supported."
+            )))
+        }
+        _ => Ok(()),
+    }
 }
