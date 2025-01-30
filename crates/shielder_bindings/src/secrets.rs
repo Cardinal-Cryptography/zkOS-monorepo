@@ -9,6 +9,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[cfg_attr(feature = "build-uniffi", derive(uniffi::Record))]
 // `getter_with_clone` is required for `Vec<u8>` struct fields
 #[cfg_attr(feature = "build-wasm", wasm_bindgen(getter_with_clone))]
+#[cfg_attr(feature = "build-server", derive(serde::Serialize))]
 #[derive(Clone, Debug, Default)]
 pub struct ShielderActionSecrets {
     pub nullifier: Vec<u8>,
@@ -19,6 +20,7 @@ pub struct ShielderActionSecrets {
 /// All returned values are field elements.
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
+#[cfg_attr(feature = "build-server", macros::jsonize)]
 pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
     let id: U256 = bytes_to_u256(id).expect("Expecting a 32-byte vector");
 

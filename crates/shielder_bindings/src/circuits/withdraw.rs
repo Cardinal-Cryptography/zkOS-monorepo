@@ -14,6 +14,10 @@ pub struct WithdrawCircuit(super::WithdrawCircuit);
 
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
+#[cfg_attr(
+    feature = "build-server",
+    macros::jsonize_singleton(constructor = "new_pronto")
+)]
 impl WithdrawCircuit {
     #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
