@@ -1,9 +1,7 @@
 use alloy_primitives::{Address, TxHash, U256};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "contract")]
-use shielder_contract::ShielderContract::{
-    DepositNative, NewAccountNative, ShielderContractEvents, WithdrawNative,
-};
+use shielder_contract::ShielderContract::{Deposit, NewAccount, ShielderContractEvents, Withdraw};
 
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
 pub enum ShielderAction {
@@ -16,19 +14,19 @@ pub enum ShielderAction {
 impl From<(TxHash, ShielderContractEvents)> for ShielderAction {
     fn from((tx_hash, event): (TxHash, ShielderContractEvents)) -> Self {
         match event {
-            ShielderContractEvents::NewAccountNative(NewAccountNative {
+            ShielderContractEvents::NewAccount(NewAccount {
                 amount,
                 newNoteIndex,
                 idHash,
                 ..
             }) => Self::new_account(amount, newNoteIndex, idHash, tx_hash),
-            ShielderContractEvents::DepositNative(DepositNative {
+            ShielderContractEvents::Deposit(Deposit {
                 amount,
                 newNoteIndex,
                 idHiding,
                 ..
             }) => Self::deposit(amount, newNoteIndex, idHiding, tx_hash),
-            ShielderContractEvents::WithdrawNative(WithdrawNative {
+            ShielderContractEvents::Withdraw(Withdraw {
                 amount,
                 withdrawAddress,
                 newNoteIndex,

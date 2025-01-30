@@ -100,7 +100,7 @@ mod tests {
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, WithdrawNative,
+        withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, Withdraw,
         WrongContractVersion,
     };
 
@@ -162,9 +162,10 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::WithdrawNative(WithdrawNative {
+            vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 0, 1]),
                 idHiding: withdraw_calldata.idHiding,
+                tokenAddress: Address::from_word(U256::ZERO.into()),
                 amount: U256::from(5),
                 withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
@@ -210,9 +211,10 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::WithdrawNative(WithdrawNative {
+            vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 0, 1]),
                 idHiding: withdraw_calldata.idHiding,
+                tokenAddress: Address::from_word(U256::ZERO.into()),
                 amount: U256::from(5),
                 withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,

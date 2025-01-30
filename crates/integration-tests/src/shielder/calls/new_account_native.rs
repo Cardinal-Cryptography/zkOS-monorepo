@@ -53,14 +53,14 @@ mod tests {
 
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
-    use alloy_primitives::{FixedBytes, U256};
+    use alloy_primitives::{Address, FixedBytes, U256};
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        NewAccountNative, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
+        NewAccount, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
     };
 
     use crate::{
@@ -103,9 +103,10 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::NewAccountNative(NewAccountNative {
+            vec![ShielderContractEvents::NewAccount(NewAccount {
                 contractVersion: FixedBytes([0, 0, 1]),
                 idHash: calldata.idHash,
+                tokenAddress: Address::from_word(U256::ZERO.into()),
                 amount,
                 newNote: calldata.newNote,
                 newNoteIndex: U256::ZERO,
@@ -190,7 +191,7 @@ mod tests {
         assert!(result.is_ok());
         let events = result.unwrap().0;
         assert!(events.len() == 1);
-        assert_matches!(events[0], ShielderContractEvents::NewAccountNative(_));
+        assert_matches!(events[0], ShielderContractEvents::NewAccount(_));
         assert!(actor_balance_decreased_by(&deployment, amount))
     }
 

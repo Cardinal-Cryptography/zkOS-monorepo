@@ -15,29 +15,32 @@ sol! {
     #[sol(rpc, all_derives = true)]
     #[derive(Debug, PartialEq, Eq)]
     contract ShielderContract {
-        event NewAccountNative(
+        event NewAccount(
             bytes3 contractVersion,
             uint256 idHash,
+            address tokenAddress,
             uint256 amount,
             uint256 newNote,
             uint256 newNoteIndex
         );
-        event DepositNative(
+        event Deposit(
             bytes3 contractVersion,
             uint256 idHiding,
+            address tokenAddress,
             uint256 amount,
             uint256 newNote,
             uint256 newNoteIndex
         );
-        event WithdrawNative(
+        event Withdraw(
             bytes3 contractVersion,
             uint256 idHiding,
+            address tokenAddress,
             uint256 amount,
             address withdrawAddress,
             uint256 newNote,
             uint256 newNoteIndex,
             address relayerAddress,
-            uint256 fee,
+            uint256 fee
         );
 
         error DepositVerificationFailed();
@@ -132,21 +135,21 @@ sol! {
 impl ShielderContractEvents {
     pub fn note(&self) -> U256 {
         match self {
-            Self::NewAccountNative(NewAccountNative { newNote: note, .. })
-            | Self::DepositNative(DepositNative { newNote: note, .. })
-            | Self::WithdrawNative(WithdrawNative { newNote: note, .. }) => *note,
+            Self::NewAccount(NewAccount { newNote: note, .. })
+            | Self::Deposit(Deposit { newNote: note, .. })
+            | Self::Withdraw(Withdraw { newNote: note, .. }) => *note,
         }
     }
 
     pub fn version(&self) -> ContractVersion {
         let version = match self {
-            Self::NewAccountNative(NewAccountNative {
+            Self::NewAccount(NewAccount {
                 contractVersion, ..
             })
-            | Self::DepositNative(DepositNative {
+            | Self::Deposit(Deposit {
                 contractVersion, ..
             })
-            | Self::WithdrawNative(WithdrawNative {
+            | Self::Withdraw(Withdraw {
                 contractVersion, ..
             }) => contractVersion,
         };
@@ -172,9 +175,9 @@ impl ShielderContractEvents {
 impl Clone for ShielderContractEvents {
     fn clone(&self) -> Self {
         match self {
-            Self::NewAccountNative(event) => Self::NewAccountNative(event.clone()),
-            Self::DepositNative(event) => Self::DepositNative(event.clone()),
-            Self::WithdrawNative(event) => Self::WithdrawNative(event.clone()),
+            Self::NewAccount(event) => Self::NewAccount(event.clone()),
+            Self::Deposit(event) => Self::Deposit(event.clone()),
+            Self::Withdraw(event) => Self::Withdraw(event.clone()),
         }
     }
 }

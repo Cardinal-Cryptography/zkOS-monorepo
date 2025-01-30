@@ -59,14 +59,14 @@ mod tests {
 
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
-    use alloy_primitives::{Bytes, FixedBytes, U256};
+    use alloy_primitives::{Address, Bytes, FixedBytes, U256};
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        depositNativeCall, DepositNative, ShielderContractErrors, ShielderContractEvents,
+        depositNativeCall, Deposit, ShielderContractErrors, ShielderContractEvents,
         WrongContractVersion,
     };
 
@@ -120,9 +120,10 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::DepositNative(DepositNative {
+            vec![ShielderContractEvents::Deposit(Deposit {
                 contractVersion: FixedBytes([0, 0, 1]),
                 idHiding: calldata.idHiding,
+                tokenAddress: Address::from_word(U256::ZERO.into()),
                 amount: U256::from(amount),
                 newNote: calldata.newNote,
                 newNoteIndex: note_index.saturating_add(U256::from(1)),

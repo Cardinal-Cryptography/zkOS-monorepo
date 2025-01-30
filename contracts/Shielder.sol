@@ -200,11 +200,12 @@ contract Shielder is
     {
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](4);
+        uint256[] memory publicInputs = new uint256[](3);
+        // uint256[] memory publicInputs = new uint256[](4);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
-        publicInputs[3] = addressToUInt256(tokenAddress);
+        // publicInputs[3] = addressToUInt256(tokenAddress);
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
@@ -299,13 +300,14 @@ contract Shielder is
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](6);
+        uint256[] memory publicInputs = new uint256[](5);
+        // uint256[] memory publicInputs = new uint256[](6);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
-        publicInputs[5] = addressToUInt256(tokenAddress);
+        // publicInputs[5] = addressToUInt256(tokenAddress);
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
@@ -425,7 +427,8 @@ contract Shielder is
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](7);
+        uint256[] memory publicInputs = new uint256[](6);
+        // uint256[] memory publicInputs = new uint256[](7);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
@@ -440,7 +443,7 @@ contract Shielder is
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[5] = uint256(keccak256(commitment)) >> 4;
-        publicInputs[6] = addressToUInt256(tokenAddress);
+        // publicInputs[6] = addressToUInt256(tokenAddress);
 
         bool success = WithdrawVerifier.verifyProof(proof, publicInputs);
 
