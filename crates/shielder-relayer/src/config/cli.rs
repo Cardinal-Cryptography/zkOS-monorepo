@@ -140,4 +140,11 @@ pub struct CLIConfig {
             the default value is `{DEFAULT_RELAY_GAS:?}`.")
     )]
     pub relay_gas: Option<u64>,
+
+    #[clap(
+        long,
+        help = "Addresses of the ERC20 tokens that are qualified as a fee token.",
+        long_help = "Addresses of the ERC20 tokens that are qualified as a fee token."
+    )]
+    pub fee_tokens: Vec<String>,
 }

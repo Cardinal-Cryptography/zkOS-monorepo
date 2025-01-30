@@ -27,6 +27,7 @@ fn config_resolution() {
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
     let total_fee = DEFAULT_TOTAL_FEE.to_string();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
+    let fee_tokens = vec![address!("1111111111111111111111111111111111111111")];
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -48,6 +49,7 @@ fn config_resolution() {
             nonce_policy,                  // default
             dry_running,                   // from CLI
             relay_count_for_recharge,      // default
+            fee_tokens,                    // from CLI
         },
     };
 
@@ -67,6 +69,7 @@ fn config_resolution() {
         relay_count_for_recharge: None,
         total_fee: Some(total_fee),
         relay_gas: None,
+        fee_tokens: vec!["1111111111111111111111111111111111111111".to_string()],
     };
 
     // ---- Environment variables. -----------------------------------------------------------

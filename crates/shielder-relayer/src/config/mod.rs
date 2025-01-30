@@ -52,12 +52,13 @@ pub struct ChainConfig {
     pub relay_gas: u64,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
     pub balance_monitor_interval_secs: u64,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
+    pub fee_tokens: Vec<Address>,
 }
 
 /// Resolved configuration for the Shielder relayer. Order of precedence is:
@@ -96,6 +97,7 @@ fn resolve_config_from_cli_config(
         relay_count_for_recharge,
         total_fee,
         relay_gas,
+        fee_tokens,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -149,6 +151,7 @@ fn resolve_config_from_cli_config(
             RELAY_COUNT_FOR_RECHARGE_ENV,
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
+        fee_tokens: fee_tokens.iter().map(|a| to_address(a)).collect(),
     };
 
     ServerConfig {
