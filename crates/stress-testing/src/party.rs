@@ -8,7 +8,7 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
 };
 use shielder_contract::{alloy_primitives::U256, merkle_path::get_current_merkle_path};
-use shielder_relayer::{QuoteFeeResponse, RelayQuery};
+use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
@@ -127,6 +127,7 @@ async fn prepare_relay_query(
         nullifier_hash: calldata.oldNullifierHash,
         new_note: calldata.newNote,
         proof: calldata.proof,
+        fee_token: FeeToken::Native,
     };
     println!("  ✅ Prepared relay query for actor {}", actor.id);
     Ok(query)
