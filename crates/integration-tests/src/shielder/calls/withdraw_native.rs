@@ -40,7 +40,7 @@ pub fn prepare_call(
         .current_leaf_index()
         .expect("No leaf index");
 
-    let (params, pk) = deployment.withdraw_native_proving_params.clone();
+    let (params, pk) = deployment.withdraw_proving_params.clone();
     let (merkle_root, merkle_path) = get_merkle_args(
         deployment.contract_suite.shielder,
         note_index,

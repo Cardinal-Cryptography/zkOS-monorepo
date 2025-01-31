@@ -9,7 +9,7 @@ pub fn prepare_call(
     shielder_account: &mut ShielderAccount,
     amount: U256,
 ) -> newAccountTokenCall {
-    let (params, pk) = deployment.new_account_native_proving_params.clone();
+    let (params, pk) = deployment.new_account_proving_params.clone();
     shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, amount, &())
 }
 
