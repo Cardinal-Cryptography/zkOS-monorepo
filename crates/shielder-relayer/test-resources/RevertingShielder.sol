@@ -6,13 +6,14 @@ contract RevertingShielder {
     function withdrawNative(
         bytes3 expectedContractVersion,
         uint256 idHiding,
+        address tokenAddress,
         uint256 amount,
         address withdrawAddress,
         uint256 merkleRoot,
-        uint256 nullifier,
+        uint256 oldNullifierHash,
         uint256 newNote,
         bytes calldata proof,
-        address relayer,
+        address relayerAddress,
         uint256 relayerFee
     ) external {
         revert();
