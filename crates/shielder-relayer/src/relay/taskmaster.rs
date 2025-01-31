@@ -4,7 +4,7 @@ use async_channel::{Receiver as MPMCReceiver, Sender as MPMCSender};
 use shielder_contract::{
     alloy_primitives::{Address, TxHash},
     call_type::{DryRun, Submit},
-    ShielderContract::withdrawNativeCall,
+    ShielderContract::withdrawTokenCall,
     ShielderContractError, ShielderUser,
 };
 use tokio::sync::{
@@ -31,7 +31,7 @@ pub enum TaskResult {
 
 pub struct Task {
     report: OneshotSender<(RequestTrace, TaskResult)>,
-    payload: withdrawNativeCall,
+    payload: withdrawTokenCall,
     request_trace: RequestTrace,
 }
 
@@ -90,7 +90,7 @@ impl Taskmaster {
 
     pub async fn register_new_task(
         &self,
-        payload: withdrawNativeCall,
+        payload: withdrawTokenCall,
         mut request_trace: RequestTrace,
     ) -> Result<OneshotReceiver<(RequestTrace, TaskResult)>> {
         let (report_sender, report_receiver) = oneshot::channel();

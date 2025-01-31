@@ -9,7 +9,7 @@ use shielder_account::{
     ShielderAction,
 };
 use shielder_contract::{
-    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::WithdrawNative,
+    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
 use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery, RelayResponse};
 use shielder_setup::version::contract_version;
@@ -49,7 +49,7 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
     let provider = app_state.create_simple_provider().await?;
     let block_hash = get_block_hash(&provider, tx_hash).await?;
 
-    let withdraw_event = get_event::<WithdrawNative>(&provider, tx_hash, block_hash).await?;
+    let withdraw_event = get_event::<Withdraw>(&provider, tx_hash, block_hash).await?;
     debug!("Withdraw event: {withdraw_event:?}");
 
     app_state.account.register_action(ShielderAction::withdraw(

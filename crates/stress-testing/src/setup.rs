@@ -10,7 +10,7 @@ use shielder_account::ShielderAction;
 use shielder_circuits::new_account::NewAccountCircuit;
 use shielder_contract::{
     alloy_primitives::U256, call_type::Call, events::get_event, providers::create_simple_provider,
-    ShielderContract::NewAccountNative,
+    ShielderContract::NewAccount,
 };
 
 use crate::{actor::Actor, config::Config, util::proving_keys, INITIAL_BALANCE, SHIELDED_BALANCE};
@@ -76,8 +76,7 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
             .create_new_account_native::<Call>(call, shielded_amount)
             .await?;
 
-        let new_account_event =
-            get_event::<NewAccountNative>(&provider, tx_hash, block_hash).await?;
+        let new_account_event = get_event::<NewAccount>(&provider, tx_hash, block_hash).await?;
 
         actor.account.register_action(ShielderAction::new_account(
             shielded_amount,
