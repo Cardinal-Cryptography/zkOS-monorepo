@@ -10,7 +10,7 @@ import {
 } from "viem";
 import { BaseError, ContractFunctionRevertedError } from "viem";
 
-import { abi } from "../_generated/abi";
+import { abi } from "../_generated/abi_v0_0_1";
 import { shieldActionGasLimit } from "@/constants";
 
 export class VersionRejectedByContract extends CustomError {
