@@ -11,7 +11,6 @@ jobs:
     runs-on: [self-hosted, Linux, X64, large]
     timeout-minutes: 20
     steps:
-
       - name: Checkout code (from the current branch)
         uses: actions/checkout@v4
 
@@ -51,37 +50,40 @@ jobs:
 
       #################### Run measurements on the main branch ####################
 
-      - name: Checkout repository from `main`
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: main
+      # - name: Checkout repository from `main`
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: main
+      #     path: main
 
-      - name: Install dependencies
-        run: |
-          cd main
-          make deps
+      # - name: Install dependencies
+      #   run: |
+      #     cd main
+      #     make deps
 
-      - name: Generate all contracts
-        run: |
-          cd main
-          make generate-contracts
+      # - name: Generate all contracts
+      #   run: |
+      #     cd main
+      #     make generate-contracts
 
-      - name: Run measure-circuits on the `main` branch
-        run: |
-          export CONTRACTS_DIR="main/contracts"
-          export CARGO_MANIFEST_DIR=./main/Cargo.toml
-          ./target/release/gas-consumption main-report.txt
+      # - name: Run measure-circuits on the `main` branch
+      #   run: |
+      #     export CONTRACTS_DIR="main/contracts"
+      #     export CARGO_MANIFEST_DIR=./main/Cargo.toml
+      #     ./target/release/gas-consumption main-report.txt
 
-      - name: Print gas measured on the `main` branch
-        run: cat main-report.txt
+      # - name: Print gas measured on the `main` branch
+      #   run: cat main-report.txt
+
+      - name: Copy current report as main report
+        run: cp current-report.txt main-report.txt
 
       #################### Generate report ####################
 
       - name: Install Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install python deps
         run: pip install prettytable
@@ -97,4 +99,3 @@ jobs:
         with:
           file-path: report.html
           comment-tag: hashFiles('report.html')
-

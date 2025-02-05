@@ -66,12 +66,12 @@ pub mod version {
         }
     }
 
-    /// The contract version. Currently set to 0.0.1
+    /// The contract version. Currently set to 0.1.0
     pub const fn contract_version() -> ContractVersion {
         ContractVersion {
             note_version: 0,
-            circuit_version: 0,
-            patch_version: 1,
+            circuit_version: 1,
+            patch_version: 0,
         }
     }
 }

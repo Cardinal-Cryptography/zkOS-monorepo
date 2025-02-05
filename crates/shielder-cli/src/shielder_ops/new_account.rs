@@ -1,7 +1,7 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{call_data::NewAccountCallType, ShielderAction};
-use shielder_contract::{call_type::Call, events::get_event, ShielderContract::NewAccountNative};
+use shielder_contract::{call_type::Call, events::get_event, ShielderContract::NewAccount};
 use tracing::{debug, info};
 
 use crate::{
@@ -22,7 +22,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
         )
         .await?;
 
-    let new_account_event = get_event::<NewAccountNative>(
+    let new_account_event = get_event::<NewAccount>(
         &app_state.create_simple_provider().await?,
         tx_hash,
         block_hash,

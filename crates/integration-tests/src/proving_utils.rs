@@ -55,21 +55,21 @@ pub type ProvingParams = (Params, ProvingKey);
 
 #[fixture]
 #[once]
-pub fn new_account_native_proving_params() -> ProvingParams {
-    println!("Preparing NewAccountNative proving keys");
+pub fn new_account_proving_params() -> ProvingParams {
+    println!("Preparing NewAccount proving keys");
     prepare_proving_keys::<NewAccountCircuit<F>>()
 }
 
 #[fixture]
 #[once]
-pub fn deposit_native_proving_params() -> ProvingParams {
-    println!("Preparing DepositNative proving keys");
+pub fn deposit_proving_params() -> ProvingParams {
+    println!("Preparing Deposit proving keys");
     prepare_proving_keys::<DepositCircuit<F, RANGE_PROOF_CHUNK_SIZE>>()
 }
 
 #[fixture]
 #[once]
-pub fn withdraw_native_proving_params() -> ProvingParams {
-    println!("Preparing WithdrawNative proving keys");
+pub fn withdraw_proving_params() -> ProvingParams {
+    println!("Preparing Withdraw proving keys");
     prepare_proving_keys::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>()
 }

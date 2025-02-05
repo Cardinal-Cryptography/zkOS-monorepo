@@ -16,27 +16,26 @@ use integration_tests::{
         },
     },
     deploy::{deployment, Deployment},
-    deposit_native_proving_params, new_account_native_proving_params,
-    withdraw_native_proving_params,
+    deposit_proving_params, new_account_proving_params, withdraw_proving_params,
 };
 use shielder_account::ShielderAccount;
 use shielder_contract::ShielderContract::{
-    depositNativeCall, newAccountNativeCall, withdrawNativeCall,
+    depositTokenCall, newAccountTokenCall, withdrawTokenCall,
 };
 
 #[derive(Debug)]
 enum Calldata {
-    NewAccount(newAccountNativeCall),
-    Deposit(depositNativeCall),
-    Withdraw(withdrawNativeCall),
+    NewAccount(newAccountTokenCall),
+    Deposit(depositTokenCall),
+    Withdraw(withdrawTokenCall),
 }
 
 impl fmt::Display for Calldata {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Calldata::NewAccount(_) => write!(f, "NewAccountNative"),
-            Calldata::Deposit(_) => write!(f, "DepositNative"),
-            Calldata::Withdraw(_) => write!(f, "WithdrawNative"),
+            Calldata::NewAccount(_) => write!(f, "NewAccount"),
+            Calldata::Deposit(_) => write!(f, "Deposit"),
+            Calldata::Withdraw(_) => write!(f, "Withdraw"),
         }
     }
 }
@@ -47,9 +46,9 @@ fn main() {
     let mut file = File::create(filename).unwrap();
 
     let mut deployment = deployment(
-        &new_account_native_proving_params(),
-        &deposit_native_proving_params(),
-        &withdraw_native_proving_params(),
+        &new_account_proving_params(),
+        &deposit_proving_params(),
+        &withdraw_proving_params(),
     );
 
     let mut shielder_account = ShielderAccount::new(U256::from(1));

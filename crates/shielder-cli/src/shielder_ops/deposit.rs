@@ -6,7 +6,7 @@ use shielder_account::{
 };
 use shielder_contract::{
     call_type::Call, events::get_event, merkle_path::get_current_merkle_path,
-    ShielderContract::DepositNative,
+    ShielderContract::Deposit,
 };
 use tracing::{debug, info};
 
@@ -39,7 +39,7 @@ pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
         )
         .await?;
 
-    let deposit_event = get_event::<DepositNative>(
+    let deposit_event = get_event::<Deposit>(
         &app_state.create_simple_provider().await?,
         tx_hash,
         block_hash,
