@@ -43,9 +43,9 @@ export class StateSynchronizer {
    * Emits the synced shielder transactions to the callback.
    * Locks to prevent concurrent storage changes.
    */
-  async syncAccountState() {
+  async syncAccountState(tokenAddress: `0x${string}`) {
     await this.mutex.runExclusive(async () => {
-      let state = await this.stateManager.accountState();
+      let state = await this.stateManager.accountState(tokenAddress);
       while (true) {
         const event = await this.findStateTransitionEvent(state);
         if (!event) {
@@ -61,7 +61,7 @@ export class StateSynchronizer {
         state = newState;
         const transaction = eventToTransaction(event);
         if (this.syncCallback) this.syncCallback(transaction);
-        await this.stateManager.updateAccountState(state);
+        await this.stateManager.updateAccountState(tokenAddress, state);
       }
     });
   }
@@ -70,8 +70,8 @@ export class StateSynchronizer {
    * Returns all the shielder transactions of the private account.
    * Note: This method is not efficient and should be used carefully.
    */
-  async *getShielderTransactions() {
-    let state = await this.stateManager.emptyAccountState();
+  async *getShielderTransactions(tokenAddress: `0x${string}`) {
+    let state = await this.stateManager.emptyAccountState(tokenAddress);
     while (true) {
       const event = await this.findStateTransitionEvent(state);
       if (!event) break;
