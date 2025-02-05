@@ -31,7 +31,7 @@ contract Shielder is
     ///  - `v1` is the version of the note schema,
     ///  - `v1.v2` is the version of the circuits used,
     ///  - `v1.v2.v3` is the version of the contract itself.
-    bytes3 public constant CONTRACT_VERSION = 0x000001;
+    bytes3 public constant CONTRACT_VERSION = 0x000100;
 
     /// This amount of gas should be sufficient for ether transfers
     /// and simple fallback function execution, yet still protecting against reentrancy attack.
@@ -73,7 +73,7 @@ contract Shielder is
         uint256 idHiding,
         address tokenAddress,
         uint256 amount,
-        address withdrawAddress,
+        address withdrawalAddress,
         uint256 newNote,
         uint256 newNoteIndex,
         address relayerAddress,
@@ -119,8 +119,6 @@ contract Shielder is
         _pause();
     }
 
-    // function reinitializeAtUpgrade() public reinitializer(2) {}
-
     /// @dev required by the OZ UUPS module
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
@@ -156,29 +154,14 @@ contract Shielder is
         fieldElement(newNote)
         fieldElement(idHash)
     {
-        if (tokenAddress == address(0)) {
-            if (amount != msg.value) {
-                revert IncorrectNativeAmount();
-            }
-            if (address(this).balance > MAX_CONTRACT_BALANCE) {
-                revert ContractBalanceLimitReached();
-            }
-        } else {
-            IERC20 token = IERC20(tokenAddress);
-            token.transferFrom(msg.sender, address(this), amount);
-            if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
-                revert ContractBalanceLimitReached();
-            }
-        }
+        handleTokenTransferIn(tokenAddress, amount);
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](3);
-        // uint256[] memory publicInputs = new uint256[](4);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
-        // publicInputs[3] = addressToUInt256(tokenAddress);
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
@@ -219,33 +202,18 @@ contract Shielder is
         fieldElement(newNote)
         whenNotPaused
     {
-        if (tokenAddress == address(0)) {
-            if (amount != msg.value) {
-                revert IncorrectNativeAmount();
-            }
-            if (address(this).balance > MAX_CONTRACT_BALANCE) {
-                revert ContractBalanceLimitReached();
-            }
-        } else {
-            IERC20 token = IERC20(tokenAddress);
-            token.transferFrom(msg.sender, address(this), amount);
-            if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
-                revert ContractBalanceLimitReached();
-            }
-        }
+        handleTokenTransferIn(tokenAddress, amount);
         if (amount == 0) revert ZeroAmount();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](5);
-        // uint256[] memory publicInputs = new uint256[](6);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
-        // publicInputs[5] = addressToUInt256(tokenAddress);
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
@@ -272,7 +240,7 @@ contract Shielder is
         uint256 idHiding,
         address tokenAddress,
         uint256 amount,
-        address withdrawAddress,
+        address withdrawalAddress,
         uint256 merkleRoot,
         uint256 oldNullifierHash,
         uint256 newNote,
@@ -296,7 +264,6 @@ contract Shielder is
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](6);
-        // uint256[] memory publicInputs = new uint256[](7);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
@@ -305,13 +272,12 @@ contract Shielder is
 
         bytes memory commitment = abi.encodePacked(
             CONTRACT_VERSION,
-            addressToUInt256(withdrawAddress),
+            addressToUInt256(withdrawalAddress),
             addressToUInt256(relayerAddress),
             relayerFee
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[5] = uint256(keccak256(commitment)) >> 4;
-        // publicInputs[6] = addressToUInt256(tokenAddress);
 
         bool success = WithdrawVerifier.verifyProof(proof, publicInputs);
 
@@ -320,42 +286,24 @@ contract Shielder is
         uint256 newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
+        handleTokenTransferOut(
+            tokenAddress,
+            withdrawalAddress,
+            amount - relayerFee
+        );
+        handleTokenTransferOut(tokenAddress, relayerAddress, relayerFee);
+
         emit Withdraw(
             CONTRACT_VERSION,
             idHiding,
             tokenAddress,
             amount,
-            withdrawAddress,
+            withdrawalAddress,
             newNote,
             newNoteIndex,
             relayerAddress,
             relayerFee
         );
-
-        if (tokenAddress == address(0)) {
-            // return the tokens
-            (bool nativeTransferSuccess, ) = withdrawAddress.call{
-                value: amount - relayerFee,
-                gas: GAS_LIMIT
-            }("");
-            if (!nativeTransferSuccess) revert NativeTransferFailed();
-
-            // pay out the fee
-            (nativeTransferSuccess, ) = relayerAddress.call{
-                value: relayerFee,
-                gas: GAS_LIMIT
-            }("");
-            if (!nativeTransferSuccess) revert NativeTransferFailed();
-        } else {
-            IERC20 token = IERC20(tokenAddress);
-            bool transferSuccess = token.transfer(
-                withdrawAddress,
-                amount - relayerFee
-            );
-            if (!transferSuccess) revert NativeTransferFailed();
-
-            transferSuccess = token.transfer(relayerAddress, relayerFee);
-        }
     }
 
     function addressToUInt256(address addr) public pure returns (uint256) {
@@ -377,5 +325,41 @@ contract Shielder is
         uint256 _depositLimit
     ) external onlyOwner {
         _setDepositLimit(tokenAddress, _depositLimit);
+    }
+
+    function handleTokenTransferIn(
+        address tokenAddress,
+        uint256 amount
+    ) internal {
+        if (tokenAddress == address(0)) {
+            if (amount != msg.value) {
+                revert IncorrectNativeAmount();
+            }
+            // `address(this).balance` already includes `msg.value`.
+            if (address(this).balance > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            token.transferFrom(msg.sender, address(this), amount);
+            if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        }
+    }
+
+    function handleTokenTransferOut(
+        address tokenAddress,
+        address to,
+        uint256 amount
+    ) internal {
+        if (tokenAddress == address(0)) {
+            (bool success, ) = to.call{ value: amount, gas: GAS_LIMIT }("");
+            if (!success) revert NativeTransferFailed();
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            bool transferSuccess = token.transfer(to, amount);
+            if (!transferSuccess) revert NativeTransferFailed();
+        }
     }
 }
