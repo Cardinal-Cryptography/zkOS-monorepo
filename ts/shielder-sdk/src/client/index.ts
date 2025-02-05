@@ -183,14 +183,14 @@ export class ShielderClient {
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
   async syncShielderAllTokens() {
-    throw new Error("Not implemented");
+    return Promise.reject(new Error("Not implemented"));
   }
 
   /**
    * Get the current account state for token.
    * @returns the current account state
    */
-  async tokenAccountState(tokenAddress: `0x${string}`) {
+  async accountState(tokenAddress: `0x${string}`) {
     return await this.stateManager.accountState(tokenAddress);
   }
 
@@ -225,12 +225,9 @@ export class ShielderClient {
   /**
    * Get the whole shielder transactions history for all tokens.
    */
-  async *scanChainForAllShielderTransactions(): AsyncGenerator<
-    ShielderTransaction,
-    void,
-    unknown
-  > {
-    throw new Error("Not implemented");
+  // eslint-disable-next-line require-yield
+  async *scanChainForAllShielderTransactions() {
+    return Promise.reject(new Error("Not implemented"));
   }
 
   /**
@@ -396,4 +393,4 @@ export class ShielderClient {
   }
 }
 
-export { SendShielderTransaction, OutdatedSdkError };
+export { SendShielderTransaction, OutdatedSdkError, ShielderCallbacks };

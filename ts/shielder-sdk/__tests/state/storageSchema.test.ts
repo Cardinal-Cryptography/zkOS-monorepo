@@ -1,24 +1,24 @@
 import { it, expect, vitest, describe, beforeEach, Mocked } from "vitest";
-import storageSchema, {
+import accountObjectSchema, {
   createStorage,
   type InjectedStorageInterface
 } from "../../src/state/storageSchema";
 
 describe("validateBigInt", () => {
   it("should parse valid bigint strings", () => {
-    const result = storageSchema.accountState.shape.nonce.parse("123");
+    const result = accountObjectSchema.shape.nonce.parse("123");
     expect(result).toBe(123n);
   });
 
   it("should parse large bigint strings", () => {
     const largeNumber = "9007199254740991"; // Number.MAX_SAFE_INTEGER
-    const result = storageSchema.accountState.shape.nonce.parse(largeNumber);
+    const result = accountObjectSchema.shape.nonce.parse(largeNumber);
     expect(result).toBe(9007199254740991n);
   });
 
   it("should throw error for invalid bigint strings", () => {
     expect(() =>
-      storageSchema.accountState.shape.nonce.parse("not a number")
+      accountObjectSchema.shape.nonce.parse("not a number")
     ).toThrow();
   });
 });
@@ -34,7 +34,7 @@ describe("storageSchema", () => {
       storageSchemaVersion: 1
     };
 
-    const result = storageSchema.accountState.parse(validState);
+    const result = accountObjectSchema.parse(validState);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
@@ -54,7 +54,7 @@ describe("storageSchema", () => {
       storageSchemaVersion: 1
     };
 
-    const result = storageSchema.accountState.parse(validState);
+    const result = accountObjectSchema.parse(validState);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
@@ -98,7 +98,7 @@ describe("storageSchema", () => {
   ])(
     "should throw error for accountState object with wrong types for $propertyKey",
     ({ invalidState, propertyKey }) => {
-      expect(() => storageSchema.accountState.parse(invalidState)).toThrow(
+      expect(() => accountObjectSchema.parse(invalidState)).toThrow(
         `${propertyKey}`
       );
     }

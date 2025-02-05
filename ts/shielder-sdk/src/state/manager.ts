@@ -7,7 +7,7 @@ import {
 import { StorageInterface } from "./storageSchema";
 import { Hex } from "viem";
 import { AccountState } from "./types";
-import { storageSchemaVersion } from "@/constants";
+import { nativeTokenAddress, storageSchemaVersion } from "@/constants";
 
 export class StateManager {
   private storage: StorageInterface;
@@ -79,7 +79,7 @@ export class StateManager {
   }
 
   async emptyAccountState(tokenAddress: `0x${string}`): Promise<AccountState> {
-    return emptyAccountState(await this.getId());
+    return emptyAccountState(tokenAddress, await this.getId());
   }
 
   // TODO: Create independent id for each token address
@@ -101,7 +101,13 @@ export class StateManager {
   }
 }
 
-const emptyAccountState = (id: Scalar): AccountState => {
+const emptyAccountState = (
+  tokenAddress: `0x${string}`,
+  id: Scalar
+): AccountState => {
+  if (tokenAddress !== nativeTokenAddress) {
+    throw new Error("Not implemented");
+  }
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
     id,

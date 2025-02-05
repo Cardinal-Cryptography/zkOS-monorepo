@@ -22,11 +22,6 @@ const accountObjectSchema = z.object({
   storageSchemaVersion: z.number()
 });
 
-const storageSchema = z.record(
-  z.string(), // key, token address
-  accountObjectSchema
-);
-
 interface InjectedStorageInterface {
   getItem: (key: string) => Promise<string | null>;
   setItem: (key: string, value: string) => Promise<void>;
@@ -70,5 +65,5 @@ const createStorage = (
   return { getItem, setItem };
 };
 
-export default storageSchema;
+export default accountObjectSchema;
 export { StorageInterface, InjectedStorageInterface, createStorage };
