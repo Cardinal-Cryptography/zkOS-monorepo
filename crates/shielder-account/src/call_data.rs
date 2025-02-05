@@ -210,7 +210,7 @@ impl CallType for WithdrawCallType {
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
             tokenAddress: Address::ZERO,
             amount: field_to_u256(pk.compute_public_input(WithdrawalValue)),
-            withdrawAddress: extra.to,
+            withdrawalAddress: extra.to,
             merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
             oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),

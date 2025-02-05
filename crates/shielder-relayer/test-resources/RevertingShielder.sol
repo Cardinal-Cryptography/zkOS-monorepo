@@ -8,7 +8,7 @@ contract RevertingShielder {
         uint256 idHiding,
         address tokenAddress,
         uint256 amount,
-        address withdrawAddress,
+        address withdrawalAddress,
         uint256 merkleRoot,
         uint256 oldNullifierHash,
         uint256 newNote,

@@ -36,7 +36,7 @@ sol! {
             uint256 idHiding,
             address tokenAddress,
             uint256 amount,
-            address withdrawAddress,
+            address withdrawalAddress,
             uint256 newNote,
             uint256 newNoteIndex,
             address relayerAddress,
@@ -95,7 +95,7 @@ sol! {
             uint256 idHiding,
             address tokenAddress,
             uint256 amount,
-            address withdrawAddress,
+            address withdrawalAddress,
             uint256 merkleRoot,
             uint256 oldNullifierHash,
             uint256 newNote,
@@ -108,10 +108,7 @@ sol! {
             uint256 id
         ) external view returns (uint256[] memory);
 
-        function setDepositLimit(
-            address tokenAddress,
-            uint256 _depositLimit
-        ) external;
+        function setDepositLimit(uint256 _depositLimit) external;
     }
 }
 

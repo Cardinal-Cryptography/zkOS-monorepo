@@ -149,11 +149,11 @@ contract Shielder is
         external
         payable
         whenNotPaused
-        withinDepositLimit(amount, tokenAddress)
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
     {
+        if (amount > depositLimit()) revert AmountOverDepositLimit();
         handleTokenTransferIn(tokenAddress, amount);
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
@@ -195,13 +195,13 @@ contract Shielder is
     )
         external
         payable
-        withinDepositLimit(amount, tokenAddress)
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
         whenNotPaused
     {
+        if (amount > depositLimit()) revert AmountOverDepositLimit();
         handleTokenTransferIn(tokenAddress, amount);
         if (amount == 0) revert ZeroAmount();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
@@ -320,11 +320,8 @@ contract Shielder is
     /*
      * Set the deposit limit for the maximal amount
      */
-    function setDepositLimit(
-        address tokenAddress,
-        uint256 _depositLimit
-    ) external onlyOwner {
-        _setDepositLimit(tokenAddress, _depositLimit);
+    function setDepositLimit(uint256 _depositLimit) external onlyOwner {
+        _setDepositLimit(_depositLimit);
     }
 
     function handleTokenTransferIn(

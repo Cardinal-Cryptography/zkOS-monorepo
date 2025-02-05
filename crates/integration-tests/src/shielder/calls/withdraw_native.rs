@@ -61,8 +61,8 @@ pub fn prepare_call(
             relayer_fee: args.relayer_fee,
             contract_version: ContractVersion {
                 note_version: 0,
-                circuit_version: 0,
-                patch_version: 1,
+                circuit_version: 1,
+                patch_version: 0,
             },
         },
     );
@@ -163,11 +163,11 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([0, 0, 1]),
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: withdraw_calldata.idHiding,
                 tokenAddress: Address::ZERO,
                 amount: U256::from(5),
-                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
@@ -212,11 +212,11 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([0, 0, 1]),
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: withdraw_calldata.idHiding,
                 tokenAddress: Address::ZERO,
                 amount: U256::from(5),
-                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
@@ -355,7 +355,7 @@ mod tests {
             expectedContractVersion: FixedBytes([9, 8, 7]),
             tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
-            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayerFee: U256::ZERO,
             amount: U256::from(10),
@@ -370,7 +370,7 @@ mod tests {
             result,
             Err(ShielderContractErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 0, 1]),
+                    actual: FixedBytes([0, 1, 0]),
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))
@@ -384,10 +384,10 @@ mod tests {
         let mut shielder_account = ShielderAccount::default();
 
         let calldata = withdrawTokenCall {
-            expectedContractVersion: FixedBytes([0, 0, 1]),
+            expectedContractVersion: FixedBytes([0, 1, 0]),
             tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
-            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayerFee: U256::ZERO,
             amount: U256::from(10),

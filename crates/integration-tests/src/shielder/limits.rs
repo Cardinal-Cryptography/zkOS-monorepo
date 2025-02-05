@@ -7,9 +7,8 @@ use shielder_contract::ShielderContract::{depositLimitCall, setDepositLimitCall}
 use super::deploy::DEPLOYER_ADDRESS;
 use crate::{shielder::deploy::Deployment, Address};
 
-pub fn set_deposit_limit(deployment: &mut Deployment, token_address: Address, limit: U256) {
+pub fn set_deposit_limit(deployment: &mut Deployment, limit: U256) {
     let calldata = setDepositLimitCall {
-        tokenAddress: token_address,
         _depositLimit: limit,
     }
     .abi_encode();

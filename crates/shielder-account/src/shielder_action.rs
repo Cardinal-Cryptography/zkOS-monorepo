@@ -28,11 +28,11 @@ impl From<(TxHash, ShielderContractEvents)> for ShielderAction {
             }) => Self::deposit(amount, newNoteIndex, idHiding, tx_hash),
             ShielderContractEvents::Withdraw(Withdraw {
                 amount,
-                withdrawAddress,
+                withdrawalAddress,
                 newNoteIndex,
                 idHiding,
                 ..
-            }) => Self::withdraw(amount, newNoteIndex, idHiding, tx_hash, withdrawAddress),
+            }) => Self::withdraw(amount, newNoteIndex, idHiding, tx_hash, withdrawalAddress),
         }
     }
 }

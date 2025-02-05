@@ -121,7 +121,7 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Deposit(Deposit {
-                contractVersion: FixedBytes([0, 0, 1]),
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: calldata.idHiding,
                 tokenAddress: Address::ZERO,
                 amount: U256::from(amount),
@@ -153,7 +153,7 @@ mod tests {
             result,
             Err(ShielderContractErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 0, 1]),
+                    actual: FixedBytes([0, 1, 0]),
                     expectedByCaller: FixedBytes([9, 8, 7])
                 }
             ))
@@ -206,7 +206,7 @@ mod tests {
 
     #[rstest]
     fn correctly_handles_max_value(mut deployment: Deployment) {
-        set_deposit_limit(&mut deployment, Address::ZERO, U256::MAX);
+        set_deposit_limit(&mut deployment, U256::MAX);
         let initial_amount = U256::from(10);
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
@@ -287,7 +287,7 @@ mod tests {
         let mut shielder_account = ShielderAccount::default();
 
         let calldata = depositTokenCall {
-            expectedContractVersion: FixedBytes([0, 0, 1]),
+            expectedContractVersion: FixedBytes([0, 1, 0]),
             tokenAddress: Address::ZERO,
             amount: U256::from(10),
             idHiding: U256::ZERO,
@@ -370,7 +370,7 @@ mod tests {
         assert_eq!(old_limit, U256::MAX);
 
         let new_limit = U256::from(100);
-        set_deposit_limit(&mut deployment, Address::ZERO, new_limit);
+        set_deposit_limit(&mut deployment, new_limit);
 
         let returned_new_limit = get_deposit_limit(&mut deployment);
 
