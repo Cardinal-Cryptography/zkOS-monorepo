@@ -79,7 +79,7 @@ fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> wi
         expectedContractVersion: q.expected_contract_version,
         idHiding: q.id_hiding,
         tokenAddress: Address::ZERO,
-        withdrawAddress: q.withdraw_address,
+        withdrawalAddress: q.withdraw_address,
         relayerAddress: relayer_address,
         relayerFee: relayer_fee,
         amount: q.amount,
