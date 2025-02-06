@@ -72,7 +72,7 @@ sol! {
         function pause() external;
         function unpause() external;
 
-        function newAccountToken(
+        function newAccount(
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
@@ -80,7 +80,7 @@ sol! {
             uint256 idHash,
             bytes calldata proof
         ) external payable;
-        function depositToken(
+        function deposit(
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
@@ -90,7 +90,7 @@ sol! {
             uint256 merkleRoot,
             bytes calldata proof
         ) external payable;
-        function withdrawToken(
+        function withdraw(
             bytes3 expectedContractVersion,
             uint256 idHiding,
             address tokenAddress,
@@ -183,9 +183,9 @@ macro_rules! impl_unit_call {
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
 
-impl_unit_call!(newAccountTokenCall);
-impl_unit_call!(depositTokenCall);
-impl_unit_call!(withdrawTokenCall);
+impl_unit_call!(newAccountCall);
+impl_unit_call!(depositCall);
+impl_unit_call!(withdrawCall);
 
 impl ShielderContractCall for getMerklePathCall {
     type UnwrappedResult = Vec<U256>;

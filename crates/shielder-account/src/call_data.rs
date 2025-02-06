@@ -12,7 +12,7 @@ use shielder_circuits::{
     Field, ProverKnowledge, PublicInputProvider, F,
 };
 use shielder_contract::{
-    ShielderContract::{depositTokenCall, newAccountTokenCall, withdrawTokenCall},
+    ShielderContract::{depositCall, newAccountCall, withdrawCall},
     WithdrawCommitment,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
@@ -58,7 +58,7 @@ pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
     type Extra = ();
     type ProverKnowledge = NewAccountProverKnowledge<F>;
-    type Calldata = newAccountTokenCall;
+    type Calldata = newAccountCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -79,7 +79,7 @@ impl CallType for NewAccountCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
-        newAccountTokenCall {
+        newAccountCall {
             expectedContractVersion: contract_version().to_bytes(),
             tokenAddress: Address::ZERO,
             amount: field_to_u256(prover_knowledge.compute_public_input(InitialDeposit)),
@@ -100,7 +100,7 @@ impl CallType for DepositCallType {
     type Extra = MerkleProof;
     type ProverKnowledge = DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
 
-    type Calldata = depositTokenCall;
+    type Calldata = depositCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -136,7 +136,7 @@ impl CallType for DepositCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
-        depositTokenCall {
+        depositCall {
             expectedContractVersion: contract_version().to_bytes(),
             tokenAddress: Address::ZERO,
             amount: field_to_u256(pk.compute_public_input(DepositValue)),
@@ -161,7 +161,7 @@ pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
     type ProverKnowledge = WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
-    type Calldata = withdrawTokenCall;
+    type Calldata = withdrawCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -205,7 +205,7 @@ impl CallType for WithdrawCallType {
         extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
-        withdrawTokenCall {
+        withdrawCall {
             expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
             tokenAddress: Address::ZERO,

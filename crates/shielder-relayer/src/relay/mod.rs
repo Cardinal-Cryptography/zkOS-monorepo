@@ -6,7 +6,7 @@ use axum::{
 };
 use shielder_contract::{
     alloy_primitives::{Address, U256},
-    ShielderContract::withdrawTokenCall,
+    ShielderContract::withdrawCall,
 };
 use shielder_relayer::{server_error, FeeToken, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_setup::version::{contract_version, ContractVersion};
@@ -74,8 +74,8 @@ fn bad_request(msg: &str) -> Response {
     (StatusCode::BAD_REQUEST, SimpleServiceResponse::from(msg)).into_response()
 }
 
-fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawTokenCall {
-    withdrawTokenCall {
+fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawCall {
+    withdrawCall {
         expectedContractVersion: q.expected_contract_version,
         idHiding: q.id_hiding,
         tokenAddress: Address::ZERO,

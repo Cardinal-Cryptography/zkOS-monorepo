@@ -13,8 +13,8 @@ use shielder_contract::{
     events::get_event,
     providers::create_simple_provider,
     ShielderContract::{
-        depositTokenCall, newAccountTokenCall, withdrawTokenCall, Deposit, NewAccount,
-        ShielderContractEvents, Withdraw,
+        depositCall, newAccountCall, withdrawCall, Deposit, NewAccount, ShielderContractEvents,
+        Withdraw,
     },
 };
 use tracing::{error, info};
@@ -117,13 +117,13 @@ async fn try_get_shielder_event_for_tx(
     block_hash: BlockHash,
 ) -> Result<Option<ShielderContractEvents>> {
     let tx_data = tx.input();
-    let maybe_action = if newAccountTokenCall::abi_decode(tx_data, true).is_ok() {
+    let maybe_action = if newAccountCall::abi_decode(tx_data, true).is_ok() {
         let event = get_event::<NewAccount>(provider, tx.tx_hash(), block_hash).await?;
         Some(ShielderContractEvents::NewAccount(event))
-    } else if depositTokenCall::abi_decode(tx_data, true).is_ok() {
+    } else if depositCall::abi_decode(tx_data, true).is_ok() {
         let event = get_event::<Deposit>(provider, tx.tx_hash(), block_hash).await?;
         Some(ShielderContractEvents::Deposit(event))
-    } else if withdrawTokenCall::abi_decode(tx_data, true).is_ok() {
+    } else if withdrawCall::abi_decode(tx_data, true).is_ok() {
         let event = get_event::<Withdraw>(provider, tx.tx_hash(), block_hash).await?;
         Some(ShielderContractEvents::Withdraw(event))
     } else {

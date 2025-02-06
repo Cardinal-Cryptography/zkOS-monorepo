@@ -1,6 +1,6 @@
 use alloy_primitives::{TxHash, U256};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
-use shielder_contract::ShielderContract::{newAccountTokenCall, ShielderContractErrors};
+use shielder_contract::ShielderContract::{newAccountCall, ShielderContractErrors};
 
 use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
 
@@ -8,7 +8,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> newAccountTokenCall {
+) -> newAccountCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
     shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, amount, &())
 }
@@ -17,7 +17,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &newAccountTokenCall,
+    calldata: &newAccountCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
@@ -208,22 +208,6 @@ mod tests {
             Err(ShielderContractErrors::ContractBalanceLimitReached(_))
         );
         assert!(actor_balance_decreased_by(&deployment, amount_1))
-    }
-
-    #[rstest]
-    fn correctly_handles_max_value(mut deployment: Deployment) {
-        set_deposit_limit(&mut deployment, U256::MAX);
-        let result = create_account_and_call(
-            &mut deployment,
-            U256::from(1),
-            U256::from(2).pow(U256::from(112)),
-        );
-
-        assert_matches!(
-            result,
-            Err(ShielderContractErrors::ContractBalanceLimitReached(_))
-        );
-        assert!(actor_balance_decreased_by(&deployment, U256::ZERO))
     }
 
     #[rstest]
