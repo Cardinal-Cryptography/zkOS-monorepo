@@ -47,13 +47,14 @@ mod tests {
     use crate::shielder::{
         calls::new_account_native,
         deploy::{deployment, Deployment},
-        invoke_shielder_call,
+        invoke_shielder_call, TestToken,
     };
 
     #[rstest]
     fn succeeds(mut deployment: Deployment) {
         assert!(new_account_native::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10)
         )

@@ -16,7 +16,7 @@ use integration_tests::{
         },
     },
     deploy::{deployment, Deployment},
-    deposit_proving_params, new_account_proving_params, withdraw_proving_params,
+    deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,
 };
 use shielder_account::ShielderAccount;
 use shielder_contract::ShielderContract::{depositCall, newAccountCall, withdrawCall};
@@ -54,6 +54,7 @@ fn main() {
     let calldata = Calldata::NewAccount(new_account_native_calldata(
         &mut deployment,
         &mut shielder_account,
+        TestToken::Native,
         amount,
     ));
 
@@ -63,7 +64,13 @@ fn main() {
     content.extend(&mut format!("{}: {gas_used}\n", &calldata).as_bytes().iter());
 
     let calldata = Calldata::Deposit(
-        deposit_native_calldata(&mut deployment, &mut shielder_account, amount).0,
+        deposit_native_calldata(
+            &mut deployment,
+            &mut shielder_account,
+            TestToken::Native,
+            amount,
+        )
+        .0,
     );
 
     let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
@@ -74,6 +81,7 @@ fn main() {
         withdraw_native_calldata(
             &mut deployment,
             &mut shielder_account,
+            TestToken::Native,
             prepare_args(amount, U256::from(1)),
         )
         .0,
@@ -93,16 +101,28 @@ fn measure_gas(
 ) -> u64 {
     match calldata {
         Calldata::NewAccount(calldata) => {
-            new_account_native_call(deployment, shielder_account, U256::from(10), calldata)
-                .unwrap()
-                .1
-                .gas_used
+            new_account_native_call(
+                deployment,
+                shielder_account,
+                TestToken::Native,
+                U256::from(10),
+                calldata,
+            )
+            .unwrap()
+            .1
+            .gas_used
         }
         Calldata::Deposit(calldata) => {
-            deposit_native_call(deployment, shielder_account, U256::from(10), calldata)
-                .unwrap()
-                .1
-                .gas_used
+            deposit_native_call(
+                deployment,
+                shielder_account,
+                TestToken::Native,
+                U256::from(10),
+                calldata,
+            )
+            .unwrap()
+            .1
+            .gas_used
         }
         Calldata::Withdraw(calldata) => {
             withdraw_native_call(deployment, shielder_account, calldata)

@@ -1,3 +1,4 @@
+// TODO: Rename to `withdraw.rs` since no longer testing just native.
 use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
@@ -8,11 +9,14 @@ use shielder_account::{
 use shielder_contract::ShielderContract::withdrawCall;
 use shielder_setup::version::ContractVersion;
 
-use crate::shielder::{
-    deploy::{Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS},
-    invoke_shielder_call,
-    merkle::get_merkle_args,
-    CallResult,
+use crate::{
+    shielder::{
+        deploy::{Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS},
+        invoke_shielder_call,
+        merkle::get_merkle_args,
+        CallResult,
+    },
+    TestToken,
 };
 
 pub struct PrepareCallArgs {
@@ -34,6 +38,7 @@ pub fn prepare_args(amount: U256, relayer_fee: U256) -> PrepareCallArgs {
 pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
+    token: TestToken,
     args: PrepareCallArgs,
 ) -> (withdrawCall, U256) {
     let note_index = shielder_account
@@ -47,7 +52,7 @@ pub fn prepare_call(
         &mut deployment.evm,
     );
 
-    let calldata = shielder_account.prepare_call::<WithdrawCallType>(
+    let mut calldata = shielder_account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
         U256::from(args.amount),
@@ -66,6 +71,7 @@ pub fn prepare_call(
             },
         },
     );
+    calldata.tokenAddress = token.address(deployment);
 
     (calldata, note_index)
 }
@@ -115,14 +121,18 @@ mod tests {
             destination_balances_unchanged, recipient_balance_increased_by,
             relayer_balance_increased_by,
         },
+        TestToken,
     };
 
     const GAS_CONSUMPTION: u64 = 1898039;
 
     #[rstest]
-    fn gas_consumption_regression(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn gas_consumption_regression(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -131,6 +141,7 @@ mod tests {
         let (withdraw_calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(5), U256::from(1)),
         );
         let (_, SuccessResult { gas_used, .. }) =
@@ -143,9 +154,12 @@ mod tests {
     }
 
     #[rstest]
-    fn succeeds(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn succeeds(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -154,6 +168,7 @@ mod tests {
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(5), U256::from(1)),
         );
         let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
@@ -165,7 +180,7 @@ mod tests {
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: withdraw_calldata.idHiding,
-                tokenAddress: Address::ZERO,
+                tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
@@ -174,27 +189,47 @@ mod tests {
                 fee: U256::from(1),
             })]
         );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
-        assert!(relayer_balance_increased_by(&deployment, U256::from(1)));
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(recipient_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(4)
+        ));
+        assert!(relayer_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(1)
+        ));
         assert_eq!(shielder_account.shielded_amount, U256::from(15))
     }
 
     #[rstest]
-    fn succeeds_after_deposit(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn succeeds_after_deposit(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
         .unwrap();
 
         let deposit_amount = U256::from(10);
-        let (deposit_calldata, _) =
-            deposit_native::prepare_call(&mut deployment, &mut shielder_account, deposit_amount);
+        let (deposit_calldata, _) = deposit_native::prepare_call(
+            &mut deployment,
+            &mut shielder_account,
+            token,
+            deposit_amount,
+        );
         deposit_native::invoke_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             deposit_amount,
             &deposit_calldata,
         )
@@ -203,6 +238,7 @@ mod tests {
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(5), U256::from(1)),
         );
         let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
@@ -214,7 +250,7 @@ mod tests {
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: withdraw_calldata.idHiding,
-                tokenAddress: Address::ZERO,
+                tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
@@ -223,16 +259,31 @@ mod tests {
                 fee: U256::from(1),
             })]
         );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(30)));
-        assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
-        assert!(relayer_balance_increased_by(&deployment, U256::from(1)));
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(30)
+        ));
+        assert!(recipient_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(4)
+        ));
+        assert!(relayer_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(1)
+        ));
         assert_eq!(shielder_account.shielded_amount, U256::from(25))
     }
 
     #[rstest]
-    fn fails_if_proof_incorrect(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn fails_if_proof_incorrect(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -241,6 +292,7 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(5), U256::from(1)),
         );
         calldata.newNote = calldata.newNote.wrapping_add(U256::from(1));
@@ -251,14 +303,21 @@ mod tests {
             result,
             Err(ShielderContractErrors::WithdrawVerificationFailed(_))
         );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(destination_balances_unchanged(&deployment))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn rejects_value_zero(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn rejects_value_zero(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -267,19 +326,27 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(0), U256::from(1)),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(result, Err(ShielderContractErrors::ZeroAmount(_)));
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(destination_balances_unchanged(&deployment))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn fails_if_fee_higher_than_amount(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn fails_if_fee_higher_than_amount(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -288,19 +355,27 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(3), U256::from(3)),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(result, Err(ShielderContractErrors::FeeHigherThanAmount(_)));
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(destination_balances_unchanged(&deployment))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn accepts_max_amount(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn accepts_max_amount(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from((1u128 << 112) - 1),
         )
@@ -309,6 +384,7 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from((1u128 << 112) - 1), U256::from(1)),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -316,19 +392,28 @@ mod tests {
         assert!(result.is_ok());
         assert!(actor_balance_decreased_by(
             &deployment,
+            token,
             U256::from((1u128 << 112) - 1)
         ));
         assert!(recipient_balance_increased_by(
             &deployment,
+            token,
             U256::from((1u128 << 112) - 2)
         ));
-        assert!(relayer_balance_increased_by(&deployment, U256::from(1)))
+        assert!(relayer_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(1)
+        ))
     }
 
     #[rstest]
-    fn rejects_too_high_amount(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn rejects_too_high_amount(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -337,23 +422,30 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(2), U256::from(1)),
         );
         calldata.amount = U256::from(1u128 << 112);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(result, Err(ShielderContractErrors::AmountTooHigh(_)));
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(destination_balances_unchanged(&deployment))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn fails_if_incorrect_expected_version(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = ShielderAccount::default();
 
         let calldata = withdrawCall {
             expectedContractVersion: FixedBytes([9, 8, 7]),
-            tokenAddress: Address::ZERO,
+            tokenAddress: token.address(&deployment),
             idHiding: U256::ZERO,
             withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -375,17 +467,23 @@ mod tests {
                 }
             ))
         );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(0)));
-        assert!(destination_balances_unchanged(&deployment))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(0)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = ShielderAccount::default();
 
         let calldata = withdrawCall {
             expectedContractVersion: FixedBytes([0, 1, 0]),
-            tokenAddress: Address::ZERO,
+            tokenAddress: token.address(&deployment),
             idHiding: U256::ZERO,
             withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -402,14 +500,21 @@ mod tests {
             result,
             Err(ShielderContractErrors::MerkleRootDoesNotExist(_))
         );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(0)));
-        assert!(destination_balances_unchanged(&deployment))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(0)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn cannot_use_same_note_twice(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn cannot_use_same_note_twice(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -418,6 +523,7 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(5), U256::from(1)),
         );
         assert!(invoke_call(&mut deployment, &mut shielder_account, &calldata).is_ok());
@@ -425,15 +531,33 @@ mod tests {
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(result, Err(ShielderContractErrors::DuplicatedNullifier(_)));
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(recipient_balance_increased_by(&deployment, U256::from(4)));
-        assert!(relayer_balance_increased_by(&deployment, U256::from(1)))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(recipient_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(4)
+        ));
+        assert!(relayer_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(1)
+        ))
     }
 
     #[rstest]
-    fn cannot_use_input_greater_than_field_modulus(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn cannot_use_input_greater_than_field_modulus(
+        mut deployment: Deployment,
+        #[case] token: TestToken,
+    ) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -442,6 +566,7 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             prepare_args(U256::from(5), U256::from(1)),
         );
         let mut swap_value = U256::from_str(F::MODULUS).unwrap();
@@ -461,15 +586,30 @@ mod tests {
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.idHiding, &mut swap_value);
 
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(recipient_balance_increased_by(&deployment, U256::from(0)));
-        assert!(relayer_balance_increased_by(&deployment, U256::from(0)))
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(recipient_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(0)
+        ));
+        assert!(relayer_balance_increased_by(
+            &deployment,
+            token,
+            U256::from(0)
+        ))
     }
 
     #[rstest]
-    fn handles_withdraw_transfer_failure(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn handles_withdraw_transfer_failure(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -478,22 +618,39 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             PrepareCallArgs {
+                // Should trigger a revert of both the native call (thanks to `REVERTING_BYTECODE`)
+                // and of the ERC20 call (thanks to the `FakeERC20Token` implementation).
                 withdraw_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
                 ..prepare_args(U256::from(5), U256::from(1))
             },
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
-        assert_matches!(result, Err(ShielderContractErrors::NativeTransferFailed(_)));
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(destination_balances_unchanged(&deployment))
+        match token {
+            TestToken::Native => {
+                assert_matches!(result, Err(ShielderContractErrors::NativeTransferFailed(_)))
+            }
+            TestToken::FakeERC20 => {
+                assert_matches!(result, Err(ShielderContractErrors::ERC20TransferFailed(_)))
+            }
+        };
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 
     #[rstest]
-    fn handles_fee_transfer_failure(mut deployment: Deployment) {
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::FakeERC20)]
+    fn handles_fee_transfer_failure(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
+            token,
             U256::from(1),
             U256::from(20),
         )
@@ -502,15 +659,29 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
+            token,
             PrepareCallArgs {
+                // Should trigger a revert of both the native call (thanks to `REVERTING_BYTECODE`)
+                // and of the ERC20 call (thanks to the `FakeERC20Token` implementation).
                 relayer_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
                 ..prepare_args(U256::from(5), U256::from(1))
             },
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
-        assert_matches!(result, Err(ShielderContractErrors::NativeTransferFailed(_)));
-        assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
-        assert!(destination_balances_unchanged(&deployment))
+        match token {
+            TestToken::Native => {
+                assert_matches!(result, Err(ShielderContractErrors::NativeTransferFailed(_)))
+            }
+            TestToken::FakeERC20 => {
+                assert_matches!(result, Err(ShielderContractErrors::ERC20TransferFailed(_)))
+            }
+        };
+        assert!(actor_balance_decreased_by(
+            &deployment,
+            token,
+            U256::from(20)
+        ));
+        assert!(destination_balances_unchanged(&deployment, token))
     }
 }

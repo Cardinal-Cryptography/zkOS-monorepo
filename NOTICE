@@ -1,4 +1,12 @@
 NOTICE
 
+## shielder-circuits  
+
 This project depends on `shielder-circuits`, which is licensed under GPL-3.0-only with Classpath exception.
 The full text of this license is available in LICENSE-GPL-3.0-only-with-Classpath-exception.
+
+## openzeppelin-contracts  
+
+This project includes components from `openzeppelin-contracts`, licensed under the MIT license. The original license text is included in `LICENSE-MIT-OpenZeppelin`
+
+Source: https://github.com/OpenZeppelin/openzeppelin-contracts
