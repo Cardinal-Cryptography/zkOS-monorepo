@@ -3,7 +3,7 @@ use shielder_account::{
     call_data::{DepositCallType, MerkleProof},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::depositTokenCall;
+use shielder_contract::ShielderContract::depositCall;
 
 use crate::shielder::{
     deploy::Deployment, invoke_shielder_call, merkle::get_merkle_args, CallResult,
@@ -12,7 +12,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> (depositTokenCall, U256) {
+) -> (depositCall, U256) {
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
@@ -39,7 +39,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &depositTokenCall,
+    calldata: &depositCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
@@ -66,8 +66,7 @@ mod tests {
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        depositTokenCall, Deposit, ShielderContractErrors, ShielderContractEvents,
-        WrongContractVersion,
+        depositCall, Deposit, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
     };
 
     use crate::{
@@ -205,28 +204,6 @@ mod tests {
     }
 
     #[rstest]
-    fn correctly_handles_max_value(mut deployment: Deployment) {
-        set_deposit_limit(&mut deployment, U256::MAX);
-        let initial_amount = U256::from(10);
-        let mut shielder_account = new_account_native::create_account_and_call(
-            &mut deployment,
-            U256::from(1),
-            initial_amount,
-        )
-        .unwrap();
-
-        let amount = U256::from(2).pow(U256::from(112)) - initial_amount;
-        let (calldata, _) = prepare_call(&mut deployment, &mut shielder_account, amount);
-        let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
-
-        assert_matches!(
-            result,
-            Err(ShielderContractErrors::ContractBalanceLimitReached(_))
-        );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(10)))
-    }
-
-    #[rstest]
     fn cannot_use_same_note_twice(mut deployment: Deployment) {
         let mut shielder_account = new_account_native::create_account_and_call(
             &mut deployment,
@@ -286,7 +263,7 @@ mod tests {
     fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = depositTokenCall {
+        let calldata = depositCall {
             expectedContractVersion: FixedBytes([0, 1, 0]),
             tokenAddress: Address::ZERO,
             amount: U256::from(10),

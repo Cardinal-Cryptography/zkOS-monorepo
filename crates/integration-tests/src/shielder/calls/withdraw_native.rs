@@ -5,7 +5,7 @@ use shielder_account::{
     call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::withdrawTokenCall;
+use shielder_contract::ShielderContract::withdrawCall;
 use shielder_setup::version::ContractVersion;
 
 use crate::shielder::{
@@ -35,7 +35,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     args: PrepareCallArgs,
-) -> (withdrawTokenCall, U256) {
+) -> (withdrawCall, U256) {
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
@@ -73,7 +73,7 @@ pub fn prepare_call(
 pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
-    calldata: &withdrawTokenCall,
+    calldata: &withdrawCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, None);
 
@@ -100,7 +100,7 @@ mod tests {
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        withdrawTokenCall, ShielderContractErrors, ShielderContractEvents, Withdraw,
+        withdrawCall, ShielderContractErrors, ShielderContractEvents, Withdraw,
         WrongContractVersion,
     };
 
@@ -351,7 +351,7 @@ mod tests {
     fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = withdrawTokenCall {
+        let calldata = withdrawCall {
             expectedContractVersion: FixedBytes([9, 8, 7]),
             tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
@@ -383,7 +383,7 @@ mod tests {
     fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = withdrawTokenCall {
+        let calldata = withdrawCall {
             expectedContractVersion: FixedBytes([0, 1, 0]),
             tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,

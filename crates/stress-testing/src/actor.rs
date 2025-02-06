@@ -5,7 +5,7 @@ use shielder_circuits::circuits::{Params, ProvingKey};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     ConnectionPolicy,
-    ShielderContract::newAccountTokenCall,
+    ShielderContract::newAccountCall,
     ShielderUser,
 };
 
@@ -37,7 +37,7 @@ impl Actor {
         params: &Params,
         pk: &ProvingKey,
         amount: U256,
-    ) -> newAccountTokenCall {
+    ) -> newAccountCall {
         self.account
             .prepare_call::<NewAccountCallType>(params, pk, amount, &())
     }
