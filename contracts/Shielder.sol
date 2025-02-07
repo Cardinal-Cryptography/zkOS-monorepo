@@ -87,6 +87,7 @@ contract Shielder is
     error FeeHigherThanAmount();
     error MerkleRootDoesNotExist();
     error NativeTransferFailed();
+    error ERC20TransferFailed();
     error WithdrawVerificationFailed();
     error NewAccountVerificationFailed();
     error ZeroAmount();
@@ -138,7 +139,7 @@ contract Shielder is
      *
      * This transaction serves as the entrypoint to the Shielder.
      */
-    function newAccount(
+    function newAccountToken(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -183,7 +184,7 @@ contract Shielder is
     /*
      * Make a token deposit into the Shielder
      */
-    function deposit(
+    function depositToken(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -235,7 +236,7 @@ contract Shielder is
     /*
      * Withdraw shielded funds
      */
-    function withdraw(
+    function withdrawToken(
         bytes3 expectedContractVersion,
         uint256 idHiding,
         address tokenAddress,
@@ -356,7 +357,7 @@ contract Shielder is
         } else {
             IERC20 token = IERC20(tokenAddress);
             bool transferSuccess = token.transfer(to, amount);
-            if (!transferSuccess) revert NativeTransferFailed();
+            if (!transferSuccess) revert ERC20TransferFailed();
         }
     }
 }
