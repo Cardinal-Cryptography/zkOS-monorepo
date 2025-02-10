@@ -3,6 +3,7 @@ import accountObjectSchema, {
   createStorage,
   type InjectedStorageInterface
 } from "../../src/state/storageSchema";
+import { nativeTokenAddress } from "../../src/constants";
 
 describe("validateBigInt", () => {
   it("should parse valid bigint strings", () => {
@@ -24,7 +25,7 @@ describe("validateBigInt", () => {
 });
 
 describe("storageSchema", () => {
-  it("should validate complete accountState object", () => {
+  it("should validate complete state object", () => {
     const validState = {
       nonce: "1",
       balance: "1000",
@@ -45,7 +46,7 @@ describe("storageSchema", () => {
     });
   });
 
-  it("should validate accountState without optional currentNoteIndex", () => {
+  it("should validate state without optional currentNoteIndex", () => {
     const validState = {
       nonce: "1",
       balance: "1000",
@@ -96,7 +97,7 @@ describe("storageSchema", () => {
       propertyKey: "nonce"
     }
   ])(
-    "should throw error for accountState object with wrong types for $propertyKey",
+    "should throw error for state object with wrong types for $propertyKey",
     ({ invalidState, propertyKey }) => {
       expect(() => accountObjectSchema.parse(invalidState)).toThrow(
         `${propertyKey}`
@@ -119,7 +120,7 @@ describe("createStorage", () => {
     mockInjectedStorage.getItem.mockResolvedValue(null);
     const storage = createStorage(mockInjectedStorage);
 
-    const result = await storage.getItem("accountState");
+    const result = await storage.getItem(nativeTokenAddress);
     expect(result).toBeNull();
   });
 
@@ -134,7 +135,7 @@ describe("createStorage", () => {
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(validState));
     const storage = createStorage(mockInjectedStorage);
 
-    const result = await storage.getItem("accountState");
+    const result = await storage.getItem(nativeTokenAddress);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
@@ -155,8 +156,8 @@ describe("createStorage", () => {
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(invalidState));
     const storage = createStorage(mockInjectedStorage);
 
-    await expect(storage.getItem("accountState")).rejects.toThrow(
-      "Failed to parse storage value for key accountState:"
+    await expect(storage.getItem(nativeTokenAddress)).rejects.toThrow(
+      `Failed to parse storage value for key ${nativeTokenAddress}:`
     );
   });
 
@@ -170,10 +171,10 @@ describe("createStorage", () => {
       storageSchemaVersion: 1
     };
 
-    await storage.setItem("accountState", state);
+    await storage.setItem(nativeTokenAddress, state);
 
     expect(mockInjectedStorage.setItem).toHaveBeenCalledWith(
-      "accountState",
+      nativeTokenAddress,
       JSON.stringify({
         nonce: "1",
         balance: "1000",

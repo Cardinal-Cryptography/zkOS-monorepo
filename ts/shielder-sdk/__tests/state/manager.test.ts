@@ -175,7 +175,7 @@ describe("StateManager", () => {
 
       await expect(
         stateManager.updateAccountState(nativeTokenAddress, newState)
-      ).rejects.toThrow("Storage schema version mismatch: 999 != 1");
+      ).rejects.toThrow("Storage schema version mismatch: 999 != 2");
     });
   });
 
