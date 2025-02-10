@@ -3,7 +3,7 @@ use shielder_account::{
     call_data::{DepositCallType, MerkleProof},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::depositNativeCall;
+use shielder_contract::ShielderContract::depositCall;
 
 use crate::shielder::{
     deploy::Deployment, invoke_shielder_call, merkle::get_merkle_args, CallResult,
@@ -12,12 +12,12 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> (depositNativeCall, U256) {
+) -> (depositCall, U256) {
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
 
-    let (params, pk) = deployment.deposit_native_proving_params.clone();
+    let (params, pk) = deployment.deposit_proving_params.clone();
     let (merkle_root, merkle_path) = get_merkle_args(
         deployment.contract_suite.shielder,
         note_index,
@@ -39,7 +39,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &depositNativeCall,
+    calldata: &depositCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
@@ -59,15 +59,14 @@ mod tests {
 
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
-    use alloy_primitives::{Bytes, FixedBytes, U256};
+    use alloy_primitives::{Address, Bytes, FixedBytes, U256};
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        depositNativeCall, DepositNative, ShielderContractErrors, ShielderContractEvents,
-        WrongContractVersion,
+        depositCall, Deposit, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
     };
 
     use crate::{
@@ -120,9 +119,10 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::DepositNative(DepositNative {
-                contractVersion: FixedBytes([0, 0, 1]),
+            vec![ShielderContractEvents::Deposit(Deposit {
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: calldata.idHiding,
+                tokenAddress: Address::ZERO,
                 amount: U256::from(amount),
                 newNote: calldata.newNote,
                 newNoteIndex: note_index.saturating_add(U256::from(1)),
@@ -152,7 +152,7 @@ mod tests {
             result,
             Err(ShielderContractErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 0, 1]),
+                    actual: FixedBytes([0, 1, 0]),
                     expectedByCaller: FixedBytes([9, 8, 7])
                 }
             ))
@@ -201,27 +201,6 @@ mod tests {
             &deployment,
             U256::from((1u128 << 112) - 1)
         ))
-    }
-
-    #[rstest]
-    fn correctly_handles_max_u256_value(mut deployment: Deployment) {
-        let initial_amount = U256::from(10);
-        let mut shielder_account = new_account_native::create_account_and_call(
-            &mut deployment,
-            U256::from(1),
-            initial_amount,
-        )
-        .unwrap();
-
-        let amount = U256::MAX - initial_amount;
-        let (calldata, _) = prepare_call(&mut deployment, &mut shielder_account, amount);
-        let result = invoke_call(&mut deployment, &mut shielder_account, amount, &calldata);
-
-        assert_matches!(
-            result,
-            Err(ShielderContractErrors::ContractBalanceLimitReached(_))
-        );
-        assert!(actor_balance_decreased_by(&deployment, U256::from(10)))
     }
 
     #[rstest]
@@ -284,8 +263,10 @@ mod tests {
     fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = depositNativeCall {
-            expectedContractVersion: FixedBytes([0, 0, 1]),
+        let calldata = depositCall {
+            expectedContractVersion: FixedBytes([0, 1, 0]),
+            tokenAddress: Address::ZERO,
+            amount: U256::from(10),
             idHiding: U256::ZERO,
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,

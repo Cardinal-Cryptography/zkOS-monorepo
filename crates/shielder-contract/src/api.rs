@@ -7,8 +7,7 @@ use crate::{
     connection::{Connection, ConnectionPolicy, NoProvider},
     ContractResult,
     ShielderContract::{
-        depositNativeCall, getMerklePathCall, newAccountNativeCall, nullifiersCall,
-        withdrawNativeCall,
+        depositCall, getMerklePathCall, newAccountCall, nullifiersCall, withdrawCall,
     },
 };
 
@@ -35,27 +34,27 @@ impl<P: Provider + Clone> ShielderUser<P> {
     }
 
     /// Create new account.
-    pub async fn create_new_account_native<C: CallType<newAccountNativeCall>>(
+    pub async fn create_new_account_native<C: CallType<newAccountCall>>(
         &self,
-        call: newAccountNativeCall,
+        call: newAccountCall,
         value: U256,
     ) -> ContractResult<C::Result> {
         self.connection.call_with_value::<C, _>(call, value).await
     }
 
     /// Deposit native currency into the contract.
-    pub async fn deposit_native<C: CallType<depositNativeCall>>(
+    pub async fn deposit_native<C: CallType<depositCall>>(
         &self,
-        call: depositNativeCall,
+        call: depositCall,
         value: U256,
     ) -> ContractResult<C::Result> {
         self.connection.call_with_value::<C, _>(call, value).await
     }
 
     /// Withdraw native currency from the contract.
-    pub async fn withdraw_native<C: CallType<withdrawNativeCall>>(
+    pub async fn withdraw_native<C: CallType<withdrawCall>>(
         &self,
-        call: withdrawNativeCall,
+        call: withdrawCall,
     ) -> ContractResult<C::Result> {
         self.connection.call::<C, _>(call).await
     }

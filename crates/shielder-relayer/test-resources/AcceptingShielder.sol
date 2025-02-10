@@ -3,16 +3,17 @@
 pragma solidity ^0.8.20;
 
 contract AcceptingShielder {
-    function withdrawNative(
+    function withdraw(
         bytes3 expectedContractVersion,
         uint256 idHiding,
+        address tokenAddress,
         uint256 amount,
-        address withdrawAddress,
+        address withdrawalAddress,
         uint256 merkleRoot,
-        uint256 nullifier,
+        uint256 oldNullifierHash,
         uint256 newNote,
         bytes calldata proof,
-        address relayer,
+        address relayerAddress,
         uint256 relayerFee
     ) external {}
 }

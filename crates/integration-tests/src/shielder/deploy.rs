@@ -13,8 +13,7 @@ use shielder_contract::ShielderContract::initializeCall;
 use crate::{
     deploy_contract,
     proving_utils::{
-        deposit_native_proving_params, new_account_native_proving_params,
-        withdraw_native_proving_params, ProvingParams,
+        deposit_proving_params, new_account_proving_params, withdraw_proving_params, ProvingParams,
     },
     read_contract,
     shielder::{
@@ -86,17 +85,17 @@ const WITHDRAW_VERIFIER_LIB_PLACEHOLDER: &str = "__$06bb88608c3ade14b496e12c6067
 pub struct Deployment {
     pub evm: EvmRunner,
     pub contract_suite: ShielderContractSuite,
-    pub new_account_native_proving_params: ProvingParams,
-    pub deposit_native_proving_params: ProvingParams,
-    pub withdraw_native_proving_params: ProvingParams,
+    pub new_account_proving_params: ProvingParams,
+    pub deposit_proving_params: ProvingParams,
+    pub withdraw_proving_params: ProvingParams,
 }
 
 /// Deploy whole Shielder suite.
 #[fixture]
 pub fn deployment(
-    new_account_native_proving_params: &ProvingParams,
-    deposit_native_proving_params: &ProvingParams,
-    withdraw_native_proving_params: &ProvingParams,
+    new_account_proving_params: &ProvingParams,
+    deposit_proving_params: &ProvingParams,
+    withdraw_proving_params: &ProvingParams,
 ) -> Deployment {
     let mut evm = EvmRunner::aleph_evm();
     let owner = prepare_account(&mut evm, DEPLOYER_ADDRESS, DEPLOYER_INITIAL_BALANCE, None);
@@ -119,9 +118,9 @@ pub fn deployment(
         contract_suite: ShielderContractSuite {
             shielder: shielder_address,
         },
-        new_account_native_proving_params: new_account_native_proving_params.clone(),
-        deposit_native_proving_params: deposit_native_proving_params.clone(),
-        withdraw_native_proving_params: withdraw_native_proving_params.clone(),
+        new_account_proving_params: new_account_proving_params.clone(),
+        deposit_proving_params: deposit_proving_params.clone(),
+        withdraw_proving_params: withdraw_proving_params.clone(),
     }
 }
 

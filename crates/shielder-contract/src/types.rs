@@ -15,29 +15,32 @@ sol! {
     #[sol(rpc, all_derives = true)]
     #[derive(Debug, PartialEq, Eq)]
     contract ShielderContract {
-        event NewAccountNative(
+        event NewAccount(
             bytes3 contractVersion,
             uint256 idHash,
+            address tokenAddress,
             uint256 amount,
             uint256 newNote,
             uint256 newNoteIndex
         );
-        event DepositNative(
+        event Deposit(
             bytes3 contractVersion,
             uint256 idHiding,
+            address tokenAddress,
             uint256 amount,
             uint256 newNote,
             uint256 newNoteIndex
         );
-        event WithdrawNative(
+        event Withdraw(
             bytes3 contractVersion,
             uint256 idHiding,
+            address tokenAddress,
             uint256 amount,
-            address withdrawAddress,
+            address withdrawalAddress,
             uint256 newNote,
             uint256 newNoteIndex,
             address relayerAddress,
-            uint256 fee,
+            uint256 fee
         );
 
         error DepositVerificationFailed();
@@ -45,6 +48,7 @@ sol! {
         error FeeHigherThanAmount();
         error MerkleRootDoesNotExist();
         error NativeTransferFailed();
+        error ERC20TransferFailed();
         error WithdrawVerificationFailed();
         error NewAccountVerificationFailed();
         error ZeroAmount();
@@ -55,6 +59,7 @@ sol! {
         error PrecompileCallFailed();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
+        error IncorrectNativeAmount();
 
         function depositLimit() external view returns (uint256);
 
@@ -68,55 +73,34 @@ sol! {
         function pause() external;
         function unpause() external;
 
-        function newAccountNative(
+        function newAccount(
             bytes3 expectedContractVersion,
+            address tokenAddress,
+            uint256 amount,
             uint256 newNote,
             uint256 idHash,
             bytes calldata proof
         ) external payable;
-        function depositNative(
+        function deposit(
             bytes3 expectedContractVersion,
+            address tokenAddress,
+            uint256 amount,
             uint256 idHiding,
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
-            bytes calldata proof,
+            bytes calldata proof
         ) external payable;
-        function withdrawNative(
+        function withdraw(
             bytes3 expectedContractVersion,
             uint256 idHiding,
+            address tokenAddress,
             uint256 amount,
-            address withdrawAddress,
+            address withdrawalAddress,
             uint256 merkleRoot,
             uint256 oldNullifierHash,
             uint256 newNote,
             bytes calldata proof,
-            address relayerAddress,
-            uint256 relayerFee,
-        ) external;
-
-        function newAccountToken(
-            address tokenOwner,
-            address token,
-            uint256 amount,
-            uint256 nonce,
-            uint256 deadline,
-            bytes calldata signature
-        ) external;
-
-        function depositToken(
-            address tokenOwner,
-            address token,
-            uint256 amount,
-            uint256 nonce,
-            uint256 deadline,
-            bytes calldata signature
-        ) external;
-
-        function withdrawToken(
-            address token,
-            uint256 amount,
-            address withdrawAddress,
             address relayerAddress,
             uint256 relayerFee
         ) external;
@@ -132,21 +116,21 @@ sol! {
 impl ShielderContractEvents {
     pub fn note(&self) -> U256 {
         match self {
-            Self::NewAccountNative(NewAccountNative { newNote: note, .. })
-            | Self::DepositNative(DepositNative { newNote: note, .. })
-            | Self::WithdrawNative(WithdrawNative { newNote: note, .. }) => *note,
+            Self::NewAccount(NewAccount { newNote: note, .. })
+            | Self::Deposit(Deposit { newNote: note, .. })
+            | Self::Withdraw(Withdraw { newNote: note, .. }) => *note,
         }
     }
 
     pub fn version(&self) -> ContractVersion {
         let version = match self {
-            Self::NewAccountNative(NewAccountNative {
+            Self::NewAccount(NewAccount {
                 contractVersion, ..
             })
-            | Self::DepositNative(DepositNative {
+            | Self::Deposit(Deposit {
                 contractVersion, ..
             })
-            | Self::WithdrawNative(WithdrawNative {
+            | Self::Withdraw(Withdraw {
                 contractVersion, ..
             }) => contractVersion,
         };
@@ -172,9 +156,9 @@ impl ShielderContractEvents {
 impl Clone for ShielderContractEvents {
     fn clone(&self) -> Self {
         match self {
-            Self::NewAccountNative(event) => Self::NewAccountNative(event.clone()),
-            Self::DepositNative(event) => Self::DepositNative(event.clone()),
-            Self::WithdrawNative(event) => Self::WithdrawNative(event.clone()),
+            Self::NewAccount(event) => Self::NewAccount(event.clone()),
+            Self::Deposit(event) => Self::Deposit(event.clone()),
+            Self::Withdraw(event) => Self::Withdraw(event.clone()),
         }
     }
 }
@@ -200,9 +184,9 @@ macro_rules! impl_unit_call {
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
 
-impl_unit_call!(newAccountNativeCall);
-impl_unit_call!(depositNativeCall);
-impl_unit_call!(withdrawNativeCall);
+impl_unit_call!(newAccountCall);
+impl_unit_call!(depositCall);
+impl_unit_call!(withdrawCall);
 
 impl ShielderContractCall for getMerklePathCall {
     type UnwrappedResult = Vec<U256>;

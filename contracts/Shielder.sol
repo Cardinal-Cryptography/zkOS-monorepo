@@ -11,6 +11,7 @@ import { Nullifiers } from "./Nullifiers.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Shielder
 /// @author CardinalCryptography
@@ -30,7 +31,7 @@ contract Shielder is
     ///  - `v1` is the version of the note schema,
     ///  - `v1.v2` is the version of the circuits used,
     ///  - `v1.v2.v3` is the version of the contract itself.
-    bytes3 public constant CONTRACT_VERSION = 0x000001;
+    bytes3 public constant CONTRACT_VERSION = 0x000100;
 
     /// This amount of gas should be sufficient for ether transfers
     /// and simple fallback function execution, yet still protecting against reentrancy attack.
@@ -51,25 +52,28 @@ contract Shielder is
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // -- Events --
-    event NewAccountNative(
+    event NewAccount(
         bytes3 contractVersion,
         uint256 idHash,
+        address tokenAddress,
         uint256 amount,
         uint256 newNote,
         uint256 newNoteIndex
     );
-    event DepositNative(
+    event Deposit(
         bytes3 contractVersion,
         uint256 idHiding,
+        address tokenAddress,
         uint256 amount,
         uint256 newNote,
         uint256 newNoteIndex
     );
-    event WithdrawNative(
+    event Withdraw(
         bytes3 contractVersion,
         uint256 idHiding,
+        address tokenAddress,
         uint256 amount,
-        address to,
+        address withdrawalAddress,
         uint256 newNote,
         uint256 newNoteIndex,
         address relayerAddress,
@@ -83,6 +87,7 @@ contract Shielder is
     error FeeHigherThanAmount();
     error MerkleRootDoesNotExist();
     error NativeTransferFailed();
+    error ERC20TransferFailed();
     error WithdrawVerificationFailed();
     error NewAccountVerificationFailed();
     error ZeroAmount();
@@ -90,6 +95,7 @@ contract Shielder is
     error ContractBalanceLimitReached();
     error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
     error NotAFieldElement();
+    error IncorrectNativeAmount();
 
     modifier restrictContractVersion(bytes3 expectedByCaller) {
         if (expectedByCaller != CONTRACT_VERSION) {
@@ -129,12 +135,14 @@ contract Shielder is
     }
 
     /*
-     * Creates a fresh note, with an optional native token deposit.
+     * Creates a fresh note, with an optional token deposit.
      *
      * This transaction serves as the entrypoint to the Shielder.
      */
-    function newAccountNative(
+    function newAccount(
         bytes3 expectedContractVersion,
+        address tokenAddress,
+        uint256 amount,
         uint256 newNote,
         uint256 idHash,
         bytes calldata proof
@@ -142,18 +150,14 @@ contract Shielder is
         external
         payable
         whenNotPaused
-        withinDepositLimit
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
     {
-        uint256 amount = msg.value;
-        if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
-        // `address(this).balance` already includes `msg.value`.
-        if (address(this).balance > MAX_CONTRACT_BALANCE) {
-            revert ContractBalanceLimitReached();
-        }
+        if (amount > depositLimit()) revert AmountOverDepositLimit();
+        handleTokenTransferIn(tokenAddress, amount);
 
+        if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](3);
         publicInputs[0] = newNote;
@@ -167,14 +171,23 @@ contract Shielder is
         uint256 index = _addNote(newNote);
         _registerNullifier(idHash);
 
-        emit NewAccountNative(CONTRACT_VERSION, idHash, amount, newNote, index);
+        emit NewAccount(
+            CONTRACT_VERSION,
+            idHash,
+            tokenAddress,
+            amount,
+            newNote,
+            index
+        );
     }
 
     /*
-     * Make a native token deposit into the Shielder
+     * Make a token deposit into the Shielder
      */
-    function depositNative(
+    function deposit(
         bytes3 expectedContractVersion,
+        address tokenAddress,
+        uint256 amount,
         uint256 idHiding,
         uint256 oldNullifierHash,
         uint256 newNote,
@@ -183,21 +196,17 @@ contract Shielder is
     )
         external
         payable
-        whenNotPaused
-        withinDepositLimit
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
+        whenNotPaused
     {
-        uint256 amount = msg.value;
+        if (amount > depositLimit()) revert AmountOverDepositLimit();
+        handleTokenTransferIn(tokenAddress, amount);
         if (amount == 0) revert ZeroAmount();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
-        // `address(this).balance` already includes `msg.value`.
-        if (address(this).balance > MAX_CONTRACT_BALANCE) {
-            revert ContractBalanceLimitReached();
-        }
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](5);
@@ -214,17 +223,25 @@ contract Shielder is
         uint256 index = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        emit DepositNative(CONTRACT_VERSION, idHiding, amount, newNote, index);
+        emit Deposit(
+            CONTRACT_VERSION,
+            idHiding,
+            tokenAddress,
+            amount,
+            newNote,
+            index
+        );
     }
 
     /*
-     * Withdraw shielded native funds
+     * Withdraw shielded funds
      */
-    function withdrawNative(
+    function withdraw(
         bytes3 expectedContractVersion,
         uint256 idHiding,
+        address tokenAddress,
         uint256 amount,
-        address withdrawAddress,
+        address withdrawalAddress,
         uint256 merkleRoot,
         uint256 oldNullifierHash,
         uint256 newNote,
@@ -256,7 +273,7 @@ contract Shielder is
 
         bytes memory commitment = abi.encodePacked(
             CONTRACT_VERSION,
-            addressToUInt256(withdrawAddress),
+            addressToUInt256(withdrawalAddress),
             addressToUInt256(relayerAddress),
             relayerFee
         );
@@ -270,25 +287,19 @@ contract Shielder is
         uint256 newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        // return the tokens
-        (bool nativeTransferSuccess, ) = withdrawAddress.call{
-            value: amount - relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
+        handleTokenTransferOut(
+            tokenAddress,
+            withdrawalAddress,
+            amount - relayerFee
+        );
+        handleTokenTransferOut(tokenAddress, relayerAddress, relayerFee);
 
-        // pay out the fee
-        (nativeTransferSuccess, ) = relayerAddress.call{
-            value: relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
-
-        emit WithdrawNative(
+        emit Withdraw(
             CONTRACT_VERSION,
             idHiding,
+            tokenAddress,
             amount,
-            withdrawAddress,
+            withdrawalAddress,
             newNote,
             newNoteIndex,
             relayerAddress,
@@ -312,5 +323,41 @@ contract Shielder is
      */
     function setDepositLimit(uint256 _depositLimit) external onlyOwner {
         _setDepositLimit(_depositLimit);
+    }
+
+    function handleTokenTransferIn(
+        address tokenAddress,
+        uint256 amount
+    ) internal {
+        if (tokenAddress == address(0)) {
+            if (amount != msg.value) {
+                revert IncorrectNativeAmount();
+            }
+            // `address(this).balance` already includes `msg.value`.
+            if (address(this).balance > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            token.transferFrom(msg.sender, address(this), amount);
+            if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
+                revert ContractBalanceLimitReached();
+            }
+        }
+    }
+
+    function handleTokenTransferOut(
+        address tokenAddress,
+        address to,
+        uint256 amount
+    ) internal {
+        if (tokenAddress == address(0)) {
+            (bool success, ) = to.call{ value: amount, gas: GAS_LIMIT }("");
+            if (!success) revert NativeTransferFailed();
+        } else {
+            IERC20 token = IERC20(tokenAddress);
+            bool transferSuccess = token.transfer(to, amount);
+            if (!transferSuccess) revert ERC20TransferFailed();
+        }
     }
 }

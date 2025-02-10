@@ -5,7 +5,7 @@ use shielder_account::{
     call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::withdrawNativeCall;
+use shielder_contract::ShielderContract::withdrawCall;
 use shielder_setup::version::ContractVersion;
 
 use crate::shielder::{
@@ -35,12 +35,12 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     args: PrepareCallArgs,
-) -> (withdrawNativeCall, U256) {
+) -> (withdrawCall, U256) {
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
 
-    let (params, pk) = deployment.withdraw_native_proving_params.clone();
+    let (params, pk) = deployment.withdraw_proving_params.clone();
     let (merkle_root, merkle_path) = get_merkle_args(
         deployment.contract_suite.shielder,
         note_index,
@@ -61,8 +61,8 @@ pub fn prepare_call(
             relayer_fee: args.relayer_fee,
             contract_version: ContractVersion {
                 note_version: 0,
-                circuit_version: 0,
-                patch_version: 1,
+                circuit_version: 1,
+                patch_version: 0,
             },
         },
     );
@@ -73,7 +73,7 @@ pub fn prepare_call(
 pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
-    calldata: &withdrawNativeCall,
+    calldata: &withdrawCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, None);
 
@@ -100,7 +100,7 @@ mod tests {
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, WithdrawNative,
+        withdrawCall, ShielderContractErrors, ShielderContractEvents, Withdraw,
         WrongContractVersion,
     };
 
@@ -162,11 +162,12 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::WithdrawNative(WithdrawNative {
-                contractVersion: FixedBytes([0, 0, 1]),
+            vec![ShielderContractEvents::Withdraw(Withdraw {
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: withdraw_calldata.idHiding,
+                tokenAddress: Address::ZERO,
                 amount: U256::from(5),
-                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
@@ -210,11 +211,12 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::WithdrawNative(WithdrawNative {
-                contractVersion: FixedBytes([0, 0, 1]),
+            vec![ShielderContractEvents::Withdraw(Withdraw {
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHiding: withdraw_calldata.idHiding,
+                tokenAddress: Address::ZERO,
                 amount: U256::from(5),
-                withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.newNote,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
@@ -349,10 +351,11 @@ mod tests {
     fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = withdrawNativeCall {
+        let calldata = withdrawCall {
             expectedContractVersion: FixedBytes([9, 8, 7]),
+            tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
-            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayerFee: U256::ZERO,
             amount: U256::from(10),
@@ -367,7 +370,7 @@ mod tests {
             result,
             Err(ShielderContractErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 0, 1]),
+                    actual: FixedBytes([0, 1, 0]),
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))
@@ -380,10 +383,11 @@ mod tests {
     fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = withdrawNativeCall {
-            expectedContractVersion: FixedBytes([0, 0, 1]),
+        let calldata = withdrawCall {
+            expectedContractVersion: FixedBytes([0, 1, 0]),
+            tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
-            withdrawAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+            withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayerFee: U256::ZERO,
             amount: U256::from(10),

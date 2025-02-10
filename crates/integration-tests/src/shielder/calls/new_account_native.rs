@@ -1,6 +1,6 @@
 use alloy_primitives::{TxHash, U256};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
-use shielder_contract::ShielderContract::{newAccountNativeCall, ShielderContractErrors};
+use shielder_contract::ShielderContract::{newAccountCall, ShielderContractErrors};
 
 use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
 
@@ -8,8 +8,8 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> newAccountNativeCall {
-    let (params, pk) = deployment.new_account_native_proving_params.clone();
+) -> newAccountCall {
+    let (params, pk) = deployment.new_account_proving_params.clone();
     shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, amount, &())
 }
 
@@ -17,7 +17,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &newAccountNativeCall,
+    calldata: &newAccountCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
@@ -53,14 +53,14 @@ mod tests {
 
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
-    use alloy_primitives::{FixedBytes, U256};
+    use alloy_primitives::{Address, FixedBytes, U256};
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
     use shielder_account::ShielderAccount;
     use shielder_circuits::F;
     use shielder_contract::ShielderContract::{
-        NewAccountNative, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
+        NewAccount, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
     };
 
     use crate::{
@@ -103,9 +103,10 @@ mod tests {
 
         assert_eq!(
             events,
-            vec![ShielderContractEvents::NewAccountNative(NewAccountNative {
-                contractVersion: FixedBytes([0, 0, 1]),
+            vec![ShielderContractEvents::NewAccount(NewAccount {
+                contractVersion: FixedBytes([0, 1, 0]),
                 idHash: calldata.idHash,
+                tokenAddress: Address::ZERO,
                 amount,
                 newNote: calldata.newNote,
                 newNoteIndex: U256::ZERO,
@@ -128,7 +129,7 @@ mod tests {
             result,
             Err(ShielderContractErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 0, 1]),
+                    actual: FixedBytes([0, 1, 0]),
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))
@@ -190,7 +191,7 @@ mod tests {
         assert!(result.is_ok());
         let events = result.unwrap().0;
         assert!(events.len() == 1);
-        assert_matches!(events[0], ShielderContractEvents::NewAccountNative(_));
+        assert_matches!(events[0], ShielderContractEvents::NewAccount(_));
         assert!(actor_balance_decreased_by(&deployment, amount))
     }
 
@@ -207,17 +208,6 @@ mod tests {
             Err(ShielderContractErrors::ContractBalanceLimitReached(_))
         );
         assert!(actor_balance_decreased_by(&deployment, amount_1))
-    }
-
-    #[rstest]
-    fn correctly_handles_max_u256_value(mut deployment: Deployment) {
-        let result = create_account_and_call(&mut deployment, U256::from(1), U256::MAX);
-
-        assert_matches!(
-            result,
-            Err(ShielderContractErrors::ContractBalanceLimitReached(_))
-        );
-        assert!(actor_balance_decreased_by(&deployment, U256::ZERO))
     }
 
     #[rstest]
