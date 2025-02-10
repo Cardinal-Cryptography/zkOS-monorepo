@@ -4,19 +4,18 @@ use rand::{RngCore, SeedableRng};
 use rstest::fixture;
 use shielder_circuits::{
     circuits::{Params, ProvingKey, VerifyingKey},
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositCircuit,
     generate_keys_with_min_k, generate_proof,
     new_account::NewAccountCircuit,
     verify,
     withdraw::WithdrawCircuit,
-    ProverKnowledge, F, MAX_K,
+    Fr, ProverKnowledge, MAX_K,
 };
 use shielder_setup::parameter_generation;
 
 /// Given circuit type `C`, construct a correct relation instance and generate a proof, accompanied
 /// by the corresponding public input.
-pub fn prepare_proof<PK: ProverKnowledge<F>>() -> (Vec<u8>, Vec<F>) {
+pub fn prepare_proof<PK: ProverKnowledge>() -> (Vec<u8>, Vec<Fr>) {
     let (params, pk, vk, mut rng) = setup::<PK::Circuit>();
 
     let prover_knowledge = PK::random_correct_example(&mut rng);
@@ -32,13 +31,13 @@ pub fn prepare_proof<PK: ProverKnowledge<F>>() -> (Vec<u8>, Vec<F>) {
 }
 
 /// Given circuit type `C`, generate params and a proving key.
-pub fn prepare_proving_keys<C: Circuit<F> + Default>() -> (Params, ProvingKey) {
+pub fn prepare_proving_keys<C: Circuit<Fr> + Default>() -> (Params, ProvingKey) {
     let (params, pk, _, _) = setup::<C>();
     (params, pk)
 }
 
-fn setup<C: Circuit<F> + Default>() -> (Params, ProvingKey, VerifyingKey, impl SeedableRng + RngCore)
-{
+fn setup<C: Circuit<Fr> + Default>(
+) -> (Params, ProvingKey, VerifyingKey, impl SeedableRng + RngCore) {
     let full_params = read_setup_parameters(
         get_ptau_file_path(MAX_K, Format::PerpetualPowersOfTau),
         Format::PerpetualPowersOfTau,
@@ -46,7 +45,7 @@ fn setup<C: Circuit<F> + Default>() -> (Params, ProvingKey, VerifyingKey, impl S
     .expect("failed to read parameters from the ptau file");
 
     let (params, _, pk, vk) =
-        generate_keys_with_min_k::<C>(full_params).expect("Key generation failed");
+        generate_keys_with_min_k(C::default(), full_params).expect("Key generation failed");
 
     (params, pk, vk, parameter_generation::rng())
 }
@@ -57,19 +56,19 @@ pub type ProvingParams = (Params, ProvingKey);
 #[once]
 pub fn new_account_proving_params() -> ProvingParams {
     println!("Preparing NewAccount proving keys");
-    prepare_proving_keys::<NewAccountCircuit<F>>()
+    prepare_proving_keys::<NewAccountCircuit>()
 }
 
 #[fixture]
 #[once]
 pub fn deposit_proving_params() -> ProvingParams {
     println!("Preparing Deposit proving keys");
-    prepare_proving_keys::<DepositCircuit<F, RANGE_PROOF_CHUNK_SIZE>>()
+    prepare_proving_keys::<DepositCircuit>()
 }
 
 #[fixture]
 #[once]
 pub fn withdraw_proving_params() -> ProvingParams {
     println!("Preparing Withdraw proving keys");
-    prepare_proving_keys::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>()
+    prepare_proving_keys::<WithdrawCircuit>()
 }

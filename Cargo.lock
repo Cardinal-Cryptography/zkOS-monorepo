@@ -1366,16 +1366,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "console_error_panic_hook"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
-dependencies = [
- "cfg-if",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "const-hex"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2957,7 +2947,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0ddf37b#0ddf37bb6e05b2d644ec19d181a02fd4564a96ca"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -4586,23 +4576,20 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0ddf37b#0ddf37bb6e05b2d644ec19d181a02fd4564a96ca"
 dependencies = [
- "console_error_panic_hook",
  "halo2_poseidon",
  "halo2_proofs",
  "human_bytes",
+ "lazy_static",
  "macros",
  "once_cell",
  "rand",
- "rand_chacha",
  "rand_core",
  "rayon",
- "sha2",
  "static_assertions",
  "strum",
  "strum_macros",
- "thiserror 1.0.69",
  "transcript",
 ]
 
@@ -5450,7 +5437,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=7743b2f#7743b2f084d80685041c1b16718e6388226e9631"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0ddf37b#0ddf37bb6e05b2d644ec19d181a02fd4564a96ca"
 dependencies = [
  "halo2_proofs",
  "itertools 0.13.0",

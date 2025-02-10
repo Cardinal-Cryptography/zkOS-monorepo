@@ -1,7 +1,11 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{call_data::NewAccountCallType, ShielderAction};
-use shielder_contract::{call_type::Call, events::get_event, ShielderContract::NewAccount};
+use shielder_contract::{
+    call_type::{Call, DryRun},
+    events::get_event,
+    ShielderContract::NewAccount,
+};
 use tracing::{debug, info};
 
 use crate::{
@@ -12,12 +16,18 @@ use crate::{
 pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
     let amount = U256::from(amount);
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
-    let (tx_hash, block_hash) = app_state
-        .create_shielder_user()
+    let shielder_user = app_state.create_shielder_user();
+    let anonimity_revoker_pubkey = shielder_user
+        .get_anonimity_revoker_pubkey::<DryRun>()
+        .await?;
+    let (tx_hash, block_hash) = shielder_user
         .create_new_account_native::<Call>(
-            app_state
-                .account
-                .prepare_call::<NewAccountCallType>(&params, &pk, amount, &()),
+            app_state.account.prepare_call::<NewAccountCallType>(
+                &params,
+                &pk,
+                amount,
+                &anonimity_revoker_pubkey,
+            ),
             amount,
         )
         .await?;

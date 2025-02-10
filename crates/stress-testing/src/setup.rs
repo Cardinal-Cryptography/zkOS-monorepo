@@ -63,13 +63,19 @@ async fn distribute_tokens(config: &Config, actors: &[Actor]) -> Result<()> {
 }
 
 async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
-    let (params, pk) = proving_keys::<NewAccountCircuit<_>>();
+    let (params, pk) = proving_keys::<NewAccountCircuit>();
     let shielded_amount = U256::from(SHIELDED_BALANCE);
     let provider = create_simple_provider(&config.node_rpc_url).await?;
 
     println!("⏳ Creating shielder accounts. Every account will shield {SHIELDED_BALANCE}.");
     for actor in actors {
-        let call = actor.prepare_new_account_call(&params, &pk, shielded_amount);
+        let anonimity_revoker_pubkey = actor.anonimity_revoker_pubkey().await?;
+        let call = actor.prepare_new_account_call(
+            &params,
+            &pk,
+            shielded_amount,
+            &anonimity_revoker_pubkey,
+        );
 
         let (tx_hash, block_hash) = actor
             .shielder_user

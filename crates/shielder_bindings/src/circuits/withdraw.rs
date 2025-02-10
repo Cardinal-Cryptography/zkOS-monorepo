@@ -25,6 +25,7 @@ impl WithdrawCircuit {
     pub fn prove(
         &self,
         id: Vec<u8>,
+        token_address: Vec<u8>,
         nonce: Vec<u8>,
         nullifier_old: Vec<u8>,
         trapdoor_old: Vec<u8>,
@@ -34,10 +35,12 @@ impl WithdrawCircuit {
         nullifier_new: Vec<u8>,
         trapdoor_new: Vec<u8>,
         commitment: Vec<u8>,
+        mac_salt: Vec<u8>,
     ) -> Vec<u8> {
         self.0.prove(
             &WithdrawProverKnowledge {
                 id: vec_to_f(id),
+                token_address: vec_to_f(token_address),
                 nonce: vec_to_f(nonce),
                 nullifier_old: vec_to_f(nullifier_old),
                 trapdoor_old: vec_to_f(trapdoor_old),
@@ -47,6 +50,7 @@ impl WithdrawCircuit {
                 nullifier_new: vec_to_f(nullifier_new),
                 trapdoor_new: vec_to_f(trapdoor_new),
                 commitment: vec_to_f(commitment),
+                mac_salt: vec_to_f(mac_salt),
             },
             &mut rand::thread_rng(),
         )
@@ -60,8 +64,11 @@ impl WithdrawCircuit {
         h_nullifier_old: Vec<u8>,
         h_note_new: Vec<u8>,
         value: Vec<u8>,
-        proof: Vec<u8>,
         commitment: Vec<u8>,
+        token_address: Vec<u8>,
+        mac_salt: Vec<u8>,
+        mac_commitment: Vec<u8>,
+        proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: WithdrawInstance| {
             let value = match input {
@@ -71,6 +78,9 @@ impl WithdrawCircuit {
                 WithdrawInstance::HashedNewNote => &h_note_new,
                 WithdrawInstance::WithdrawalValue => &value,
                 WithdrawInstance::Commitment => &commitment,
+                WithdrawInstance::TokenAddress => &token_address,
+                WithdrawInstance::MacSalt => &mac_salt,
+                WithdrawInstance::MacCommitment => &mac_commitment,
             };
             vec_to_f(value.clone())
         };

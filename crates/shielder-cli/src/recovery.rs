@@ -7,7 +7,7 @@ use alloy_rpc_types_eth::{Transaction, TransactionTrait};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, bail, Result};
 use shielder_account::{ShielderAccount, ShielderAction};
-use shielder_circuits::{poseidon::off_circuit::hash, F};
+use shielder_circuits::poseidon::off_circuit::hash;
 use shielder_contract::{
     call_type::DryRun,
     events::get_event,
@@ -40,7 +40,7 @@ pub async fn recover_state(app_state: &mut AppState) -> Result<()> {
         // Calculate the expected nullifier hash
         let expected_nullifier = recovering_account.previous_nullifier();
         let expected_nullifier_hash =
-            field_to_u256(hash::<F, 1>(&[u256_to_field(expected_nullifier)]));
+            field_to_u256(hash::<1>(&[u256_to_field(expected_nullifier)]));
 
         // Check if the nullifier hash has already been registered in the contract.
         let mut block_number = shielder_user

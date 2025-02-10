@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use alloy_primitives::U256;
+use alloy_primitives::{Address, U256};
 use halo2curves::bn256::Fr;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +12,7 @@ mod shielder_action;
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{note_hash, Note};
 use shielder_setup::version::contract_version;
-use type_conversions::{field_to_u256, u256_to_field};
+use type_conversions::{address_to_field, field_to_u256, u256_to_field};
 
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {
@@ -28,6 +28,8 @@ pub struct ShielderAccount {
     pub shielded_amount: U256,
     /// The history of actions performed by the account.
     pub history: Vec<ShielderAction>,
+    /// The address of the token contract.
+    pub token_address: Address,
 }
 
 impl Display for ShielderAccount {
@@ -95,6 +97,7 @@ impl ShielderAccount {
             nullifier: u256_to_field(self.previous_nullifier()),
             trapdoor: u256_to_field(self.previous_trapdoor().unwrap()), // safe unwrap
             account_balance: u256_to_field(self.shielded_amount),
+            token_address: address_to_field(self.token_address),
         });
         Some(field_to_u256(raw_note))
     }
@@ -122,5 +125,17 @@ impl ShielderAccount {
         self.nonce
             .checked_sub(1)
             .map(|nonce| secrets::trapdoor(self.id, nonce))
+    }
+
+    /// Generate the MAC salt for the next action to be done.
+    pub fn next_mac_salt(&self) -> U256 {
+        secrets::mac_salt(self.id, self.nonce)
+    }
+
+    /// Generate the MAC salt for the previous action. If the account has no actions, return `None`.
+    pub fn previous_mac_salt(&self) -> Option<U256> {
+        self.nonce
+            .checked_sub(1)
+            .map(|nonce| secrets::mac_salt(self.id, nonce))
     }
 }
