@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use alloy_primitives::{keccak256, Address, Bytes, U256};
+use alloy_primitives::{keccak256, Address, Bytes, B256, U256};
 use alloy_sol_types::{SolCall, SolConstructor};
 use evm_utils::{
     compilation::source_to_bytecode,
@@ -52,6 +52,11 @@ pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 
 
 pub const INITIAL_DEPOSIT_LIMIT: U256 = U256::MAX;
 
+pub const ANONIMITY_REVOKER_PUBKEY: B256 = B256::new([
+    0x4d, 0xa9, 0x1e, 0x3f, 0x72, 0xc8, 0x5b, 0xd0, 0x6e, 0x14, 0x83, 0x2d, 0xa7, 0x9f, 0x3c, 0x58,
+    0x0b, 0xe1, 0x4f, 0xc2, 0x8a, 0x67, 0xd3, 0x10, 0x95, 0x2e, 0x7a, 0x4c, 0x81, 0x36, 0xbd, 0xf4,
+]);
+
 /// Contains full deployment addresses.
 pub struct ShielderContractSuite {
     pub shielder: Address,
@@ -88,6 +93,7 @@ pub struct Deployment {
     pub new_account_proving_params: ProvingParams,
     pub deposit_proving_params: ProvingParams,
     pub withdraw_proving_params: ProvingParams,
+    pub anonimity_revoker_pubkey: B256,
 }
 
 /// Deploy whole Shielder suite.
@@ -121,6 +127,7 @@ pub fn deployment(
         new_account_proving_params: new_account_proving_params.clone(),
         deposit_proving_params: deposit_proving_params.clone(),
         withdraw_proving_params: withdraw_proving_params.clone(),
+        anonimity_revoker_pubkey: ANONIMITY_REVOKER_PUBKEY,
     }
 }
 

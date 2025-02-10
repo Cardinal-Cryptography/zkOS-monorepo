@@ -5,6 +5,7 @@ use shielder_circuits::consts::NONCE_UPPER_LIMIT;
 
 const NULLIFIER_LABEL: &[u8] = b"nullifier";
 const TRAPDOOR_LABEL: &[u8] = b"trapdoor";
+const MAC_SALT_LABEL: &[u8] = b"mac_salt";
 
 // Copied from `src/bn256/fr.rs` in `halo2curves`. Unfortunately only a string constant is public
 // in `halo2curves`, and we need bytes for performance reasons.
@@ -23,6 +24,11 @@ pub fn nullifier(id: U256, nonce: u32) -> U256 {
 /// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
 pub fn trapdoor(id: U256, nonce: u32) -> U256 {
     hash(id, nonce, TRAPDOOR_LABEL)
+}
+
+/// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
+pub fn mac_salt(id: U256, nonce: u32) -> U256 {
+    hash(id, nonce, MAC_SALT_LABEL)
 }
 
 fn hash(id: U256, nonce: u32, label: &[u8]) -> U256 {

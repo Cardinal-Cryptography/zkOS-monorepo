@@ -51,8 +51,8 @@ serde = { version = "1.0.203" }
 serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
-# https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/7743b2f084d80685041c1b16718e6388226e9631
-shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "7743b2f" }
+# https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/0ddf37bb6e05b2d644ec19d181a02fd4564a96ca
+shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "0ddf37b" }
 testcontainers = { version = "0.19.0" }
 thiserror = { version = "2.0.9" }
 tokio = { version = "1.38.0" }

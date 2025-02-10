@@ -24,26 +24,34 @@ impl NewAccountCircuit {
     pub fn prove(
         &self,
         id: Vec<u8>,
+        token_address: Vec<u8>,
         nullifier: Vec<u8>,
         trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
+        anonimity_revoker_pubkey: Vec<u8>,
     ) -> Vec<u8> {
         self.0.prove(
             &NewAccountProverKnowledge {
                 id: vec_to_f(id),
+                token_address: vec_to_f(token_address),
                 nullifier: vec_to_f(nullifier),
                 trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
+                anonymity_revoker_public_key: vec_to_f(anonimity_revoker_pubkey),
             },
             &mut rand::thread_rng(),
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
         h_note: Vec<u8>,
         h_id: Vec<u8>,
         initial_deposit: Vec<u8>,
+        token_address: Vec<u8>,
+        anonimity_revoker_pubkey: Vec<u8>,
+        sym_key_encryption: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: NewAccountInstance| {
@@ -51,6 +59,9 @@ impl NewAccountCircuit {
                 NewAccountInstance::HashedId => &h_id,
                 NewAccountInstance::HashedNote => &h_note,
                 NewAccountInstance::InitialDeposit => &initial_deposit,
+                NewAccountInstance::TokenAddress => &token_address,
+                NewAccountInstance::AnonymityRevokerPublicKey => &anonimity_revoker_pubkey,
+                NewAccountInstance::SymKeyEncryption => &sym_key_encryption,
             };
             vec_to_f(value.clone())
         };

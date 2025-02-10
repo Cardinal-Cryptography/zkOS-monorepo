@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 use std::fmt::Debug;
 
 use alloy_contract::CallDecoder;
-use alloy_primitives::U256;
+use alloy_primitives::{B256, U256};
 use alloy_sol_types::{sol, SolCall};
 use shielder_setup::version::{contract_version, ContractVersion};
 use ShielderContract::*;
@@ -110,6 +110,8 @@ sol! {
         ) external view returns (uint256[] memory);
 
         function setDepositLimit(uint256 _depositLimit) external;
+
+        function getAnonimityRevokerPubkey() external view returns (bytes32);
     }
 }
 
@@ -199,5 +201,12 @@ impl ShielderContractCall for nullifiersCall {
     type UnwrappedResult = U256;
     fn unwrap_result(nullifier: nullifiersReturn) -> Self::UnwrappedResult {
         nullifier._0
+    }
+}
+
+impl ShielderContractCall for getAnonimityRevokerPubkeyCall {
+    type UnwrappedResult = B256;
+    fn unwrap_result(pubkey: getAnonimityRevokerPubkeyReturn) -> Self::UnwrappedResult {
+        pubkey._0
     }
 }

@@ -3,8 +3,9 @@ use rand::{rngs::StdRng, SeedableRng};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
 use shielder_circuits::circuits::{Params, ProvingKey};
 use shielder_contract::{
-    alloy_primitives::{Address, U256},
-    ConnectionPolicy,
+    alloy_primitives::{Address, B256, U256},
+    call_type::DryRun,
+    ConnectionPolicy, ContractDryRunResult,
     ShielderContract::newAccountCall,
     ShielderUser,
 };
@@ -32,14 +33,25 @@ impl Actor {
         self.shielder_user.address()
     }
 
+    pub async fn anonimity_revoker_pubkey(&self) -> ContractDryRunResult<B256> {
+        self.shielder_user
+            .get_anonimity_revoker_pubkey::<DryRun>()
+            .await
+    }
+
     pub fn prepare_new_account_call(
         &self,
         params: &Params,
         pk: &ProvingKey,
         amount: U256,
+        anonimity_revoker_pubkey: &B256,
     ) -> newAccountCall {
-        self.account
-            .prepare_call::<NewAccountCallType>(params, pk, amount, &())
+        self.account.prepare_call::<NewAccountCallType>(
+            params,
+            pk,
+            amount,
+            anonimity_revoker_pubkey,
+        )
     }
 }
 

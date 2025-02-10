@@ -1,22 +1,19 @@
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes, B256, U256};
 use rand::rngs::OsRng;
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::{
-        merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
-        RANGE_PROOF_CHUNK_SIZE,
-    },
+    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Field, ProverKnowledge, PublicInputProvider, F,
+    Field, Fr, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
     ShielderContract::{depositCall, newAccountCall, withdrawCall},
     WithdrawCommitment,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
-use type_conversions::{field_to_u256, u256_to_field};
+use type_conversions::{address_to_field, bytes_to_field, field_to_u256, u256_to_field};
 
 use super::secrets::id_hiding_nonce;
 use crate::ShielderAccount;
@@ -26,6 +23,7 @@ struct ActionSecrets {
     trapdoor_old: U256,
     nullifier_new: U256,
     trapdoor_new: U256,
+    mac_salt_new: U256,
 }
 
 /// A trait for the different types of calls, for which calldata can be prepared based on the
@@ -35,7 +33,7 @@ pub trait CallType {
     type Extra;
     /// We suppose that every call has a corresponding circuit values struct used to generate a
     /// proof.
-    type ProverKnowledge: ProverKnowledge<F>;
+    type ProverKnowledge: ProverKnowledge;
     /// The type of the contract call data.
     type Calldata;
 
@@ -56,20 +54,23 @@ pub trait CallType {
 
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
-    type Extra = ();
-    type ProverKnowledge = NewAccountProverKnowledge<F>;
+    type Extra = B256;
+    type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
         amount: U256,
-        _: &Self::Extra,
+        anonimity_revoker_pubkey: &Self::Extra,
     ) -> Self::ProverKnowledge {
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
+            token_address: address_to_field(account.token_address),
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
+            anonymity_revoker_public_key: bytes_to_field(anonimity_revoker_pubkey.to_vec())
+                .unwrap(),
         }
     }
 
@@ -98,7 +99,7 @@ pub struct MerkleProof {
 pub enum DepositCallType {}
 impl CallType for DepositCallType {
     type Extra = MerkleProof;
-    type ProverKnowledge = DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
+    type ProverKnowledge = DepositProverKnowledge<Fr>;
 
     type Calldata = depositCall;
 
@@ -112,6 +113,7 @@ impl CallType for DepositCallType {
             trapdoor_old,
             nullifier_new,
             trapdoor_new,
+            mac_salt_new,
             ..
         } = account.get_secrets();
 
@@ -119,6 +121,7 @@ impl CallType for DepositCallType {
 
         DepositProverKnowledge {
             id: u256_to_field(account.id),
+            token_address: address_to_field(account.token_address),
             nonce: u256_to_field(nonce),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
@@ -127,6 +130,7 @@ impl CallType for DepositCallType {
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
+            mac_salt: u256_to_field(mac_salt_new),
         }
     }
 
@@ -160,7 +164,7 @@ pub struct WithdrawExtra {
 pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
-    type ProverKnowledge = WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
+    type ProverKnowledge = WithdrawProverKnowledge<Fr>;
     type Calldata = withdrawCall;
 
     fn prepare_prover_knowledge(
@@ -173,6 +177,7 @@ impl CallType for WithdrawCallType {
             trapdoor_old,
             nullifier_new,
             trapdoor_new,
+            mac_salt_new,
             ..
         } = account.get_secrets();
 
@@ -185,8 +190,9 @@ impl CallType for WithdrawCallType {
         .commitment_hash();
         let nonce = id_hiding_nonce();
 
-        WithdrawProverKnowledge::<_, RANGE_PROOF_CHUNK_SIZE> {
+        WithdrawProverKnowledge {
             id: u256_to_field(account.id),
+            token_address: address_to_field(account.token_address),
             nonce: u256_to_field(nonce),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
@@ -196,6 +202,7 @@ impl CallType for WithdrawCallType {
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
             commitment: u256_to_field(commitment),
+            mac_salt: u256_to_field(mac_salt_new),
         }
     }
 
@@ -242,12 +249,14 @@ impl ShielderAccount {
 
         let nullifier_new = self.next_nullifier();
         let trapdoor_new = self.next_trapdoor();
+        let mac_salt_new = self.next_mac_salt();
 
         ActionSecrets {
             nullifier_old,
             trapdoor_old,
             nullifier_new,
             trapdoor_new,
+            mac_salt_new,
         }
     }
 }
@@ -255,7 +264,7 @@ impl ShielderAccount {
 fn generate_proof(
     params: &Params,
     pk: &ProvingKey,
-    prover_knowledge: &impl ProverKnowledge<F>,
+    prover_knowledge: &impl ProverKnowledge,
 ) -> Vec<u8> {
     shielder_circuits::generate_proof(
         params,
@@ -266,8 +275,8 @@ fn generate_proof(
     )
 }
 
-fn map_path_to_field(path: [[U256; ARITY]; NOTE_TREE_HEIGHT]) -> [[F; ARITY]; NOTE_TREE_HEIGHT] {
-    let mut result = [[F::ZERO; ARITY]; NOTE_TREE_HEIGHT];
+fn map_path_to_field(path: [[U256; ARITY]; NOTE_TREE_HEIGHT]) -> [[Fr; ARITY]; NOTE_TREE_HEIGHT] {
+    let mut result = [[Fr::ZERO; ARITY]; NOTE_TREE_HEIGHT];
     for (i, row) in path.iter().enumerate() {
         for (j, element) in row.iter().enumerate() {
             result[i][j] = u256_to_field(*element);
