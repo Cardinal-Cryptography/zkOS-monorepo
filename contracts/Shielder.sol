@@ -139,7 +139,7 @@ contract Shielder is
      *
      * This transaction serves as the entrypoint to the Shielder.
      */
-    function newAccountToken(
+    function newAccount(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -184,7 +184,7 @@ contract Shielder is
     /*
      * Make a token deposit into the Shielder
      */
-    function depositToken(
+    function deposit(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -236,7 +236,7 @@ contract Shielder is
     /*
      * Withdraw shielded funds
      */
-    function withdrawToken(
+    function withdraw(
         bytes3 expectedContractVersion,
         uint256 idHiding,
         address tokenAddress,
