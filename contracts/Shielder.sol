@@ -87,6 +87,7 @@ contract Shielder is
     error FeeHigherThanAmount();
     error MerkleRootDoesNotExist();
     error NativeTransferFailed();
+    error ERC20TransferFailed();
     error WithdrawVerificationFailed();
     error NewAccountVerificationFailed();
     error ZeroAmount();
@@ -356,7 +357,7 @@ contract Shielder is
         } else {
             IERC20 token = IERC20(tokenAddress);
             bool transferSuccess = token.transfer(to, amount);
-            if (!transferSuccess) revert NativeTransferFailed();
+            if (!transferSuccess) revert ERC20TransferFailed();
         }
     }
 }
