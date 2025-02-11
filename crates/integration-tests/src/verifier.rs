@@ -27,15 +27,14 @@ pub fn deploy_verifiers(evm: &mut EvmRunner) -> VerificationContracts {
 
 #[cfg(test)]
 mod tests {
-
     use alloy_primitives::Address;
     use alloy_sol_types::SolValue;
     use evm_utils::EvmRunner;
     use halo2_proofs::halo2curves::bn256::Fr;
     use halo2_solidity_verifier::verifier_contract;
     use shielder_circuits::{
-        consts::RANGE_PROOF_CHUNK_SIZE, deposit::DepositProverKnowledge,
-        new_account::NewAccountProverKnowledge, withdraw::WithdrawProverKnowledge, F,
+        deposit::DepositProverKnowledge, new_account::NewAccountProverKnowledge,
+        withdraw::WithdrawProverKnowledge, F,
     };
 
     use super::deploy_verifiers;
@@ -79,8 +78,7 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (proof, pub_input) =
-            proving_utils::prepare_proof::<DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>>();
+        let (proof, pub_input) = proving_utils::prepare_proof::<DepositProverKnowledge<F>>();
         assert!(verify_with_contract(
             proof,
             pub_input,
@@ -94,8 +92,7 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (proof, pub_input) =
-            proving_utils::prepare_proof::<WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>>();
+        let (proof, pub_input) = proving_utils::prepare_proof::<WithdrawProverKnowledge<F>>();
         assert!(verify_with_contract(
             proof,
             pub_input,
