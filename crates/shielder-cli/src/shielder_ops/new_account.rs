@@ -9,7 +9,7 @@ use crate::{
     shielder_ops::pk::{get_proving_equipment, CircuitType},
 };
 
-pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
+pub async fn new_account(app_state: &mut AppState, amount: u128, ) -> Result<()> {
     let amount = U256::from(amount);
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
     let (tx_hash, block_hash) = app_state
