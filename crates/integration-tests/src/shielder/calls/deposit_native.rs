@@ -88,7 +88,7 @@ mod tests {
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
     use shielder_account::ShielderAccount;
-    use shielder_circuits::F;
+    use shielder_circuits::Fr;
     use shielder_contract::ShielderContract::{
         depositCall, Deposit, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
     };
@@ -308,7 +308,7 @@ mod tests {
 
         let amount = U256::from(5);
         let (mut calldata, _) = prepare_call(&mut deployment, &mut account, token, amount);
-        let mut swap_value = U256::from_str(F::MODULUS).unwrap();
+        let mut swap_value = U256::from_str(Fr::MODULUS).unwrap();
 
         mem::swap(&mut calldata.oldNullifierHash, &mut swap_value);
         let result = invoke_call(&mut deployment, &mut account, token, amount, &calldata);

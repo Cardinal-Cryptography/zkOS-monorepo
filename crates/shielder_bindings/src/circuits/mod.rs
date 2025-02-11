@@ -5,14 +5,13 @@ use halo2_proofs::plonk::Error;
 use rand::RngCore;
 use shielder_circuits::{
     circuits::{Params, ProvingKey, VerifyingKey},
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositProverKnowledge,
     generate_keys_with_min_k, generate_proof, generate_setup_params,
     marshall::{unmarshall_params, unmarshall_pk},
     new_account::NewAccountProverKnowledge,
     verify,
     withdraw::WithdrawProverKnowledge,
-    ProverKnowledge, PublicInputProvider, F, MAX_K,
+    Fr, ProverKnowledge, PublicInputProvider, MAX_K,
 };
 
 pub mod deposit;
@@ -25,7 +24,7 @@ pub trait WasmCircuit {
 }
 
 #[derive(Clone, Debug)]
-pub struct Circuit<PK: ProverKnowledge<F>> {
+pub struct Circuit<PK: ProverKnowledge> {
     params: Params,
     pk: ProvingKey,
     vk: VerifyingKey,
@@ -44,7 +43,7 @@ macro_rules! impl_load_files {
                 )))
                 .expect("Failed to unmarshall params");
 
-                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge<F>>::Circuit>(
+                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge>::Circuit>(
                     include_bytes!(concat!("../../artifacts/", $circuit_name, "/pk.bin")),
                 )
                 .expect("Failed to unmarshall pk");
@@ -55,11 +54,11 @@ macro_rules! impl_load_files {
     };
 }
 
-impl_load_files!(DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>, "deposit");
-impl_load_files!(NewAccountProverKnowledge<F>, "new_account");
-impl_load_files!(WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>, "withdraw");
+impl_load_files!(DepositProverKnowledge<Fr>, "deposit");
+impl_load_files!(NewAccountProverKnowledge<Fr>, "new_account");
+impl_load_files!(WithdrawProverKnowledge<Fr>, "withdraw");
 
-impl<PK: ProverKnowledge<F>> Circuit<PK>
+impl<PK: ProverKnowledge> Circuit<PK>
 where
     Circuit<PK>: WasmCircuit,
 {
@@ -118,7 +117,7 @@ where
         )
     }
 
-    pub fn verify<PIP: PublicInputProvider<PK::PublicInput, F>>(
+    pub fn verify<PIP: PublicInputProvider<PK::PublicInput>>(
         &self,
         pub_input_provider: &PIP,
         proof: Vec<u8>,
@@ -132,16 +131,15 @@ where
     }
 }
 
-pub type DepositCircuit = Circuit<DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>>;
-pub type NewAccountCircuit = Circuit<NewAccountProverKnowledge<F>>;
-pub type WithdrawCircuit = Circuit<WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>>;
+pub type DepositCircuit = Circuit<DepositProverKnowledge<Fr>>;
+pub type NewAccountCircuit = Circuit<NewAccountProverKnowledge<Fr>>;
+pub type WithdrawCircuit = Circuit<WithdrawProverKnowledge<Fr>>;
 
 #[cfg(test)]
 mod tests {
     use shielder_circuits::{
-        consts::RANGE_PROOF_CHUNK_SIZE, deposit::DepositProverKnowledge,
-        new_account::NewAccountProverKnowledge, withdraw::WithdrawProverKnowledge, ProverKnowledge,
-        F,
+        deposit::DepositProverKnowledge, new_account::NewAccountProverKnowledge,
+        withdraw::WithdrawProverKnowledge, Fr, ProverKnowledge,
     };
 
     use super::{DepositCircuit, NewAccountCircuit, WithdrawCircuit};
@@ -150,8 +148,7 @@ mod tests {
     fn deposit_pronto() {
         let mut rng = rand::thread_rng();
         let circuit = DepositCircuit::new_pronto();
-        let values =
-            DepositProverKnowledge::<F, RANGE_PROOF_CHUNK_SIZE>::random_correct_example(&mut rng);
+        let values = DepositProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
     }
@@ -160,7 +157,7 @@ mod tests {
     fn new_account_pronto() {
         let mut rng = rand::thread_rng();
         let circuit = NewAccountCircuit::new_pronto();
-        let values = NewAccountProverKnowledge::<F>::random_correct_example(&mut rng);
+        let values = NewAccountProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
     }
@@ -169,8 +166,7 @@ mod tests {
     fn withdraw_pronto() {
         let mut rng = rand::thread_rng();
         let circuit = WithdrawCircuit::new_pronto();
-        let values =
-            WithdrawProverKnowledge::<F, RANGE_PROOF_CHUNK_SIZE>::random_correct_example(&mut rng);
+        let values = WithdrawProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
     }
