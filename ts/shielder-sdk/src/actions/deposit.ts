@@ -16,6 +16,7 @@ export interface DepositCalldata extends Calldata {
     pubInputs: DepositPubInputs;
     proof: Proof;
   };
+  tokenAddress: `0x${string}`;
   expectedContractVersion: `0x${string}`;
   amount: bigint;
   merkleRoot: Scalar;
@@ -89,6 +90,7 @@ export class DepositAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
@@ -146,6 +148,7 @@ export class DepositAction extends NoteAction {
         pubInputs,
         proof
       },
+      tokenAddress,
       expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
@@ -173,6 +176,7 @@ export class DepositAction extends NoteAction {
     } = calldata;
     const encodedCalldata = await this.contract.depositCalldata(
       calldata.expectedContractVersion,
+      calldata.tokenAddress,
       from,
       scalarToBigint(pubInputs.idHiding),
       scalarToBigint(pubInputs.hNullifierOld),

@@ -15,6 +15,7 @@ export interface NewAccountCalldata {
     pubInputs: NewAccountPubInputs;
     proof: Proof;
   };
+  tokenAddress: `0x${string}`;
   expectedContractVersion: `0x${string}`;
   provingTimeMillis: number;
   amount: bigint;
@@ -66,6 +67,7 @@ export class NewAccountAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
@@ -96,6 +98,7 @@ export class NewAccountAction extends NoteAction {
         pubInputs,
         proof
       },
+      tokenAddress,
       provingTimeMillis: provingTime,
       amount
     };
@@ -120,6 +123,7 @@ export class NewAccountAction extends NoteAction {
     } = calldata;
     const encodedCalldata = await this.contract.newAccountCalldata(
       expectedContractVersion,
+      calldata.tokenAddress,
       from,
       scalarToBigint(pubInputs.hNote),
       scalarToBigint(pubInputs.hId),
