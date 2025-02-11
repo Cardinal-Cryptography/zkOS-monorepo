@@ -8,7 +8,6 @@ use halo2_solidity_verifier::{BatchOpenScheme::Bdfg21, SolidityGenerator};
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::{generate_keys_with_min_k, Params},
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
@@ -25,14 +24,8 @@ pub fn main() {
     .expect("failed to read parameters from the ptau file");
 
     handle_relation::<NewAccountProverKnowledge<Fr>>(full_parameters.clone(), "NewAccount");
-    handle_relation::<DepositProverKnowledge<Fr, RANGE_PROOF_CHUNK_SIZE>>(
-        full_parameters.clone(),
-        "Deposit",
-    );
-    handle_relation::<WithdrawProverKnowledge<Fr, RANGE_PROOF_CHUNK_SIZE>>(
-        full_parameters,
-        "Withdraw",
-    );
+    handle_relation::<DepositProverKnowledge<Fr>>(full_parameters.clone(), "Deposit");
+    handle_relation::<WithdrawProverKnowledge<Fr>>(full_parameters, "Withdraw");
 }
 
 /// Generate verifier contract for the given circuit type.
@@ -71,7 +64,7 @@ mod test {
     use halo2_solidity_verifier::verifier_contract;
     use shielder_circuits::{
         circuits::{generate_proof, generate_setup_params},
-        consts::{MAX_K, RANGE_PROOF_CHUNK_SIZE},
+        consts::MAX_K,
         deposit::DepositProverKnowledge,
         generate_keys_with_min_k,
         new_account::NewAccountProverKnowledge,
@@ -147,15 +140,11 @@ mod test {
 
     #[test]
     fn prove_and_verify_deposit() {
-        prove_and_verify::<DepositProverKnowledge<Fr, RANGE_PROOF_CHUNK_SIZE>>(
-            DEPOSIT_VERIFICATION_GAS_COST,
-        );
+        prove_and_verify::<DepositProverKnowledge<Fr>>(DEPOSIT_VERIFICATION_GAS_COST);
     }
 
     #[test]
     fn prove_and_verify_withdraw() {
-        prove_and_verify::<WithdrawProverKnowledge<Fr, RANGE_PROOF_CHUNK_SIZE>>(
-            WITHDRAW_VERIFICATION_GAS_COST,
-        );
+        prove_and_verify::<WithdrawProverKnowledge<Fr>>(WITHDRAW_VERIFICATION_GAS_COST);
     }
 }

@@ -4,7 +4,6 @@ use rand::{RngCore, SeedableRng};
 use rstest::fixture;
 use shielder_circuits::{
     circuits::{Params, ProvingKey, VerifyingKey},
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositCircuit,
     generate_keys_with_min_k, generate_proof,
     new_account::NewAccountCircuit,
@@ -64,12 +63,12 @@ pub fn new_account_proving_params() -> ProvingParams {
 #[once]
 pub fn deposit_proving_params() -> ProvingParams {
     println!("Preparing Deposit proving keys");
-    prepare_proving_keys::<DepositCircuit<F, RANGE_PROOF_CHUNK_SIZE>>()
+    prepare_proving_keys::<DepositCircuit<F>>()
 }
 
 #[fixture]
 #[once]
 pub fn withdraw_proving_params() -> ProvingParams {
     println!("Preparing Withdraw proving keys");
-    prepare_proving_keys::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>()
+    prepare_proving_keys::<WithdrawCircuit<F>>()
 }

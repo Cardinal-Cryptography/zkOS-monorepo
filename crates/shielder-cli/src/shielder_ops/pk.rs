@@ -4,7 +4,6 @@ use anyhow::Result;
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositCircuit,
     generate_keys_with_min_k,
     marshall::{marshall_params, marshall_pk, unmarshall_params, unmarshall_pk},
@@ -38,12 +37,8 @@ impl CircuitType {
     pub fn unmarshall_pk(self, bytes: &[u8]) -> Result<(u32, ProvingKey)> {
         match self {
             CircuitType::NewAccount => unmarshall_pk::<NewAccountCircuit<F>>(bytes),
-            CircuitType::Deposit => {
-                unmarshall_pk::<DepositCircuit<F, RANGE_PROOF_CHUNK_SIZE>>(bytes)
-            }
-            CircuitType::Withdraw => {
-                unmarshall_pk::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>(bytes)
-            }
+            CircuitType::Deposit => unmarshall_pk::<DepositCircuit<F>>(bytes),
+            CircuitType::Withdraw => unmarshall_pk::<WithdrawCircuit<F>>(bytes),
         }
         .map_err(|_| anyhow::Error::msg("Failed to unmarshall proving key"))
     }
@@ -53,12 +48,8 @@ impl CircuitType {
             CircuitType::NewAccount => {
                 generate_keys_with_min_k::<NewAccountCircuit<_>>(full_params)?
             }
-            CircuitType::Deposit => {
-                generate_keys_with_min_k::<DepositCircuit<_, RANGE_PROOF_CHUNK_SIZE>>(full_params)?
-            }
-            CircuitType::Withdraw => {
-                generate_keys_with_min_k::<WithdrawCircuit<_, RANGE_PROOF_CHUNK_SIZE>>(full_params)?
-            }
+            CircuitType::Deposit => generate_keys_with_min_k::<DepositCircuit<_>>(full_params)?,
+            CircuitType::Withdraw => generate_keys_with_min_k::<WithdrawCircuit<_>>(full_params)?,
         };
         debug!("Generated keys for {self:?} circuit with k={k}");
         Ok((params, k, pk))

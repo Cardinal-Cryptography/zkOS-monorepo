@@ -6,7 +6,6 @@
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::Params,
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositCircuit,
     generate_keys_with_min_k,
     marshall::{marshall_params, marshall_pk},
@@ -38,7 +37,7 @@ where
 
 /// This function is used to generate the artifacts for the DepositCircuit
 fn gen_deposit(full_params: &Params) {
-    gen_params_pk::<DepositCircuit<F, RANGE_PROOF_CHUNK_SIZE>>("deposit", full_params);
+    gen_params_pk::<DepositCircuit<F>>("deposit", full_params);
 }
 
 /// This function is used to generate the artifacts for the NewAccountCircuit
@@ -48,7 +47,7 @@ fn generate_new_account(full_params: &Params) {
 
 /// This function is used to generate the artifacts for the WithdrawCircuit
 fn generate_withdraw(full_params: &Params) {
-    gen_params_pk::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>("withdraw", full_params);
+    gen_params_pk::<WithdrawCircuit<F>>("withdraw", full_params);
 }
 
 fn main() {

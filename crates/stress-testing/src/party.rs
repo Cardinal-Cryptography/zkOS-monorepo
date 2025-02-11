@@ -4,7 +4,6 @@ use anyhow::Result;
 use shielder_account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::RANGE_PROOF_CHUNK_SIZE,
     withdraw::WithdrawCircuit,
 };
 use shielder_contract::{alloy_primitives::U256, merkle_path::get_current_merkle_path};
@@ -71,7 +70,7 @@ async fn prepare_relay_queries<'actor>(
     config: &Config,
     actors: Vec<Actor>,
 ) -> Result<Vec<(Actor, RelayQuery)>> {
-    let (params, pk) = proving_keys::<WithdrawCircuit<_, RANGE_PROOF_CHUNK_SIZE>>();
+    let (params, pk) = proving_keys::<WithdrawCircuit<_>>();
     let mut result = Vec::new();
 
     let total_fee = reqwest::Client::new()

@@ -2,10 +2,7 @@ use alloy_primitives::{Address, Bytes, U256};
 use rand::rngs::OsRng;
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::{
-        merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
-        RANGE_PROOF_CHUNK_SIZE,
-    },
+    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
@@ -98,7 +95,7 @@ pub struct MerkleProof {
 pub enum DepositCallType {}
 impl CallType for DepositCallType {
     type Extra = MerkleProof;
-    type ProverKnowledge = DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
+    type ProverKnowledge = DepositProverKnowledge<F>;
 
     type Calldata = depositCall;
 
@@ -160,7 +157,7 @@ pub struct WithdrawExtra {
 pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
-    type ProverKnowledge = WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
+    type ProverKnowledge = WithdrawProverKnowledge<F>;
     type Calldata = withdrawCall;
 
     fn prepare_prover_knowledge(
@@ -185,7 +182,7 @@ impl CallType for WithdrawCallType {
         .commitment_hash();
         let nonce = id_hiding_nonce();
 
-        WithdrawProverKnowledge::<_, RANGE_PROOF_CHUNK_SIZE> {
+        WithdrawProverKnowledge {
             id: u256_to_field(account.id),
             nonce: u256_to_field(nonce),
             nullifier_old: u256_to_field(nullifier_old),
