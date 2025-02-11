@@ -11,12 +11,12 @@ use shielder_circuits::{
     marshall::{marshall_params, marshall_pk},
     new_account::NewAccountCircuit,
     withdraw::WithdrawCircuit,
-    Circuit, F, MAX_K,
+    Circuit, Fr, MAX_K,
 };
 
 /// This function is used to generate the artifacts for the circuit, i.e. hardcoded keys
 /// and parameters. Saves results to `params.bin` and `pk.bin`.
-fn gen_params_pk<C: Circuit<F> + Default>(circuit_name: &str, full_params: &Params) {
+fn gen_params_pk<C: Circuit<Fr> + Default>(circuit_name: &str, full_params: &Params) {
     std::fs::create_dir_all(format!("artifacts/{}", circuit_name))
         .expect("Failed to create directory");
     let (params, k, pk, _) = generate_keys_with_min_k::<C>(full_params.clone())

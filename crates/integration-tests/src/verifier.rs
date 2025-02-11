@@ -30,11 +30,10 @@ mod tests {
     use alloy_primitives::Address;
     use alloy_sol_types::SolValue;
     use evm_utils::EvmRunner;
-    use halo2_proofs::halo2curves::bn256::Fr;
     use halo2_solidity_verifier::verifier_contract;
     use shielder_circuits::{
         deposit::DepositProverKnowledge, new_account::NewAccountProverKnowledge,
-        withdraw::WithdrawProverKnowledge, F,
+        withdraw::WithdrawProverKnowledge, Fr,
     };
 
     use super::deploy_verifiers;
@@ -47,7 +46,7 @@ mod tests {
 
     fn verify_with_contract(
         proof: Vec<u8>,
-        pub_input: Vec<F>,
+        pub_input: Vec<Fr>,
         verifier_address: Address,
         evm: &mut EvmRunner,
     ) -> bool {
@@ -64,7 +63,7 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (proof, pub_input) = proving_utils::prepare_proof::<NewAccountProverKnowledge<F>>();
+        let (proof, pub_input) = proving_utils::prepare_proof::<NewAccountProverKnowledge<Fr>>();
         assert!(verify_with_contract(
             proof,
             pub_input,
@@ -78,7 +77,7 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (proof, pub_input) = proving_utils::prepare_proof::<DepositProverKnowledge<F>>();
+        let (proof, pub_input) = proving_utils::prepare_proof::<DepositProverKnowledge<Fr>>();
         assert!(verify_with_contract(
             proof,
             pub_input,
@@ -92,7 +91,7 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (proof, pub_input) = proving_utils::prepare_proof::<WithdrawProverKnowledge<F>>();
+        let (proof, pub_input) = proving_utils::prepare_proof::<WithdrawProverKnowledge<Fr>>();
         assert!(verify_with_contract(
             proof,
             pub_input,
@@ -121,7 +120,8 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (proof, mut pub_input) = proving_utils::prepare_proof::<NewAccountProverKnowledge<F>>();
+        let (proof, mut pub_input) =
+            proving_utils::prepare_proof::<NewAccountProverKnowledge<Fr>>();
         pub_input[0] += Fr::from(1);
 
         assert!(!verify_with_contract(
@@ -138,7 +138,8 @@ mod tests {
         let mut evm = EvmRunner::aleph_evm();
         let verification_contracts = deploy_verifiers(&mut evm);
 
-        let (mut proof, pub_input) = proving_utils::prepare_proof::<NewAccountProverKnowledge<F>>();
+        let (mut proof, pub_input) =
+            proving_utils::prepare_proof::<NewAccountProverKnowledge<Fr>>();
         proof[0] = proof[0].wrapping_add(1u8);
 
         assert!(!verify_with_contract(

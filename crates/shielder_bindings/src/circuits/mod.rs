@@ -11,7 +11,7 @@ use shielder_circuits::{
     new_account::NewAccountProverKnowledge,
     verify,
     withdraw::WithdrawProverKnowledge,
-    ProverKnowledge, PublicInputProvider, F, MAX_K,
+    Fr, ProverKnowledge, PublicInputProvider, MAX_K,
 };
 
 pub mod deposit;
@@ -54,9 +54,9 @@ macro_rules! impl_load_files {
     };
 }
 
-impl_load_files!(DepositProverKnowledge<F>, "deposit");
-impl_load_files!(NewAccountProverKnowledge<F>, "new_account");
-impl_load_files!(WithdrawProverKnowledge<F>, "withdraw");
+impl_load_files!(DepositProverKnowledge<Fr>, "deposit");
+impl_load_files!(NewAccountProverKnowledge<Fr>, "new_account");
+impl_load_files!(WithdrawProverKnowledge<Fr>, "withdraw");
 
 impl<PK: ProverKnowledge> Circuit<PK>
 where
@@ -131,9 +131,9 @@ where
     }
 }
 
-pub type DepositCircuit = Circuit<DepositProverKnowledge<F>>;
-pub type NewAccountCircuit = Circuit<NewAccountProverKnowledge<F>>;
-pub type WithdrawCircuit = Circuit<WithdrawProverKnowledge<F>>;
+pub type DepositCircuit = Circuit<DepositProverKnowledge<Fr>>;
+pub type NewAccountCircuit = Circuit<NewAccountProverKnowledge<Fr>>;
+pub type WithdrawCircuit = Circuit<WithdrawProverKnowledge<Fr>>;
 
 #[cfg(test)]
 mod tests {
@@ -148,7 +148,7 @@ mod tests {
     fn deposit_pronto() {
         let mut rng = rand::thread_rng();
         let circuit = DepositCircuit::new_pronto();
-        let values = DepositProverKnowledge::<F>::random_correct_example(&mut rng);
+        let values = DepositProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
     }
@@ -157,7 +157,7 @@ mod tests {
     fn new_account_pronto() {
         let mut rng = rand::thread_rng();
         let circuit = NewAccountCircuit::new_pronto();
-        let values = NewAccountProverKnowledge::<F>::random_correct_example(&mut rng);
+        let values = NewAccountProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
     }
@@ -166,7 +166,7 @@ mod tests {
     fn withdraw_pronto() {
         let mut rng = rand::thread_rng();
         let circuit = WithdrawCircuit::new_pronto();
-        let values = WithdrawProverKnowledge::<F>::random_correct_example(&mut rng);
+        let values = WithdrawProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
     }

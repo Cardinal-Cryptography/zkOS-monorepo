@@ -9,13 +9,13 @@ use shielder_circuits::{
     new_account::NewAccountCircuit,
     verify,
     withdraw::WithdrawCircuit,
-    ProverKnowledge, F, MAX_K,
+    Fr, ProverKnowledge, MAX_K,
 };
 use shielder_setup::parameter_generation;
 
 /// Given circuit type `C`, construct a correct relation instance and generate a proof, accompanied
 /// by the corresponding public input.
-pub fn prepare_proof<PK: ProverKnowledge>() -> (Vec<u8>, Vec<F>) {
+pub fn prepare_proof<PK: ProverKnowledge>() -> (Vec<u8>, Vec<Fr>) {
     let (params, pk, vk, mut rng) = setup::<PK::Circuit>();
 
     let prover_knowledge = PK::random_correct_example(&mut rng);
@@ -31,13 +31,13 @@ pub fn prepare_proof<PK: ProverKnowledge>() -> (Vec<u8>, Vec<F>) {
 }
 
 /// Given circuit type `C`, generate params and a proving key.
-pub fn prepare_proving_keys<C: Circuit<F> + Default>() -> (Params, ProvingKey) {
+pub fn prepare_proving_keys<C: Circuit<Fr> + Default>() -> (Params, ProvingKey) {
     let (params, pk, _, _) = setup::<C>();
     (params, pk)
 }
 
-fn setup<C: Circuit<F> + Default>() -> (Params, ProvingKey, VerifyingKey, impl SeedableRng + RngCore)
-{
+fn setup<C: Circuit<Fr> + Default>(
+) -> (Params, ProvingKey, VerifyingKey, impl SeedableRng + RngCore) {
     let full_params = read_setup_parameters(
         get_ptau_file_path(MAX_K, Format::PerpetualPowersOfTau),
         Format::PerpetualPowersOfTau,

@@ -6,7 +6,7 @@ use shielder_circuits::{
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Field, ProverKnowledge, PublicInputProvider, F,
+    Field, Fr, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
     ShielderContract::{depositCall, newAccountCall, withdrawCall},
@@ -54,7 +54,7 @@ pub trait CallType {
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
     type Extra = ();
-    type ProverKnowledge = NewAccountProverKnowledge<F>;
+    type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountCall;
 
     fn prepare_prover_knowledge(
@@ -95,7 +95,7 @@ pub struct MerkleProof {
 pub enum DepositCallType {}
 impl CallType for DepositCallType {
     type Extra = MerkleProof;
-    type ProverKnowledge = DepositProverKnowledge<F>;
+    type ProverKnowledge = DepositProverKnowledge<Fr>;
 
     type Calldata = depositCall;
 
@@ -157,7 +157,7 @@ pub struct WithdrawExtra {
 pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
-    type ProverKnowledge = WithdrawProverKnowledge<F>;
+    type ProverKnowledge = WithdrawProverKnowledge<Fr>;
     type Calldata = withdrawCall;
 
     fn prepare_prover_knowledge(
@@ -263,8 +263,8 @@ fn generate_proof(
     )
 }
 
-fn map_path_to_field(path: [[U256; ARITY]; NOTE_TREE_HEIGHT]) -> [[F; ARITY]; NOTE_TREE_HEIGHT] {
-    let mut result = [[F::ZERO; ARITY]; NOTE_TREE_HEIGHT];
+fn map_path_to_field(path: [[U256; ARITY]; NOTE_TREE_HEIGHT]) -> [[Fr; ARITY]; NOTE_TREE_HEIGHT] {
+    let mut result = [[Fr::ZERO; ARITY]; NOTE_TREE_HEIGHT];
     for (i, row) in path.iter().enumerate() {
         for (j, element) in row.iter().enumerate() {
             result[i][j] = u256_to_field(*element);
