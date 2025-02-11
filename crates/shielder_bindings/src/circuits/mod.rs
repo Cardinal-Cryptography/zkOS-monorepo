@@ -24,7 +24,7 @@ pub trait WasmCircuit {
 }
 
 #[derive(Clone, Debug)]
-pub struct Circuit<PK: ProverKnowledge<F>> {
+pub struct Circuit<PK: ProverKnowledge> {
     params: Params,
     pk: ProvingKey,
     vk: VerifyingKey,
@@ -43,7 +43,7 @@ macro_rules! impl_load_files {
                 )))
                 .expect("Failed to unmarshall params");
 
-                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge<F>>::Circuit>(
+                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge>::Circuit>(
                     include_bytes!(concat!("../../artifacts/", $circuit_name, "/pk.bin")),
                 )
                 .expect("Failed to unmarshall pk");
@@ -58,7 +58,7 @@ impl_load_files!(DepositProverKnowledge<F>, "deposit");
 impl_load_files!(NewAccountProverKnowledge<F>, "new_account");
 impl_load_files!(WithdrawProverKnowledge<F>, "withdraw");
 
-impl<PK: ProverKnowledge<F>> Circuit<PK>
+impl<PK: ProverKnowledge> Circuit<PK>
 where
     Circuit<PK>: WasmCircuit,
 {
@@ -117,7 +117,7 @@ where
         )
     }
 
-    pub fn verify<PIP: PublicInputProvider<PK::PublicInput, F>>(
+    pub fn verify<PIP: PublicInputProvider<PK::PublicInput>>(
         &self,
         pub_input_provider: &PIP,
         proof: Vec<u8>,

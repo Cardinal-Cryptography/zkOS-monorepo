@@ -32,7 +32,7 @@ pub trait CallType {
     type Extra;
     /// We suppose that every call has a corresponding circuit values struct used to generate a
     /// proof.
-    type ProverKnowledge: ProverKnowledge<F>;
+    type ProverKnowledge: ProverKnowledge;
     /// The type of the contract call data.
     type Calldata;
 
@@ -252,7 +252,7 @@ impl ShielderAccount {
 fn generate_proof(
     params: &Params,
     pk: &ProvingKey,
-    prover_knowledge: &impl ProverKnowledge<F>,
+    prover_knowledge: &impl ProverKnowledge,
 ) -> Vec<u8> {
     shielder_circuits::generate_proof(
         params,

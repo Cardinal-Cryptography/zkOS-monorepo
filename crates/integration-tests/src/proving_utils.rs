@@ -15,7 +15,7 @@ use shielder_setup::parameter_generation;
 
 /// Given circuit type `C`, construct a correct relation instance and generate a proof, accompanied
 /// by the corresponding public input.
-pub fn prepare_proof<PK: ProverKnowledge<F>>() -> (Vec<u8>, Vec<F>) {
+pub fn prepare_proof<PK: ProverKnowledge>() -> (Vec<u8>, Vec<F>) {
     let (params, pk, vk, mut rng) = setup::<PK::Circuit>();
 
     let prover_knowledge = PK::random_correct_example(&mut rng);
@@ -56,19 +56,19 @@ pub type ProvingParams = (Params, ProvingKey);
 #[once]
 pub fn new_account_proving_params() -> ProvingParams {
     println!("Preparing NewAccount proving keys");
-    prepare_proving_keys::<NewAccountCircuit<F>>()
+    prepare_proving_keys::<NewAccountCircuit>()
 }
 
 #[fixture]
 #[once]
 pub fn deposit_proving_params() -> ProvingParams {
     println!("Preparing Deposit proving keys");
-    prepare_proving_keys::<DepositCircuit<F>>()
+    prepare_proving_keys::<DepositCircuit>()
 }
 
 #[fixture]
 #[once]
 pub fn withdraw_proving_params() -> ProvingParams {
     println!("Preparing Withdraw proving keys");
-    prepare_proving_keys::<WithdrawCircuit<F>>()
+    prepare_proving_keys::<WithdrawCircuit>()
 }

@@ -70,7 +70,7 @@ async fn prepare_relay_queries<'actor>(
     config: &Config,
     actors: Vec<Actor>,
 ) -> Result<Vec<(Actor, RelayQuery)>> {
-    let (params, pk) = proving_keys::<WithdrawCircuit<_>>();
+    let (params, pk) = proving_keys::<WithdrawCircuit>();
     let mut result = Vec::new();
 
     let total_fee = reqwest::Client::new()

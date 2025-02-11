@@ -29,14 +29,14 @@ pub fn main() {
 }
 
 /// Generate verifier contract for the given circuit type.
-fn handle_relation<PK: ProverKnowledge<Fr>>(full_params: Params, relation: &str) {
+fn handle_relation<PK: ProverKnowledge>(full_params: Params, relation: &str) {
     println!("Generating {relation} relation contracts...");
     let verifier_solidity = generate_solidity_verification_bundle::<PK>(full_params);
     save_contract_source(&format!("{relation}Verifier.sol"), &verifier_solidity);
 }
 
 /// Given trusted setup, generate Solidity code for the verifier with embedded verification key.
-fn generate_solidity_verification_bundle<PK: ProverKnowledge<Fr>>(
+fn generate_solidity_verification_bundle<PK: ProverKnowledge>(
     full_parameters: ParamsKZG<Bn256>,
 ) -> String {
     let (parameters, _, _, vk) =
@@ -114,7 +114,7 @@ mod test {
     }
 
     // Generate proof for an example relation instance and verify it with the Solidity contract.
-    fn prove_and_verify<PK: ProverKnowledge<Fr>>(cost_upper_bound: u64) {
+    fn prove_and_verify<PK: ProverKnowledge>(cost_upper_bound: u64) {
         let mut rng = rng();
         let full_parameters = generate_setup_params(MAX_K, &mut rng);
         let prover_knowledge = PK::random_correct_example(&mut rng);

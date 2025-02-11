@@ -9,7 +9,7 @@ use shielder_circuits::{
     marshall::{marshall_params, marshall_pk, unmarshall_params, unmarshall_pk},
     new_account::NewAccountCircuit,
     withdraw::WithdrawCircuit,
-    Params as _, F, MAX_K,
+    Params as _, MAX_K,
 };
 use tracing::debug;
 
@@ -36,20 +36,18 @@ impl CircuitType {
 
     pub fn unmarshall_pk(self, bytes: &[u8]) -> Result<(u32, ProvingKey)> {
         match self {
-            CircuitType::NewAccount => unmarshall_pk::<NewAccountCircuit<F>>(bytes),
-            CircuitType::Deposit => unmarshall_pk::<DepositCircuit<F>>(bytes),
-            CircuitType::Withdraw => unmarshall_pk::<WithdrawCircuit<F>>(bytes),
+            CircuitType::NewAccount => unmarshall_pk::<NewAccountCircuit>(bytes),
+            CircuitType::Deposit => unmarshall_pk::<DepositCircuit>(bytes),
+            CircuitType::Withdraw => unmarshall_pk::<WithdrawCircuit>(bytes),
         }
         .map_err(|_| anyhow::Error::msg("Failed to unmarshall proving key"))
     }
 
     pub fn generate_keys(self, full_params: Params) -> Result<(Params, u32, ProvingKey)> {
         let (params, k, pk, _) = match self {
-            CircuitType::NewAccount => {
-                generate_keys_with_min_k::<NewAccountCircuit<_>>(full_params)?
-            }
-            CircuitType::Deposit => generate_keys_with_min_k::<DepositCircuit<_>>(full_params)?,
-            CircuitType::Withdraw => generate_keys_with_min_k::<WithdrawCircuit<_>>(full_params)?,
+            CircuitType::NewAccount => generate_keys_with_min_k::<NewAccountCircuit>(full_params)?,
+            CircuitType::Deposit => generate_keys_with_min_k::<DepositCircuit>(full_params)?,
+            CircuitType::Withdraw => generate_keys_with_min_k::<WithdrawCircuit>(full_params)?,
         };
         debug!("Generated keys for {self:?} circuit with k={k}");
         Ok((params, k, pk))
