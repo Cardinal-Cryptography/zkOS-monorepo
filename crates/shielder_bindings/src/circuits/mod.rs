@@ -139,7 +139,7 @@ pub type WithdrawCircuit = Circuit<WithdrawProverKnowledge<Fr>>;
 mod tests {
     use shielder_circuits::{
         deposit::DepositProverKnowledge, new_account::NewAccountProverKnowledge,
-        withdraw::WithdrawProverKnowledge, ProverKnowledge, Fr,
+        withdraw::WithdrawProverKnowledge, Fr, ProverKnowledge,
     };
 
     use super::{DepositCircuit, NewAccountCircuit, WithdrawCircuit};
