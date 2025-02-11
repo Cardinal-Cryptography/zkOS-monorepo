@@ -338,7 +338,7 @@ fn column_eval_var(prefix: &'static str, column_index: usize, rotation: i32) -> 
 }
 
 #[allow(clippy::too_many_arguments)]
-fn evaluate<F, T>(
+fn evaluate<F: PrimeField<Repr = [u8; 0x20]>, T>(
     expression: &Expression<F>,
     constant: &impl Fn(U256) -> T,
     fixed: &impl Fn(FixedQuery) -> T,
@@ -349,10 +349,7 @@ fn evaluate<F, T>(
     sum: &impl Fn(T, T) -> T,
     product: &impl Fn(T, T) -> T,
     scaled: &impl Fn(T, U256) -> T,
-) -> T
-where
-    F: PrimeField<Repr = [u8; 0x20]>,
-{
+) -> T {
     let evaluate = |expr| {
         evaluate(
             expr, constant, fixed, advice, instance, challenge, negated, sum, product, scaled,

@@ -63,7 +63,7 @@ async fn distribute_tokens(config: &Config, actors: &[Actor]) -> Result<()> {
 }
 
 async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
-    let (params, pk) = proving_keys::<NewAccountCircuit<_>>();
+    let (params, pk) = proving_keys::<NewAccountCircuit>();
     let shielded_amount = U256::from(SHIELDED_BALANCE);
     let provider = create_simple_provider(&config.node_rpc_url).await?;
 

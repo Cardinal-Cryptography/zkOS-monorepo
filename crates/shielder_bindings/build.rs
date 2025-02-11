@@ -6,21 +6,17 @@
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::Params,
-    consts::RANGE_PROOF_CHUNK_SIZE,
     deposit::DepositCircuit,
     generate_keys_with_min_k,
     marshall::{marshall_params, marshall_pk},
     new_account::NewAccountCircuit,
     withdraw::WithdrawCircuit,
-    Circuit, F, MAX_K,
+    Circuit, Fr, MAX_K,
 };
 
 /// This function is used to generate the artifacts for the circuit, i.e. hardcoded keys
 /// and parameters. Saves results to `params.bin` and `pk.bin`.
-fn gen_params_pk<C>(circuit_name: &str, full_params: &Params)
-where
-    C: Circuit<F> + Default,
-{
+fn gen_params_pk<C: Circuit<Fr> + Default>(circuit_name: &str, full_params: &Params) {
     std::fs::create_dir_all(format!("artifacts/{}", circuit_name))
         .expect("Failed to create directory");
     let (params, k, pk, _) = generate_keys_with_min_k::<C>(full_params.clone())
@@ -38,17 +34,17 @@ where
 
 /// This function is used to generate the artifacts for the DepositCircuit
 fn gen_deposit(full_params: &Params) {
-    gen_params_pk::<DepositCircuit<F, RANGE_PROOF_CHUNK_SIZE>>("deposit", full_params);
+    gen_params_pk::<DepositCircuit>("deposit", full_params);
 }
 
 /// This function is used to generate the artifacts for the NewAccountCircuit
 fn generate_new_account(full_params: &Params) {
-    gen_params_pk::<NewAccountCircuit<F>>("new_account", full_params);
+    gen_params_pk::<NewAccountCircuit>("new_account", full_params);
 }
 
 /// This function is used to generate the artifacts for the WithdrawCircuit
 fn generate_withdraw(full_params: &Params) {
-    gen_params_pk::<WithdrawCircuit<F, RANGE_PROOF_CHUNK_SIZE>>("withdraw", full_params);
+    gen_params_pk::<WithdrawCircuit>("withdraw", full_params);
 }
 
 fn main() {
