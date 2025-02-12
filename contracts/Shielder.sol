@@ -356,8 +356,12 @@ contract Shielder is
             if (!success) revert NativeTransferFailed();
         } else {
             IERC20 token = IERC20(tokenAddress);
-            bool transferSuccess = token.transfer(to, amount);
-            if (!transferSuccess) revert ERC20TransferFailed();
+
+            try token.transfer(to, amount) returns (bool transferSuccess) {
+                if (!transferSuccess) revert ERC20TransferFailed();
+            } catch {
+                revert ERC20TransferFailed();
+            }
         }
     }
 }
