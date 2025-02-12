@@ -65,7 +65,8 @@ sol! {
 
         function initialize(
             address initialOwner,
-            uint256 _depositLimit
+            uint256 _depositLimit,
+            uint256 _anonimityRevokerPublicKey
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
@@ -79,6 +80,7 @@ sol! {
             uint256 amount,
             uint256 newNote,
             uint256 idHash,
+            uint256 symKeyEncryption,
             bytes calldata proof
         ) external payable;
         function deposit(

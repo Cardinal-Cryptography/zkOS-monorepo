@@ -8,6 +8,7 @@ import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
 import { Nullifiers } from "./Nullifiers.sol";
+import { AnonimityRevoker } from "./AnonimityRevoker.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -23,7 +24,8 @@ contract Shielder is
     PausableUpgradeable,
     MerkleTree,
     Nullifiers,
-    DepositLimit
+    DepositLimit,
+    AnonimityRevoker
 {
     // -- Constants --
 
@@ -111,12 +113,14 @@ contract Shielder is
 
     function initialize(
         address initialOwner,
-        uint256 _depositLimit
+        uint256 _depositLimit,
+        uint256 _anonimityRevokerPublicKey
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
         __MerkleTree_init();
         __DepositLimit_init(_depositLimit);
+        __AnonimityRevoker_init(_anonimityRevokerPublicKey);
         _pause();
     }
 
@@ -145,6 +149,7 @@ contract Shielder is
         uint256 amount,
         uint256 newNote,
         uint256 idHash,
+        uint256 symKeyEncryption,
         bytes calldata proof
     )
         external
@@ -153,16 +158,20 @@ contract Shielder is
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
+        fieldElement(symKeyEncryption)
     {
         if (amount > depositLimit()) revert AmountOverDepositLimit();
         handleTokenTransferIn(tokenAddress, amount);
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](3);
+        uint256[] memory publicInputs = new uint256[](6);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
+        publicInputs[3] = addressToUInt256(tokenAddress);
+        publicInputs[4] = anonimityRevokerPubkey();
+        publicInputs[5] = symKeyEncryption;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
@@ -209,12 +218,13 @@ contract Shielder is
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](5);
+        uint256[] memory publicInputs = new uint256[](6);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
+        publicInputs[5] = addressToUInt256(tokenAddress);
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
@@ -264,12 +274,13 @@ contract Shielder is
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](6);
+        uint256[] memory publicInputs = new uint256[](7);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
+        publicInputs[5] = addressToUInt256(tokenAddress);
 
         bytes memory commitment = abi.encodePacked(
             CONTRACT_VERSION,
@@ -278,7 +289,7 @@ contract Shielder is
             relayerFee
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
-        publicInputs[5] = uint256(keccak256(commitment)) >> 4;
+        publicInputs[6] = uint256(keccak256(commitment)) >> 4;
 
         bool success = WithdrawVerifier.verifyProof(proof, publicInputs);
 
@@ -324,6 +335,17 @@ contract Shielder is
     function setDepositLimit(uint256 _depositLimit) external onlyOwner {
         _setDepositLimit(_depositLimit);
     }
+
+    /*
+     * Set the public key of the Anonimity Revoker
+     */
+    function setAnonimityRevokerPubkey(
+        uint256 anonimityRevokerPubkey
+    ) external onlyOwner {
+        _setAnonimityRevokerPubkey(anonimityRevokerPubkey);
+    }
+
+    // -- Internal functions --
 
     function handleTokenTransferIn(
         address tokenAddress,

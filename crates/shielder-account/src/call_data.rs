@@ -87,6 +87,9 @@ impl CallType for NewAccountCallType {
             amount: field_to_u256(prover_knowledge.compute_public_input(InitialDeposit)),
             newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
+            symKeyEncryption: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryption),
+            ),
             proof: Bytes::from(proof),
         }
     }

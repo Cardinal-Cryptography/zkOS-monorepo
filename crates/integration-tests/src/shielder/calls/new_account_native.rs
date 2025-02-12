@@ -2,9 +2,10 @@ use alloy_primitives::{TxHash, U256};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
 use shielder_contract::ShielderContract::{newAccountCall, ShielderContractErrors};
 
-use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
-
-const ANONYMITY_REVOKER_PKEY: U256 = U256::from_limbs([65, 78, 79, 78]); // ANON
+use crate::{
+    deploy::ANONYMITY_REVOKER_PKEY,
+    shielder::{invoke_shielder_call, CallResult, Deployment},
+};
 
 pub fn prepare_call(
     deployment: &mut Deployment,
