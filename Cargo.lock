@@ -4691,6 +4691,7 @@ dependencies = [
  "rayon",
  "shielder-account",
  "shielder-circuits",
+ "shielder-setup",
  "thiserror 2.0.11",
  "type-conversions",
  "uniffi",

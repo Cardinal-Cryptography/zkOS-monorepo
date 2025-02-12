@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::withdraw::{WithdrawInstance, WithdrawProverKnowledge};
+use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -42,6 +43,7 @@ impl WithdrawCircuit {
                 nullifier_old: vec_to_f(nullifier_old),
                 trapdoor_old: vec_to_f(trapdoor_old),
                 account_old_balance: vec_to_f(account_balance_old),
+                token_address: NATIVE_TOKEN_ADDRESS,
                 path: vec_to_path(path),
                 withdrawal_value: vec_to_f(value),
                 nullifier_new: vec_to_f(nullifier_new),
@@ -71,6 +73,7 @@ impl WithdrawCircuit {
                 WithdrawInstance::HashedNewNote => &h_note_new,
                 WithdrawInstance::WithdrawalValue => &value,
                 WithdrawInstance::Commitment => &commitment,
+                WithdrawInstance::TokenAddress => &NATIVE_TOKEN_ADDRESS.to_bytes().to_vec(),
             };
             vec_to_f(value.clone())
         };

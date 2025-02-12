@@ -9,15 +9,22 @@ use crate::{
     shielder_ops::pk::{get_proving_equipment, CircuitType},
 };
 
-pub async fn new_account(app_state: &mut AppState, amount: u128, ) -> Result<()> {
+pub async fn new_account(
+    app_state: &mut AppState,
+    amount: u128,
+    anonymity_revoker_pkey: U256,
+) -> Result<()> {
     let amount = U256::from(amount);
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
     let (tx_hash, block_hash) = app_state
         .create_shielder_user()
         .create_new_account_native::<Call>(
-            app_state
-                .account
-                .prepare_call::<NewAccountCallType>(&params, &pk, amount, &()),
+            app_state.account.prepare_call::<NewAccountCallType>(
+                &params,
+                &pk,
+                amount,
+                &anonymity_revoker_pkey,
+            ),
             amount,
         )
         .await?;

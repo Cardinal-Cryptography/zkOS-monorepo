@@ -4,13 +4,20 @@ use shielder_contract::ShielderContract::{newAccountCall, ShielderContractErrors
 
 use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
 
+const ANONYMITY_REVOKER_PKEY: U256 = U256::from_limbs([65, 78, 79, 78]); // ANON
+
 pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
 ) -> newAccountCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
-    shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, amount, &())
+    shielder_account.prepare_call::<NewAccountCallType>(
+        &params,
+        &pk,
+        amount,
+        &ANONYMITY_REVOKER_PKEY,
+    )
 }
 
 pub fn invoke_call(

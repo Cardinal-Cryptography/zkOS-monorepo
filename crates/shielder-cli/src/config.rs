@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use alloy_primitives::Address;
+use alloy_primitives::{Address, U256};
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use inquire::Password;
@@ -104,6 +104,9 @@ pub enum ContractInteractionCommand {
 pub struct NewAccountCmd {
     /// Amount of the token to be shielded.
     pub amount: u128,
+    /// Public key of the anonymity revoker.
+    #[clap(value_parser = parsing::parse_asymmetric_key)]
+    pub anonymity_revoker_pkey: U256,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -130,6 +133,7 @@ pub enum LoggingFormat {
 mod parsing {
     use std::{path::PathBuf, str::FromStr};
 
+    use alloy_primitives::U256;
     use anyhow::{anyhow, Result};
 
     pub fn parse_path(path: &str) -> Result<PathBuf> {
@@ -137,6 +141,10 @@ mod parsing {
             shellexpand::full(path).map_err(|e| anyhow!("Failed to expand path: {e:?}"))?;
         PathBuf::from_str(expanded_path.as_ref())
             .map_err(|e| anyhow!("Failed to interpret path: {e:?}"))
+    }
+
+    pub fn parse_asymmetric_key(key: &str) -> Result<U256> {
+        U256::from_str(key).map_err(|e| anyhow!("Failed to parse U256: {e:?}"))
     }
 }
 

@@ -45,9 +45,15 @@ impl CircuitType {
 
     pub fn generate_keys(self, full_params: Params) -> Result<(Params, u32, ProvingKey)> {
         let (params, k, pk, _) = match self {
-            CircuitType::NewAccount => generate_keys_with_min_k(NewAccountCircuit::default(), full_params)?,
-            CircuitType::Deposit => generate_keys_with_min_k(DepositCircuit::default(), full_params)?,
-            CircuitType::Withdraw => generate_keys_with_min_k(WithdrawCircuit::default(), full_params)?,
+            CircuitType::NewAccount => {
+                generate_keys_with_min_k(NewAccountCircuit::default(), full_params)?
+            }
+            CircuitType::Deposit => {
+                generate_keys_with_min_k(DepositCircuit::default(), full_params)?
+            }
+            CircuitType::Withdraw => {
+                generate_keys_with_min_k(WithdrawCircuit::default(), full_params)?
+            }
         };
         debug!("Generated keys for {self:?} circuit with k={k}");
         Ok((params, k, pk))
