@@ -57,7 +57,9 @@ jobs:
           path: main
 
       - name: Build binary
-        run: cargo build -p integration-tests --bin gas-consumption --release
+        run: |
+          cd main
+          cargo build -p integration-tests --bin gas-consumption --release
 
       - name: Install dependencies
         run: |
@@ -73,7 +75,7 @@ jobs:
         run: |
           export CONTRACTS_DIR="main/contracts"
           export CARGO_MANIFEST_DIR=./main/Cargo.toml
-          ./target/release/gas-consumption main-report.txt
+          ./main/target/release/gas-consumption main-report.txt
 
       - name: Print gas measured on the `main` branch
         run: cat main-report.txt
