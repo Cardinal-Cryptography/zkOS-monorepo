@@ -8,7 +8,7 @@ import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { MerkleTree } from "./MerkleTree.sol";
 import { Nullifiers } from "./Nullifiers.sol";
-import { AnonimityRevoker } from "./AnonimityRevoker.sol";
+import { AnonymityRevoker } from "./AnonymityRevoker.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -25,7 +25,7 @@ contract Shielder is
     MerkleTree,
     Nullifiers,
     DepositLimit,
-    AnonimityRevoker
+    AnonymityRevoker
 {
     // -- Constants --
 
@@ -114,13 +114,13 @@ contract Shielder is
     function initialize(
         address initialOwner,
         uint256 _depositLimit,
-        uint256 _anonimityRevokerPublicKey
+        uint256 _anonymityRevokerPublicKey
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
         __MerkleTree_init();
         __DepositLimit_init(_depositLimit);
-        __AnonimityRevoker_init(_anonimityRevokerPublicKey);
+        __AnonymityRevoker_init(_anonymityRevokerPublicKey);
         _pause();
     }
 
@@ -170,7 +170,7 @@ contract Shielder is
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
         publicInputs[3] = addressToUInt256(tokenAddress);
-        publicInputs[4] = anonimityRevokerPubkey();
+        publicInputs[4] = anonymityRevokerPubkey();
         publicInputs[5] = symKeyEncryption;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
@@ -337,12 +337,12 @@ contract Shielder is
     }
 
     /*
-     * Set the public key of the Anonimity Revoker
+     * Set the public key of the Anonymity Revoker
      */
-    function setAnonimityRevokerPubkey(
-        uint256 anonimityRevokerPubkey
+    function setAnonymityRevokerPubkey(
+        uint256 anonymityRevokerPubkey
     ) external onlyOwner {
-        _setAnonimityRevokerPubkey(anonimityRevokerPubkey);
+        _setAnonymityRevokerPubkey(anonymityRevokerPubkey);
     }
 
     // -- Internal functions --

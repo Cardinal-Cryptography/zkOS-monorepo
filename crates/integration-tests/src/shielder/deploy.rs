@@ -186,7 +186,7 @@ pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address 
     let initialization_data = initializeCall {
         initialOwner: owner,
         _depositLimit: INITIAL_DEPOSIT_LIMIT,
-        _anonimityRevokerPublicKey: ANONYMITY_REVOKER_PKEY,
+        _anonymityRevokerPublicKey: ANONYMITY_REVOKER_PKEY,
     }
     .abi_encode();
 
