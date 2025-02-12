@@ -1,66 +1,67 @@
 import { it, expect, vitest, describe, beforeEach, Mocked } from "vitest";
-import storageSchema, {
+import accountObjectSchema, {
   createStorage,
   type InjectedStorageInterface
 } from "../../src/state/storageSchema";
+import { nativeTokenAddress } from "../../src/constants";
 
 describe("validateBigInt", () => {
   it("should parse valid bigint strings", () => {
-    const result = storageSchema.accountState.shape.nonce.parse("123");
+    const result = accountObjectSchema.shape.nonce.parse("123");
     expect(result).toBe(123n);
   });
 
   it("should parse large bigint strings", () => {
     const largeNumber = "9007199254740991"; // Number.MAX_SAFE_INTEGER
-    const result = storageSchema.accountState.shape.nonce.parse(largeNumber);
+    const result = accountObjectSchema.shape.nonce.parse(largeNumber);
     expect(result).toBe(9007199254740991n);
   });
 
   it("should throw error for invalid bigint strings", () => {
     expect(() =>
-      storageSchema.accountState.shape.nonce.parse("not a number")
+      accountObjectSchema.shape.nonce.parse("not a number")
     ).toThrow();
   });
 });
 
 describe("storageSchema", () => {
-  it("should validate complete accountState object", () => {
+  it("should validate complete state object", () => {
     const validState = {
       nonce: "1",
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
       currentNoteIndex: "2",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
 
-    const result = storageSchema.accountState.parse(validState);
+    const result = accountObjectSchema.parse(validState);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
       currentNoteIndex: 2n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     });
   });
 
-  it("should validate accountState without optional currentNoteIndex", () => {
+  it("should validate state without optional currentNoteIndex", () => {
     const validState = {
       nonce: "1",
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
 
-    const result = storageSchema.accountState.parse(validState);
+    const result = accountObjectSchema.parse(validState);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     });
   });
 
@@ -71,7 +72,7 @@ describe("storageSchema", () => {
         balance: "not a number", // non-bigint string here
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 1
+        storageSchemaVersion: 2
       },
       propertyKey: "balance"
     },
@@ -81,7 +82,7 @@ describe("storageSchema", () => {
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: "1" // string here
+        storageSchemaVersion: "2" // string here
       },
       propertyKey: "storageSchemaVersion"
     },
@@ -91,14 +92,14 @@ describe("storageSchema", () => {
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 1
+        storageSchemaVersion: 2
       },
       propertyKey: "nonce"
     }
   ])(
-    "should throw error for accountState object with wrong types for $propertyKey",
+    "should throw error for state object with wrong types for $propertyKey",
     ({ invalidState, propertyKey }) => {
-      expect(() => storageSchema.accountState.parse(invalidState)).toThrow(
+      expect(() => accountObjectSchema.parse(invalidState)).toThrow(
         `${propertyKey}`
       );
     }
@@ -119,7 +120,7 @@ describe("createStorage", () => {
     mockInjectedStorage.getItem.mockResolvedValue(null);
     const storage = createStorage(mockInjectedStorage);
 
-    const result = await storage.getItem("accountState");
+    const result = await storage.getItem(nativeTokenAddress);
     expect(result).toBeNull();
   });
 
@@ -129,18 +130,18 @@ describe("createStorage", () => {
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(validState));
     const storage = createStorage(mockInjectedStorage);
 
-    const result = await storage.getItem("accountState");
+    const result = await storage.getItem(nativeTokenAddress);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     });
   });
 
@@ -150,13 +151,13 @@ describe("createStorage", () => {
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(invalidState));
     const storage = createStorage(mockInjectedStorage);
 
-    await expect(storage.getItem("accountState")).rejects.toThrow(
-      "Failed to parse storage value for key accountState:"
+    await expect(storage.getItem(nativeTokenAddress)).rejects.toThrow(
+      `Failed to parse storage value for key ${nativeTokenAddress}:`
     );
   });
 
@@ -167,19 +168,19 @@ describe("createStorage", () => {
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
 
-    await storage.setItem("accountState", state);
+    await storage.setItem(nativeTokenAddress, state);
 
     expect(mockInjectedStorage.setItem).toHaveBeenCalledWith(
-      "accountState",
+      nativeTokenAddress,
       JSON.stringify({
         nonce: "1",
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 1
+        storageSchemaVersion: 2
       })
     );
   });

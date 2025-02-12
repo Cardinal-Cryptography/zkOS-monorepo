@@ -1,14 +1,5 @@
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { CustomError } from "ts-custom-error";
-import {
-  Address,
-  createPublicClient,
-  defineChain,
-  Hash,
-  http,
-  PublicClient
-} from "viem";
-
+import { Address, createPublicClient, Hash, http, PublicClient } from "viem";
 import {
   Contract,
   IContract,
@@ -33,66 +24,13 @@ import {
   StateSynchronizer,
   UnexpectedVersionInEvent
 } from "@/state";
-
-export type ShielderOperation = "shield" | "withdraw" | "sync";
-
-export class OutdatedSdkError extends CustomError {
-  public constructor() {
-    super("Contract version not supported by SDK");
-  }
-}
-
-export interface ShielderCallbacks {
-  /**
-   * Fired after the calldata is generated.
-   * @param calldata - calldata generated for the operation with some metadata
-   * @param {ShielderOperation} operation - operation type
-   */
-  onCalldataGenerated?: (
-    calldata: Calldata,
-    operation: ShielderOperation
-  ) => unknown;
-  /**
-   * Fired after the calldata is sent to chain/relayer.
-   * @param txHash - transaction hash
-   * @param {ShielderOperation} operation - operation type
-   */
-  onCalldataSent?: (
-    txHash: `0x${string}`,
-    operation: ShielderOperation
-  ) => unknown;
-  /**
-   * Fired after the new transaction is found and tracked by shielder client.
-   * This is the intended way to track the new transactions.
-   * Note, that this callback may be called multiple times for the same transaction.
-   * @param tx - new transaction
-   */
-  onNewTransaction?: (tx: ShielderTransaction) => unknown;
-  /**
-   * Fired when an error occurs during the generation or sending of the calldata, or during syncing.
-   */
-  onError?: (
-    error: unknown,
-    stage: "generation" | "sending" | "syncing",
-    operation: ShielderOperation
-  ) => unknown;
-}
-
-export type SendShielderTransaction = (params: {
-  data: `0x${string}`;
-  to: `0x${string}`;
-  value: bigint;
-}) => Promise<Hash>;
-
-export type QuotedFees = {
-  // esimated base fee for the withdraw operation
-  baseFee: bigint;
-  // estimated relay fee for the withdraw operation
-  relayFee: bigint;
-  // total fee for the withdraw operation, is deducted from the
-  // amount to withdraw, supposedly a sum of `baseFee` and `relayFee`
-  totalFee: bigint;
-};
+import {
+  OutdatedSdkError,
+  QuotedFees,
+  SendShielderTransaction,
+  ShielderCallbacks,
+  ShielderOperation
+} from "./types";
 
 /**
  * Factory method to create ShielderClient with the original configuration
@@ -116,21 +54,7 @@ export const createShielderClient = (
   callbacks: ShielderCallbacks = {}
 ): ShielderClient => {
   const publicClient = createPublicClient({
-    chain: defineChain({
-      name: "chain",
-      id: chainId,
-      rpcUrls: {
-        default: {
-          http: [rpcHttpEndpoint]
-        }
-      },
-      nativeCurrency: {
-        name: "AZERO",
-        symbol: "AZERO",
-        decimals: 18
-      }
-    }),
-    transport: http()
+    transport: http(rpcHttpEndpoint)
   });
   const contract = new Contract(publicClient, contractAddress);
   const relayer = new Relayer(relayerUrl);
@@ -230,18 +154,19 @@ export class ShielderClient {
   }
 
   /**
-   * Syncs the shielder state with the blockchain.
+   * Syncs the shielder state with the blockchain for the given token.
    * Emits callbacks for the newly synced transaction.
    * Might have side effects, as it mutates the shielder state.
    * For the fresh storage and existing account being imported, it goes through the whole
    * shielder transactions history and updates the state, so it might be slow.
    * @returns new transactions, which were not yet synced
+   * @param {`0x${string}`} tokenAddress - address of the token to sync
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
-  async syncShielder() {
+  async syncShielderToken(tokenAddress: `0x${string}`) {
     try {
       return await this.handleVersionErrors(() => {
-        return this.stateSynchronizer.syncAccountState();
+        return this.stateSynchronizer.syncAccountState(tokenAddress);
       });
     } catch (error) {
       this.callbacks.onError?.(error, "syncing", "sync");
@@ -250,24 +175,40 @@ export class ShielderClient {
   }
 
   /**
-   * Get the current account state.
-   * @returns the current account state
+   * Syncs the whole shielder state with the blockchain.
+   * Emits callbacks for the newly synced transaction.
+   * Might have side effects, as it mutates the shielder state.
+   * For the fresh storage and existing account being imported, it goes through the whole
+   * shielder transactions history and updates the state, so it might be slow.
+   * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
-  async accountState() {
-    return await this.stateManager.accountState();
+  async syncShielderAllTokens() {
+    return Promise.reject(new Error("Not implemented"));
   }
 
   /**
-   * Get the whole shielder transactions history.
+   * Get the current account state for token.
+   * @returns the current account state
+   */
+  async accountState(tokenAddress: `0x${string}`) {
+    return await this.stateManager.accountState(tokenAddress);
+  }
+
+  /**
+   * Get the whole shielder transactions history for a single token.
    * Note, this method should be used with caution,
    * as it may fetch and return a large amount of data.
    * Instead, consider using callback `onNewTransaction` to track the new transactions.
    * @returns the shielder transactions
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
-  async *scanChainForShielderTransactions() {
+  async *scanChainForTokenShielderTransactions(
+    tokenAddress: `0x${string}`
+  ): AsyncGenerator<ShielderTransaction, void, unknown> {
     try {
-      for await (const transaction of this.stateSynchronizer.getShielderTransactions()) {
+      for await (const transaction of this.stateSynchronizer.getShielderTransactions(
+        tokenAddress
+      )) {
         yield transaction;
       }
     } catch (error) {
@@ -282,9 +223,18 @@ export class ShielderClient {
   }
 
   /**
+   * Get the whole shielder transactions history for all tokens.
+   */
+  // eslint-disable-next-line require-yield
+  async *scanChainForAllShielderTransactions() {
+    return Promise.reject(new Error("Not implemented"));
+  }
+
+  /**
    * Shield `amount` to the shielder account. Under the hood, it either creates a new account or deposits to the existing account.
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
+   * @param {`0x${string}`} tokenAddress - address of the token to shield
    * @param {bigint} amount - amount to shield, in wei
    * @param {SendShielderTransaction} sendShielderTransaction - function to send the shielder transaction to the blockchain
    * @param {`0x${string}`} from - public address of the sender
@@ -292,18 +242,29 @@ export class ShielderClient {
    * @throws {OutdatedSdkError} if cannot call the contract due to unsupported contract version
    */
   async shield(
+    tokenAddress: `0x${string}`,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState();
+    const state = await this.stateManager.accountState(tokenAddress);
     const txHash =
       state.nonce == 0n
-        ? await this.newAccount(amount, sendShielderTransaction, from)
-        : await this.deposit(amount, sendShielderTransaction, from);
+        ? await this.newAccount(
+            tokenAddress,
+            amount,
+            sendShielderTransaction,
+            from
+          )
+        : await this.deposit(
+            tokenAddress,
+            amount,
+            sendShielderTransaction,
+            from
+          );
     if (this.publicClient) {
       await this.publicClient.waitForTransactionReceipt({ hash: txHash });
-      await this.syncShielder();
+      await this.syncShielderToken(tokenAddress);
     }
     return txHash;
   }
@@ -312,14 +273,20 @@ export class ShielderClient {
    * Withdraw `amount` to the `address` from the shielder account.
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
+   * @param {`0x${string}`} tokenAddress - address of the token to withdraw
    * @param {bigint} amount - amount to withdraw, in wei
    * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
    * @param {`0x${string}`} address - public address of the recipient
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
-  async withdraw(amount: bigint, totalFee: bigint, address: Address) {
-    const state = await this.stateManager.accountState();
+  async withdraw(
+    tokenAddress: `0x${string}`,
+    amount: bigint,
+    totalFee: bigint,
+    address: Address
+  ) {
+    const state = await this.stateManager.accountState(tokenAddress);
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
@@ -334,17 +301,18 @@ export class ShielderClient {
     );
     if (this.publicClient) {
       await this.publicClient.waitForTransactionReceipt({ hash: txHash });
-      await this.syncShielder();
+      await this.syncShielderToken(tokenAddress);
     }
     return txHash;
   }
 
   private async newAccount(
+    tokenAddress: `0x${string}`,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState();
+    const state = await this.stateManager.accountState(tokenAddress);
     const txHash = await this.handleCalldata(
       () =>
         this.newAccountAction.generateCalldata(state, amount, contractVersion),
@@ -360,11 +328,12 @@ export class ShielderClient {
   }
 
   private async deposit(
+    tokenAddress: `0x${string}`,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState();
+    const state = await this.stateManager.accountState(tokenAddress);
     const txHash = await this.handleCalldata(
       () => this.depositAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>
@@ -423,3 +392,5 @@ export class ShielderClient {
     }
   }
 }
+
+export { SendShielderTransaction, OutdatedSdkError, ShielderCallbacks };

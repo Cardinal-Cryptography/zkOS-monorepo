@@ -9,7 +9,7 @@ import {
   assert
 } from "vitest";
 
-import { Address, createPublicClient, Hash, PublicClient } from "viem";
+import { Address, createPublicClient, Hash, http, PublicClient } from "viem";
 import { MockedCryptoClient } from "./helpers";
 import {
   ShielderClient,
@@ -23,7 +23,7 @@ import { UnexpectedVersionInEvent } from "../src/state";
 import { idHidingNonce } from "../src/utils";
 import { InjectedStorageInterface } from "../src/state/storageSchema";
 import { AccountState, ShielderTransaction } from "../src/state/types";
-import { contractVersion } from "../src/constants";
+import { contractVersion, nativeTokenAddress } from "../src/constants";
 
 vitest.mock("../src/chain/contract");
 vitest.mock("../src/chain/relayer");
@@ -139,18 +139,7 @@ describe("ShielderClient", () => {
 
     it("should create ShielderClient with correct parameters", () => {
       expect(client).toBeInstanceOf(ShielderClient);
-      expect(createPublicClient).toHaveBeenCalledWith(
-        expect.objectContaining({
-          chain: expect.objectContaining({
-            id: mockChainId,
-            rpcUrls: expect.objectContaining({
-              default: {
-                http: [mockRpcHttpEndpoint]
-              }
-            })
-          })
-        })
-      );
+      expect(createPublicClient).toHaveBeenCalledOnce();
       expect(Contract).toHaveBeenCalledWith(
         expect.anything(),
         mockContractAddress
@@ -228,7 +217,7 @@ describe("ShielderClient", () => {
 
   describe("syncShielder", () => {
     it("should call stateSynchronizer", async () => {
-      await client.syncShielder();
+      await client.syncShielderToken(nativeTokenAddress);
 
       expect(
         client["stateSynchronizer"].syncAccountState
@@ -253,7 +242,9 @@ describe("ShielderClient", () => {
 
       vitest.spyOn(callbacks, "onError");
 
-      await expect(client.syncShielder()).rejects.toThrow(expectedError);
+      await expect(
+        client.syncShielderToken(nativeTokenAddress)
+      ).rejects.toThrow(expectedError);
 
       expect(callbacks.onError).toHaveBeenCalledWith(
         expectedError,
@@ -273,7 +264,7 @@ describe("ShielderClient", () => {
         storageSchemaVersion: 1
       };
 
-      const state = await client.accountState();
+      const state = await client.accountState(nativeTokenAddress);
 
       expect(state).toEqual(mockState);
     });
@@ -304,7 +295,9 @@ describe("ShielderClient", () => {
         });
 
       const transactions: ShielderTransaction[] = [];
-      for await (const tx of client.scanChainForShielderTransactions()) {
+      for await (const tx of client.scanChainForTokenShielderTransactions(
+        nativeTokenAddress
+      )) {
         transactions.push(tx);
       }
 
@@ -331,7 +324,9 @@ describe("ShielderClient", () => {
       vitest.spyOn(callbacks, "onError");
 
       await expect(async () => {
-        for await (const _ of client.scanChainForShielderTransactions()) {
+        for await (const _ of client.scanChainForTokenShielderTransactions(
+          nativeTokenAddress
+        )) {
           // Should throw before yielding any transactions
           assert(false, "Should not reach this point");
         }
@@ -398,6 +393,7 @@ describe("ShielderClient", () => {
           mockState = { nonce } as AccountState;
 
           const txHash = await client.shield(
+            nativeTokenAddress,
             mockAmount,
             mockSendTransaction,
             mockFrom
@@ -445,6 +441,7 @@ describe("ShielderClient", () => {
         mockState = { nonce: 1n } as AccountState;
 
         const txHash = await client.withdraw(
+          nativeTokenAddress,
           mockAmount,
           mockTotalFee,
           mockAddress

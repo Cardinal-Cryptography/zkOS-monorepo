@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-type StateManagerStorageKeys = "accountState";
-
 const validateBigInt = z.string().transform((value, ctx) => {
   try {
     return BigInt(value);
@@ -15,16 +13,14 @@ const validateBigInt = z.string().transform((value, ctx) => {
   }
 });
 
-const storageSchema = {
-  accountState: z.object({
-    nonce: validateBigInt,
-    balance: validateBigInt,
-    idHash: validateBigInt,
-    currentNote: validateBigInt,
-    currentNoteIndex: z.union([validateBigInt, z.undefined()]).optional(),
-    storageSchemaVersion: z.number()
-  })
-} satisfies Record<StateManagerStorageKeys, z.ZodSchema>;
+const accountObjectSchema = z.object({
+  nonce: validateBigInt,
+  balance: validateBigInt,
+  idHash: validateBigInt,
+  currentNote: validateBigInt,
+  currentNoteIndex: z.union([validateBigInt, z.undefined()]).optional(),
+  storageSchemaVersion: z.number()
+});
 
 interface InjectedStorageInterface {
   getItem: (key: string) => Promise<string | null>;
@@ -32,36 +28,34 @@ interface InjectedStorageInterface {
 }
 
 interface StorageInterface {
-  getItem: <K extends StateManagerStorageKeys>(
-    key: K
-  ) => Promise<z.infer<(typeof storageSchema)[K]> | null>;
-  setItem: <K extends StateManagerStorageKeys>(
-    key: K,
-    value: z.infer<(typeof storageSchema)[K]>
+  getItem: (key: string) => Promise<z.infer<typeof accountObjectSchema> | null>;
+  setItem: (
+    key: string,
+    value: z.infer<typeof accountObjectSchema>
   ) => Promise<void>;
 }
 
 const createStorage = (
   injectedStorage: InjectedStorageInterface
 ): StorageInterface => {
-  const getItem = async <K extends StateManagerStorageKeys>(
-    key: K
-  ): Promise<z.infer<(typeof storageSchema)[K]> | null> => {
+  const getItem = async (
+    key: string
+  ): Promise<z.infer<typeof accountObjectSchema> | null> => {
     const storedValue = await injectedStorage.getItem(key);
     if (!storedValue) {
       return null;
     }
     try {
-      return storageSchema[key].parse(JSON.parse(storedValue));
+      return accountObjectSchema.parse(JSON.parse(storedValue));
     } catch (error) {
       throw new Error(
         `Failed to parse storage value for key ${key}: ${(error as Error).message}`
       );
     }
   };
-  const setItem = async <K extends StateManagerStorageKeys>(
-    key: K,
-    value: z.infer<(typeof storageSchema)[K]>
+  const setItem = async (
+    key: string,
+    value: z.infer<typeof accountObjectSchema>
   ): Promise<void> => {
     const stringValue = JSON.stringify(value, (_, value): string =>
       typeof value === "bigint" ? value.toString() : value
@@ -71,10 +65,5 @@ const createStorage = (
   return { getItem, setItem };
 };
 
-export default storageSchema;
-export {
-  type StateManagerStorageKeys,
-  StorageInterface,
-  InjectedStorageInterface,
-  createStorage
-};
+export default accountObjectSchema;
+export { StorageInterface, InjectedStorageInterface, createStorage };
