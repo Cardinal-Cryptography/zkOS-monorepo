@@ -1,6 +1,6 @@
 use alloy_primitives::{TxHash, U256};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
-use shielder_contract::ShielderContract::{newAccountCall, ShielderContractErrors};
+use shielder_contract::ShielderContract::{newAccountNativeCall, ShielderContractErrors};
 
 use crate::shielder::{invoke_shielder_call, CallResult, Deployment};
 
@@ -8,7 +8,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> newAccountCall {
+) -> newAccountNativeCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
     shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, amount, &())
 }
@@ -17,7 +17,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &newAccountCall,
+    calldata: &newAccountNativeCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
