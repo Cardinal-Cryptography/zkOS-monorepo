@@ -48,7 +48,6 @@ sol! {
         error FeeHigherThanAmount();
         error MerkleRootDoesNotExist();
         error NativeTransferFailed();
-        error SafeERC20FailedOperation(address token);
         error WithdrawVerificationFailed();
         error NewAccountVerificationFailed();
         error ZeroAmount();

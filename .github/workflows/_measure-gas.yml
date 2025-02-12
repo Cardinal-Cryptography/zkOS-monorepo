@@ -7,7 +7,7 @@ on:
 
 jobs:
   main:
-    name: Measure circuits
+    name: Measure gas
     runs-on: [self-hosted, Linux, X64, large]
     timeout-minutes: 20
     steps:
@@ -28,10 +28,10 @@ jobs:
         with:
           solc-version: 0.8.26
 
+      #################### Run measurements on the current branch ####################
+
       - name: Build binary
         run: cargo build -p integration-tests --bin gas-consumption --release
-
-      #################### Run measurements on the current branch ####################
 
       - name: Install dependencies
         run: make deps
@@ -39,7 +39,7 @@ jobs:
       - name: Generate all contracts
         run: make generate-contracts
 
-      - name: Run measure-circuits binary on the current branch
+      - name: Run gas-consumption binary on the current branch
         run: |
           export CONTRACTS_DIR="contracts"
           export CARGO_MANIFEST_DIR=./Cargo.toml
@@ -56,6 +56,9 @@ jobs:
           ref: main
           path: main
 
+      - name: Build binary
+        run: cargo build -p integration-tests --bin gas-consumption --release
+
       - name: Install dependencies
         run: |
           cd main
@@ -66,7 +69,7 @@ jobs:
           cd main
           make generate-contracts
 
-      - name: Run measure-circuits on the `main` branch
+      - name: Run gas-consumption on the `main` branch
         run: |
           export CONTRACTS_DIR="main/contracts"
           export CARGO_MANIFEST_DIR=./main/Cargo.toml
