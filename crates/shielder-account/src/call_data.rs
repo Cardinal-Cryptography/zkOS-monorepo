@@ -2,14 +2,11 @@ use alloy_primitives::{Address, Bytes, U256};
 use rand::rngs::OsRng;
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::{
-        merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
-        RANGE_PROOF_CHUNK_SIZE,
-    },
+    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Field, ProverKnowledge, PublicInputProvider, F,
+    Field, Fr, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
     ShielderContract::{depositCall, newAccountCall, withdrawCall},
@@ -35,7 +32,7 @@ pub trait CallType {
     type Extra;
     /// We suppose that every call has a corresponding circuit values struct used to generate a
     /// proof.
-    type ProverKnowledge: ProverKnowledge<F>;
+    type ProverKnowledge: ProverKnowledge;
     /// The type of the contract call data.
     type Calldata;
 
@@ -57,7 +54,7 @@ pub trait CallType {
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
     type Extra = ();
-    type ProverKnowledge = NewAccountProverKnowledge<F>;
+    type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountCall;
 
     fn prepare_prover_knowledge(
@@ -98,7 +95,7 @@ pub struct MerkleProof {
 pub enum DepositCallType {}
 impl CallType for DepositCallType {
     type Extra = MerkleProof;
-    type ProverKnowledge = DepositProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
+    type ProverKnowledge = DepositProverKnowledge<Fr>;
 
     type Calldata = depositCall;
 
@@ -160,7 +157,7 @@ pub struct WithdrawExtra {
 pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
-    type ProverKnowledge = WithdrawProverKnowledge<F, RANGE_PROOF_CHUNK_SIZE>;
+    type ProverKnowledge = WithdrawProverKnowledge<Fr>;
     type Calldata = withdrawCall;
 
     fn prepare_prover_knowledge(
@@ -185,7 +182,7 @@ impl CallType for WithdrawCallType {
         .commitment_hash();
         let nonce = id_hiding_nonce();
 
-        WithdrawProverKnowledge::<_, RANGE_PROOF_CHUNK_SIZE> {
+        WithdrawProverKnowledge {
             id: u256_to_field(account.id),
             nonce: u256_to_field(nonce),
             nullifier_old: u256_to_field(nullifier_old),
@@ -255,7 +252,7 @@ impl ShielderAccount {
 fn generate_proof(
     params: &Params,
     pk: &ProvingKey,
-    prover_knowledge: &impl ProverKnowledge<F>,
+    prover_knowledge: &impl ProverKnowledge,
 ) -> Vec<u8> {
     shielder_circuits::generate_proof(
         params,
@@ -266,8 +263,8 @@ fn generate_proof(
     )
 }
 
-fn map_path_to_field(path: [[U256; ARITY]; NOTE_TREE_HEIGHT]) -> [[F; ARITY]; NOTE_TREE_HEIGHT] {
-    let mut result = [[F::ZERO; ARITY]; NOTE_TREE_HEIGHT];
+fn map_path_to_field(path: [[U256; ARITY]; NOTE_TREE_HEIGHT]) -> [[Fr; ARITY]; NOTE_TREE_HEIGHT] {
+    let mut result = [[Fr::ZERO; ARITY]; NOTE_TREE_HEIGHT];
     for (i, row) in path.iter().enumerate() {
         for (j, element) in row.iter().enumerate() {
             result[i][j] = u256_to_field(*element);
