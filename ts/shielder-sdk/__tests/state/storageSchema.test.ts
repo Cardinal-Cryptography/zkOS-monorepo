@@ -32,7 +32,7 @@ describe("storageSchema", () => {
       idHash: "12345",
       currentNote: "67890",
       currentNoteIndex: "2",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
 
     const result = accountObjectSchema.parse(validState);
@@ -42,7 +42,7 @@ describe("storageSchema", () => {
       idHash: 12345n,
       currentNote: 67890n,
       currentNoteIndex: 2n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     });
   });
 
@@ -52,7 +52,7 @@ describe("storageSchema", () => {
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
 
     const result = accountObjectSchema.parse(validState);
@@ -61,7 +61,7 @@ describe("storageSchema", () => {
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     });
   });
 
@@ -72,7 +72,7 @@ describe("storageSchema", () => {
         balance: "not a number", // non-bigint string here
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 1
+        storageSchemaVersion: 2
       },
       propertyKey: "balance"
     },
@@ -82,7 +82,7 @@ describe("storageSchema", () => {
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: "1" // string here
+        storageSchemaVersion: "2" // string here
       },
       propertyKey: "storageSchemaVersion"
     },
@@ -92,7 +92,7 @@ describe("storageSchema", () => {
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 1
+        storageSchemaVersion: 2
       },
       propertyKey: "nonce"
     }
@@ -130,7 +130,7 @@ describe("createStorage", () => {
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(validState));
     const storage = createStorage(mockInjectedStorage);
@@ -141,7 +141,7 @@ describe("createStorage", () => {
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     });
   });
 
@@ -151,7 +151,7 @@ describe("createStorage", () => {
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(invalidState));
     const storage = createStorage(mockInjectedStorage);
@@ -168,7 +168,7 @@ describe("createStorage", () => {
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 2
     };
 
     await storage.setItem(nativeTokenAddress, state);
@@ -180,7 +180,7 @@ describe("createStorage", () => {
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 1
+        storageSchemaVersion: 2
       })
     );
   });
