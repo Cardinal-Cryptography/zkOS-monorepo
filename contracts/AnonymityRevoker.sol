@@ -40,11 +40,4 @@ abstract contract AnonymityRevoker is Initializable {
         AnonymityRevokerStorage storage $ = _getAnonymityRevokerStorage();
         return $.anonymityRevokerPublicKey;
     }
-
-    function _setAnonymityRevokerPubkey(
-        uint256 anonymityRevokerPublicKey
-    ) internal {
-        AnonymityRevokerStorage storage $ = _getAnonymityRevokerStorage();
-        $.anonymityRevokerPublicKey = anonymityRevokerPublicKey;
-    }
 }

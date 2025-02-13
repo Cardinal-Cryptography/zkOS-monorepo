@@ -336,15 +336,6 @@ contract Shielder is
         _setDepositLimit(_depositLimit);
     }
 
-    /*
-     * Set the public key of the Anonymity Revoker
-     */
-    function setAnonymityRevokerPubkey(
-        uint256 anonymityRevokerPubkey
-    ) external onlyOwner {
-        _setAnonymityRevokerPubkey(anonymityRevokerPubkey);
-    }
-
     // -- Internal functions --
 
     function handleTokenTransferIn(
