@@ -13,6 +13,7 @@ import {
 } from "../../src/state/sync";
 import { MockedCryptoClient } from "../helpers";
 import { Address } from "viem";
+import { nativeTokenAddress } from "../../src/constants";
 
 // Test helpers
 const createAccountState = (
@@ -166,9 +167,12 @@ describe("StateSynchronizer", () => {
         1n
       ); // Initial nullifier hash -> block 1
 
-      await synchronizer.syncAccountState();
+      await synchronizer.syncAccountState(nativeTokenAddress);
 
-      expect(stateManager.updateAccountState).toHaveBeenCalledWith(newState);
+      expect(stateManager.updateAccountState).toHaveBeenCalledWith(
+        nativeTokenAddress,
+        newState
+      );
       expect(syncCallback).toHaveBeenCalledWith({
         type: "DepositNative",
         amount: 100n,
@@ -222,7 +226,7 @@ describe("StateSynchronizer", () => {
         .mockResolvedValueOnce(states[1])
         .mockResolvedValueOnce(states[2]);
 
-      await synchronizer.syncAccountState();
+      await synchronizer.syncAccountState(nativeTokenAddress);
 
       expect(stateManager.updateAccountState).toHaveBeenCalledTimes(2);
       expect(syncCallback).toHaveBeenCalledTimes(2);
@@ -261,9 +265,9 @@ describe("StateSynchronizer", () => {
         1n
       );
 
-      await expect(synchronizer.syncAccountState()).rejects.toThrow(
-        UnexpectedVersionInEvent
-      );
+      await expect(
+        synchronizer.syncAccountState(nativeTokenAddress)
+      ).rejects.toThrow(UnexpectedVersionInEvent);
     });
 
     it("should throw on found, but non-transitioning event", async () => {
@@ -282,9 +286,9 @@ describe("StateSynchronizer", () => {
         1n
       ); // Initial nullifier hash -> block 1
 
-      await expect(synchronizer.syncAccountState()).rejects.toThrow(
-        "State is null, this should not happen"
-      );
+      await expect(
+        synchronizer.syncAccountState(nativeTokenAddress)
+      ).rejects.toThrow("State is null, this should not happen");
     });
 
     it("should throw on non-single filtered events", async () => {
@@ -298,9 +302,9 @@ describe("StateSynchronizer", () => {
         1n
       ); // Initial nullifier hash -> block 1
 
-      await expect(synchronizer.syncAccountState()).rejects.toThrow(
-        "Unexpected number of events: 0, expected 1 event"
-      );
+      await expect(
+        synchronizer.syncAccountState(nativeTokenAddress)
+      ).rejects.toThrow("Unexpected number of events: 0, expected 1 event");
     });
   });
 
@@ -350,7 +354,9 @@ describe("StateSynchronizer", () => {
         .mockResolvedValueOnce(states[2]);
 
       const transactions: ShielderTransaction[] = [];
-      for await (const tx of synchronizer.getShielderTransactions()) {
+      for await (const tx of synchronizer.getShielderTransactions(
+        nativeTokenAddress
+      )) {
         transactions.push(tx);
       }
       expect(transactions).toHaveLength(2);
@@ -377,7 +383,9 @@ describe("StateSynchronizer", () => {
         .mockResolvedValue(emptyState);
       contract.setNullifierBlock(1n, null); // No transactions
       const transactions: ShielderTransaction[] = [];
-      for await (const tx of synchronizer.getShielderTransactions()) {
+      for await (const tx of synchronizer.getShielderTransactions(
+        nativeTokenAddress
+      )) {
         transactions.push(tx);
       }
       expect(transactions).toHaveLength(0);
@@ -401,7 +409,7 @@ describe("StateSynchronizer", () => {
 
       // Should throw on first iteration
       await expect(
-        synchronizer.getShielderTransactions().next()
+        synchronizer.getShielderTransactions(nativeTokenAddress).next()
       ).rejects.toThrow("State is null, this should not happen");
     });
   });

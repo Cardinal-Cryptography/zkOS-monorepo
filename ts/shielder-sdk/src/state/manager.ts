@@ -7,7 +7,7 @@ import {
 import { StorageInterface } from "./storageSchema";
 import { Hex } from "viem";
 import { AccountState } from "./types";
-import { storageSchemaVersion } from "@/constants";
+import { nativeTokenAddress, storageSchemaVersion } from "@/constants";
 
 export class StateManager {
   private storage: StorageInterface;
@@ -26,8 +26,8 @@ export class StateManager {
     this.cryptoClient = cryptoClient;
   }
 
-  async accountState(): Promise<AccountState> {
-    const res = await this.storage.getItem("accountState");
+  async accountState(tokenAddress: `0x${string}`): Promise<AccountState> {
+    const res = await this.storage.getItem(tokenAddress);
     const id = await this.getId();
     if (res) {
       const expectedIdHash = await this.getIdHash();
@@ -48,10 +48,13 @@ export class StateManager {
         storageSchemaVersion: obj.storageSchemaVersion
       };
     }
-    return await this.emptyAccountState();
+    return await this.emptyAccountState(tokenAddress);
   }
 
-  async updateAccountState(accountState: AccountState) {
+  async updateAccountState(
+    tokenAddress: `0x${string}`,
+    accountState: AccountState
+  ) {
     if (accountState.currentNoteIndex == undefined) {
       throw new Error("currentNoteIndex must be set.");
     }
@@ -63,7 +66,7 @@ export class StateManager {
         `Storage schema version mismatch: ${accountState.storageSchemaVersion} != ${storageSchemaVersion}`
       );
     }
-    await this.storage.setItem("accountState", {
+    await this.storage.setItem(tokenAddress, {
       idHash: scalarToBigint(
         await this.cryptoClient.hasher.poseidonHash([accountState.id])
       ),
@@ -75,10 +78,11 @@ export class StateManager {
     });
   }
 
-  async emptyAccountState() {
-    return emptyAccountState(await this.getId());
+  async emptyAccountState(tokenAddress: `0x${string}`): Promise<AccountState> {
+    return emptyAccountState(tokenAddress, await this.getId());
   }
 
+  // TODO: Create independent id for each token address
   private async getId(): Promise<Scalar> {
     if (!this.id) {
       this.id = await this.cryptoClient.converter.privateKeyToScalar(
@@ -97,7 +101,13 @@ export class StateManager {
   }
 }
 
-const emptyAccountState = (id: Scalar): AccountState => {
+const emptyAccountState = (
+  tokenAddress: `0x${string}`,
+  id: Scalar
+): AccountState => {
+  if (tokenAddress !== nativeTokenAddress) {
+    throw new Error("Not implemented");
+  }
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
     id,

@@ -3,7 +3,7 @@ import { StateManager } from "../../src/state/manager";
 import { MockedCryptoClient } from "../helpers";
 import { StorageInterface } from "../../src/state/storageSchema";
 import { AccountState } from "../../src/state/types";
-import { storageSchemaVersion } from "../../src/constants";
+import { nativeTokenAddress, storageSchemaVersion } from "../../src/constants";
 import {
   Scalar,
   scalarsEqual,
@@ -48,7 +48,7 @@ describe("StateManager", () => {
 
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
-      const state = await stateManager.accountState();
+      const state = await stateManager.accountState(nativeTokenAddress);
       const expectedId =
         await cryptoClient.converter.privateKeyToScalar(testPrivateKey);
 
@@ -64,7 +64,7 @@ describe("StateManager", () => {
     it("returns existing state when id hash matches", async () => {
       const idHash = await cryptoClient.hasher.poseidonHash([testId]);
 
-      await storage.setItem("accountState", {
+      await storage.setItem(nativeTokenAddress, {
         idHash: scalarToBigint(idHash),
         nonce: 1n,
         balance: 100n,
@@ -73,7 +73,7 @@ describe("StateManager", () => {
         storageSchemaVersion
       });
 
-      const state = await stateManager.accountState();
+      const state = await stateManager.accountState(nativeTokenAddress);
       expectStatesEqual(state, {
         id: testId,
         nonce: 1n,
@@ -85,7 +85,7 @@ describe("StateManager", () => {
     });
 
     it("throws error when id hash doesn't match", async () => {
-      await storage.setItem("accountState", {
+      await storage.setItem(nativeTokenAddress, {
         idHash: 999n, // Wrong hash
         nonce: 1n,
         balance: 100n,
@@ -94,13 +94,13 @@ describe("StateManager", () => {
         storageSchemaVersion
       });
 
-      await expect(stateManager.accountState()).rejects.toThrow(
-        "Id hash in storage does not matched the configured."
-      );
+      await expect(
+        stateManager.accountState(nativeTokenAddress)
+      ).rejects.toThrow("Id hash in storage does not matched the configured.");
     });
 
     it("throws error when currentNoteIndex is undefined", async () => {
-      await storage.setItem("accountState", {
+      await storage.setItem(nativeTokenAddress, {
         idHash: scalarToBigint(
           await cryptoClient.hasher.poseidonHash([testId])
         ),
@@ -110,9 +110,9 @@ describe("StateManager", () => {
         storageSchemaVersion
       });
 
-      await expect(stateManager.accountState()).rejects.toThrow(
-        "currentNoteIndex must be set."
-      );
+      await expect(
+        stateManager.accountState(nativeTokenAddress)
+      ).rejects.toThrow("currentNoteIndex must be set.");
     });
   });
 
@@ -127,9 +127,9 @@ describe("StateManager", () => {
         storageSchemaVersion
       };
 
-      await stateManager.updateAccountState(newState);
+      await stateManager.updateAccountState(nativeTokenAddress, newState);
 
-      const storedState = await stateManager.accountState();
+      const storedState = await stateManager.accountState(nativeTokenAddress);
       expectStatesEqual(storedState, newState);
     });
 
@@ -142,9 +142,9 @@ describe("StateManager", () => {
         storageSchemaVersion
       };
 
-      await expect(stateManager.updateAccountState(newState)).rejects.toThrow(
-        "currentNoteIndex must be set."
-      );
+      await expect(
+        stateManager.updateAccountState(nativeTokenAddress, newState)
+      ).rejects.toThrow("currentNoteIndex must be set.");
     });
 
     it("throws error when account id doesn't match", async () => {
@@ -158,9 +158,9 @@ describe("StateManager", () => {
         storageSchemaVersion
       };
 
-      await expect(stateManager.updateAccountState(newState)).rejects.toThrow(
-        "New account id does not match the configured."
-      );
+      await expect(
+        stateManager.updateAccountState(nativeTokenAddress, newState)
+      ).rejects.toThrow("New account id does not match the configured.");
     });
 
     it("throws error when schema version doesn't match", async () => {
@@ -173,15 +173,16 @@ describe("StateManager", () => {
         storageSchemaVersion: 999 // Wrong version
       };
 
-      await expect(stateManager.updateAccountState(newState)).rejects.toThrow(
-        "Storage schema version mismatch: 999 != 1"
-      );
+      await expect(
+        stateManager.updateAccountState(nativeTokenAddress, newState)
+      ).rejects.toThrow("Storage schema version mismatch: 999 != 2");
     });
   });
 
   describe("emptyAccountState", () => {
     it("returns correct empty state", async () => {
-      const emptyState = await stateManager.emptyAccountState();
+      const emptyState =
+        await stateManager.emptyAccountState(nativeTokenAddress);
 
       expect(emptyState).toEqual({
         id: testId,
