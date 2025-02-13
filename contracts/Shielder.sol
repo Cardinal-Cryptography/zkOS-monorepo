@@ -160,7 +160,7 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        _newAccount(
+        uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
@@ -168,6 +168,15 @@ contract Shielder is
             idHash,
             symKeyEncryption,
             proof
+        );
+
+        emit NewAccount(
+            CONTRACT_VERSION,
+            idHash,
+            NATIVE_TOKEN_NOTE_ADDRESS,
+            amount,
+            newNote,
+            newNoteIndex
         );
     }
 
@@ -193,7 +202,7 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        _newAccount(
+        uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             tokenAddress,
             amount,
@@ -204,6 +213,15 @@ contract Shielder is
         );
 
         token.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit NewAccount(
+            CONTRACT_VERSION,
+            idHash,
+            tokenAddress,
+            amount,
+            newNote,
+            newNoteIndex
+        );
     }
 
     function _newAccount(
@@ -220,6 +238,7 @@ contract Shielder is
         fieldElement(newNote)
         fieldElement(idHash)
         fieldElement(symKeyEncryption)
+        returns (uint256)
     {
         if (amount > depositLimit()) revert AmountOverDepositLimit();
 
@@ -237,17 +256,10 @@ contract Shielder is
 
         if (!success) revert NewAccountVerificationFailed();
 
-        uint256 index = _addNote(newNote);
+        uint256 newNoteIndex = _addNote(newNote);
         _registerNullifier(idHash);
 
-        emit NewAccount(
-            CONTRACT_VERSION,
-            idHash,
-            tokenAddress,
-            amount,
-            newNote,
-            index
-        );
+        return newNoteIndex;
     }
 
     /*
@@ -265,7 +277,8 @@ contract Shielder is
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
-        _deposit(
+
+        uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
@@ -274,6 +287,15 @@ contract Shielder is
             newNote,
             merkleRoot,
             proof
+        );
+
+        emit Deposit(
+            CONTRACT_VERSION,
+            idHiding,
+            NATIVE_TOKEN_NOTE_ADDRESS,
+            amount,
+            newNote,
+            newNoteIndex
         );
     }
 
@@ -297,7 +319,8 @@ contract Shielder is
         ) {
             revert ContractBalanceLimitReached();
         }
-        _deposit(
+
+        uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             tokenAddress,
             amount,
@@ -307,7 +330,17 @@ contract Shielder is
             merkleRoot,
             proof
         );
+
         token.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit Deposit(
+            CONTRACT_VERSION,
+            idHiding,
+            tokenAddress,
+            amount,
+            newNote,
+            newNoteIndex
+        );
     }
 
     function _deposit(
@@ -325,6 +358,7 @@ contract Shielder is
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
+        returns (uint256)
     {
         if (amount > depositLimit()) revert AmountOverDepositLimit();
         if (amount == 0) revert ZeroAmount();
@@ -344,17 +378,10 @@ contract Shielder is
 
         if (!success) revert DepositVerificationFailed();
 
-        uint256 index = _addNote(newNote);
+        uint256 newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        emit Deposit(
-            CONTRACT_VERSION,
-            idHiding,
-            tokenAddress,
-            amount,
-            newNote,
-            index
-        );
+        return newNoteIndex;
     }
 
     /*
@@ -372,7 +399,7 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     ) external whenNotPaused {
-        _withdraw(
+        uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             idHiding,
             NATIVE_TOKEN_NOTE_ADDRESS,
@@ -385,6 +412,7 @@ contract Shielder is
             relayerAddress,
             relayerFee
         );
+
         // return the tokens
         (bool nativeTransferSuccess, ) = withdrawalAddress.call{
             value: amount - relayerFee,
@@ -398,6 +426,18 @@ contract Shielder is
             gas: GAS_LIMIT
         }("");
         if (!nativeTransferSuccess) revert NativeTransferFailed();
+
+        emit Withdraw(
+            CONTRACT_VERSION,
+            idHiding,
+            NATIVE_TOKEN_NOTE_ADDRESS,
+            amount,
+            withdrawalAddress,
+            newNote,
+            newNoteIndex,
+            relayerAddress,
+            relayerFee
+        );
     }
 
     function withdrawERC20(
@@ -413,7 +453,7 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     ) external whenNotPaused {
-        _withdraw(
+        uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             idHiding,
             tokenAddress,
@@ -426,9 +466,22 @@ contract Shielder is
             relayerAddress,
             relayerFee
         );
+
         IERC20 token = IERC20(tokenAddress);
         token.safeTransfer(withdrawalAddress, amount - relayerFee);
         token.safeTransfer(relayerAddress, relayerFee);
+
+        emit Withdraw(
+            CONTRACT_VERSION,
+            idHiding,
+            tokenAddress,
+            amount,
+            withdrawalAddress,
+            newNote,
+            newNoteIndex,
+            relayerAddress,
+            relayerFee
+        );
     }
 
     function _withdraw(
@@ -449,6 +502,7 @@ contract Shielder is
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
+        returns (uint256)
     {
         if (amount == 0) revert ZeroAmount();
         if (amount <= relayerFee) revert FeeHigherThanAmount();
@@ -482,17 +536,7 @@ contract Shielder is
         uint256 newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
 
-        emit Withdraw(
-            CONTRACT_VERSION,
-            idHiding,
-            tokenAddress,
-            amount,
-            withdrawalAddress,
-            newNote,
-            newNoteIndex,
-            relayerAddress,
-            relayerFee
-        );
+        return newNoteIndex;
     }
 
     function addressToUInt256(address addr) public pure returns (uint256) {
