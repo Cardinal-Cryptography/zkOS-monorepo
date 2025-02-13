@@ -9,6 +9,7 @@ import {
 import { SendShielderTransaction } from "@/client";
 import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
+import { hexToBigInt } from "viem";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -45,7 +46,11 @@ export class NewAccountAction extends NoteAction {
     );
   }
 
-  async preparePubInputs(state: AccountState, amount: bigint) {
+  async preparePubInputs(
+    state: AccountState,
+    amount: bigint,
+    anonymityRevokerPubkey: bigint
+  ): Promise<NewAccountPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const newState = await this.rawNewAccount(state, amount);
 
@@ -55,7 +60,20 @@ export class NewAccountAction extends NoteAction {
       );
     }
     const hNote = newState.currentNote;
-    return { hId, hNote, initialDeposit: Scalar.fromBigint(amount) };
+    const derivationSalt = Scalar.fromBigint(
+      hexToBigInt("0x6b657920666f72204152")
+    );
+    const encryption = await this.cryptoClient.hasher.poseidonHash([
+      state.id,
+      derivationSalt
+    ]);
+    return {
+      hId,
+      hNote,
+      initialDeposit: Scalar.fromBigint(amount),
+      anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey),
+      symKeyEncryption: encryption
+    };
   }
 
   /**
@@ -74,18 +92,24 @@ export class NewAccountAction extends NoteAction {
         state.id,
         Number(state.nonce)
       );
+    const anonymityRevokerPubkey = await this.contract.anonymityRevokerPubkey();
     const time = Date.now();
     const proof = await this.cryptoClient.newAccountCircuit
       .prove({
         id: state.id,
         nullifier,
         trapdoor,
-        initialDeposit: Scalar.fromBigint(amount)
+        initialDeposit: Scalar.fromBigint(amount),
+        anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey)
       })
       .catch((e) => {
         throw new Error(`Failed to prove new account: ${e}`);
       });
-    const pubInputs = await this.preparePubInputs(state, amount);
+    const pubInputs = await this.preparePubInputs(
+      state,
+      amount,
+      anonymityRevokerPubkey
+    );
     if (!(await this.cryptoClient.newAccountCircuit.verify(proof, pubInputs))) {
       throw new Error("New account proof verification failed");
     }
@@ -124,6 +148,7 @@ export class NewAccountAction extends NoteAction {
       scalarToBigint(pubInputs.hNote),
       scalarToBigint(pubInputs.hId),
       amount,
+      scalarToBigint(pubInputs.symKeyEncryption),
       proof
     );
     const txHash = await sendShielderTransaction({

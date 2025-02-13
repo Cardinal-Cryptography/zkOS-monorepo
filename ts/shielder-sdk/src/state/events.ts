@@ -25,14 +25,14 @@ export class StateEventsFilter {
   ): Promise<AccountState | null> => {
     const getNewState = async () => {
       switch (noteEvent.name) {
-        case "NewAccountNative":
+        case "NewAccount":
           return await this.newAccountAction.rawNewAccount(
             state,
             noteEvent.amount
           );
-        case "DepositNative":
+        case "Deposit":
           return await this.depositAction.rawDeposit(state, noteEvent.amount);
-        case "WithdrawNative":
+        case "Withdraw":
           return await this.withdrawAction.rawWithdraw(state, noteEvent.amount);
       }
     };
