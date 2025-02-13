@@ -6,6 +6,8 @@ export type NewAccountPubInputs = {
   hNote: Scalar;
   hId: Scalar;
   initialDeposit: Scalar;
+  anonymityRevokerPubkey: Scalar;
+  symKeyEncryption: Scalar;
 };
 
 export type NewAccountAdvice = {
@@ -13,6 +15,7 @@ export type NewAccountAdvice = {
   nullifier: Scalar;
   trapdoor: Scalar;
   initialDeposit: Scalar;
+  anonymityRevokerPubkey: Scalar; // temporary, will be a curve point in the future
 };
 
 export type DepositPubInputs = {
