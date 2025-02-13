@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::deposit::{DepositInstance, DepositProverKnowledge};
+use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -41,6 +42,7 @@ impl DepositCircuit {
                 nullifier_old: vec_to_f(nullifier_old),
                 trapdoor_old: vec_to_f(trapdoor_old),
                 account_old_balance: vec_to_f(account_balance_old),
+                token_address: NATIVE_TOKEN_ADDRESS,
                 path: vec_to_path(path),
                 deposit_value: vec_to_f(value),
                 nullifier_new: vec_to_f(nullifier_new),
@@ -66,6 +68,7 @@ impl DepositCircuit {
                 DepositInstance::HashedOldNullifier => &h_nullifier_old,
                 DepositInstance::HashedNewNote => &h_note_new,
                 DepositInstance::DepositValue => &value,
+                DepositInstance::TokenAddress => &NATIVE_TOKEN_ADDRESS.to_bytes().to_vec(),
             };
             vec_to_f(value.clone())
         };

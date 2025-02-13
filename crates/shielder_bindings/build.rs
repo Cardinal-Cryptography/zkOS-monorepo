@@ -19,7 +19,7 @@ use shielder_circuits::{
 fn gen_params_pk<C: Circuit<Fr> + Default>(circuit_name: &str, full_params: &Params) {
     std::fs::create_dir_all(format!("artifacts/{}", circuit_name))
         .expect("Failed to create directory");
-    let (params, k, pk, _) = generate_keys_with_min_k::<C>(full_params.clone())
+    let (params, k, pk, _) = generate_keys_with_min_k(C::default(), full_params.clone())
         .expect("keys should not fail to generate");
     let params_bytes = marshall_params(&params).expect("Failed to marshall params");
     std::fs::write(
