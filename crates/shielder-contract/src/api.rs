@@ -7,8 +7,8 @@ use crate::{
     connection::{Connection, ConnectionPolicy, NoProvider},
     ContractResult,
     ShielderContract::{
-        anonymityRevokerPubkeyCall, depositNativeCall, getMerklePathCall,
-        newAccountNativeCall, nullifiersCall, withdrawNativeCall,
+        anonymityRevokerPubkeyCall, depositNativeCall, getMerklePathCall, newAccountNativeCall,
+        nullifiersCall, withdrawNativeCall,
     },
 };
 

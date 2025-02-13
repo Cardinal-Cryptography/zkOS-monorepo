@@ -160,7 +160,7 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        newAccount(
+        _newAccount(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
@@ -192,7 +192,7 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        newAccount(
+        _newAccount(
             expectedContractVersion,
             tokenAddress,
             amount,
@@ -203,7 +203,7 @@ contract Shielder is
         );
     }
 
-    function newAccount(
+    function _newAccount(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -212,7 +212,7 @@ contract Shielder is
         uint256 symKeyEncryption,
         bytes calldata proof
     )
-        internal
+        private
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
@@ -262,7 +262,7 @@ contract Shielder is
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
-        deposit(
+        _deposit(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
@@ -292,7 +292,7 @@ contract Shielder is
         if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
-        deposit(
+        _deposit(
             expectedContractVersion,
             tokenAddress,
             amount,
@@ -304,7 +304,7 @@ contract Shielder is
         );
     }
 
-    function deposit(
+    function _deposit(
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
@@ -314,7 +314,7 @@ contract Shielder is
         uint256 merkleRoot,
         bytes calldata proof
     )
-        internal
+        private
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
@@ -366,7 +366,7 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     ) external whenNotPaused {
-        withdraw(
+        _withdraw(
             expectedContractVersion,
             idHiding,
             NATIVE_TOKEN_NOTE_ADDRESS,
@@ -407,7 +407,7 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     ) external whenNotPaused {
-        withdraw(
+        _withdraw(
             expectedContractVersion,
             idHiding,
             tokenAddress,
@@ -425,7 +425,7 @@ contract Shielder is
         token.safeTransfer(relayerAddress, relayerFee);
     }
 
-    function withdraw(
+    function _withdraw(
         bytes3 expectedContractVersion,
         uint256 idHiding,
         address tokenAddress,
@@ -438,7 +438,7 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee
     )
-        internal
+        private
         restrictContractVersion(expectedContractVersion)
         fieldElement(idHiding)
         fieldElement(oldNullifierHash)
