@@ -76,6 +76,7 @@ sol! {
             bytes3 expectedContractVersion,
             uint256 newNote,
             uint256 idHash,
+            uint256 symKeyEncryption,
             bytes calldata proof
         ) external payable whenNotPaused;
         function newAccountERC20(

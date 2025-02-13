@@ -56,6 +56,9 @@ contract Shielder is
     uint256 private constant FIELD_MODULUS =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
+    /// A special value of `tokenAddress` in circuits used to represent the native token.
+    address private constant NATIVE_TOKEN_NOTE_ADDRESS = address(0);
+
     // -- Events --
     event NewAccount(
         bytes3 contractVersion,
@@ -148,6 +151,7 @@ contract Shielder is
         bytes3 expectedContractVersion,
         uint256 newNote,
         uint256 idHash,
+        uint256 symKeyEncryption,
         bytes calldata proof
     ) external payable whenNotPaused {
         uint256 amount = msg.value;
@@ -158,10 +162,11 @@ contract Shielder is
 
         newAccount(
             expectedContractVersion,
-            address(0),
+            NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             newNote,
             idHash,
+            symKeyEncryption,
             proof
         );
     }
@@ -177,6 +182,7 @@ contract Shielder is
         uint256 amount,
         uint256 newNote,
         uint256 idHash,
+        uint256 symKeyEncryption,
         bytes calldata proof
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
@@ -192,6 +198,7 @@ contract Shielder is
             amount,
             newNote,
             idHash,
+            symKeyEncryption,
             proof
         );
     }
@@ -206,7 +213,6 @@ contract Shielder is
         bytes calldata proof
     )
         internal
-        whenNotPaused
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
@@ -258,7 +264,7 @@ contract Shielder is
         }
         deposit(
             expectedContractVersion,
-            address(0),
+            NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             idHiding,
             oldNullifierHash,
@@ -363,7 +369,7 @@ contract Shielder is
         withdraw(
             expectedContractVersion,
             idHiding,
-            address(0),
+            NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             withdrawalAddress,
             merkleRoot,
