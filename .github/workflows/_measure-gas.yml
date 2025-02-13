@@ -75,7 +75,6 @@ jobs:
           ./main/target/release/gas-consumption main-report.txt
 
       - name: Print gas measured on the `main` branch
-        working-directory: main
         run: cat main-report.txt
 
       #################### Generate report ####################
