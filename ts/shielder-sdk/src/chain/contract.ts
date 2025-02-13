@@ -128,7 +128,6 @@ export class Contract implements IContract {
       return this.contract.simulate.newAccountNative(
         [
           expectedContractVersion,
-          zeroAddress,
           amount,
           newNote,
           idHash,
@@ -143,7 +142,6 @@ export class Contract implements IContract {
       functionName: "newAccountNative",
       args: [
         expectedContractVersion,
-        zeroAddress,
         amount,
         newNote,
         idHash,
@@ -167,7 +165,6 @@ export class Contract implements IContract {
       return this.contract.simulate.depositNative(
         [
           expectedContractVersion,
-          zeroAddress,
           amount,
           idHiding,
           oldNoteNullifierHash,
@@ -183,7 +180,6 @@ export class Contract implements IContract {
       functionName: "depositNative",
       args: [
         expectedContractVersion,
-        zeroAddress,
         amount,
         idHiding,
         oldNoteNullifierHash,
