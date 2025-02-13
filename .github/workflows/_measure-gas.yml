@@ -62,14 +62,16 @@ jobs:
           cargo build -p integration-tests --bin gas-consumption --release
 
       - name: Install dependencies
-        run: |
-          cd main
-          make deps
+        working-directory: main
+        run: make deps
 
       - name: Generate all contracts
-        run: |
-          cd main
-          make generate-contracts
+        working-directory: main
+        run: make generate-contracts
+
+      - name: Build binary (main branch)
+        working-directory: main
+        run: cargo build -p integration-tests --bin gas-consumption --release
 
       - name: Run gas-consumption on the `main` branch
         run: |

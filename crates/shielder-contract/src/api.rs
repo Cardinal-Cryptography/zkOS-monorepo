@@ -7,8 +7,8 @@ use crate::{
     connection::{Connection, ConnectionPolicy, NoProvider},
     ContractResult,
     ShielderContract::{
-        depositNativeCall, getMerklePathCall, newAccountNativeCall, nullifiersCall,
-        withdrawNativeCall,
+        anonymityRevokerPubkeyCall, depositNativeCall, getMerklePathCall,
+        newAccountNativeCall, nullifiersCall, withdrawNativeCall,
     },
 };
 
@@ -80,6 +80,14 @@ impl<P: Provider + Clone> ShielderUser<P> {
     ) -> ContractResult<C::Result> {
         self.connection
             .call::<C, _>(getMerklePathCall::new((id,)))
+            .await
+    }
+
+    pub async fn anonymity_revoker_pubkey<C: CallType<anonymityRevokerPubkeyCall>>(
+        &self,
+    ) -> ContractResult<C::Result> {
+        self.connection
+            .call::<C, _>(anonymityRevokerPubkeyCall::new(()))
             .await
     }
 }

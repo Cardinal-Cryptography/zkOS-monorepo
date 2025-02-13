@@ -15,6 +15,8 @@ pub struct Actor {
     pub account: ShielderAccount,
 }
 
+const ANONYMITY_REVOKER_PKEY: U256 = U256::from_limbs([65, 78, 79, 78]); // ANON
+
 impl Actor {
     pub fn new(id: u32, rpc_url: String, shielder: Address) -> Self {
         let signer = PrivateKeySigner::random_with(&mut StdRng::from_seed(seed(id)));
@@ -39,7 +41,7 @@ impl Actor {
         amount: U256,
     ) -> newAccountNativeCall {
         self.account
-            .prepare_call::<NewAccountCallType>(params, pk, amount, &())
+            .prepare_call::<NewAccountCallType>(params, pk, amount, &ANONYMITY_REVOKER_PKEY)
     }
 }
 

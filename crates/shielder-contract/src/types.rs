@@ -63,7 +63,8 @@ sol! {
 
         function initialize(
             address initialOwner,
-            uint256 _depositLimit
+            uint256 _depositLimit,
+            uint256 _anonymityRevokerPublicKey
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
@@ -83,6 +84,7 @@ sol! {
             uint256 amount,
             uint256 newNote,
             uint256 idHash,
+            uint256 symKeyEncryption,
             bytes calldata proof
         ) external whenNotPaused;
         function depositNative(
@@ -134,6 +136,7 @@ sol! {
         ) external view returns (uint256[] memory);
 
         function setDepositLimit(uint256 _depositLimit) external;
+        function anonymityRevokerPubkey() public view returns (uint256);
     }
 }
 
@@ -226,5 +229,12 @@ impl ShielderContractCall for nullifiersCall {
     type UnwrappedResult = U256;
     fn unwrap_result(nullifier: nullifiersReturn) -> Self::UnwrappedResult {
         nullifier._0
+    }
+}
+
+impl ShielderContractCall for anonymityRevokerPubkeyCall {
+    type UnwrappedResult = U256;
+    fn unwrap_result(pubkey: anonymityRevokerPubkeyReturn) -> Self::UnwrappedResult {
+        pubkey._0
     }
 }

@@ -12,7 +12,10 @@ use shielder_contract::{
     ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
     WithdrawCommitment,
 };
-use shielder_setup::version::{contract_version, ContractVersion};
+use shielder_setup::{
+    native_token::NATIVE_TOKEN_ADDRESS,
+    version::{contract_version, ContractVersion},
+};
 use type_conversions::{field_to_u256, u256_to_field};
 
 use super::secrets::id_hiding_nonce;
@@ -53,20 +56,22 @@ pub trait CallType {
 
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
-    type Extra = ();
+    type Extra = U256; // temporarily; target: `AsymPublicKey` (not yet visible)
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountNativeCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
         amount: U256,
-        _: &Self::Extra,
+        anonymity_revoker_public_key: &Self::Extra,
     ) -> Self::ProverKnowledge {
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
+            anonymity_revoker_public_key: u256_to_field(anonymity_revoker_public_key),
         }
     }
 
@@ -80,6 +85,9 @@ impl CallType for NewAccountCallType {
             expectedContractVersion: contract_version().to_bytes(),
             newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
+            symKeyEncryption: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryption),
+            ),
             proof: Bytes::from(proof),
         }
     }
@@ -118,6 +126,7 @@ impl CallType for DepositCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
             path: map_path_to_field(merkle.path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
@@ -184,6 +193,7 @@ impl CallType for WithdrawCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
             path: map_path_to_field(extra.merkle_proof.path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
