@@ -15,6 +15,8 @@ import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 
+const ANONYMITY_REVOKER_PUBKEY = 1n;
+
 const expectPubInputsCorrect = async (
   pubInputs: NewAccountPubInputs,
   state: AccountState,
@@ -60,6 +62,9 @@ describe("NewAccountAction", () => {
     cryptoClient = new MockedCryptoClient();
     contract = {
       getAddress: vitest.fn().mockReturnValue(mockAddress),
+      anonymityRevokerPubkey: vitest
+        .fn()
+        .mockResolvedValue(ANONYMITY_REVOKER_PUBKEY),
       newAccountCalldata: vitest
         .fn<
           (
@@ -114,7 +119,11 @@ describe("NewAccountAction", () => {
   describe("preparePubInputs", () => {
     it("should prepare public inputs correctly", async () => {
       const amount = 100n;
-      const pubInputs = await action.preparePubInputs(mockedState, amount);
+      const pubInputs = await action.preparePubInputs(
+        mockedState,
+        amount,
+        ANONYMITY_REVOKER_PUBKEY
+      );
 
       await expectPubInputsCorrect(
         pubInputs,
@@ -127,7 +136,7 @@ describe("NewAccountAction", () => {
     it("should throw an error at negative amount", async () => {
       const amount = -100n;
       await expect(
-        action.preparePubInputs(mockedState, amount)
+        action.preparePubInputs(mockedState, amount, ANONYMITY_REVOKER_PUBKEY)
       ).rejects.toThrow(
         "Failed to create new account, possibly due to negative balance"
       );
@@ -223,6 +232,7 @@ describe("NewAccountAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNote),
         scalarToBigint(calldata.calldata.pubInputs.hId),
         amount,
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption),
         calldata.calldata.proof
       );
 
@@ -254,6 +264,7 @@ describe("NewAccountAction", () => {
             newNote: bigint,
             idHash: bigint,
             amount: bigint,
+            symKeyEncryption: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
