@@ -100,10 +100,9 @@ async fn perform_contract_action(
         ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
             withdraw(app_state, amount, to).await
         }
-        ContractInteractionCommand::NewAccount(NewAccountCmd {
-            amount,
-            anonymity_revoker_pkey,
-        }) => new_account(app_state, amount, anonymity_revoker_pkey).await,
+        ContractInteractionCommand::NewAccount(NewAccountCmd { amount }) => {
+            new_account(app_state, amount).await
+        }
     }
 }
 
