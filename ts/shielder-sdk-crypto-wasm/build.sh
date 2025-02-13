@@ -12,5 +12,5 @@ cp -r ../../crates/shielder_bindings/pkg dist/crates/shielder_bindings/
 node update-imports.mjs
 
 # Create Vite-specific build
-# ./patches/vite-patch.sh
+./patches/vite-patch.sh
 
