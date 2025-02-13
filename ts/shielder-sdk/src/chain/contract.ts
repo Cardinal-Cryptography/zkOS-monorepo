@@ -6,8 +6,7 @@ import {
   getContract,
   GetContractReturnType,
   Hash,
-  PublicClient,
-  zeroAddress
+  PublicClient
 } from "viem";
 import { BaseError, ContractFunctionRevertedError } from "viem";
 
