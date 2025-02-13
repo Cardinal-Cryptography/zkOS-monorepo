@@ -186,9 +186,10 @@ contract Shielder is
         bytes calldata proof
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        if (token.balanceOf(address(this)) > MAX_CONTRACT_BALANCE) {
+        if (
+            amount > MAX_CONTRACT_BALANCE ||
+            token.balanceOf(address(this)) + amount > MAX_CONTRACT_BALANCE
+        ) {
             revert ContractBalanceLimitReached();
         }
 
@@ -201,6 +202,8 @@ contract Shielder is
             symKeyEncryption,
             proof
         );
+
+        token.safeTransferFrom(msg.sender, address(this), amount);
     }
 
     function _newAccount(
