@@ -57,22 +57,25 @@ jobs:
           path: main
 
       - name: Install dependencies
-        run: |
-          cd main
-          make deps
+        working-directory: main
+        run: make deps
 
       - name: Generate all contracts
-        run: |
-          cd main
-          make generate-contracts
+        working-directory: main
+        run: make generate-contracts
+
+      - name: Build binary (main branch)
+        working-directory: main
+        run: cargo build -p integration-tests --bin gas-consumption --release
 
       - name: Run measure-circuits on the `main` branch
         run: |
           export CONTRACTS_DIR="main/contracts"
           export CARGO_MANIFEST_DIR=./main/Cargo.toml
-          ./target/release/gas-consumption main-report.txt
+          ./main/target/release/gas-consumption main-report.txt
 
       - name: Print gas measured on the `main` branch
+        working-directory: main
         run: cat main-report.txt
 
       #################### Generate report ####################
