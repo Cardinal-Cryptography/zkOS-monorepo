@@ -60,13 +60,14 @@ export class NewAccountAction extends NoteAction {
       );
     }
     const hNote = newState.currentNote;
-    const derivationSalt = Scalar.fromBigint(
-      hexToBigInt("0x6b657920666f72204152")
-    );
-    const encryption = await this.cryptoClient.hasher.poseidonHash([
-      state.id,
-      derivationSalt
-    ]);
+
+    // temporary placeholder for derivation & encryption, will be exposed through bindings in the future
+    const encryption = await (async (id: Scalar) => {
+      const derivationSalt = Scalar.fromBigint(
+        hexToBigInt("0x6b657920666f72204152")
+      );
+      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
+    })(state.id);
     return {
       hId,
       hNote,
