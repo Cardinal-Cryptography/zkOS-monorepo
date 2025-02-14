@@ -10,6 +10,8 @@ import { SendShielderTransaction } from "@/client";
 import { Calldata } from "@/actions";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -19,6 +21,7 @@ export interface DepositCalldata extends Calldata {
   expectedContractVersion: `0x${string}`;
   amount: bigint;
   merkleRoot: Scalar;
+  token: Token;
 }
 
 export class DepositAction extends NoteAction {
@@ -91,10 +94,10 @@ export class DepositAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
-    tokenAddress: `0x${string}`,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
+    const tokenAddress = getTokenAddress(state.token);
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
@@ -154,7 +157,8 @@ export class DepositAction extends NoteAction {
       expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
-      merkleRoot
+      merkleRoot,
+      token: state.token
     };
   }
 
@@ -176,16 +180,29 @@ export class DepositAction extends NoteAction {
       amount,
       merkleRoot
     } = calldata;
-    const encodedCalldata = await this.contract.depositCalldata(
-      calldata.expectedContractVersion,
-      from,
-      scalarToBigint(pubInputs.idHiding),
-      scalarToBigint(pubInputs.hNullifierOld),
-      scalarToBigint(pubInputs.hNoteNew),
-      scalarToBigint(merkleRoot),
-      amount,
-      proof
-    );
+    const encodedCalldata =
+      calldata.token.type === "native"
+        ? await this.contract.depositNativeCalldata(
+            calldata.expectedContractVersion,
+            from,
+            scalarToBigint(pubInputs.idHiding),
+            scalarToBigint(pubInputs.hNullifierOld),
+            scalarToBigint(pubInputs.hNoteNew),
+            scalarToBigint(merkleRoot),
+            amount,
+            proof
+          )
+        : await this.contract.depositTokenCalldata(
+            calldata.expectedContractVersion,
+            calldata.token.address,
+            from,
+            scalarToBigint(pubInputs.idHiding),
+            scalarToBigint(pubInputs.hNullifierOld),
+            scalarToBigint(pubInputs.hNoteNew),
+            scalarToBigint(merkleRoot),
+            amount,
+            proof
+          );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),

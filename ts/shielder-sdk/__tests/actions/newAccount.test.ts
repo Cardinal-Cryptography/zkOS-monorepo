@@ -14,6 +14,8 @@ import { NewAccountAction } from "../../src/actions/newAccount";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
+import { createNativeToken } from "../../src/types";
+import { nativeTokenAddress } from "../../src/constants";
 
 const ANONYMITY_REVOKER_PUBKEY = 1n;
 
@@ -65,7 +67,7 @@ describe("NewAccountAction", () => {
       anonymityRevokerPubkey: vitest
         .fn()
         .mockResolvedValue(ANONYMITY_REVOKER_PUBKEY),
-      newAccountCalldata: vitest
+      newAccountNativeCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -84,7 +86,8 @@ describe("NewAccountAction", () => {
       nonce: mockedStateNonce,
       balance: 0n,
       currentNote: Scalar.fromBigint(0n),
-      storageSchemaVersion: 0
+      storageSchemaVersion: 0,
+      token: createNativeToken()
     };
   });
 
@@ -122,7 +125,8 @@ describe("NewAccountAction", () => {
       const pubInputs = await action.preparePubInputs(
         mockedState,
         amount,
-        ANONYMITY_REVOKER_PUBKEY
+        ANONYMITY_REVOKER_PUBKEY,
+        nativeTokenAddress
       );
 
       await expectPubInputsCorrect(
@@ -136,7 +140,12 @@ describe("NewAccountAction", () => {
     it("should throw an error at negative amount", async () => {
       const amount = -100n;
       await expect(
-        action.preparePubInputs(mockedState, amount, ANONYMITY_REVOKER_PUBKEY)
+        action.preparePubInputs(
+          mockedState,
+          amount,
+          ANONYMITY_REVOKER_PUBKEY,
+          nativeTokenAddress
+        )
       ).rejects.toThrow(
         "Failed to create new account, possibly due to negative balance"
       );
@@ -226,7 +235,7 @@ describe("NewAccountAction", () => {
         mockAddress
       );
 
-      expect(contract.newAccountCalldata).toHaveBeenCalledWith(
+      expect(contract.newAccountNativeCalldata).toHaveBeenCalledWith(
         expectedVersion,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.hNote),
@@ -256,7 +265,7 @@ describe("NewAccountAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      contract.newAccountCalldata = vitest
+      contract.newAccountNativeCalldata = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,

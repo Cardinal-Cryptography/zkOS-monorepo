@@ -31,6 +31,7 @@ import {
   ShielderCallbacks,
   ShielderOperation
 } from "./types";
+import { Token } from "@/types";
 
 /**
  * Factory method to create ShielderClient with the original configuration
@@ -160,13 +161,13 @@ export class ShielderClient {
    * For the fresh storage and existing account being imported, it goes through the whole
    * shielder transactions history and updates the state, so it might be slow.
    * @returns new transactions, which were not yet synced
-   * @param {`0x${string}`} tokenAddress - address of the token to sync
+   * @param {Token} token - token to sync
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
-  async syncShielderToken(tokenAddress: `0x${string}`) {
+  async syncShielderToken(token: Token) {
     try {
       return await this.handleVersionErrors(() => {
-        return this.stateSynchronizer.syncAccountState(tokenAddress);
+        return this.stateSynchronizer.syncAccountState(token);
       });
     } catch (error) {
       this.callbacks.onError?.(error, "syncing", "sync");
@@ -188,10 +189,11 @@ export class ShielderClient {
 
   /**
    * Get the current account state for token.
+   * @param {Token} token - token to get the account state for
    * @returns the current account state
    */
-  async accountState(tokenAddress: `0x${string}`) {
-    return await this.stateManager.accountState(tokenAddress);
+  async accountState(token: Token) {
+    return await this.stateManager.accountState(token);
   }
 
   /**
@@ -199,15 +201,16 @@ export class ShielderClient {
    * Note, this method should be used with caution,
    * as it may fetch and return a large amount of data.
    * Instead, consider using callback `onNewTransaction` to track the new transactions.
+   * @param {Token} token - token to get the shielder transactions for
    * @returns the shielder transactions
    * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
    */
   async *scanChainForTokenShielderTransactions(
-    tokenAddress: `0x${string}`
+    token: Token
   ): AsyncGenerator<ShielderTransaction, void, unknown> {
     try {
       for await (const transaction of this.stateSynchronizer.getShielderTransactions(
-        tokenAddress
+        token
       )) {
         yield transaction;
       }
@@ -234,7 +237,7 @@ export class ShielderClient {
    * Shield `amount` to the shielder account. Under the hood, it either creates a new account or deposits to the existing account.
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
-   * @param {`0x${string}`} tokenAddress - address of the token to shield
+   * @param {Token} token - token to shield
    * @param {bigint} amount - amount to shield, in wei
    * @param {SendShielderTransaction} sendShielderTransaction - function to send the shielder transaction to the blockchain
    * @param {`0x${string}`} from - public address of the sender
@@ -242,29 +245,19 @@ export class ShielderClient {
    * @throws {OutdatedSdkError} if cannot call the contract due to unsupported contract version
    */
   async shield(
-    tokenAddress: `0x${string}`,
+    token: Token,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(tokenAddress);
+    const state = await this.stateManager.accountState(token);
     const txHash =
       state.nonce == 0n
-        ? await this.newAccount(
-            tokenAddress,
-            amount,
-            sendShielderTransaction,
-            from
-          )
-        : await this.deposit(
-            tokenAddress,
-            amount,
-            sendShielderTransaction,
-            from
-          );
+        ? await this.newAccount(token, amount, sendShielderTransaction, from)
+        : await this.deposit(token, amount, sendShielderTransaction, from);
     if (this.publicClient) {
       await this.publicClient.waitForTransactionReceipt({ hash: txHash });
-      await this.syncShielderToken(tokenAddress);
+      await this.syncShielderToken(token);
     }
     return txHash;
   }
@@ -273,7 +266,7 @@ export class ShielderClient {
    * Withdraw `amount` to the `address` from the shielder account.
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
-   * @param {`0x${string}`} tokenAddress - address of the token to withdraw
+   * @param {Token} token - token to withdraw
    * @param {bigint} amount - amount to withdraw, in wei
    * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
    * @param {`0x${string}`} address - public address of the recipient
@@ -281,17 +274,16 @@ export class ShielderClient {
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
   async withdraw(
-    tokenAddress: `0x${string}`,
+    token: Token,
     amount: bigint,
     totalFee: bigint,
     address: Address
   ) {
-    const state = await this.stateManager.accountState(tokenAddress);
+    const state = await this.stateManager.accountState(token);
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
           state,
-          tokenAddress,
           amount,
           totalFee,
           address,
@@ -302,26 +294,21 @@ export class ShielderClient {
     );
     if (this.publicClient) {
       await this.publicClient.waitForTransactionReceipt({ hash: txHash });
-      await this.syncShielderToken(tokenAddress);
+      await this.syncShielderToken(token);
     }
     return txHash;
   }
 
   private async newAccount(
-    tokenAddress: `0x${string}`,
+    token: Token,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(tokenAddress);
+    const state = await this.stateManager.accountState(token);
     const txHash = await this.handleCalldata(
       () =>
-        this.newAccountAction.generateCalldata(
-          state,
-          tokenAddress,
-          amount,
-          contractVersion
-        ),
+        this.newAccountAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>
         this.newAccountAction.sendCalldata(
           calldata,
@@ -334,20 +321,14 @@ export class ShielderClient {
   }
 
   private async deposit(
-    tokenAddress: `0x${string}`,
+    token: Token,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(tokenAddress);
+    const state = await this.stateManager.accountState(token);
     const txHash = await this.handleCalldata(
-      () =>
-        this.depositAction.generateCalldata(
-          state,
-          tokenAddress,
-          amount,
-          contractVersion
-        ),
+      () => this.depositAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>
         this.depositAction.sendCalldata(
           calldata,

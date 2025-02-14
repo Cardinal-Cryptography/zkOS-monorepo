@@ -10,6 +10,8 @@ import { AccountState } from "@/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
@@ -21,6 +23,7 @@ export interface WithdrawCalldata {
   amount: bigint;
   address: Address;
   merkleRoot: Scalar;
+  token: Token;
 }
 
 export class WithdrawAction extends NoteAction {
@@ -133,12 +136,12 @@ export class WithdrawAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
-    tokenAddress: `0x${string}`,
     amount: bigint,
     totalFee: bigint,
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
+    const tokenAddress = getTokenAddress(state.token);
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
@@ -217,7 +220,8 @@ export class WithdrawAction extends NoteAction {
       provingTimeMillis: provingTime,
       amount,
       address,
-      merkleRoot
+      merkleRoot,
+      token: state.token
     };
   }
 

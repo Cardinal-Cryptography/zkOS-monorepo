@@ -10,6 +10,8 @@ import { SendShielderTransaction } from "@/client";
 import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { hexToBigInt } from "viem";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -19,6 +21,7 @@ export interface NewAccountCalldata {
   expectedContractVersion: `0x${string}`;
   provingTimeMillis: number;
   amount: bigint;
+  token: Token;
 }
 
 export class NewAccountAction extends NoteAction {
@@ -87,10 +90,10 @@ export class NewAccountAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
-    tokenAddress: `0x${string}`,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
+    const tokenAddress = getTokenAddress(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -127,7 +130,8 @@ export class NewAccountAction extends NoteAction {
         proof
       },
       provingTimeMillis: provingTime,
-      amount
+      amount,
+      token: state.token
     };
   }
 
@@ -148,15 +152,27 @@ export class NewAccountAction extends NoteAction {
       expectedContractVersion,
       amount
     } = calldata;
-    const encodedCalldata = await this.contract.newAccountCalldata(
-      expectedContractVersion,
-      from,
-      scalarToBigint(pubInputs.hNote),
-      scalarToBigint(pubInputs.hId),
-      amount,
-      scalarToBigint(pubInputs.symKeyEncryption),
-      proof
-    );
+    const encodedCalldata =
+      calldata.token.type === "native"
+        ? await this.contract.newAccountNativeCalldata(
+            expectedContractVersion,
+            from,
+            scalarToBigint(pubInputs.hNote),
+            scalarToBigint(pubInputs.hId),
+            amount,
+            scalarToBigint(pubInputs.symKeyEncryption),
+            proof
+          )
+        : await this.contract.newAccountTokenCalldata(
+            expectedContractVersion,
+            calldata.token.address,
+            from,
+            scalarToBigint(pubInputs.hNote),
+            scalarToBigint(pubInputs.hId),
+            amount,
+            scalarToBigint(pubInputs.symKeyEncryption),
+            proof
+          );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),

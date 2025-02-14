@@ -19,6 +19,8 @@ import {
   WithdrawResponse
 } from "../../src/chain/relayer";
 import { encodePacked, hexToBigInt, keccak256 } from "viem";
+import { createNativeToken } from "../../src/types";
+import { nativeTokenAddress } from "../../src/constants";
 
 const expectPubInputsCorrect = async (
   pubInputs: WithdrawPubInputs,
@@ -156,7 +158,8 @@ describe("WithdrawAction", () => {
         Scalar.fromBigint(5n)
       ),
       currentNoteIndex: 100n,
-      storageSchemaVersion: 0
+      storageSchemaVersion: 0,
+      token: createNativeToken()
     };
   });
 
@@ -201,7 +204,8 @@ describe("WithdrawAction", () => {
         Scalar.fromBigint(nonce),
         Scalar.fromBigint(2n),
         merkleRoot,
-        commitment
+        commitment,
+        nativeTokenAddress
       );
 
       await expectPubInputsCorrect(
@@ -228,7 +232,8 @@ describe("WithdrawAction", () => {
           Scalar.fromBigint(nonce),
           prevNullifier,
           merkleRoot,
-          commitment
+          commitment,
+          nativeTokenAddress
         )
       ).rejects.toThrow(
         "Failed to withdraw, possibly due to insufficient balance"
