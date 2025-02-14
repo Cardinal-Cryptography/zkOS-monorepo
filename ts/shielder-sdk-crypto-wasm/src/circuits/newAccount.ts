@@ -2,10 +2,12 @@ import {
   Proof,
   NewAccountAdvice,
   NewAccountPubInputs,
-  NewAccountCircuit as INewAccountCircuit
+  NewAccountCircuit as INewAccountCircuit,
+  Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
+import { splitUint8 } from "@/utils";
 
 type WasmNewAccountCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").NewAccountCircuit
@@ -38,6 +40,31 @@ export class NewAccountCircuit
         values.anonymityRevokerPubkey.bytes
       )
     );
+  }
+  async pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    const pubInputsBytes = this.wasmCircuit.pub_inputs(
+      values.id.bytes,
+      values.nullifier.bytes,
+      values.trapdoor.bytes,
+      values.initialDeposit.bytes,
+      values.tokenAddress.bytes,
+      values.anonymityRevokerPubkey.bytes
+    );
+    const pubInputs = splitUint8(pubInputsBytes, 6).map(
+      (bytes) => new Scalar(bytes)
+    );
+
+    return {
+      hNote: pubInputs[0],
+      hId: pubInputs[1],
+      initialDeposit: pubInputs[2],
+      tokenAddress: pubInputs[3],
+      anonymityRevokerPubkey: pubInputs[4],
+      symKeyEncryption: pubInputs[5]
+    };
   }
 
   async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {

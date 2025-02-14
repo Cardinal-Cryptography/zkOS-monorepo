@@ -2,6 +2,7 @@ import { Scalar } from "./scalar";
 
 export type Proof = Uint8Array;
 
+// follows the order in shielder-circuits::circuits::new_account
 export type NewAccountPubInputs = {
   hNote: Scalar;
   hId: Scalar;
@@ -20,6 +21,7 @@ export type NewAccountAdvice = {
   anonymityRevokerPubkey: Scalar; // temporary, will be a curve point in the future
 };
 
+// follows the order in shielder-circuits::circuits::deposit
 export type DepositPubInputs = {
   idHiding: Scalar;
   merkleRoot: Scalar;
@@ -42,14 +44,15 @@ export type DepositAdvice = {
   trapdoorNew: Scalar;
 };
 
+// follows the order in shielder-circuits::circuits::withdraw
 export type WithdrawPubInputs = {
   idHiding: Scalar;
   merkleRoot: Scalar;
   hNullifierOld: Scalar;
   hNoteNew: Scalar;
   value: Scalar;
-  commitment: Scalar;
   tokenAddress: Scalar;
+  commitment: Scalar;
 };
 
 export type WithdrawAdvice = {

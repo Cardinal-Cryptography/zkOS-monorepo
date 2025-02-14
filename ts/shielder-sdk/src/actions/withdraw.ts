@@ -4,6 +4,7 @@ import {
   Proof,
   Scalar,
   scalarToBigint,
+  WithdrawAdvice,
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/state";
@@ -87,40 +88,46 @@ export class WithdrawAction extends NoteAction {
     return Scalar.fromBigint(commitment);
   }
 
-  async preparePubInputs(
+  async prepareAdvice(
     state: AccountState,
     amount: bigint,
-    nonce: Scalar,
-    nullifierOld: Scalar,
-    merkleRoot: Scalar,
-    commitment: Scalar,
-    tokenAddress: `0x${string}`
-  ): Promise<WithdrawPubInputs> {
-    const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
-    const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
-
-    const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
-      nullifierOld
-    ]);
-
-    const newNote = await this.rawWithdraw(state, amount);
-
-    if (newNote === null) {
-      throw new Error(
-        "Failed to withdraw, possibly due to insufficient balance"
+    expectedContractVersion: `0x${string}`,
+    withdrawalAddress: `0x${string}`,
+    totalFee: bigint,
+    merklePath: Uint8Array
+  ): Promise<WithdrawAdvice> {
+    const tokenAddress = getTokenAddress(state.token);
+    const nonce = this.nonceGenerator.randomIdHidingNonce();
+    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce - 1n)
       );
-    }
+    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce)
+      );
 
-    const hNoteNew = newNote.currentNote;
+    const commitment = this.calculateCommitment(
+      expectedContractVersion,
+      withdrawalAddress,
+      await this.relayer.address(),
+      totalFee
+    );
 
     return {
-      hNullifierOld,
-      hNoteNew,
-      idHiding,
-      merkleRoot,
+      id: state.id,
+      nonce,
+      nullifierOld,
+      trapdoorOld,
+      accountBalanceOld: Scalar.fromBigint(state.balance),
+      tokenAddress: Scalar.fromAddress(tokenAddress),
+      path: merklePath,
       value: Scalar.fromBigint(amount),
-      commitment,
-      tokenAddress: Scalar.fromAddress(tokenAddress)
+      nullifierNew,
+      trapdoorNew,
+      commitment
     };
   }
 
@@ -141,14 +148,6 @@ export class WithdrawAction extends NoteAction {
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
-    const tokenAddress = getTokenAddress(state.token);
-    const lastNodeIndex = state.currentNoteIndex!;
-    const [path, merkleRoot] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
-
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
     }
@@ -163,50 +162,26 @@ export class WithdrawAction extends NoteAction {
 
     const time = Date.now();
 
-    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce - 1n)
-      );
-    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce)
-      );
+    const lastNodeIndex = state.currentNoteIndex!;
+    const [path, merkleRoot] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
 
-    const commitment = this.calculateCommitment(
+    const advice = await this.prepareAdvice(
+      state,
+      amount,
       expectedContractVersion,
       address,
-      await this.relayer.address(),
-      totalFee
+      totalFee,
+      path
     );
 
     const proof = await this.cryptoClient.withdrawCircuit
-      .prove({
-        id: state.id,
-        nonce,
-        nullifierOld,
-        trapdoorOld,
-        accountBalanceOld: Scalar.fromBigint(state.balance),
-        tokenAddress: Scalar.fromAddress(tokenAddress),
-        path,
-        value: Scalar.fromBigint(amount),
-        nullifierNew,
-        trapdoorNew,
-        commitment
-      })
+      .prove(advice)
       .catch((e) => {
         throw new Error(`Failed to prove withdrawal: ${e}`);
       });
-    const pubInputs = await this.preparePubInputs(
-      state,
-      amount,
-      nonce,
-      nullifierOld,
-      merkleRoot,
-      commitment,
-      tokenAddress
-    );
+    const pubInputs = await this.cryptoClient.withdrawCircuit.pubInputs(advice);
     if (!(await this.cryptoClient.withdrawCircuit.verify(proof, pubInputs))) {
       throw new Error("Withdrawal proof verification failed");
     }

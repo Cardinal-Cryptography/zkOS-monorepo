@@ -1,6 +1,7 @@
 import { IContract, VersionRejectedByContract } from "@/chain/contract";
 import {
   CryptoClient,
+  DepositAdvice,
   DepositPubInputs,
   Proof,
   Scalar,
@@ -55,34 +56,35 @@ export class DepositAction extends NoteAction {
     );
   }
 
-  async preparePubInputs(
+  async prepareAdvice(
     state: AccountState,
     amount: bigint,
-    nonce: Scalar,
-    nullifierOld: Scalar,
-    merkleRoot: Scalar,
-    tokenAddress: `0x${string}`
-  ): Promise<DepositPubInputs> {
-    const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
-    const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
+    merklePath: Uint8Array
+  ): Promise<DepositAdvice> {
+    const tokenAddress = getTokenAddress(state.token);
 
-    const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
-      nullifierOld
-    ]);
-    const newState = await this.rawDeposit(state, amount);
-    if (newState === null) {
-      throw new Error(
-        "Failed to deposit, possibly due to insufficient balance"
+    const nonce = this.nonceGenerator.randomIdHidingNonce();
+    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce - 1n)
       );
-    }
-    const hNoteNew = newState.currentNote;
+    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce)
+      );
     return {
-      hNullifierOld,
-      hNoteNew,
-      idHiding,
-      merkleRoot,
+      id: state.id,
+      nonce,
+      nullifierOld,
+      trapdoorOld,
+      accountBalanceOld: Scalar.fromBigint(state.balance),
+      tokenAddress: Scalar.fromAddress(tokenAddress),
+      path: merklePath,
       value: Scalar.fromBigint(amount),
-      tokenAddress: Scalar.fromAddress(tokenAddress)
+      nullifierNew,
+      trapdoorNew
     };
   }
 
@@ -97,57 +99,27 @@ export class DepositAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
-    const tokenAddress = getTokenAddress(state.token);
-    const lastNodeIndex = state.currentNoteIndex!;
-    const [path, merkleRoot] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
-
+    const time = Date.now();
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
     }
+    const lastNodeIndex = state.currentNoteIndex!;
+    const [merklePath, merkleRoot] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
 
-    const time = Date.now();
-
-    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce - 1n)
-      );
-    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce)
-      );
+    const advice = await this.prepareAdvice(state, amount, merklePath);
 
     const proof = await this.cryptoClient.depositCircuit
-      .prove({
-        id: state.id,
-        nonce,
-        nullifierOld,
-        trapdoorOld,
-        accountBalanceOld: Scalar.fromBigint(state.balance),
-        tokenAddress: Scalar.fromAddress(tokenAddress),
-        path,
-        value: Scalar.fromBigint(amount),
-        nullifierNew,
-        trapdoorNew
-      })
+      .prove(advice)
       .catch((e) => {
         throw new Error(`Failed to prove deposit: ${e}`);
       });
-    const pubInputs = await this.preparePubInputs(
-      state,
-      amount,
-      nonce,
-      nullifierOld,
-      merkleRoot,
-      tokenAddress
-    );
+    const pubInputs = await this.cryptoClient.depositCircuit.pubInputs(advice);
     if (!(await this.cryptoClient.depositCircuit.verify(proof, pubInputs))) {
       throw new Error("Deposit proof verification failed");
     }
+
     const provingTime = Date.now() - time;
     return {
       calldata: {
