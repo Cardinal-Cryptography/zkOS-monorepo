@@ -6,6 +6,7 @@ export type NewAccountPubInputs = {
   hNote: Scalar;
   hId: Scalar;
   initialDeposit: Scalar;
+  tokenAddress: Scalar;
   anonymityRevokerPubkey: Scalar;
   symKeyEncryption: Scalar;
 };
@@ -15,6 +16,7 @@ export type NewAccountAdvice = {
   nullifier: Scalar;
   trapdoor: Scalar;
   initialDeposit: Scalar;
+  tokenAddress: Scalar;
   anonymityRevokerPubkey: Scalar; // temporary, will be a curve point in the future
 };
 
@@ -24,6 +26,7 @@ export type DepositPubInputs = {
   hNullifierOld: Scalar;
   hNoteNew: Scalar;
   value: Scalar;
+  tokenAddress: Scalar;
 };
 
 export type DepositAdvice = {
@@ -32,6 +35,7 @@ export type DepositAdvice = {
   nullifierOld: Scalar;
   trapdoorOld: Scalar;
   accountBalanceOld: Scalar;
+  tokenAddress: Scalar;
   path: Uint8Array;
   value: Scalar;
   nullifierNew: Scalar;
@@ -45,6 +49,7 @@ export type WithdrawPubInputs = {
   hNoteNew: Scalar;
   value: Scalar;
   commitment: Scalar;
+  tokenAddress: Scalar;
 };
 
 export type WithdrawAdvice = {
@@ -53,6 +58,7 @@ export type WithdrawAdvice = {
   nullifierOld: Scalar;
   trapdoorOld: Scalar;
   accountBalanceOld: Scalar;
+  tokenAddress: Scalar;
   path: Uint8Array;
   value: Scalar;
   nullifierNew: Scalar;

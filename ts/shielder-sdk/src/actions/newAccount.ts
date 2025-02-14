@@ -10,6 +10,8 @@ import { SendShielderTransaction } from "@/client";
 import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { hexToBigInt } from "viem";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -19,6 +21,7 @@ export interface NewAccountCalldata {
   expectedContractVersion: `0x${string}`;
   provingTimeMillis: number;
   amount: bigint;
+  token: Token;
 }
 
 export class NewAccountAction extends NoteAction {
@@ -49,7 +52,8 @@ export class NewAccountAction extends NoteAction {
   async preparePubInputs(
     state: AccountState,
     amount: bigint,
-    anonymityRevokerPubkey: bigint
+    anonymityRevokerPubkey: bigint,
+    tokenAddress: `0x${string}`
   ): Promise<NewAccountPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const newState = await this.rawNewAccount(state, amount);
@@ -73,7 +77,8 @@ export class NewAccountAction extends NoteAction {
       hNote,
       initialDeposit: Scalar.fromBigint(amount),
       anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey),
-      symKeyEncryption: encryption
+      symKeyEncryption: encryption,
+      tokenAddress: Scalar.fromAddress(tokenAddress)
     };
   }
 
@@ -88,6 +93,7 @@ export class NewAccountAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
+    const tokenAddress = getTokenAddress(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -100,6 +106,7 @@ export class NewAccountAction extends NoteAction {
         id: state.id,
         nullifier,
         trapdoor,
+        tokenAddress: Scalar.fromAddress(tokenAddress),
         initialDeposit: Scalar.fromBigint(amount),
         anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey)
       })
@@ -109,7 +116,8 @@ export class NewAccountAction extends NoteAction {
     const pubInputs = await this.preparePubInputs(
       state,
       amount,
-      anonymityRevokerPubkey
+      anonymityRevokerPubkey,
+      tokenAddress
     );
     if (!(await this.cryptoClient.newAccountCircuit.verify(proof, pubInputs))) {
       throw new Error("New account proof verification failed");
@@ -122,7 +130,8 @@ export class NewAccountAction extends NoteAction {
         proof
       },
       provingTimeMillis: provingTime,
-      amount
+      amount,
+      token: state.token
     };
   }
 
@@ -143,15 +152,27 @@ export class NewAccountAction extends NoteAction {
       expectedContractVersion,
       amount
     } = calldata;
-    const encodedCalldata = await this.contract.newAccountCalldata(
-      expectedContractVersion,
-      from,
-      scalarToBigint(pubInputs.hNote),
-      scalarToBigint(pubInputs.hId),
-      amount,
-      scalarToBigint(pubInputs.symKeyEncryption),
-      proof
-    );
+    const encodedCalldata =
+      calldata.token.type === "native"
+        ? await this.contract.newAccountNativeCalldata(
+            expectedContractVersion,
+            from,
+            scalarToBigint(pubInputs.hNote),
+            scalarToBigint(pubInputs.hId),
+            amount,
+            scalarToBigint(pubInputs.symKeyEncryption),
+            proof
+          )
+        : await this.contract.newAccountTokenCalldata(
+            expectedContractVersion,
+            calldata.token.address,
+            from,
+            scalarToBigint(pubInputs.hNote),
+            scalarToBigint(pubInputs.hId),
+            amount,
+            scalarToBigint(pubInputs.symKeyEncryption),
+            proof
+          );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),

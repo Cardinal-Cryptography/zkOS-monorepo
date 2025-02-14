@@ -3,7 +3,7 @@ import {
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/state";
-import { noteVersion } from "@/utils";
+import { getTokenAddress, noteVersion } from "@/utils";
 
 export abstract class NoteAction {
   protected cryptoClient: CryptoClient;
@@ -15,6 +15,7 @@ export abstract class NoteAction {
     amount: bigint,
     balanceChange: (currentBalance: bigint, amount: bigint) => bigint
   ): Promise<AccountState | null> {
+    const tokenAddress = getTokenAddress(stateOld.token);
     const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
       await this.cryptoClient.secretManager.getSecrets(
         stateOld.id,
@@ -28,6 +29,7 @@ export abstract class NoteAction {
       await this.cryptoClient.hasher.poseidonRate()
     ).fill(Scalar.fromBigint(0n));
     scalarArray[0] = Scalar.fromBigint(balanceNew);
+    scalarArray[1] = Scalar.fromAddress(tokenAddress);
     const hAccountBalanceNew =
       await this.cryptoClient.hasher.poseidonHash(scalarArray);
     const version = noteVersion();
@@ -43,7 +45,8 @@ export abstract class NoteAction {
       nonce: stateOld.nonce + 1n,
       balance: balanceNew,
       currentNote: noteNew,
-      storageSchemaVersion: stateOld.storageSchemaVersion
+      storageSchemaVersion: stateOld.storageSchemaVersion,
+      token: stateOld.token
     };
   }
 

@@ -9,6 +9,7 @@ import { Mutex } from "async-mutex";
 import { isVersionSupported } from "@/utils";
 import { StateManager } from "./manager";
 import { AccountState, ShielderTransaction } from "./types";
+import { Token } from "@/types";
 
 export class UnexpectedVersionInEvent extends CustomError {
   public constructor(message: string) {
@@ -43,9 +44,9 @@ export class StateSynchronizer {
    * Emits the synced shielder transactions to the callback.
    * Locks to prevent concurrent storage changes.
    */
-  async syncAccountState(tokenAddress: `0x${string}`) {
+  async syncAccountState(token: Token) {
     await this.mutex.runExclusive(async () => {
-      let state = await this.stateManager.accountState(tokenAddress);
+      let state = await this.stateManager.accountState(token);
       while (true) {
         const event = await this.findStateTransitionEvent(state);
         if (!event) {
@@ -61,7 +62,7 @@ export class StateSynchronizer {
         state = newState;
         const transaction = eventToTransaction(event);
         if (this.syncCallback) this.syncCallback(transaction);
-        await this.stateManager.updateAccountState(tokenAddress, state);
+        await this.stateManager.updateAccountState(token, state);
       }
     });
   }
@@ -70,8 +71,8 @@ export class StateSynchronizer {
    * Returns all the shielder transactions of the private account.
    * Note: This method is not efficient and should be used carefully.
    */
-  async *getShielderTransactions(tokenAddress: `0x${string}`) {
-    let state = await this.stateManager.emptyAccountState(tokenAddress);
+  async *getShielderTransactions(token: Token) {
+    let state = await this.stateManager.emptyAccountState(token);
     while (true) {
       const event = await this.findStateTransitionEvent(state);
       if (!event) break;

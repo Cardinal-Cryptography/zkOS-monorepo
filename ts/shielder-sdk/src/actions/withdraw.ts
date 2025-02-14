@@ -10,6 +10,8 @@ import { AccountState } from "@/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
@@ -21,6 +23,7 @@ export interface WithdrawCalldata {
   amount: bigint;
   address: Address;
   merkleRoot: Scalar;
+  token: Token;
 }
 
 export class WithdrawAction extends NoteAction {
@@ -90,7 +93,8 @@ export class WithdrawAction extends NoteAction {
     nonce: Scalar,
     nullifierOld: Scalar,
     merkleRoot: Scalar,
-    commitment: Scalar
+    commitment: Scalar,
+    tokenAddress: `0x${string}`
   ): Promise<WithdrawPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
@@ -115,7 +119,8 @@ export class WithdrawAction extends NoteAction {
       idHiding,
       merkleRoot,
       value: Scalar.fromBigint(amount),
-      commitment
+      commitment,
+      tokenAddress: Scalar.fromAddress(tokenAddress)
     };
   }
 
@@ -136,6 +141,7 @@ export class WithdrawAction extends NoteAction {
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
+    const tokenAddress = getTokenAddress(state.token);
     const lastNodeIndex = state.currentNoteIndex!;
     const [path, merkleRoot] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
@@ -182,6 +188,7 @@ export class WithdrawAction extends NoteAction {
         nullifierOld,
         trapdoorOld,
         accountBalanceOld: Scalar.fromBigint(state.balance),
+        tokenAddress: Scalar.fromAddress(tokenAddress),
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
@@ -197,7 +204,8 @@ export class WithdrawAction extends NoteAction {
       nonce,
       nullifierOld,
       merkleRoot,
-      commitment
+      commitment,
+      tokenAddress
     );
     if (!(await this.cryptoClient.withdrawCircuit.verify(proof, pubInputs))) {
       throw new Error("Withdrawal proof verification failed");
@@ -212,7 +220,8 @@ export class WithdrawAction extends NoteAction {
       provingTimeMillis: provingTime,
       amount,
       address,
-      merkleRoot
+      merkleRoot,
+      token: state.token
     };
   }
 

@@ -39,6 +39,7 @@ vitest.mock("viem", async () => {
 });
 
 import { StateSynchronizer } from "../src/state";
+import { createNativeToken } from "../src/types";
 
 describe("ShielderClient", () => {
   let client: ShielderClient;
@@ -261,7 +262,8 @@ describe("ShielderClient", () => {
         nonce: 1n,
         balance: 1000n,
         currentNote: {} as any,
-        storageSchemaVersion: 1
+        storageSchemaVersion: 1,
+        token: createNativeToken()
       };
 
       const state = await client.accountState(nativeTokenAddress);
@@ -274,13 +276,13 @@ describe("ShielderClient", () => {
     it("should yield transactions successfully", async () => {
       const mockTransactions: ShielderTransaction[] = [
         {
-          type: "NewAccountNative",
+          type: "NewAccount",
           amount: 1000n,
           txHash: "0x123" as Hash,
           block: 1n
         },
         {
-          type: "DepositNative",
+          type: "Deposit",
           amount: 2000n,
           txHash: "0x456" as Hash,
           block: 2n
