@@ -95,6 +95,10 @@ export class WithdrawAction extends NoteAction {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
 
+    const macSalt = state.macSalt;
+    // temporary placeholder for MAC computation, will be exposed through bindings in the future
+    const macCommitment = Scalar.fromBigint(hexToBigInt("0x4141414141"));
+
     const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
       nullifierOld
     ]);
@@ -115,7 +119,9 @@ export class WithdrawAction extends NoteAction {
       idHiding,
       merkleRoot,
       value: Scalar.fromBigint(amount),
-      commitment
+      commitment,
+      macSalt,
+      macCommitment
     };
   }
 
@@ -186,7 +192,8 @@ export class WithdrawAction extends NoteAction {
         value: Scalar.fromBigint(amount),
         nullifierNew,
         trapdoorNew,
-        commitment
+        commitment,
+        macSalt: state.macSalt
       })
       .catch((e) => {
         throw new Error(`Failed to prove withdrawal: ${e}`);

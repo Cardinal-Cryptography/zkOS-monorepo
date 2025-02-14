@@ -10,6 +10,7 @@ import { SendShielderTransaction } from "@/client";
 import { Calldata } from "@/actions";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
+import { hexToBigInt } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -24,6 +25,7 @@ export interface DepositCalldata extends Calldata {
 export class DepositAction extends NoteAction {
   private contract: IContract;
   private nonceGenerator: INonceGenerator;
+
   constructor(
     contract: IContract,
     cryptoClient: CryptoClient,
@@ -62,6 +64,10 @@ export class DepositAction extends NoteAction {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
 
+    const macSalt = state.macSalt;
+    // temporary placeholder for MAC computation, will be exposed through bindings in the future
+    const macCommitment = Scalar.fromBigint(hexToBigInt("0x4141414141"));
+
     const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
       nullifierOld
     ]);
@@ -77,7 +83,9 @@ export class DepositAction extends NoteAction {
       hNoteNew,
       idHiding,
       merkleRoot,
-      value: Scalar.fromBigint(amount)
+      value: Scalar.fromBigint(amount),
+      macSalt,
+      macCommitment
     };
   }
 
@@ -125,7 +133,8 @@ export class DepositAction extends NoteAction {
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
-        trapdoorNew
+        trapdoorNew,
+        macSalt: state.macSalt
       })
       .catch((e) => {
         throw new Error(`Failed to prove deposit: ${e}`);
