@@ -57,7 +57,8 @@ export class DepositAction extends NoteAction {
     amount: bigint,
     nonce: Scalar,
     nullifierOld: Scalar,
-    merkleRoot: Scalar
+    merkleRoot: Scalar,
+    tokenAddress: `0x${string}`
   ): Promise<DepositPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
@@ -77,7 +78,8 @@ export class DepositAction extends NoteAction {
       hNoteNew,
       idHiding,
       merkleRoot,
-      value: Scalar.fromBigint(amount)
+      value: Scalar.fromBigint(amount),
+      tokenAddress: Scalar.fromAddress(tokenAddress)
     };
   }
 
@@ -89,6 +91,7 @@ export class DepositAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
@@ -122,6 +125,7 @@ export class DepositAction extends NoteAction {
         nullifierOld,
         trapdoorOld,
         accountBalanceOld: Scalar.fromBigint(state.balance),
+        tokenAddress: Scalar.fromAddress(tokenAddress),
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
@@ -135,7 +139,8 @@ export class DepositAction extends NoteAction {
       amount,
       nonce,
       nullifierOld,
-      merkleRoot
+      merkleRoot,
+      tokenAddress
     );
     if (!(await this.cryptoClient.depositCircuit.verify(proof, pubInputs))) {
       throw new Error("Deposit proof verification failed");

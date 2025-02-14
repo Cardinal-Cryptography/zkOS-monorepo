@@ -28,6 +28,7 @@ impl NewAccountCircuit {
         nullifier: Vec<u8>,
         trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
+        token_address: Vec<u8>,
         anonymity_revoker_public_key: Vec<u8>,
     ) -> Vec<u8> {
         self.0.prove(
@@ -36,7 +37,7 @@ impl NewAccountCircuit {
                 nullifier: vec_to_f(nullifier),
                 trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
-                token_address: NATIVE_TOKEN_ADDRESS,
+                token_address: vec_to_f(token_address),
                 anonymity_revoker_public_key: vec_to_f(anonymity_revoker_public_key),
             },
             &mut rand::thread_rng(),
@@ -48,16 +49,17 @@ impl NewAccountCircuit {
         h_note: Vec<u8>,
         h_id: Vec<u8>,
         initial_deposit: Vec<u8>,
-        proof: Vec<u8>,
+        token_address: Vec<u8>,
         anonymity_revoker_public_key: Vec<u8>,
         sym_key_encryption: Vec<u8>,
+        proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: NewAccountInstance| {
             let value = match input {
                 NewAccountInstance::HashedId => &h_id,
                 NewAccountInstance::HashedNote => &h_note,
                 NewAccountInstance::InitialDeposit => &initial_deposit,
-                NewAccountInstance::TokenAddress => &NATIVE_TOKEN_ADDRESS.to_bytes().to_vec(),
+                NewAccountInstance::TokenAddress => &token_address,
                 NewAccountInstance::AnonymityRevokerPublicKey => &anonymity_revoker_public_key,
                 NewAccountInstance::SymKeyEncryption => &sym_key_encryption,
             };

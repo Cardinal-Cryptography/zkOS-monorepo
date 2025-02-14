@@ -49,7 +49,8 @@ export class NewAccountAction extends NoteAction {
   async preparePubInputs(
     state: AccountState,
     amount: bigint,
-    anonymityRevokerPubkey: bigint
+    anonymityRevokerPubkey: bigint,
+    tokenAddress: `0x${string}`
   ): Promise<NewAccountPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const newState = await this.rawNewAccount(state, amount);
@@ -73,7 +74,8 @@ export class NewAccountAction extends NoteAction {
       hNote,
       initialDeposit: Scalar.fromBigint(amount),
       anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey),
-      symKeyEncryption: encryption
+      symKeyEncryption: encryption,
+      tokenAddress: Scalar.fromAddress(tokenAddress)
     };
   }
 
@@ -85,6 +87,7 @@ export class NewAccountAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
@@ -100,6 +103,7 @@ export class NewAccountAction extends NoteAction {
         id: state.id,
         nullifier,
         trapdoor,
+        tokenAddress: Scalar.fromAddress(tokenAddress),
         initialDeposit: Scalar.fromBigint(amount),
         anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey)
       })
@@ -109,7 +113,8 @@ export class NewAccountAction extends NoteAction {
     const pubInputs = await this.preparePubInputs(
       state,
       amount,
-      anonymityRevokerPubkey
+      anonymityRevokerPubkey,
+      tokenAddress
     );
     if (!(await this.cryptoClient.newAccountCircuit.verify(proof, pubInputs))) {
       throw new Error("New account proof verification failed");

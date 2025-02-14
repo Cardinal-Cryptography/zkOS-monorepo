@@ -35,6 +35,7 @@ export class DepositCircuit
         values.nullifierOld.bytes,
         values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
+        values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
         values.nullifierNew.bytes,
@@ -55,6 +56,7 @@ export class DepositCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
+          pubInputs.tokenAddress.bytes,
           proof
         )
       );

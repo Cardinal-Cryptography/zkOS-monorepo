@@ -291,6 +291,7 @@ export class ShielderClient {
       () =>
         this.withdrawAction.generateCalldata(
           state,
+          tokenAddress,
           amount,
           totalFee,
           address,
@@ -315,7 +316,12 @@ export class ShielderClient {
     const state = await this.stateManager.accountState(tokenAddress);
     const txHash = await this.handleCalldata(
       () =>
-        this.newAccountAction.generateCalldata(state, amount, contractVersion),
+        this.newAccountAction.generateCalldata(
+          state,
+          tokenAddress,
+          amount,
+          contractVersion
+        ),
       (calldata) =>
         this.newAccountAction.sendCalldata(
           calldata,
@@ -335,7 +341,13 @@ export class ShielderClient {
   ) {
     const state = await this.stateManager.accountState(tokenAddress);
     const txHash = await this.handleCalldata(
-      () => this.depositAction.generateCalldata(state, amount, contractVersion),
+      () =>
+        this.depositAction.generateCalldata(
+          state,
+          tokenAddress,
+          amount,
+          contractVersion
+        ),
       (calldata) =>
         this.depositAction.sendCalldata(
           calldata,

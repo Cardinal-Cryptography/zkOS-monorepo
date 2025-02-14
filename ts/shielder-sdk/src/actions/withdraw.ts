@@ -90,7 +90,8 @@ export class WithdrawAction extends NoteAction {
     nonce: Scalar,
     nullifierOld: Scalar,
     merkleRoot: Scalar,
-    commitment: Scalar
+    commitment: Scalar,
+    tokenAddress: `0x${string}`
   ): Promise<WithdrawPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
@@ -115,7 +116,8 @@ export class WithdrawAction extends NoteAction {
       idHiding,
       merkleRoot,
       value: Scalar.fromBigint(amount),
-      commitment
+      commitment,
+      tokenAddress: Scalar.fromAddress(tokenAddress)
     };
   }
 
@@ -131,6 +133,7 @@ export class WithdrawAction extends NoteAction {
    */
   async generateCalldata(
     state: AccountState,
+    tokenAddress: `0x${string}`,
     amount: bigint,
     totalFee: bigint,
     address: Address,
@@ -182,6 +185,7 @@ export class WithdrawAction extends NoteAction {
         nullifierOld,
         trapdoorOld,
         accountBalanceOld: Scalar.fromBigint(state.balance),
+        tokenAddress: Scalar.fromAddress(tokenAddress),
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
@@ -197,7 +201,8 @@ export class WithdrawAction extends NoteAction {
       nonce,
       nullifierOld,
       merkleRoot,
-      commitment
+      commitment,
+      tokenAddress
     );
     if (!(await this.cryptoClient.withdrawCircuit.verify(proof, pubInputs))) {
       throw new Error("Withdrawal proof verification failed");
