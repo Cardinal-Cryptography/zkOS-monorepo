@@ -7,7 +7,7 @@ import {
 import { StorageInterface } from "./storageSchema";
 import { Hex } from "viem";
 import { AccountState } from "./types";
-import { nativeTokenAddress, storageSchemaVersion } from "@/constants";
+import { storageSchemaVersion } from "@/constants";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
 

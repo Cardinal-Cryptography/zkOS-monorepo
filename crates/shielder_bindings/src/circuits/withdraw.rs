@@ -1,7 +1,6 @@
-use alloc::vec::{self, Vec};
+use alloc::vec::Vec;
 
 use shielder_circuits::withdraw::{WithdrawInstance, WithdrawProverKnowledge};
-use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 

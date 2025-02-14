@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::deposit::{DepositInstance, DepositProverKnowledge};
-use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -53,6 +52,7 @@ impl DepositCircuit {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
         id_hiding: Vec<u8>,

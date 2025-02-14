@@ -6,7 +6,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { StateEventsFilter } from "@/state/events";
 import { Mutex } from "async-mutex";
-import { getTokenAddress, isVersionSupported } from "@/utils";
+import { isVersionSupported } from "@/utils";
 import { StateManager } from "./manager";
 import { AccountState, ShielderTransaction } from "./types";
 import { Token } from "@/types";

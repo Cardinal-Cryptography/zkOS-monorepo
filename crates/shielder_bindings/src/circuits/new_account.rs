@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::new_account::{NewAccountInstance, NewAccountProverKnowledge};
-use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -44,6 +43,7 @@ impl NewAccountCircuit {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
         h_note: Vec<u8>,
