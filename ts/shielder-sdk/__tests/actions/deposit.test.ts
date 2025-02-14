@@ -159,50 +159,6 @@ describe("DepositAction", () => {
     });
   });
 
-  describe("preparePubInputs", () => {
-    it("should prepare public inputs correctly", async () => {
-      const amount = 100n;
-      const nonce = 123n;
-      const merkleRoot = Scalar.fromBigint(3n);
-      const pubInputs = await action.preparePubInputs(
-        state,
-        amount,
-        Scalar.fromBigint(nonce),
-        prevNullifier,
-        merkleRoot,
-        nativeTokenAddress
-      );
-
-      await expectPubInputsCorrect(
-        pubInputs,
-        cryptoClient,
-        prevNullifier,
-        state,
-        amount,
-        nonce,
-        merkleRoot
-      );
-    });
-
-    it("should throw on negative balance", async () => {
-      const amount = -100n;
-      const nonce = 123n;
-      const merkleRoot = Scalar.fromBigint(3n);
-      await expect(
-        action.preparePubInputs(
-          state,
-          amount,
-          Scalar.fromBigint(nonce),
-          prevNullifier,
-          merkleRoot,
-          nativeTokenAddress
-        )
-      ).rejects.toThrow(
-        "Failed to deposit, possibly due to insufficient balance"
-      );
-    });
-  });
-
   describe("generateCalldata", () => {
     it("should generate valid calldata", async () => {
       const amount = 100n;
@@ -211,22 +167,6 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion
-      );
-
-      const { nullifier } = await cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce - 1n)
-      );
-
-      // Verify the public inputs
-      await expectPubInputsCorrect(
-        calldata.calldata.pubInputs,
-        cryptoClient,
-        nullifier,
-        state,
-        amount,
-        mockedIdHidingNonce,
-        mockedMerkleRoot
       );
 
       // Verify the proof
@@ -241,11 +181,6 @@ describe("DepositAction", () => {
 
       // Expected contract version should be equal to input expected version
       expect(calldata.expectedContractVersion).toBe(expectedVersion);
-
-      // Merkle root should be equal to input merkle root
-      expect(
-        scalarsEqual(calldata.calldata.pubInputs.merkleRoot, mockedMerkleRoot)
-      ).toBe(true);
     });
 
     it("should throw on undefined currentNoteIndex", async () => {

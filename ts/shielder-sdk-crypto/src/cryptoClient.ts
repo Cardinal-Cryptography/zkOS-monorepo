@@ -12,16 +12,19 @@ import {
 
 export interface NewAccountCircuit {
   prove(values: NewAccountAdvice): Promise<Proof>;
+  pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs>;
   verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean>;
 }
 
 export interface DepositCircuit {
   prove(values: DepositAdvice): Promise<Proof>;
+  pubInputs(values: DepositAdvice): Promise<DepositPubInputs>;
   verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean>;
 }
 
 export interface WithdrawCircuit {
   prove(values: WithdrawAdvice): Promise<Proof>;
+  pubInputs(values: WithdrawAdvice): Promise<WithdrawPubInputs>;
   verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean>;
 }
 

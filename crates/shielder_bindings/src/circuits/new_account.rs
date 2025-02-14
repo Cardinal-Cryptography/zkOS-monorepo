@@ -1,6 +1,10 @@
 use alloc::vec::Vec;
 
-use shielder_circuits::new_account::{NewAccountInstance, NewAccountProverKnowledge};
+use shielder_circuits::{
+    new_account::{NewAccountInstance, NewAccountProverKnowledge},
+    PublicInputProvider,
+};
+use type_conversions::field_to_bytes;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -41,6 +45,33 @@ impl NewAccountCircuit {
             },
             &mut rand::thread_rng(),
         )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn pub_inputs(
+        &self,
+        id: Vec<u8>,
+        nullifier: Vec<u8>,
+        trapdoor: Vec<u8>,
+        initial_deposit: Vec<u8>,
+        token_address: Vec<u8>,
+        anonymity_revoker_public_key: Vec<u8>,
+    ) -> Vec<u8> {
+        let knowledge = &NewAccountProverKnowledge {
+            id: vec_to_f(id),
+            nullifier: vec_to_f(nullifier),
+            trapdoor: vec_to_f(trapdoor),
+            initial_deposit: vec_to_f(initial_deposit),
+            token_address: vec_to_f(token_address),
+            anonymity_revoker_public_key: vec_to_f(anonymity_revoker_public_key),
+        };
+
+        let concat_vec = knowledge
+            .serialize_public_input()
+            .iter()
+            .flat_map(|value| field_to_bytes(*value))
+            .collect();
+        concat_vec
     }
 
     #[allow(clippy::too_many_arguments)]
