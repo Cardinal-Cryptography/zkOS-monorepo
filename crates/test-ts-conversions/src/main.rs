@@ -2,7 +2,7 @@ use std::error::Error;
 
 use clap::{Parser, Subcommand};
 use halo2_proofs::halo2curves::ff::PrimeField;
-use shielder_account::secrets::{nullifier, trapdoor};
+use shielder_account::secrets::{derive_nullifier, derive_trapdoor};
 use shielder_circuits::{consts::POSEIDON_RATE, poseidon::off_circuit::hash, Fr};
 use type_conversions::{bytes_to_field, bytes_to_u256};
 
@@ -94,8 +94,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             let expected_nullifier = bytes_to_u256(expected_nullifier)?;
             let expected_trapdoor = bytes_to_u256(expected_trapdoor)?;
 
-            assert_eq!(expected_nullifier, nullifier(seed, nonce));
-            assert_eq!(expected_trapdoor, trapdoor(seed, nonce));
+            assert_eq!(expected_nullifier, derive_nullifier(seed, nonce));
+            assert_eq!(expected_trapdoor, derive_trapdoor(seed, nonce));
         }
     };
     Ok(())

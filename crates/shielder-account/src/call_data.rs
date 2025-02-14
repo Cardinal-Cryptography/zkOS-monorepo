@@ -18,7 +18,7 @@ use shielder_setup::{
 };
 use type_conversions::{field_to_u256, u256_to_field};
 
-use super::secrets::id_hiding_nonce;
+use super::secrets::generate_id_hiding_nonce;
 use crate::ShielderAccount;
 
 struct ActionSecrets {
@@ -118,7 +118,7 @@ impl CallType for DepositCallType {
             ..
         } = account.get_secrets();
 
-        let nonce = id_hiding_nonce();
+        let nonce = generate_id_hiding_nonce();
 
         DepositProverKnowledge {
             id: u256_to_field(account.id),
@@ -185,7 +185,7 @@ impl CallType for WithdrawCallType {
             relayer_fee: extra.relayer_fee,
         }
         .commitment_hash();
-        let nonce = id_hiding_nonce();
+        let nonce = generate_id_hiding_nonce();
 
         WithdrawProverKnowledge {
             id: u256_to_field(account.id),

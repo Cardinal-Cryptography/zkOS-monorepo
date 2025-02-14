@@ -3,7 +3,7 @@
 //! Contains conversions between:
 //! - field element and U256 (both ways): [u256_to_field], [field_to_u256];
 //! - field element and raw bytes (both ways): [bytes_to_field], [field_to_bytes];
-//! - hex-encoded private key and field element: [private_key_to_field];
+//! - hex string and U256: [hex_to_u256];
 //! - raw bytes and U256 (both ways): [bytes_to_u256], [u256_to_bytes];
 //! - Ethereum address and field element (both ways): [address_to_field], [field_to_address].
 //! - Ethereum address and U256: [address_to_u256].
@@ -68,13 +68,9 @@ pub fn field_to_bytes<F: PrimeField<Repr = [u8; BYTE_LENGTH]>, const BYTE_LENGTH
     value.to_repr().to_vec()
 }
 
-/// Since the private key is an arbitrary 32-byte number, this is a non-reversible mapping.
-pub fn private_key_to_field<F: From<[u64; 4]>>(hex: &str) -> Result<F> {
-    let u256 = match U256::from_str(hex) {
-        Ok(u256) => u256,
-        Err(_) => return Err(Error::HexU256ParseError),
-    };
-    Ok(u256_to_field(u256))
+/// Convert a hex string (with "0x" prefix) to U256.
+pub fn hex_to_u256(hex: &str) -> Result<U256> {
+    U256::from_str(hex).map_err(|_| Error::HexU256ParseError)
 }
 
 /// Convert raw bytes to a U256 value.
@@ -151,10 +147,10 @@ mod tests {
     }
 
     #[test]
-    fn from_private_key_to_field() {
+    fn from_hex_to_u256() {
         let hex = "0x0000000000000000000000000000000000000000000000000000000000000029";
-        let field = Fr::from(41);
-        assert_eq!(private_key_to_field::<Fr>(hex), Ok(field));
+        let u256 = U256::from(41);
+        assert_eq!(hex_to_u256(hex), Ok(u256));
     }
 
     #[test]
