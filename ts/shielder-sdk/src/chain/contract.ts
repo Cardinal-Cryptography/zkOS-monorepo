@@ -6,8 +6,7 @@ import {
   getContract,
   GetContractReturnType,
   Hash,
-  PublicClient,
-  zeroAddress
+  PublicClient
 } from "viem";
 import { BaseError, ContractFunctionRevertedError } from "viem";
 
@@ -125,11 +124,9 @@ export class Contract implements IContract {
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.newAccount(
+      return this.contract.simulate.newAccountNative(
         [
           expectedContractVersion,
-          zeroAddress,
-          amount,
           newNote,
           idHash,
           symKeyEncryption,
@@ -140,11 +137,9 @@ export class Contract implements IContract {
     });
     return encodeFunctionData({
       abi,
-      functionName: "newAccount",
+      functionName: "newAccountNative",
       args: [
         expectedContractVersion,
-        zeroAddress,
-        amount,
         newNote,
         idHash,
         symKeyEncryption,
@@ -164,11 +159,9 @@ export class Contract implements IContract {
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.deposit(
+      return this.contract.simulate.depositNative(
         [
           expectedContractVersion,
-          zeroAddress,
-          amount,
           idHiding,
           oldNoteNullifierHash,
           newNote,
@@ -180,11 +173,9 @@ export class Contract implements IContract {
     });
     return encodeFunctionData({
       abi,
-      functionName: "deposit",
+      functionName: "depositNative",
       args: [
         expectedContractVersion,
-        zeroAddress,
-        amount,
         idHiding,
         oldNoteNullifierHash,
         newNote,

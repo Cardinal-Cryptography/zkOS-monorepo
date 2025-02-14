@@ -19,13 +19,15 @@ use integration_tests::{
     deposit_proving_params, new_account_proving_params, withdraw_proving_params,
 };
 use shielder_account::ShielderAccount;
-use shielder_contract::ShielderContract::{depositCall, newAccountCall, withdrawCall};
+use shielder_contract::ShielderContract::{
+    depositNativeCall, newAccountNativeCall, withdrawNativeCall,
+};
 
 #[derive(Debug)]
 enum Calldata {
-    NewAccount(newAccountCall),
-    Deposit(depositCall),
-    Withdraw(withdrawCall),
+    NewAccount(newAccountNativeCall),
+    Deposit(depositNativeCall),
+    Withdraw(withdrawNativeCall),
 }
 
 impl fmt::Display for Calldata {

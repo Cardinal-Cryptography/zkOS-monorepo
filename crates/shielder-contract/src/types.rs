@@ -48,7 +48,6 @@ sol! {
         error FeeHigherThanAmount();
         error MerkleRootDoesNotExist();
         error NativeTransferFailed();
-        error ERC20TransferFailed();
         error WithdrawVerificationFailed();
         error NewAccountVerificationFailed();
         error ZeroAmount();
@@ -59,7 +58,6 @@ sol! {
         error PrecompileCallFailed();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
-        error IncorrectNativeAmount();
 
         function depositLimit() external view returns (uint256);
 
@@ -74,7 +72,14 @@ sol! {
         function pause() external;
         function unpause() external;
 
-        function newAccount(
+        function newAccountNative(
+            bytes3 expectedContractVersion,
+            uint256 newNote,
+            uint256 idHash,
+            uint256 symKeyEncryption,
+            bytes calldata proof
+        ) external payable whenNotPaused;
+        function newAccountERC20(
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
@@ -82,8 +87,16 @@ sol! {
             uint256 idHash,
             uint256 symKeyEncryption,
             bytes calldata proof
-        ) external payable;
-        function deposit(
+        ) external whenNotPaused;
+        function depositNative(
+            bytes3 expectedContractVersion,
+            uint256 idHiding,
+            uint256 oldNullifierHash,
+            uint256 newNote,
+            uint256 merkleRoot,
+            bytes calldata proof
+        ) external payable whenNotPaused;
+        function depositERC20(
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
@@ -92,8 +105,20 @@ sol! {
             uint256 newNote,
             uint256 merkleRoot,
             bytes calldata proof
-        ) external payable;
-        function withdraw(
+        ) external whenNotPaused;
+        function withdrawNative(
+            bytes3 expectedContractVersion,
+            uint256 idHiding,
+            uint256 amount,
+            address withdrawalAddress,
+            uint256 merkleRoot,
+            uint256 oldNullifierHash,
+            uint256 newNote,
+            bytes calldata proof,
+            address relayerAddress,
+            uint256 relayerFee
+        ) external whenNotPaused;
+        function withdrawERC20(
             bytes3 expectedContractVersion,
             uint256 idHiding,
             address tokenAddress,
@@ -105,7 +130,7 @@ sol! {
             bytes calldata proof,
             address relayerAddress,
             uint256 relayerFee
-        ) external;
+        ) external whenNotPaused;
 
         function getMerklePath(
             uint256 id
@@ -187,9 +212,12 @@ macro_rules! impl_unit_call {
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
 
-impl_unit_call!(newAccountCall);
-impl_unit_call!(depositCall);
-impl_unit_call!(withdrawCall);
+impl_unit_call!(newAccountNativeCall);
+impl_unit_call!(depositNativeCall);
+impl_unit_call!(withdrawNativeCall);
+impl_unit_call!(newAccountERC20Call);
+impl_unit_call!(depositERC20Call);
+impl_unit_call!(withdrawERC20Call);
 
 impl ShielderContractCall for getMerklePathCall {
     type UnwrappedResult = Vec<U256>;

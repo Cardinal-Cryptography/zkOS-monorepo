@@ -3,7 +3,7 @@ use shielder_account::{
     call_data::{DepositCallType, MerkleProof},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::depositCall;
+use shielder_contract::ShielderContract::depositNativeCall;
 
 use crate::shielder::{
     deploy::Deployment, invoke_shielder_call, merkle::get_merkle_args, CallResult,
@@ -12,7 +12,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-) -> (depositCall, U256) {
+) -> (depositNativeCall, U256) {
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
@@ -39,7 +39,7 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     amount: U256,
-    calldata: &depositCall,
+    calldata: &depositNativeCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, Some(amount));
 
@@ -66,7 +66,8 @@ mod tests {
     use shielder_account::ShielderAccount;
     use shielder_circuits::Fr;
     use shielder_contract::ShielderContract::{
-        depositCall, Deposit, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
+        depositNativeCall, Deposit, ShielderContractErrors, ShielderContractEvents,
+        WrongContractVersion,
     };
 
     use crate::{
@@ -263,10 +264,8 @@ mod tests {
     fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = depositCall {
+        let calldata = depositNativeCall {
             expectedContractVersion: FixedBytes([0, 1, 0]),
-            tokenAddress: Address::ZERO,
-            amount: U256::from(10),
             idHiding: U256::ZERO,
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,

@@ -3,10 +3,9 @@
 pragma solidity ^0.8.20;
 
 contract RevertingShielder {
-    function withdraw(
+    function withdrawNative(
         bytes3 expectedContractVersion,
         uint256 idHiding,
-        address tokenAddress,
         uint256 amount,
         address withdrawalAddress,
         uint256 merkleRoot,
