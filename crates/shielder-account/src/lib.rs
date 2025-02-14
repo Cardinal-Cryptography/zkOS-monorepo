@@ -45,7 +45,7 @@ impl Display for ShielderAccount {
 }
 
 impl ShielderAccount {
-    /// Create a new account with the given id and MAC salt. Other fields are initialized to default
+    /// Create a new account with the given id. Other fields are initialized to default
     /// values (like the account has no history).
     ///
     /// Note: You SHOULD prefer using `Self::new` instead of `Default::default()`, unless you are
