@@ -68,7 +68,7 @@ export class WithdrawCircuit
       (bytes) => new Scalar(bytes)
     );
 
-    return {
+    return Promise.resolve({
       idHiding: pubInputs[0],
       merkleRoot: pubInputs[1],
       hNullifierOld: pubInputs[2],
@@ -76,7 +76,7 @@ export class WithdrawCircuit
       value: pubInputs[4],
       tokenAddress: pubInputs[5],
       commitment: pubInputs[6]
-    };
+    });
   }
 
   async verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean> {

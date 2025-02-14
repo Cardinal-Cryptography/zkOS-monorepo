@@ -192,55 +192,6 @@ describe("WithdrawAction", () => {
     });
   });
 
-  describe("preparePubInputs", () => {
-    it("should prepare public inputs correctly", async () => {
-      const amount = 2n;
-      const nonce = 123n;
-      const commitment = Scalar.fromBigint(3n);
-      const merkleRoot = Scalar.fromBigint(4n);
-      const pubInputs = await action.preparePubInputs(
-        state,
-        amount,
-        Scalar.fromBigint(nonce),
-        Scalar.fromBigint(2n),
-        merkleRoot,
-        commitment,
-        nativeTokenAddress
-      );
-
-      await expectPubInputsCorrect(
-        pubInputs,
-        cryptoClient,
-        prevNullifier,
-        state,
-        amount,
-        nonce,
-        merkleRoot,
-        commitment
-      );
-    });
-
-    it("should throw on negative balance", async () => {
-      const amount = 6n;
-      const nonce = 123n;
-      const commitment = Scalar.fromBigint(3n);
-      const merkleRoot = Scalar.fromBigint(4n);
-      await expect(
-        action.preparePubInputs(
-          state,
-          amount,
-          Scalar.fromBigint(nonce),
-          prevNullifier,
-          merkleRoot,
-          commitment,
-          nativeTokenAddress
-        )
-      ).rejects.toThrow(
-        "Failed to withdraw, possibly due to insufficient balance"
-      );
-    });
-  });
-
   describe("generateCalldata", () => {
     it("should generate valid calldata", async () => {
       const amount = 2n;
@@ -256,37 +207,6 @@ describe("WithdrawAction", () => {
         expectedVersion
       );
 
-      const { nullifier } = await cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce - 1n)
-      );
-
-      // Verify the public inputs
-      await expectPubInputsCorrect(
-        calldata.calldata.pubInputs,
-        cryptoClient,
-        nullifier,
-        state,
-        amount,
-        mockedIdHidingNonce,
-        mockedMerkleRoot,
-        Scalar.fromBigint(
-          hexToBigInt(
-            keccak256(
-              encodePacked(
-                ["bytes3", "uint256", "uint256", "uint256"],
-                [
-                  expectedVersion,
-                  hexToBigInt(address),
-                  hexToBigInt(mockRelayerAddress),
-                  totalFee
-                ]
-              )
-            )
-          ) >> 4n
-        )
-      );
-
       // Verify the proof
       const isValid = await cryptoClient.withdrawCircuit.verify(
         calldata.calldata.proof,
@@ -299,11 +219,6 @@ describe("WithdrawAction", () => {
 
       // Expected contract version should be equal to input expected version
       expect(calldata.expectedContractVersion).toBe(expectedVersion);
-
-      // Merkle root should be equal to input merkle root
-      expect(
-        scalarsEqual(calldata.calldata.pubInputs.merkleRoot, mockedMerkleRoot)
-      ).toBe(true);
     });
 
     it("should throw on undefined currentNoteIndex", async () => {

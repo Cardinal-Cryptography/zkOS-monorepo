@@ -10,7 +10,6 @@ import {
 import { SendShielderTransaction } from "@/client";
 import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
-import { hexToBigInt } from "viem";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
 

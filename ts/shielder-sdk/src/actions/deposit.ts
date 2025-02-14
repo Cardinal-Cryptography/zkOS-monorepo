@@ -21,7 +21,6 @@ export interface DepositCalldata extends Calldata {
   };
   expectedContractVersion: `0x${string}`;
   amount: bigint;
-  merkleRoot: Scalar;
   token: Token;
 }
 
@@ -58,9 +57,16 @@ export class DepositAction extends NoteAction {
 
   async prepareAdvice(
     state: AccountState,
-    amount: bigint,
-    merklePath: Uint8Array
+    amount: bigint
   ): Promise<DepositAdvice> {
+    if (state.currentNoteIndex === undefined) {
+      throw new Error("currentNoteIndex must be set");
+    }
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
     const tokenAddress = getTokenAddress(state.token);
 
     const nonce = this.nonceGenerator.randomIdHidingNonce();
@@ -100,15 +106,8 @@ export class DepositAction extends NoteAction {
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
     const time = Date.now();
-    if (state.currentNoteIndex === undefined) {
-      throw new Error("currentNoteIndex must be set");
-    }
-    const lastNodeIndex = state.currentNoteIndex!;
-    const [merklePath, merkleRoot] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
 
-    const advice = await this.prepareAdvice(state, amount, merklePath);
+    const advice = await this.prepareAdvice(state, amount);
 
     const proof = await this.cryptoClient.depositCircuit
       .prove(advice)
@@ -129,7 +128,6 @@ export class DepositAction extends NoteAction {
       expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
-      merkleRoot,
       token: state.token
     };
   }
@@ -149,8 +147,7 @@ export class DepositAction extends NoteAction {
   ) {
     const {
       calldata: { pubInputs, proof },
-      amount,
-      merkleRoot
+      amount
     } = calldata;
     const encodedCalldata =
       calldata.token.type === "native"
@@ -160,7 +157,7 @@ export class DepositAction extends NoteAction {
             scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
-            scalarToBigint(merkleRoot),
+            scalarToBigint(pubInputs.merkleRoot),
             amount,
             proof
           )
@@ -171,7 +168,7 @@ export class DepositAction extends NoteAction {
             scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
-            scalarToBigint(merkleRoot),
+            scalarToBigint(pubInputs.merkleRoot),
             amount,
             proof
           );

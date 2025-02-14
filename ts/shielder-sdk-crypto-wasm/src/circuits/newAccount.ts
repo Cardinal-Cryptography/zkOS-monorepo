@@ -57,14 +57,14 @@ export class NewAccountCircuit
       (bytes) => new Scalar(bytes)
     );
 
-    return {
+    return Promise.resolve({
       hNote: pubInputs[0],
       hId: pubInputs[1],
       initialDeposit: pubInputs[2],
       tokenAddress: pubInputs[3],
       anonymityRevokerPubkey: pubInputs[4],
       symKeyEncryption: pubInputs[5]
-    };
+    });
   }
 
   async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {

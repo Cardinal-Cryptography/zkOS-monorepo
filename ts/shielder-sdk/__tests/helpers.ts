@@ -16,7 +16,9 @@ import {
   scalarToBigint,
   SecretManager,
   ShielderActionSecrets,
-  WithdrawCircuit
+  WithdrawAdvice,
+  WithdrawCircuit,
+  WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { hexToBigInt } from "viem";
 
@@ -130,6 +132,17 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
     return Promise.resolve(new Uint8Array());
   }
 
+  pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
+    return Promise.resolve({
+      hNote: Scalar.fromBigint(0n),
+      hId: Scalar.fromBigint(0n),
+      initialDeposit: Scalar.fromBigint(0n),
+      tokenAddress: Scalar.fromBigint(0n),
+      anonymityRevokerPubkey: Scalar.fromBigint(0n),
+      symKeyEncryption: Scalar.fromBigint(0n)
+    });
+  }
+
   async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
     return Promise.resolve(true);
   }
@@ -140,6 +153,17 @@ class MockedDepositCircuit implements DepositCircuit {
     return Promise.resolve(new Uint8Array());
   }
 
+  pubInputs(values: DepositAdvice): Promise<DepositPubInputs> {
+    return Promise.resolve({
+      idHiding: Scalar.fromBigint(0n),
+      merkleRoot: Scalar.fromBigint(0n),
+      hNullifierOld: Scalar.fromBigint(0n),
+      hNoteNew: Scalar.fromBigint(0n),
+      value: Scalar.fromBigint(0n),
+      tokenAddress: Scalar.fromBigint(0n)
+    });
+  }
+
   async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
     return Promise.resolve(true);
   }
@@ -148,6 +172,18 @@ class MockedDepositCircuit implements DepositCircuit {
 class MockedWithdrawCircuit implements WithdrawCircuit {
   prove(): Promise<Proof> {
     return Promise.resolve(new Uint8Array());
+  }
+
+  pubInputs(values: WithdrawAdvice): Promise<WithdrawPubInputs> {
+    return Promise.resolve({
+      idHiding: Scalar.fromBigint(0n),
+      merkleRoot: Scalar.fromBigint(0n),
+      hNullifierOld: Scalar.fromBigint(0n),
+      hNoteNew: Scalar.fromBigint(0n),
+      value: Scalar.fromBigint(0n),
+      tokenAddress: Scalar.fromBigint(0n),
+      commitment: Scalar.fromBigint(0n)
+    });
   }
 
   verify(): Promise<boolean> {

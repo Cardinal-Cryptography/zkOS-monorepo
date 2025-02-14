@@ -65,14 +65,14 @@ export class DepositCircuit
     const pubInputs = splitUint8(pubInputsBytes, 6).map(
       (bytes) => new Scalar(bytes)
     );
-    return {
+    return Promise.resolve({
       idHiding: pubInputs[0],
       merkleRoot: pubInputs[1],
       hNullifierOld: pubInputs[2],
       hNoteNew: pubInputs[3],
       value: pubInputs[4],
       tokenAddress: pubInputs[5]
-    };
+    });
   }
 
   async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {

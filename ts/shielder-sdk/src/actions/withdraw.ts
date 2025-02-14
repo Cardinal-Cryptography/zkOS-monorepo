@@ -23,7 +23,6 @@ export interface WithdrawCalldata {
   provingTimeMillis: number;
   amount: bigint;
   address: Address;
-  merkleRoot: Scalar;
   token: Token;
 }
 
@@ -93,11 +92,20 @@ export class WithdrawAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
-    totalFee: bigint,
-    merklePath: Uint8Array
+    totalFee: bigint
   ): Promise<WithdrawAdvice> {
+    if (state.currentNoteIndex === undefined) {
+      throw new Error("currentNoteIndex must be set");
+    }
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
     const tokenAddress = getTokenAddress(state.token);
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
+
+    const idHidingNonce = this.nonceGenerator.randomIdHidingNonce();
+
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -118,7 +126,7 @@ export class WithdrawAction extends NoteAction {
 
     return {
       id: state.id,
-      nonce,
+      nonce: idHidingNonce,
       nullifierOld,
       trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
@@ -148,9 +156,6 @@ export class WithdrawAction extends NoteAction {
     address: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
-    if (state.currentNoteIndex === undefined) {
-      throw new Error("currentNoteIndex must be set");
-    }
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
@@ -162,18 +167,12 @@ export class WithdrawAction extends NoteAction {
 
     const time = Date.now();
 
-    const lastNodeIndex = state.currentNoteIndex!;
-    const [path, merkleRoot] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-
     const advice = await this.prepareAdvice(
       state,
       amount,
       expectedContractVersion,
       address,
-      totalFee,
-      path
+      totalFee
     );
 
     const proof = await this.cryptoClient.withdrawCircuit
@@ -195,7 +194,6 @@ export class WithdrawAction extends NoteAction {
       provingTimeMillis: provingTime,
       amount,
       address,
-      merkleRoot,
       token: state.token
     };
   }
@@ -212,8 +210,7 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       calldata: { pubInputs, proof },
       amount,
-      address,
-      merkleRoot
+      address
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
@@ -221,7 +218,7 @@ export class WithdrawAction extends NoteAction {
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
-        scalarToBigint(merkleRoot),
+        scalarToBigint(pubInputs.merkleRoot),
         amount,
         proof,
         address
