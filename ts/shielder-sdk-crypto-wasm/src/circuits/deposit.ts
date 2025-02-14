@@ -38,7 +38,8 @@ export class DepositCircuit
         values.path,
         values.value.bytes,
         values.nullifierNew.bytes,
-        values.trapdoorNew.bytes
+        values.trapdoorNew.bytes,
+        values.macSalt.bytes
       )
     );
   }
@@ -55,6 +56,8 @@ export class DepositCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
+          pubInputs.macSalt.bytes,
+          pubInputs.macCommitment.bytes,
           proof
         )
       );

@@ -73,6 +73,8 @@ impl TestContext {
                 new_note: U256::ZERO,
                 proof: Bytes::new(),
                 fee_token: FeeToken::Native,
+                mac_salt: U256::ZERO,
+                mac_commitment: U256::ZERO,
             })
             .send()
             .await

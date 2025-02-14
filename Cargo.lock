@@ -2947,7 +2947,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=cdd411#cdd4115474f79520a98826a9d7f026a97066c758"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0ddf37#0ddf37bb6e05b2d644ec19d181a02fd4564a96ca"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -3296,15 +3296,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
-name = "openssl-src"
-version = "300.4.1+3.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faa4eac4138c62414b5622d1b31c5c304f34b406b013c079c2bbc652fdd6678c"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "openssl-sys"
 version = "0.9.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3312,7 +3303,6 @@ checksum = "8b22d5b84be05a8d6947c7cb71f7c849aa0f112acd4bf51c2a7c1c988ac0a9dc"
 dependencies = [
  "cc",
  "libc",
- "openssl-src",
  "pkg-config",
  "vcpkg",
 ]
@@ -4576,7 +4566,7 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=cdd411#cdd4115474f79520a98826a9d7f026a97066c758"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0ddf37#0ddf37bb6e05b2d644ec19d181a02fd4564a96ca"
 dependencies = [
  "halo2_poseidon",
  "halo2_proofs",
@@ -4657,7 +4647,6 @@ dependencies = [
  "clap",
  "metrics",
  "metrics-exporter-prometheus",
- "openssl",
  "rand",
  "reqwest",
  "serde",
@@ -5438,7 +5427,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=cdd411#cdd4115474f79520a98826a9d7f026a97066c758"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0ddf37#0ddf37bb6e05b2d644ec19d181a02fd4564a96ca"
 dependencies = [
  "halo2_proofs",
  "itertools 0.13.0",

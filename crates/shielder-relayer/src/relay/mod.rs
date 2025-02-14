@@ -86,6 +86,8 @@ fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> wi
         oldNullifierHash: q.nullifier_hash,
         newNote: q.new_note,
         proof: q.proof,
+        macSalt: q.mac_salt,
+        macCommitment: q.mac_commitment,
     }
 }
 

@@ -21,7 +21,7 @@ sol! {
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
-            uint256 newNoteIndex
+            uint256 newNoteIndex,
         );
         event Deposit(
             bytes3 contractVersion,
@@ -29,7 +29,9 @@ sol! {
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
-            uint256 newNoteIndex
+            uint256 newNoteIndex,
+            uint256 macSalt,
+            uint256 macCommitment,
         );
         event Withdraw(
             bytes3 contractVersion,
@@ -40,7 +42,9 @@ sol! {
             uint256 newNote,
             uint256 newNoteIndex,
             address relayerAddress,
-            uint256 fee
+            uint256 fee,
+            uint256 macSalt,
+            uint256 macCommitment,
         );
 
         error DepositVerificationFailed();
@@ -94,6 +98,8 @@ sol! {
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
         ) external payable whenNotPaused;
         function depositERC20(
@@ -104,6 +110,8 @@ sol! {
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
         ) external whenNotPaused;
         function withdrawNative(
@@ -116,7 +124,9 @@ sol! {
             uint256 newNote,
             bytes calldata proof,
             address relayerAddress,
-            uint256 relayerFee
+            uint256 relayerFee,
+            uint256 macSalt,
+            uint256 macCommitment,
         ) external whenNotPaused;
         function withdrawERC20(
             bytes3 expectedContractVersion,
@@ -129,7 +139,9 @@ sol! {
             uint256 newNote,
             bytes calldata proof,
             address relayerAddress,
-            uint256 relayerFee
+            uint256 relayerFee,
+            uint256 macSalt,
+            uint256 macCommitment,
         ) external whenNotPaused;
 
         function getMerklePath(
