@@ -292,6 +292,8 @@ contract Shielder is
             oldNullifierHash,
             newNote,
             merkleRoot,
+            macSalt,
+            macCommitment,
             proof
         );
 
@@ -338,6 +340,8 @@ contract Shielder is
             oldNullifierHash,
             newNote,
             merkleRoot,
+            macSalt,
+            macCommitment,
             proof
         );
 

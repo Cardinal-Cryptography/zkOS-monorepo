@@ -147,6 +147,8 @@ impl CallType for DepositCallType {
             oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
             merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
+            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
+            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof.to_vec()),
         }
     }
@@ -221,6 +223,8 @@ impl CallType for WithdrawCallType {
             proof: Bytes::from(proof),
             relayerAddress: extra.relayer_address,
             relayerFee: extra.relayer_fee,
+            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
+            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
         }
     }
 }

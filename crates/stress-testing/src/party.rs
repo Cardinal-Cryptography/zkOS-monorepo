@@ -127,6 +127,8 @@ async fn prepare_relay_query(
         new_note: calldata.newNote,
         proof: calldata.proof,
         fee_token: FeeToken::Native,
+        mac_salt: calldata.macSalt,
+        mac_commitment: calldata.macCommitment,
     };
     println!("  ✅ Prepared relay query for actor {}", actor.id);
     Ok(query)
