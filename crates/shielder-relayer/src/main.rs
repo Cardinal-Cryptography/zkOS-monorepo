@@ -30,6 +30,7 @@ use crate::{
 mod config;
 mod metrics;
 mod monitor;
+pub mod price_feed;
 mod quote;
 mod recharge;
 mod relay;
