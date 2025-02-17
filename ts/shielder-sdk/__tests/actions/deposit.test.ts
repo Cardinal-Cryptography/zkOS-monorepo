@@ -14,6 +14,8 @@ import { DepositAction } from "../../src/actions/deposit";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
+import { bigint } from "zod";
+import { call } from "viem/actions";
 
 const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
@@ -115,6 +117,7 @@ describe("DepositAction", () => {
     state = {
       id,
       nonce: stateNonce,
+      macSalt: Scalar.fromBigint(0n),
       balance: 5n,
       currentNote: await hashedNote(
         id,
@@ -326,6 +329,8 @@ describe("DepositAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.calldata.proof
       );
 
@@ -360,6 +365,8 @@ describe("DepositAction", () => {
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
