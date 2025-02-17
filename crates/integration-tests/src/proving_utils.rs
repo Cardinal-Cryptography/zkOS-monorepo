@@ -45,7 +45,7 @@ fn setup<C: Circuit<Fr> + Default>(
     .expect("failed to read parameters from the ptau file");
 
     let (params, _, pk, vk) =
-        generate_keys_with_min_k::<C>(full_params).expect("Key generation failed");
+        generate_keys_with_min_k(C::default(), full_params).expect("Key generation failed");
 
     (params, pk, vk, parameter_generation::rng())
 }

@@ -12,6 +12,7 @@ contract ShielderUpgrade is Test {
     address public owner;
 
     uint256 public depositLimit = 100e18;
+    uint256 public anonymityRevokerPubkey = 42;
 
     string[] public allowedErrors;
 
@@ -72,7 +73,10 @@ contract ShielderUpgrade is Test {
         // Deploy upgradeable Shielder
         address shielderProxy = Upgrades.deployUUPSProxy(
             "Shielder.sol:Shielder",
-            abi.encodeCall(Shielder.initialize, (owner, depositLimit))
+            abi.encodeCall(
+                Shielder.initialize,
+                (owner, depositLimit, anonymityRevokerPubkey)
+            )
         );
         Shielder shielder = Shielder(shielderProxy);
 

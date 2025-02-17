@@ -11,7 +11,7 @@ mod shielder_action;
 
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{note_hash, Note};
-use shielder_setup::version::contract_version;
+use shielder_setup::{native_token::NATIVE_TOKEN_ADDRESS, version::contract_version};
 use type_conversions::{field_to_u256, u256_to_field};
 
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
@@ -22,6 +22,8 @@ pub struct ShielderAccount {
     /// WARNING: You SHOULD NOT use `Self::Default` in production, as this will set the seed to
     /// zero, which is insecure and might get in conflict with other accounts (similarly set up).
     pub id: U256,
+    /// Salt used to generate the MAC for the account.
+    pub mac_salt: U256,
     /// The nonce used to generate nullifiers and trapdoors. It is incremented after each action.
     pub nonce: u32,
     /// The total current amount of tokens shielded by the account.
@@ -34,6 +36,7 @@ impl Display for ShielderAccount {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ShielderAccount")
             .field("id", &self.id)
+            .field("MAC salt", &self.mac_salt)
             .field("nonce", &self.nonce)
             .field("shielded_amount", &self.shielded_amount)
             .field("current_leaf_index", &self.current_leaf_index())
@@ -42,8 +45,8 @@ impl Display for ShielderAccount {
 }
 
 impl ShielderAccount {
-    /// Create a new account with the given id. Other fields are initialized to default values
-    /// (like the account has no history).
+    /// Create a new account with the given id and MAC salt. Other fields are initialized to default
+    /// values (like the account has no history).
     ///
     /// Note: You SHOULD prefer using `Self::new` instead of `Default::default()`, unless you are
     /// writing single-actor tests.
@@ -95,6 +98,7 @@ impl ShielderAccount {
             nullifier: u256_to_field(self.previous_nullifier()),
             trapdoor: u256_to_field(self.previous_trapdoor().unwrap()), // safe unwrap
             account_balance: u256_to_field(self.shielded_amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
         });
         Some(field_to_u256(raw_note))
     }

@@ -29,7 +29,7 @@ export type AccountState = {
 };
 
 export type ShielderTransaction = {
-  type: "NewAccountNative" | "DepositNative" | "WithdrawNative";
+  type: "NewAccount" | "Deposit" | "Withdraw";
   amount: bigint;
   to?: Address;
   txHash: Hex;

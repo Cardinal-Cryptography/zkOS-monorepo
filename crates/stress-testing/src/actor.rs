@@ -5,7 +5,7 @@ use shielder_circuits::circuits::{Params, ProvingKey};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     ConnectionPolicy,
-    ShielderContract::newAccountCall,
+    ShielderContract::newAccountNativeCall,
     ShielderUser,
 };
 
@@ -14,6 +14,8 @@ pub struct Actor {
     pub shielder_user: ShielderUser,
     pub account: ShielderAccount,
 }
+
+const ANONYMITY_REVOKER_PKEY: U256 = U256::from_limbs([65, 78, 79, 78]); // ANON
 
 impl Actor {
     pub fn new(id: u32, rpc_url: String, shielder: Address) -> Self {
@@ -37,9 +39,9 @@ impl Actor {
         params: &Params,
         pk: &ProvingKey,
         amount: U256,
-    ) -> newAccountCall {
+    ) -> newAccountNativeCall {
         self.account
-            .prepare_call::<NewAccountCallType>(params, pk, amount, &())
+            .prepare_call::<NewAccountCallType>(params, pk, amount, &ANONYMITY_REVOKER_PKEY)
     }
 }
 

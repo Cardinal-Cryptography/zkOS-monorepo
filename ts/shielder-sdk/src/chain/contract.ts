@@ -10,7 +10,7 @@ import {
 } from "viem";
 import { BaseError, ContractFunctionRevertedError } from "viem";
 
-import { abi } from "../_generated/abi_v0_0_1";
+import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
 
 export class VersionRejectedByContract extends CustomError {
@@ -43,7 +43,7 @@ export async function handleWrongContractVersionError<T>(
 }
 
 export type NoteEvent = {
-  name: "NewAccountNative" | "DepositNative" | "WithdrawNative";
+  name: "NewAccount" | "Deposit" | "Withdraw";
   contractVersion: `0x${string}`;
   amount: bigint;
   newNoteIndex: bigint;
@@ -67,12 +67,14 @@ const getShielderContract = (
 export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
+  anonymityRevokerPubkey: () => Promise<bigint>;
   newAccountCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
+    symKeyEncryption: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   depositCalldata: (
@@ -108,24 +110,41 @@ export class Contract implements IContract {
     return merklePath as readonly bigint[];
   };
 
+  anonymityRevokerPubkey = async (): Promise<bigint> => {
+    return await this.contract.read.anonymityRevokerPubkey();
+  };
+
   newAccountCalldata = async (
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
+    symKeyEncryption: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
       return this.contract.simulate.newAccountNative(
-        [expectedContractVersion, newNote, idHash, bytesToHex(proof)],
+        [
+          expectedContractVersion,
+          newNote,
+          idHash,
+          symKeyEncryption,
+          bytesToHex(proof)
+        ],
         { account: from, value: amount, gas: shieldActionGasLimit }
       );
     });
     return encodeFunctionData({
       abi,
       functionName: "newAccountNative",
-      args: [expectedContractVersion, newNote, idHash, bytesToHex(proof)]
+      args: [
+        expectedContractVersion,
+        newNote,
+        idHash,
+        symKeyEncryption,
+        bytesToHex(proof)
+      ]
     });
   };
 
@@ -189,15 +208,15 @@ export class Contract implements IContract {
   getNoteEventsFromBlock = async (block: bigint) => {
     const fromBlock = block;
     const toBlock = block;
-    const newAccountEvents = await this.contract.getEvents.NewAccountNative({
+    const newAccountEvents = await this.contract.getEvents.NewAccount({
       fromBlock,
       toBlock
     });
-    const depositEvents = await this.contract.getEvents.DepositNative({
+    const depositEvents = await this.contract.getEvents.Deposit({
       fromBlock,
       toBlock
     });
-    const withdrawEvents = await this.contract.getEvents.WithdrawNative({
+    const withdrawEvents = await this.contract.getEvents.Withdraw({
       fromBlock,
       toBlock
     });
@@ -215,8 +234,8 @@ export class Contract implements IContract {
         txHash: event.transactionHash,
         block: event.blockNumber,
         to:
-          event.eventName === "WithdrawNative"
-            ? (event.args.to as Address)
+          event.eventName === "Withdraw"
+            ? (event.args.withdrawalAddress as Address)
             : undefined
       } as NoteEvent;
     });
