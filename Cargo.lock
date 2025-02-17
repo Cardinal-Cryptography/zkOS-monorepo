@@ -3552,6 +3552,7 @@ dependencies = [
  "halo2_proofs",
  "halo2curves",
  "num-bigint",
+ "rand",
  "shielder-circuits",
 ]
 
