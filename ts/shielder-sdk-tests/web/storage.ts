@@ -1,7 +1,7 @@
-import { type InjectedStorageInterface } from "shielder-sdk/__internal__";
+import { InjectedStorageInterface } from "@cardinal-cryptography/shielder-sdk";
 
 export const mockedStorage = (
-  address: `0x${string}`,
+  address: `0x${string}`
 ): InjectedStorageInterface => {
   const setItem = async (key: string, value: string): Promise<void> => {
     try {
@@ -15,7 +15,7 @@ export const mockedStorage = (
   const getItem = async (key: string): Promise<string | null> => {
     const storedValue: string | null = window.localStorage.getItem(
       // prevent storage from being shared between different addresses in different tests
-      key + address,
+      key + address
     );
 
     if (!storedValue) {

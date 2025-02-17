@@ -24,31 +24,20 @@ export const sdkTest = test.extend<
       });
 
       await initWasmModule(page);
-      await initWasmClientWorker(page);
       await use(page);
 
       await context.close();
     },
-    { scope: "worker" },
-  ],
+    { scope: "worker" }
+  ]
 });
 
 // Makes the WASM module ready for use in the context of the browser's main thread.
 async function initWasmModule(page: Page): Promise<void> {
   const threads = await page.evaluate(async () => {
-    return await window.wasmModule.init();
+    return await window.wasmCryptoClient.cryptoClient;
   });
   console.log(`WASM module initialized with ${threads} thread(s).`);
-}
-
-// Initializes the Comlink worker, which under the hood runs WASM module initialization
-// *just for the worker thread*.
-async function initWasmClientWorker(page: Page): Promise<void> {
-  const threads = await page.evaluate(async () => {
-    const threads = await window.wasmClientWorker.isReady();
-    return threads;
-  });
-  console.log(`WasmClientWorker initialized with ${threads} thread(s).`);
 }
 
 // Handles a `Uint8Array` returned from `page.evaluate`. Probably due to the way Playwright handles
@@ -56,7 +45,7 @@ async function initWasmClientWorker(page: Page): Promise<void> {
 // return type of `page.evaluate` is `Uint8Array` during `pnpm build`
 // but `{ [key: string]: number }` at runtime.
 export function unpackUint8Array(
-  obj: Uint8Array | { [key: string]: number },
+  obj: Uint8Array | { [key: string]: number }
 ): Uint8Array {
   if (obj instanceof Uint8Array) {
     return obj;

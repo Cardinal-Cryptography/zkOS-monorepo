@@ -16,33 +16,31 @@ const setCors = () => ({
   },
   configurePreviewServer: (server) => {
     server.middlewares.use(crossOriginIsolationMiddleware);
-  },
+  }
 });
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
   return {
-    envPrefix: "PLASMO_PUBLIC_",
-    define: {
-      "process.env.PLASMO_PUBLIC_THREADS": JSON.stringify(
-        env.PLASMO_PUBLIC_THREADS,
-      ),
-    },
     root: "web",
     build: {
       outDir: "../dist",
-      emptyOutDir: true,
+      emptyOutDir: true
     },
     plugins: [react(), tsconfigPaths(), setCors()],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./web"),
-      },
+        "@": path.resolve(__dirname, "./web")
+      }
     },
     server: {
       fs: {
-        allow: ["../../shielder-sdk", "../../../crates/shielder-wasm/pkg", "."],
-      },
-    },
+        allow: [
+          "../../shielder-sdk",
+          "../../shielder-sdk-crypto",
+          "../../shielder-sdk-crypto-wasm",
+          "../../../crates/shielder-wasm/pkg"
+        ]
+      }
+    }
   };
 });
