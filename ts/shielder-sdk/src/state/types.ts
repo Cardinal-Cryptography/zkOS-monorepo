@@ -11,10 +11,6 @@ export type AccountState = {
    */
   nonce: bigint;
   /**
-   * Salt used to generate MAC.
-   */
-  macSalt: Scalar;
-  /**
    * Account balance, in wei.
    */
   balance: bigint;

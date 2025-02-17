@@ -13,7 +13,6 @@ export class StateManager {
   private storage: StorageInterface;
   private privateKey: Hex;
   private id: Scalar | undefined;
-  private macSalt: Scalar | undefined;
   private idHash: Scalar | undefined;
   private cryptoClient: CryptoClient;
 
@@ -30,7 +29,7 @@ export class StateManager {
   async accountState(tokenAddress: `0x${string}`): Promise<AccountState> {
     const res = await this.storage.getItem(tokenAddress);
     const id = await this.getId();
-    const macSalt = this.getMacSalt();
+
     if (res) {
       const expectedIdHash = await this.getIdHash();
       const storageIdHash = Scalar.fromBigint(res.idHash);
@@ -44,7 +43,6 @@ export class StateManager {
       return {
         id,
         nonce: BigInt(obj.nonce),
-        macSalt,
         balance: BigInt(obj.balance),
         currentNote: Scalar.fromBigint(BigInt(obj.currentNote)),
         currentNoteIndex: BigInt(obj.currentNoteIndex),
@@ -95,13 +93,6 @@ export class StateManager {
     return this.id;
   }
 
-  private getMacSalt(): Scalar {
-    if (!this.macSalt) {
-      this.macSalt = Scalar.fromBigint(0n); // TODO: use some random value from cryptoClient
-    }
-    return this.macSalt;
-  }
-
   private async getIdHash(): Promise<Scalar> {
     if (!this.idHash) {
       this.idHash = await this.cryptoClient.hasher.poseidonHash([
@@ -122,7 +113,6 @@ const emptyAccountState = (
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
     id,
-    macSalt: Scalar.fromBigint(0n),
     nonce: 0n,
     balance: 0n,
     currentNote: Scalar.fromBigint(0n),

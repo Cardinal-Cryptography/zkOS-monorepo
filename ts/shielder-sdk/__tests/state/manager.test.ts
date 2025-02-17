@@ -55,7 +55,6 @@ describe("StateManager", () => {
       expect(state).toEqual({
         id: expectedId,
         nonce: 0n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 0n,
         currentNote: Scalar.fromBigint(0n),
         storageSchemaVersion
@@ -78,7 +77,6 @@ describe("StateManager", () => {
       expectStatesEqual(state, {
         id: testId,
         nonce: 1n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 100n,
         currentNote: Scalar.fromBigint(123n),
         currentNoteIndex: 0n,
@@ -123,7 +121,6 @@ describe("StateManager", () => {
       const newState: AccountState = {
         id: testId,
         nonce: 1n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 200n,
         currentNote: Scalar.fromBigint(456n),
         currentNoteIndex: 1n,
@@ -140,7 +137,6 @@ describe("StateManager", () => {
       const newState: AccountState = {
         id: testId,
         nonce: 1n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 200n,
         currentNote: Scalar.fromBigint(456n),
         storageSchemaVersion
@@ -156,7 +152,6 @@ describe("StateManager", () => {
       const newState: AccountState = {
         id: wrongId,
         nonce: 1n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 200n,
         currentNote: Scalar.fromBigint(456n),
         currentNoteIndex: 1n,
@@ -172,7 +167,6 @@ describe("StateManager", () => {
       const newState: AccountState = {
         id: testId,
         nonce: 1n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 200n,
         currentNote: Scalar.fromBigint(456n),
         currentNoteIndex: 1n,
@@ -193,7 +187,6 @@ describe("StateManager", () => {
       expect(emptyState).toEqual({
         id: testId,
         nonce: 0n,
-        macSalt: Scalar.fromBigint(0n),
         balance: 0n,
         currentNote: Scalar.fromBigint(0n),
         storageSchemaVersion

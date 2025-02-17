@@ -14,8 +14,6 @@ import { DepositAction } from "../../src/actions/deposit";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
-import { bigint } from "zod";
-import { call } from "viem/actions";
 
 const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
