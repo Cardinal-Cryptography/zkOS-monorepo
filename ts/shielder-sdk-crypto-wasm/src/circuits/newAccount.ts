@@ -45,7 +45,10 @@ export class NewAccountCircuit
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    const pubInputsBytes = this.wasmCircuit.pub_inputs(
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    const pubInputsBridged = this.wasmModule.new_account_pub_inputs(
       values.id.bytes,
       values.nullifier.bytes,
       values.trapdoor.bytes,
@@ -53,17 +56,16 @@ export class NewAccountCircuit
       values.tokenAddress.bytes,
       values.anonymityRevokerPubkey.bytes
     );
-    const pubInputs = splitUint8(pubInputsBytes, 6).map(
-      (bytes) => new Scalar(bytes)
-    );
 
     return Promise.resolve({
-      hNote: pubInputs[0],
-      hId: pubInputs[1],
-      initialDeposit: pubInputs[2],
-      tokenAddress: pubInputs[3],
-      anonymityRevokerPubkey: pubInputs[4],
-      symKeyEncryption: pubInputs[5]
+      hNote: new Scalar(pubInputsBridged.hashed_note),
+      hId: new Scalar(pubInputsBridged.hashed_id),
+      initialDeposit: new Scalar(pubInputsBridged.initial_deposit),
+      tokenAddress: new Scalar(pubInputsBridged.token_address),
+      anonymityRevokerPubkey: new Scalar(
+        pubInputsBridged.anonymity_revoker_public_key
+      ),
+      symKeyEncryption: new Scalar(pubInputsBridged.sym_key_encryption)
     });
   }
 
