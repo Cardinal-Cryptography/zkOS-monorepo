@@ -13,7 +13,7 @@ export type AccountState = {
   /**
    * Salt used to generate MAC.
    */
-  macSalt: Scalar
+  macSalt: Scalar;
   /**
    * Account balance, in wei.
    */
