@@ -41,6 +41,7 @@ export abstract class NoteAction {
     return {
       id: stateOld.id,
       nonce: stateOld.nonce + 1n,
+      macSalt: stateOld.macSalt,
       balance: balanceNew,
       currentNote: noteNew,
       storageSchemaVersion: stateOld.storageSchemaVersion

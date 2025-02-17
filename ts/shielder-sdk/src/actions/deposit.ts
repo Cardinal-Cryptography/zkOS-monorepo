@@ -188,6 +188,8 @@ export class DepositAction extends NoteAction {
       scalarToBigint(pubInputs.hNoteNew),
       scalarToBigint(merkleRoot),
       amount,
+      scalarToBigint(pubInputs.macSalt),
+      scalarToBigint(pubInputs.macCommitment),
       proof
     );
     const txHash = await sendShielderTransaction({
