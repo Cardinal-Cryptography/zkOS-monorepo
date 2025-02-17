@@ -21,6 +21,10 @@ pub enum Coin {
     Usdc,
 }
 
+/// A collection of prices for various coins.
+///
+/// The underlying structure is behind a mutex and a process to update it
+/// asynchronously can be strated with `start_price_feed`.
 #[derive(Clone)]
 pub struct Prices {
     validity: time::Duration,
@@ -46,6 +50,10 @@ pub enum Error {
 }
 
 impl Prices {
+    /// Create a new `Prices` instance with the given validity and refresh interval.
+    ///
+    /// Note that you should realistically set `validity` to at least 5 or 10 minutes - it seems
+    /// the API we are using (DIA) updates about 2 or 3 minutes or so.
     pub fn new(validity: Duration, refresh_interval: Duration) -> Self {
         let inner = Default::default();
         let validity =
@@ -58,6 +66,7 @@ impl Prices {
         }
     }
 
+    /// Get the price of a coin or `None` if the price is not available or outdated.
     pub fn price(&self, coin: Coin) -> Option<Decimal> {
         let inner = self.inner.lock().expect("Mutex poisoned");
         inner.get(&coin).cloned().and_then(|price| {
@@ -72,6 +81,7 @@ impl Prices {
         })
     }
 
+    /// Get the relative price of two coins or `None` if the price of one of them is not available or outdated.
     pub fn relative_price(&self, coin1: Coin, coin2: Coin) -> Option<Decimal> {
         let price1 = self.price(coin1)?;
         let price2 = self.price(coin2)?;
@@ -89,6 +99,7 @@ impl Prices {
     }
 }
 
+/// Start a price feed that updates the prices in the given `Prices` instance.
 pub async fn start_price_feed(prices: Prices) {
     loop {
         prices.update().await.unwrap();

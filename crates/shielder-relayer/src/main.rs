@@ -30,6 +30,7 @@ use crate::{
 mod config;
 mod metrics;
 mod monitor;
+// This is only pub for now to avoid dead code warnings, make it private once we use it
 pub mod price_feed;
 mod quote;
 mod recharge;
