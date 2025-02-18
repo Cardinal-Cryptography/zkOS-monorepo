@@ -17,6 +17,7 @@ alloy-sol-types = { workspace = true }
 askama = { workspace = true, features = ["config"] }
 evm-utils = { workspace = true }
 halo2_proofs = { workspace = true }
+halo2_frontend = { workspace = true }
 itertools = { workspace = true }
 powers-of-tau = { workspace = true }
 ruint = { workspace = true }

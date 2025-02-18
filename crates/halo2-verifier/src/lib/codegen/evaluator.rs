@@ -2,13 +2,12 @@
 
 use std::{cell::RefCell, cmp::Ordering, collections::HashMap, iter};
 
+use halo2_frontend::plonk::{AdviceQuery, Gate, InstanceQuery};
 use halo2_proofs::{
     halo2curves::ff::PrimeField,
-    plonk::{
-        Advice, AdviceQuery, Any, Challenge, ConstraintSystem, Expression, Fixed, FixedQuery, Gate,
-        InstanceQuery,
-    },
+    plonk::{Advice, Any, Challenge, ConstraintSystem, Expression, Fixed, FixedQuery},
 };
+use halo2_proofs::halo2curves::serde::Repr;
 use itertools::{chain, izip, Itertools};
 use ruint::aliases::U256;
 use type_conversions::field_to_u256;
@@ -26,7 +25,7 @@ pub(crate) struct Evaluator<'a, F: PrimeField> {
 
 impl<'a, F> Evaluator<'a, F>
 where
-    F: PrimeField<Repr = [u8; 0x20]>,
+    F: PrimeField<Repr = Repr<32>>,
 {
     pub(crate) fn new(
         cs: &'a ConstraintSystem<F>,
@@ -224,7 +223,7 @@ where
 
     fn eval(&self, column_type: impl Into<Any>, column_index: usize, rotation: i32) -> String {
         match column_type.into() {
-            Any::Advice(_) => self.data.advice_evals[&(column_index, rotation)].to_string(),
+            Any::Advice => self.data.advice_evals[&(column_index, rotation)].to_string(),
             Any::Fixed => self.data.fixed_evals[&(column_index, rotation)].to_string(),
             Any::Instance => self.data.instance_eval.to_string(),
         }
@@ -256,7 +255,7 @@ where
             },
             &|query| {
                 self.init_var(
-                    self.eval(Advice::default(), query.column_index(), query.rotation().0),
+                    self.eval(Advice, query.column_index(), query.rotation().0),
                     Some(advice_eval_var(query)),
                 )
             },
@@ -338,7 +337,7 @@ fn column_eval_var(prefix: &'static str, column_index: usize, rotation: i32) -> 
 }
 
 #[allow(clippy::too_many_arguments)]
-fn evaluate<F: PrimeField<Repr = [u8; 0x20]>, T>(
+fn evaluate<F: PrimeField<Repr = Repr<32>>, T>(
     expression: &Expression<F>,
     constant: &impl Fn(U256) -> T,
     fixed: &impl Fn(FixedQuery) -> T,

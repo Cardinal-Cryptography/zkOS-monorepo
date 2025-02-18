@@ -30,8 +30,9 @@ byteorder = { version = "1.4.3" }
 chacha20poly1305 = { version = "0.10.1", default-features = false }
 clap = { version = "4.5.8" }
 getrandom = { version = "0.2" }
-halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", default-features = false }
-halo2curves = { version = "0.6.0", default-features = false }
+halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.4.0", default-features = false }
+halo2_frontend = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.4.0", default-features = false }
+halo2curves = { version = "0.7.0", default-features = false }
 hex = { version = "0.4.3" }
 inquire = { version = "0.7.5" }
 itertools = { version = "0.13.0" }
@@ -51,8 +52,8 @@ serde = { version = "1.0.203" }
 serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
-# https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/0f4e50bb47c625efe71815232b4f86998e7165be
-shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "0f4e50b" }
+# https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/6fd4f1e1235f3180d91d60e3556b01045d52466b
+shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "6fd4f1e" }
 testcontainers = { version = "0.19.0" }
 thiserror = { version = "2.0.9" }
 tokio = { version = "1.38.0" }

@@ -644,7 +644,7 @@ pub(crate) fn group_backward_adjacent_ec_points<'a>(
 
 pub(crate) fn g1_to_u256s(ec_point: impl Borrow<bn256::G1Affine>) -> [U256; 2] {
     let coords = ec_point.borrow().coordinates().unwrap();
-    [coords.x(), coords.y()].map(field_to_u256::<Fq, 32>)
+    [coords.x(), coords.y()].map(field_to_u256::<Fq>)
 }
 
 pub(crate) fn g2_to_u256s(ec_point: impl Borrow<bn256::G2Affine>) -> [U256; 4] {

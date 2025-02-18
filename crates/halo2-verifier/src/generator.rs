@@ -1,18 +1,12 @@
 use std::{fs::File, io::Write, path::PathBuf, str};
-
+use halo2_frontend::circuit::compile_circuit;
 use halo2_proofs::{
     halo2curves::bn256::{Bn256, Fr},
     poly::kzg::commitment::ParamsKZG,
 };
 use halo2_solidity_verifier::{BatchOpenScheme::Bdfg21, SolidityGenerator};
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
-use shielder_circuits::{
-    circuits::{generate_keys_with_min_k, Params},
-    deposit::DepositProverKnowledge,
-    new_account::NewAccountProverKnowledge,
-    withdraw::WithdrawProverKnowledge,
-    EnumCount, ProverKnowledge, MAX_K,
-};
+use shielder_circuits::{circuits::{generate_keys_with_min_k, Params}, deposit::DepositProverKnowledge, new_account::NewAccountProverKnowledge, withdraw::WithdrawProverKnowledge, EnumCount, ProverKnowledge, COMPRESS_SELECTORS, MAX_K};
 
 const CONTRACTS_DIR: &str = "./contracts";
 
@@ -39,9 +33,13 @@ fn handle_relation<PK: ProverKnowledge>(full_params: Params, relation: &str) {
 fn generate_solidity_verification_bundle<PK: ProverKnowledge>(
     full_parameters: ParamsKZG<Bn256>,
 ) -> String {
-    let (parameters, _, _, vk) = generate_keys_with_min_k(PK::Circuit::default(), full_parameters)
+    let circuit = PK::Circuit::default();
+    let (parameters, k, _, vk) = generate_keys_with_min_k(circuit.clone(), full_parameters)
         .expect("Failed to generate keys");
-    SolidityGenerator::new(&parameters, &vk, Bdfg21, PK::PublicInput::COUNT)
+    let (compiled_circuit, _, _) = compile_circuit(k, circuit, COMPRESS_SELECTORS).expect("Failed to compile circuit");
+    let cs = compiled_circuit.cs;
+
+    SolidityGenerator::new(&parameters, &cs, &vk, Bdfg21, PK::PublicInput::COUNT)
         .render()
         .expect("Failed to generate separate contracts")
 }

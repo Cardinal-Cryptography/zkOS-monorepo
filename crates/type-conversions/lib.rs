@@ -11,7 +11,7 @@ use core::result;
 use std::{borrow::Borrow, str::FromStr};
 
 use alloy_primitives::{Address, U256};
-use halo2curves::ff::PrimeField;
+use halo2curves::{ff::PrimeField, serde::Repr};
 
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
@@ -28,15 +28,13 @@ pub enum Error {
 pub type Result<T> = result::Result<T, Error>;
 
 /// Convert a U256 value to a field element.
-pub fn u256_to_field<F: From<[u64; 4]>>(value: impl Borrow<U256>) -> F {
-    F::from(*value.borrow().as_limbs())
+pub fn u256_to_field<F: PrimeField<Repr = Repr<32>>>(value: impl Borrow<U256>) -> F {
+    F::from_repr(value.borrow().to_le_bytes().into()).expect("failed to convert U256 to field")
 }
 
 /// Convert a field element to a U256 value.
-pub fn field_to_u256<F: PrimeField<Repr = [u8; BYTE_LENGTH]>, const BYTE_LENGTH: usize>(
-    value: impl Borrow<F>,
-) -> U256 {
-    U256::from_le_bytes(value.borrow().to_repr())
+pub fn field_to_u256<F: PrimeField<Repr = Repr<32>>>(value: impl Borrow<F>) -> U256 {
+    U256::from_le_bytes(*value.borrow().to_repr().inner())
 }
 
 /// Convert raw bytes to an array of a fixed length.
@@ -52,10 +50,10 @@ fn byte_vec_to_array<const LENGTH: usize>(bytes: Vec<u8>) -> Result<[u8; LENGTH]
 }
 
 /// Convert raw bytes to a field element.
-pub fn bytes_to_field<F: PrimeField<Repr = [u8; BYTE_LENGTH]>, const BYTE_LENGTH: usize>(
+pub fn bytes_to_field<F: PrimeField<Repr = Repr<BYTE_LENGTH>>, const BYTE_LENGTH: usize>(
     bytes: Vec<u8>,
 ) -> Result<F> {
-    match F::from_repr(byte_vec_to_array::<BYTE_LENGTH>(bytes)?).into() /* conversion from `CtOption<Fr>` */ {
+    match F::from_repr(byte_vec_to_array::<BYTE_LENGTH>(bytes)?.into()).into() /* conversion from `CtOption<Fr>` */ {
             Some(field_element) => Ok(field_element),
             None => Err(Error::Halo2FieldElementCreationFailed),
         }
@@ -69,7 +67,7 @@ pub fn field_to_bytes<F: PrimeField<Repr = [u8; BYTE_LENGTH]>, const BYTE_LENGTH
 }
 
 /// Since the private key is an arbitrary 32-byte number, this is a non-reversible mapping.
-pub fn private_key_to_field<F: From<[u64; 4]>>(hex: &str) -> Result<F> {
+pub fn private_key_to_field<F: PrimeField<Repr = Repr<32>>>(hex: &str) -> Result<F> {
     let u256 = match U256::from_str(hex) {
         Ok(u256) => u256,
         Err(_) => return Err(Error::HexU256ParseError),
@@ -89,7 +87,7 @@ pub fn u256_to_bytes(value: U256) -> Vec<u8> {
 
 /// Converts an Ethereum address to a field element. MUST be consistent with the Solidity
 /// implementation, which is `uint256(uint160(address))`.
-pub fn address_to_field<F: From<[u64; 4]>>(address: Address) -> F {
+pub fn address_to_field<F: PrimeField<Repr = Repr<32>>>(address: Address) -> F {
     let mut bytes = [0u8; 32];
     bytes[12..].copy_from_slice(address.as_slice());
     let u256 = U256::from_be_bytes(bytes);
