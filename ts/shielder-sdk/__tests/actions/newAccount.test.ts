@@ -15,7 +15,10 @@ import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 
-const ANONYMITY_REVOKER_PUBKEY = 1n;
+const ANONYMITY_REVOKER_PUBKEY = {
+  x: 123n,
+  y: 456n
+};
 
 const expectPubInputsCorrect = async (
   pubInputs: NewAccountPubInputs,

@@ -122,13 +122,17 @@ contract Shielder is
     function initialize(
         address initialOwner,
         uint256 _depositLimit,
-        uint256 _anonymityRevokerPublicKey
+        uint256 _anonymityRevokerPublicKeyX,
+        uint256 _anonymityRevokerPublicKeyY
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
         __MerkleTree_init();
         __DepositLimit_init(_depositLimit);
-        __AnonymityRevoker_init(_anonymityRevokerPublicKey);
+        __AnonymityRevoker_init(
+            _anonymityRevokerPublicKeyX,
+            _anonymityRevokerPublicKeyY
+        );
         _pause();
     }
 
@@ -248,13 +252,17 @@ contract Shielder is
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](6);
+        uint256[] memory publicInputs = new uint256[](7);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
         publicInputs[3] = addressToUInt256(tokenAddress);
-        publicInputs[4] = anonymityRevokerPubkey();
-        publicInputs[5] = symKeyEncryption;
+
+        (uint256 arX, uint256 arY) = anonymityRevokerPubkey();
+        publicInputs[4] = arX;
+        publicInputs[5] = arY;
+
+        publicInputs[6] = symKeyEncryption;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 

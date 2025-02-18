@@ -34,7 +34,8 @@ export class NewAccountCircuit
         values.nullifier.bytes,
         values.trapdoor.bytes,
         values.initialDeposit.bytes,
-        values.anonymityRevokerPubkey.bytes
+        values.anonymityRevokerPubkey.x.bytes,
+        values.anonymityRevokerPubkey.y.bytes
       )
     );
   }
@@ -50,7 +51,8 @@ export class NewAccountCircuit
           pubInputs.hNote.bytes,
           pubInputs.hId.bytes,
           pubInputs.initialDeposit.bytes,
-          pubInputs.anonymityRevokerPubkey.bytes,
+          pubInputs.anonymityRevokerPubkey.x.bytes,
+          pubInputs.anonymityRevokerPubkey.y.bytes,
           pubInputs.symKeyEncryption.bytes,
           proof
         )
