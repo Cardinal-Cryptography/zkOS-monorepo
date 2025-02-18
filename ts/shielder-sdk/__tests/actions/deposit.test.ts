@@ -15,7 +15,8 @@ import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 import { nativeToken } from "../../src/types";
-import { nativeTokenAddress } from "../../src/constants";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
