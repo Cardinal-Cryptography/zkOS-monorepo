@@ -127,6 +127,8 @@ mod tests {
                 amount: U256::from(amount),
                 newNote: calldata.newNote,
                 newNoteIndex: note_index.saturating_add(U256::from(1)),
+                macSalt: U256::ZERO,
+                macCommitment: calldata.macCommitment,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, U256::from(15)));
@@ -270,6 +272,8 @@ mod tests {
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,
             merkleRoot: U256::ZERO,
+            macSalt: U256::ZERO,
+            macCommitment: U256::ZERO,
             proof: Bytes::from(vec![]),
         };
         let result = invoke_call(

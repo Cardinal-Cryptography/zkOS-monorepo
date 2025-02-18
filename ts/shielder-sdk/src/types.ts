@@ -1,18 +1,18 @@
-export interface NativeToken {
+export type NativeToken = {
   type: "native";
-}
+};
 
-export interface ERC20Token {
+export type ERC20Token = {
   type: "erc20";
   address: `0x${string}`;
-}
+};
 
 export type Token = NativeToken | ERC20Token;
 
-export function createNativeToken(): NativeToken {
+export function nativeToken(): NativeToken {
   return { type: "native" };
 }
 
-export function createERC20Token(address: `0x${string}`): ERC20Token {
+export function ERC20Token(address: `0x${string}`): ERC20Token {
   return { type: "erc20", address };
 }

@@ -1,3 +1,5 @@
+pub use shielder_circuits;
+
 pub mod consts {
     pub const ARITY: usize = 7;
     pub const TREE_HEIGHT: usize = 13;

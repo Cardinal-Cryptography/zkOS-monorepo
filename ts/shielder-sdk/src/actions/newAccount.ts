@@ -1,5 +1,6 @@
 import { IContract } from "@/chain/contract";
 import {
+  AsymPublicKey,
   CryptoClient,
   NewAccountAdvice,
   NewAccountPubInputs,
@@ -26,6 +27,7 @@ export interface NewAccountCalldata {
 
 export class NewAccountAction extends NoteAction {
   contract: IContract;
+
   constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
     this.contract = contract;

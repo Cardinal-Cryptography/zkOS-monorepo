@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use shielder_circuits::{
     new_account::{NewAccountInstance, NewAccountProverKnowledge},
-    Fr, PublicInputProvider,
+    AsymPublicKey, Fr, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
 #[cfg(feature = "build-wasm")]
@@ -68,7 +68,8 @@ impl NewAccountCircuit {
         trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
         token_address: Vec<u8>,
-        anonymity_revoker_public_key: Vec<u8>,
+        anonymity_revoker_public_key_x: Vec<u8>,
+        anonymity_revoker_public_key_y: Vec<u8>,
     ) -> Vec<u8> {
         self.0.prove(
             &NewAccountProverKnowledge {
@@ -77,9 +78,11 @@ impl NewAccountCircuit {
                 trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
                 token_address: vec_to_f(token_address),
-                anonymity_revoker_public_key: vec_to_f(anonymity_revoker_public_key),
-            }
-            .into(),
+                anonymity_revoker_public_key: AsymPublicKey {
+                    x: vec_to_f(anonymity_revoker_public_key_x),
+                    y: vec_to_f(anonymity_revoker_public_key_y),
+                },
+            },
             &mut rand::thread_rng(),
         )
     }
@@ -91,7 +94,8 @@ impl NewAccountCircuit {
         h_id: Vec<u8>,
         initial_deposit: Vec<u8>,
         token_address: Vec<u8>,
-        anonymity_revoker_public_key: Vec<u8>,
+        anonymity_revoker_public_key_x: Vec<u8>,
+        anonymity_revoker_public_key_y: Vec<u8>,
         sym_key_encryption: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
@@ -101,7 +105,8 @@ impl NewAccountCircuit {
                 NewAccountInstance::HashedNote => &h_note,
                 NewAccountInstance::InitialDeposit => &initial_deposit,
                 NewAccountInstance::TokenAddress => &token_address,
-                NewAccountInstance::AnonymityRevokerPublicKey => &anonymity_revoker_public_key,
+                NewAccountInstance::AnonymityRevokerPublicKeyX => &anonymity_revoker_public_key_x,
+                NewAccountInstance::AnonymityRevokerPublicKeyY => &anonymity_revoker_public_key_y,
                 NewAccountInstance::SymKeyEncryption => &sym_key_encryption,
             };
             vec_to_f(value.clone())

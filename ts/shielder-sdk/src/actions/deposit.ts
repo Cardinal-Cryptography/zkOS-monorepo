@@ -13,6 +13,7 @@ import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
+import { hexToBigInt } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -27,6 +28,7 @@ export interface DepositCalldata extends Calldata {
 export class DepositAction extends NoteAction {
   private contract: IContract;
   private nonceGenerator: INonceGenerator;
+
   constructor(
     contract: IContract,
     cryptoClient: CryptoClient,
@@ -91,6 +93,9 @@ export class DepositAction extends NoteAction {
       value: Scalar.fromBigint(amount),
       nullifierNew,
       trapdoorNew
+      tokenAddress: Scalar.fromAddress(tokenAddress),
+      macSalt,
+      macCommitment
     };
   }
 
@@ -159,6 +164,8 @@ export class DepositAction extends NoteAction {
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
             amount,
+            scalarToBigint(pubInputs.macSalt),
+            scalarToBigint(pubInputs.macCommitment),
             proof
           )
         : await this.contract.depositTokenCalldata(
@@ -170,6 +177,8 @@ export class DepositAction extends NoteAction {
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
             amount,
+            scalarToBigint(pubInputs.macSalt),
+            scalarToBigint(pubInputs.macCommitment),
             proof
           );
     const txHash = await sendShielderTransaction({

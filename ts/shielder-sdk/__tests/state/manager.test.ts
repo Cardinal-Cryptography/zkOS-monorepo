@@ -9,7 +9,7 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { createNativeToken } from "../../src/types";
+import { nativeToken } from "../../src/types";
 
 const expectStatesEqual = (state1: AccountState, state2: AccountState) => {
   expect(scalarsEqual(state1.id, state2.id)).toBe(true);
@@ -49,7 +49,7 @@ describe("StateManager", () => {
 
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
-      const state = await stateManager.accountState(createNativeToken());
+      const state = await stateManager.accountState(nativeToken());
       const expectedId =
         await cryptoClient.converter.privateKeyToScalar(testPrivateKey);
 
@@ -59,7 +59,7 @@ describe("StateManager", () => {
         balance: 0n,
         currentNote: Scalar.fromBigint(0n),
         storageSchemaVersion,
-        token: createNativeToken()
+        token: nativeToken()
       });
     });
 
@@ -75,7 +75,7 @@ describe("StateManager", () => {
         storageSchemaVersion
       });
 
-      const token = createNativeToken();
+      const token = nativeToken();
 
       const state = await stateManager.accountState(token);
       expectStatesEqual(state, {
@@ -85,7 +85,7 @@ describe("StateManager", () => {
         currentNote: Scalar.fromBigint(123n),
         currentNoteIndex: 0n,
         storageSchemaVersion,
-        token: createNativeToken()
+        token: nativeToken()
       });
     });
 
@@ -99,9 +99,9 @@ describe("StateManager", () => {
         storageSchemaVersion
       });
 
-      await expect(
-        stateManager.accountState(createNativeToken())
-      ).rejects.toThrow("Id hash in storage does not matched the configured.");
+      await expect(stateManager.accountState(nativeToken())).rejects.toThrow(
+        "Id hash in storage does not matched the configured."
+      );
     });
 
     it("throws error when currentNoteIndex is undefined", async () => {
@@ -115,15 +115,14 @@ describe("StateManager", () => {
         storageSchemaVersion
       });
 
-      await expect(
-        stateManager.accountState(createNativeToken())
-      ).rejects.toThrow("currentNoteIndex must be set.");
+      await expect(stateManager.accountState(nativeToken())).rejects.toThrow(
+        "currentNoteIndex must be set."
+      );
     });
   });
 
   describe("updateAccountState", () => {
     it("updates state when all conditions are met", async () => {
-      const nativeToken = createNativeToken();
       const newState: AccountState = {
         id: testId,
         nonce: 1n,
@@ -131,7 +130,7 @@ describe("StateManager", () => {
         currentNote: Scalar.fromBigint(456n),
         currentNoteIndex: 1n,
         storageSchemaVersion,
-        token: nativeToken
+        token: nativeToken()
       };
 
       await stateManager.updateAccountState(nativeToken, newState);
@@ -147,11 +146,11 @@ describe("StateManager", () => {
         balance: 200n,
         currentNote: Scalar.fromBigint(456n),
         storageSchemaVersion,
-        token: createNativeToken()
+        token: nativeToken()
       };
 
       await expect(
-        stateManager.updateAccountState(createNativeToken(), newState)
+        stateManager.updateAccountState(nativeToken(), newState)
       ).rejects.toThrow("currentNoteIndex must be set.");
     });
 
@@ -164,11 +163,11 @@ describe("StateManager", () => {
         currentNote: Scalar.fromBigint(456n),
         currentNoteIndex: 1n,
         storageSchemaVersion,
-        token: createNativeToken()
+        token: nativeToken()
       };
 
       await expect(
-        stateManager.updateAccountState(createNativeToken(), newState)
+        stateManager.updateAccountState(nativeToken(), newState)
       ).rejects.toThrow("New account id does not match the configured.");
     });
 
@@ -180,19 +179,18 @@ describe("StateManager", () => {
         currentNote: Scalar.fromBigint(456n),
         currentNoteIndex: 1n,
         storageSchemaVersion: 999, // Wrong version
-        token: createNativeToken()
+        token: nativeToken()
       };
 
       await expect(
-        stateManager.updateAccountState(createNativeToken(), newState)
+        stateManager.updateAccountState(nativeToken(), newState)
       ).rejects.toThrow("Storage schema version mismatch: 999 != 2");
     });
   });
 
   describe("emptyAccountState", () => {
     it("returns correct empty state", async () => {
-      const emptyState =
-        await stateManager.emptyAccountState(createNativeToken());
+      const emptyState = await stateManager.emptyAccountState(nativeToken());
 
       expect(emptyState).toEqual({
         id: testId,
@@ -200,7 +198,7 @@ describe("StateManager", () => {
         balance: 0n,
         currentNote: Scalar.fromBigint(0n),
         storageSchemaVersion,
-        token: createNativeToken()
+        token: nativeToken()
       });
     });
   });

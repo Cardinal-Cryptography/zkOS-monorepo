@@ -39,6 +39,7 @@ impl WithdrawCircuit {
         nullifier_new: Vec<u8>,
         trapdoor_new: Vec<u8>,
         commitment: Vec<u8>,
+        mac_salt: Vec<u8>,
     ) -> Vec<u8> {
         self.0.prove(
             &WithdrawProverKnowledge {
@@ -53,6 +54,7 @@ impl WithdrawCircuit {
                 nullifier_new: vec_to_f(nullifier_new),
                 trapdoor_new: vec_to_f(trapdoor_new),
                 commitment: vec_to_f(commitment),
+                mac_salt: vec_to_f(mac_salt),
             },
             &mut rand::thread_rng(),
         )
@@ -105,6 +107,8 @@ impl WithdrawCircuit {
         value: Vec<u8>,
         commitment: Vec<u8>,
         token_address: Vec<u8>,
+        mac_salt: Vec<u8>,
+        mac_commitment: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: WithdrawInstance| {
@@ -116,6 +120,8 @@ impl WithdrawCircuit {
                 WithdrawInstance::WithdrawalValue => &value,
                 WithdrawInstance::Commitment => &commitment,
                 WithdrawInstance::TokenAddress => &token_address,
+                WithdrawInstance::MacSalt => &mac_salt,
+                WithdrawInstance::MacCommitment => &mac_commitment,
             };
             vec_to_f(value.clone())
         };

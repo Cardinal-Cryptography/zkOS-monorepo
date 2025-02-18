@@ -42,7 +42,8 @@ export class WithdrawCircuit
         values.value.bytes,
         values.nullifierNew.bytes,
         values.trapdoorNew.bytes,
-        values.commitment.bytes
+        values.commitment.bytes,
+        values.macSalt.bytes
       )
     );
   }
@@ -94,6 +95,8 @@ export class WithdrawCircuit
           pubInputs.value.bytes,
           pubInputs.commitment.bytes,
           pubInputs.tokenAddress.bytes,
+          pubInputs.macSalt.bytes,
+          pubInputs.macCommitment.bytes,
           proof
         )
       );
