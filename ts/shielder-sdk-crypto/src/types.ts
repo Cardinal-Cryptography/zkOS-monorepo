@@ -6,6 +6,7 @@ export type AsymPublicKey<T> = {
   y: T;
 };
 
+// follows the order in shielder-circuits::circuits::new_account
 export type NewAccountPubInputs = {
   hNote: Scalar;
   hId: Scalar;
@@ -24,6 +25,7 @@ export type NewAccountAdvice = {
   anonymityRevokerPubkey: AsymPublicKey<Scalar>;
 };
 
+// follows the order in shielder-circuits::circuits::deposit
 export type DepositPubInputs = {
   idHiding: Scalar;
   merkleRoot: Scalar;
@@ -49,14 +51,15 @@ export type DepositAdvice = {
   macSalt: Scalar;
 };
 
+// follows the order in shielder-circuits::circuits::withdraw
 export type WithdrawPubInputs = {
   idHiding: Scalar;
   merkleRoot: Scalar;
   hNullifierOld: Scalar;
   hNoteNew: Scalar;
   value: Scalar;
-  commitment: Scalar;
   tokenAddress: Scalar;
+  commitment: Scalar;
   macSalt: Scalar;
   macCommitment: Scalar;
 };

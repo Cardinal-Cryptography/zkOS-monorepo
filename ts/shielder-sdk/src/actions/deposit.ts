@@ -1,6 +1,7 @@
 import { IContract, VersionRejectedByContract } from "@/chain/contract";
 import {
   CryptoClient,
+  DepositAdvice,
   DepositPubInputs,
   Proof,
   Scalar,
@@ -21,7 +22,6 @@ export interface DepositCalldata extends Calldata {
   };
   expectedContractVersion: `0x${string}`;
   amount: bigint;
-  merkleRoot: Scalar;
   token: Token;
 }
 
@@ -57,44 +57,43 @@ export class DepositAction extends NoteAction {
     );
   }
 
-  async preparePubInputs(
+  async prepareAdvice(
     state: AccountState,
-    amount: bigint,
-    nonce: Scalar,
-    nullifierOld: Scalar,
-    merkleRoot: Scalar,
-    tokenAddress: `0x${string}`
-  ): Promise<DepositPubInputs> {
-    const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
-    const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
-
-    // temporary placeholder for salt generation, will be exposed through bindings in the future
-    const macSalt = await (async (id: Scalar) => {
-      const derivationSalt = Scalar.fromBigint(hexToBigInt("0x41414141"));
-      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
-    })(state.id);
-    // temporary placeholder for MAC computation, will be exposed through bindings in the future
-    const macCommitment = Scalar.fromBigint(hexToBigInt("0x4242424242"));
-
-    const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
-      nullifierOld
-    ]);
-    const newState = await this.rawDeposit(state, amount);
-    if (newState === null) {
-      throw new Error(
-        "Failed to deposit, possibly due to insufficient balance"
-      );
+    amount: bigint
+  ): Promise<DepositAdvice> {
+    if (state.currentNoteIndex === undefined) {
+      throw new Error("currentNoteIndex must be set");
     }
-    const hNoteNew = newState.currentNote;
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
+    const tokenAddress = getTokenAddress(state.token);
+
+    const nonce = this.nonceGenerator.randomIdHidingNonce();
+    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce - 1n)
+      );
+    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
+      await this.cryptoClient.secretManager.getSecrets(
+        state.id,
+        Number(state.nonce)
+      );
     return {
-      hNullifierOld,
-      hNoteNew,
-      idHiding,
-      merkleRoot,
-      value: Scalar.fromBigint(amount),
+      id: state.id,
+      nonce,
+      nullifierOld,
+      trapdoorOld,
+      accountBalanceOld: Scalar.fromBigint(state.balance),
       tokenAddress: Scalar.fromAddress(tokenAddress),
-      macSalt,
-      macCommitment
+      path: merklePath,
+      value: Scalar.fromBigint(amount),
+      nullifierNew,
+      trapdoorNew,
+      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
     };
   }
 
@@ -109,64 +108,20 @@ export class DepositAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
-    const tokenAddress = getTokenAddress(state.token);
-    const lastNodeIndex = state.currentNoteIndex!;
-    const [path, merkleRoot] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
-
-    // temporary placeholder for salt generation, will be exposed through bindings in the future
-    const macSalt = await (async (id: Scalar) => {
-      const derivationSalt = Scalar.fromBigint(hexToBigInt("0x41414141"));
-      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
-    })(state.id);
-
-    if (state.currentNoteIndex === undefined) {
-      throw new Error("currentNoteIndex must be set");
-    }
-
     const time = Date.now();
 
-    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce - 1n)
-      );
-    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce)
-      );
+    const advice = await this.prepareAdvice(state, amount);
 
     const proof = await this.cryptoClient.depositCircuit
-      .prove({
-        id: state.id,
-        nonce,
-        nullifierOld,
-        trapdoorOld,
-        accountBalanceOld: Scalar.fromBigint(state.balance),
-        tokenAddress: Scalar.fromAddress(tokenAddress),
-        path,
-        value: Scalar.fromBigint(amount),
-        nullifierNew,
-        trapdoorNew,
-        macSalt
-      })
+      .prove(advice)
       .catch((e) => {
         throw new Error(`Failed to prove deposit: ${e}`);
       });
-    const pubInputs = await this.preparePubInputs(
-      state,
-      amount,
-      nonce,
-      nullifierOld,
-      merkleRoot,
-      tokenAddress
-    );
+    const pubInputs = await this.cryptoClient.depositCircuit.pubInputs(advice);
     if (!(await this.cryptoClient.depositCircuit.verify(proof, pubInputs))) {
       throw new Error("Deposit proof verification failed");
     }
+
     const provingTime = Date.now() - time;
     return {
       calldata: {
@@ -176,7 +131,6 @@ export class DepositAction extends NoteAction {
       expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
-      merkleRoot,
       token: state.token
     };
   }
@@ -196,8 +150,7 @@ export class DepositAction extends NoteAction {
   ) {
     const {
       calldata: { pubInputs, proof },
-      amount,
-      merkleRoot
+      amount
     } = calldata;
     const encodedCalldata =
       calldata.token.type === "native"
@@ -207,7 +160,7 @@ export class DepositAction extends NoteAction {
             scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
-            scalarToBigint(merkleRoot),
+            scalarToBigint(pubInputs.merkleRoot),
             amount,
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
@@ -220,7 +173,7 @@ export class DepositAction extends NoteAction {
             scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
-            scalarToBigint(merkleRoot),
+            scalarToBigint(pubInputs.merkleRoot),
             amount,
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),

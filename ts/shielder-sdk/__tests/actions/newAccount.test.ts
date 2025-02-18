@@ -23,36 +23,6 @@ const ANONYMITY_REVOKER_PUBKEY = {
   y: 456n
 };
 
-const expectPubInputsCorrect = async (
-  pubInputs: NewAccountPubInputs,
-  state: AccountState,
-  amount: bigint,
-  cryptoClient: CryptoClient
-) => {
-  // hId should be hash of id
-  expect(
-    scalarsEqual(
-      pubInputs.hId,
-      await cryptoClient.hasher.poseidonHash([state.id])
-    )
-  ).toBe(true);
-
-  expect(
-    scalarsEqual(pubInputs.initialDeposit, Scalar.fromBigint(amount))
-  ).toBe(true);
-
-  const { nullifier, trapdoor } = await cryptoClient.secretManager.getSecrets(
-    state.id,
-    Number(state.nonce)
-  );
-  expect(
-    scalarsEqual(
-      pubInputs.hNote,
-      await hashedNote(state.id, nullifier, trapdoor, Scalar.fromBigint(amount))
-    )
-  ).toBe(true);
-};
-
 describe("NewAccountAction", () => {
   let cryptoClient: MockedCryptoClient;
   let contract: IContract;
@@ -123,39 +93,6 @@ describe("NewAccountAction", () => {
     });
   });
 
-  describe("preparePubInputs", () => {
-    it("should prepare public inputs correctly", async () => {
-      const amount = 100n;
-      const pubInputs = await action.preparePubInputs(
-        mockedState,
-        amount,
-        ANONYMITY_REVOKER_PUBKEY,
-        nativeTokenAddress
-      );
-
-      await expectPubInputsCorrect(
-        pubInputs,
-        mockedState,
-        amount,
-        cryptoClient
-      );
-    });
-
-    it("should throw an error at negative amount", async () => {
-      const amount = -100n;
-      await expect(
-        action.preparePubInputs(
-          mockedState,
-          amount,
-          ANONYMITY_REVOKER_PUBKEY,
-          nativeTokenAddress
-        )
-      ).rejects.toThrow(
-        "Failed to create new account, possibly due to negative balance"
-      );
-    });
-  });
-
   describe("generateCalldata", () => {
     it("should generate valid calldata", async () => {
       const amount = 100n;
@@ -164,14 +101,6 @@ describe("NewAccountAction", () => {
         mockedState,
         amount,
         expectedVersion
-      );
-
-      // Verify the public inputs
-      await expectPubInputsCorrect(
-        calldata.calldata.pubInputs,
-        mockedState,
-        amount,
-        cryptoClient
       );
 
       // Verify the proof
