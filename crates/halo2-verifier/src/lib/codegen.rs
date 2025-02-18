@@ -1,5 +1,6 @@
 use std::fmt::{self, Debug};
 
+use halo2_frontend::plonk::ConstraintSystem;
 use halo2_proofs::{
     halo2curves::{bn256, ff::Field},
     plonk::VerifyingKey,
@@ -29,6 +30,7 @@ pub struct SolidityGenerator<'a> {
     scheme: BatchOpenScheme,
     num_instances: usize,
     acc_encoding: Option<AccumulatorEncoding>,
+    cs: &'a ConstraintSystem<bn256::Fr>,
     meta: ConstraintSystemMeta,
 }
 
@@ -91,17 +93,17 @@ impl<'a> SolidityGenerator<'a> {
     pub fn new(
         params: &'a ParamsKZG<bn256::Bn256>,
         vk: &'a VerifyingKey<bn256::G1Affine>,
+        cs: &'a ConstraintSystem<bn256::Fr>,
         scheme: BatchOpenScheme,
         num_instances: usize,
     ) -> Self {
-        assert_ne!(vk.cs().num_advice_columns(), 0);
+        assert_ne!(cs.num_advice_columns(), 0);
         assert!(
-            vk.cs().num_instance_columns() <= 1,
+            cs.num_instance_columns() <= 1,
             "Multiple instance columns is not yet implemented"
         );
         assert!(
-            !vk.cs()
-                .instance_queries()
+            !cs.instance_queries()
                 .iter()
                 .any(|(_, rotation)| *rotation != Rotation::cur()),
             "Rotated query to instance column is not yet implemented"
@@ -113,7 +115,8 @@ impl<'a> SolidityGenerator<'a> {
             scheme,
             num_instances,
             acc_encoding: None,
-            meta: ConstraintSystemMeta::new(vk.cs()),
+            cs,
+            meta: ConstraintSystemMeta::new(cs),
         }
     }
 
@@ -233,7 +236,7 @@ impl<'a> SolidityGenerator<'a> {
         let vk_mptr = Ptr::memory(self.static_working_memory_size(&vk, proof_cptr));
         let data = Data::new(&self.meta, &vk, vk_mptr, proof_cptr);
 
-        let evaluator = Evaluator::new(self.vk.cs(), &self.meta, &data);
+        let evaluator = Evaluator::new(self.cs, &self.meta, &data);
         let quotient_eval_numer_computations = chain![
             evaluator.gate_computations(),
             evaluator.permutation_computations(),
