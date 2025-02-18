@@ -3,7 +3,7 @@ import { StateManager } from "../../src/state/manager";
 import { MockedCryptoClient } from "../helpers";
 import { StorageInterface } from "../../src/state/storageSchema";
 import { AccountState } from "../../src/state/types";
-import { nativeTokenAddress, storageSchemaVersion } from "../../src/constants";
+import { storageSchemaVersion } from "../../src/constants";
 import {
   Scalar,
   scalarsEqual,
@@ -29,6 +29,8 @@ describe("StateManager", () => {
   let stateManager: StateManager;
   let storage: StorageInterface;
   let cryptoClient: MockedCryptoClient;
+  const nativeTokenAddress =
+    "0x0000000000000000000000000000000000000000";
   const testPrivateKey =
     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
   let testId: Scalar;
