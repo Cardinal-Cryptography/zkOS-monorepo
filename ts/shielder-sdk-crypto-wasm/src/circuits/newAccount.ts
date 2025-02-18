@@ -7,7 +7,6 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
-import { splitUint8 } from "@/utils";
 
 type WasmNewAccountCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").NewAccountCircuit
@@ -49,24 +48,26 @@ export class NewAccountCircuit
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
-    const pubInputsBridged = this.wasmModule.new_account_pub_inputs(
+    const pubInputsBytes = this.wasmModule.new_account_pub_inputs(
       values.id.bytes,
       values.nullifier.bytes,
       values.trapdoor.bytes,
       values.initialDeposit.bytes,
       values.tokenAddress.bytes,
-      values.anonymityRevokerPubkey.bytes
+      values.anonymityRevokerPubkey.x.bytes,
+      values.anonymityRevokerPubkey.y.bytes
     );
 
     return Promise.resolve({
-      hNote: new Scalar(pubInputsBridged.hashed_note),
-      hId: new Scalar(pubInputsBridged.hashed_id),
-      initialDeposit: new Scalar(pubInputsBridged.initial_deposit),
-      tokenAddress: new Scalar(pubInputsBridged.token_address),
-      anonymityRevokerPubkey: new Scalar(
-        pubInputsBridged.anonymity_revoker_public_key
-      ),
-      symKeyEncryption: new Scalar(pubInputsBridged.sym_key_encryption)
+      hNote: new Scalar(pubInputsBytes.hashed_note),
+      hId: new Scalar(pubInputsBytes.hashed_id),
+      initialDeposit: new Scalar(pubInputsBytes.initial_deposit),
+      tokenAddress: new Scalar(pubInputsBytes.token_address),
+      anonymityRevokerPubkey: {
+        x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
+        y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
+      },
+      symKeyEncryption: new Scalar(pubInputsBytes.sym_key_encryption)
     });
   }
 

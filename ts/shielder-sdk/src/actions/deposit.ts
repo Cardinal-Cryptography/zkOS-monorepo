@@ -92,10 +92,8 @@ export class DepositAction extends NoteAction {
       path: merklePath,
       value: Scalar.fromBigint(amount),
       nullifierNew,
-      trapdoorNew
-      tokenAddress: Scalar.fromAddress(tokenAddress),
-      macSalt,
-      macCommitment
+      trapdoorNew,
+      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
     };
   }
 

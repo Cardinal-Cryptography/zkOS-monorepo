@@ -135,7 +135,8 @@ export class WithdrawAction extends NoteAction {
       value: Scalar.fromBigint(amount),
       nullifierNew,
       trapdoorNew,
-      commitment
+      commitment,
+      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
     };
   }
 

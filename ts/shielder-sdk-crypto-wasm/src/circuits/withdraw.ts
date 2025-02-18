@@ -7,7 +7,6 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
-import { splitUint8 } from "@/utils";
 
 type WasmWithdrawCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").WithdrawCircuit
@@ -52,7 +51,10 @@ export class WithdrawCircuit
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    const pubInputsBytes = this.wasmCircuit.pub_inputs(
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    const pubInputsBytes = this.wasmModule.withdraw_pub_inputs(
       values.id.bytes,
       values.nonce.bytes,
       values.nullifierOld.bytes,
@@ -63,20 +65,20 @@ export class WithdrawCircuit
       values.value.bytes,
       values.nullifierNew.bytes,
       values.trapdoorNew.bytes,
-      values.commitment.bytes
-    );
-    const pubInputs = splitUint8(pubInputsBytes, 7).map(
-      (bytes) => new Scalar(bytes)
+      values.commitment.bytes,
+      values.macSalt.bytes
     );
 
     return Promise.resolve({
-      idHiding: pubInputs[0],
-      merkleRoot: pubInputs[1],
-      hNullifierOld: pubInputs[2],
-      hNoteNew: pubInputs[3],
-      value: pubInputs[4],
-      tokenAddress: pubInputs[5],
-      commitment: pubInputs[6]
+      idHiding: new Scalar(pubInputsBytes.id_hiding),
+      merkleRoot: new Scalar(pubInputsBytes.merkle_root),
+      hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
+      hNoteNew: new Scalar(pubInputsBytes.h_note_new),
+      value: new Scalar(pubInputsBytes.withdrawal_value),
+      commitment: new Scalar(pubInputsBytes.commitment),
+      tokenAddress: new Scalar(pubInputsBytes.token_address),
+      macSalt: new Scalar(pubInputsBytes.mac_salt),
+      macCommitment: new Scalar(pubInputsBytes.mac_commitment)
     });
   }
 

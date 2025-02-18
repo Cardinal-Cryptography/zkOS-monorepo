@@ -1,6 +1,5 @@
 import { IContract } from "@/chain/contract";
 import {
-  AsymPublicKey,
   CryptoClient,
   NewAccountAdvice,
   NewAccountPubInputs,
@@ -68,7 +67,10 @@ export class NewAccountAction extends NoteAction {
       trapdoor,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
-      anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey)
+      anonymityRevokerPubkey: {
+        x: Scalar.fromBigint(anonymityRevokerPubkey.x),
+        y: Scalar.fromBigint(anonymityRevokerPubkey.y)
+      }
     };
   }
 

@@ -117,7 +117,6 @@ describe("DepositAction", () => {
     state = {
       id,
       nonce: stateNonce,
-      macSalt: Scalar.fromBigint(0n),
       balance: 5n,
       currentNote: await hashedNote(
         id,
