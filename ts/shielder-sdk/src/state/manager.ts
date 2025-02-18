@@ -85,11 +85,10 @@ export class StateManager {
   // TODO: Create independent id for each token address
   private async getId(): Promise<Scalar> {
     if (!this.id) {
-      this.id = await this.cryptoClient.converter.privateKeyToScalar(
-        this.privateKey
-      );
+      // TODO: replace this stub
+      this.id = Scalar.fromBigint(0n);
     }
-    return this.id;
+    return Promise.resolve(this.id);
   }
   private async getIdHash(): Promise<Scalar> {
     if (!this.idHash) {

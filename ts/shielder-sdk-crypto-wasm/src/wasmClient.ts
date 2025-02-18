@@ -5,7 +5,6 @@ import { DepositCircuit } from "@/circuits/deposit";
 import { WithdrawCircuit } from "@/circuits/withdraw";
 import { Hasher } from "@/hasher";
 import { SecretGenerator } from "@/secretGenerator";
-import { Converter } from "@/conversion";
 import { NoteTreeConfig } from "@/noteTreeConfig";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 
@@ -18,7 +17,6 @@ export class WasmClient implements CryptoClient {
   withdrawCircuit: WithdrawCircuit;
   hasher: Hasher;
   secretManager: SecretGenerator;
-  converter: Converter;
   noteTreeConfig: NoteTreeConfig;
   initialized: boolean = false;
 
@@ -28,7 +26,6 @@ export class WasmClient implements CryptoClient {
     this.withdrawCircuit = new WithdrawCircuit();
     this.hasher = new Hasher();
     this.secretManager = new SecretGenerator();
-    this.converter = new Converter();
     this.noteTreeConfig = new NoteTreeConfig();
   }
 
@@ -52,7 +49,6 @@ export class WasmClient implements CryptoClient {
     this.withdrawCircuit.init(caller);
     this.hasher.init(caller);
     this.secretManager.init(caller);
-    this.converter.init(caller);
     this.noteTreeConfig.init(caller);
     this.initialized = true;
     if (caller == "web_singlethreaded") {
