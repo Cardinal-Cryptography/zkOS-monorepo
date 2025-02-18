@@ -172,6 +172,8 @@ mod tests {
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
                 fee: U256::from(1),
+                macSalt: U256::ZERO,
+                macCommitment: withdraw_calldata.macCommitment,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
@@ -221,6 +223,8 @@ mod tests {
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
                 fee: U256::from(1),
+                macSalt: U256::ZERO,
+                macCommitment: withdraw_calldata.macCommitment,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, U256::from(30)));
@@ -362,6 +366,8 @@ mod tests {
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,
             proof: Bytes::from(vec![]),
+            macSalt: U256::ZERO,
+            macCommitment: U256::ZERO,
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -393,6 +399,8 @@ mod tests {
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,
             proof: Bytes::from(vec![]),
+            macSalt: U256::ZERO,
+            macCommitment: U256::ZERO,
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 

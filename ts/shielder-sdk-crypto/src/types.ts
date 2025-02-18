@@ -24,6 +24,8 @@ export type DepositPubInputs = {
   hNullifierOld: Scalar;
   hNoteNew: Scalar;
   value: Scalar;
+  macSalt: Scalar;
+  macCommitment: Scalar;
 };
 
 export type DepositAdvice = {
@@ -36,6 +38,7 @@ export type DepositAdvice = {
   value: Scalar;
   nullifierNew: Scalar;
   trapdoorNew: Scalar;
+  macSalt: Scalar;
 };
 
 export type WithdrawPubInputs = {
@@ -45,6 +48,8 @@ export type WithdrawPubInputs = {
   hNoteNew: Scalar;
   value: Scalar;
   commitment: Scalar;
+  macSalt: Scalar;
+  macCommitment: Scalar;
 };
 
 export type WithdrawAdvice = {
@@ -58,6 +63,7 @@ export type WithdrawAdvice = {
   nullifierNew: Scalar;
   trapdoorNew: Scalar;
   commitment: Scalar;
+  macSalt: Scalar;
 };
 
 export type ShielderActionSecrets = {

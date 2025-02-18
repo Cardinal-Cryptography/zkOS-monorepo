@@ -115,6 +115,7 @@ describe("DepositAction", () => {
     state = {
       id,
       nonce: stateNonce,
+      macSalt: Scalar.fromBigint(0n),
       balance: 5n,
       currentNote: await hashedNote(
         id,
@@ -326,6 +327,8 @@ describe("DepositAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.calldata.proof
       );
 
@@ -360,6 +363,8 @@ describe("DepositAction", () => {
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()

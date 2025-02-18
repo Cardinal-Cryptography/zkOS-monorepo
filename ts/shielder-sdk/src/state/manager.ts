@@ -29,6 +29,7 @@ export class StateManager {
   async accountState(tokenAddress: `0x${string}`): Promise<AccountState> {
     const res = await this.storage.getItem(tokenAddress);
     const id = await this.getId();
+
     if (res) {
       const expectedIdHash = await this.getIdHash();
       const storageIdHash = Scalar.fromBigint(res.idHash);
@@ -91,6 +92,7 @@ export class StateManager {
     }
     return this.id;
   }
+
   private async getIdHash(): Promise<Scalar> {
     if (!this.idHash) {
       this.idHash = await this.cryptoClient.hasher.poseidonHash([

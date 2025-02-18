@@ -85,6 +85,8 @@ export type IContract = {
     newNote: bigint,
     merkleRoot: bigint,
     amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
@@ -156,6 +158,8 @@ export class Contract implements IContract {
     newNote: bigint,
     merkleRoot: bigint,
     amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -166,6 +170,8 @@ export class Contract implements IContract {
           oldNoteNullifierHash,
           newNote,
           merkleRoot,
+          macSalt,
+          macCommitment,
           bytesToHex(proof)
         ],
         { account: from, value: amount, gas: shieldActionGasLimit }
@@ -180,6 +186,8 @@ export class Contract implements IContract {
         oldNoteNullifierHash,
         newNote,
         merkleRoot,
+        macSalt,
+        macCommitment,
         bytesToHex(proof)
       ]
     });

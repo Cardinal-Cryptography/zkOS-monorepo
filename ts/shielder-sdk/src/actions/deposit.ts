@@ -10,6 +10,7 @@ import { SendShielderTransaction } from "@/client";
 import { Calldata } from "@/actions";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
+import { hexToBigInt } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -24,6 +25,7 @@ export interface DepositCalldata extends Calldata {
 export class DepositAction extends NoteAction {
   private contract: IContract;
   private nonceGenerator: INonceGenerator;
+
   constructor(
     contract: IContract,
     cryptoClient: CryptoClient,
@@ -62,6 +64,14 @@ export class DepositAction extends NoteAction {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
 
+    // temporary placeholder for salt generation, will be exposed through bindings in the future
+    const macSalt = await (async (id: Scalar) => {
+      const derivationSalt = Scalar.fromBigint(hexToBigInt("0x41414141"));
+      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
+    })(state.id);
+    // temporary placeholder for MAC computation, will be exposed through bindings in the future
+    const macCommitment = Scalar.fromBigint(hexToBigInt("0x4242424242"));
+
     const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
       nullifierOld
     ]);
@@ -77,7 +87,9 @@ export class DepositAction extends NoteAction {
       hNoteNew,
       idHiding,
       merkleRoot,
-      value: Scalar.fromBigint(amount)
+      value: Scalar.fromBigint(amount),
+      macSalt,
+      macCommitment
     };
   }
 
@@ -97,6 +109,12 @@ export class DepositAction extends NoteAction {
       await this.contract.getMerklePath(lastNodeIndex)
     );
     const nonce = this.nonceGenerator.randomIdHidingNonce();
+
+    // temporary placeholder for salt generation, will be exposed through bindings in the future
+    const macSalt = await (async (id: Scalar) => {
+      const derivationSalt = Scalar.fromBigint(hexToBigInt("0x41414141"));
+      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
+    })(state.id);
 
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
@@ -125,7 +143,8 @@ export class DepositAction extends NoteAction {
         path,
         value: Scalar.fromBigint(amount),
         nullifierNew,
-        trapdoorNew
+        trapdoorNew,
+        macSalt
       })
       .catch((e) => {
         throw new Error(`Failed to prove deposit: ${e}`);
@@ -179,6 +198,8 @@ export class DepositAction extends NoteAction {
       scalarToBigint(pubInputs.hNoteNew),
       scalarToBigint(merkleRoot),
       amount,
+      scalarToBigint(pubInputs.macSalt),
+      scalarToBigint(pubInputs.macCommitment),
       proof
     );
     const txHash = await sendShielderTransaction({

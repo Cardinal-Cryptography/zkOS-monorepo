@@ -95,6 +95,14 @@ export class WithdrawAction extends NoteAction {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const idHiding = await this.cryptoClient.hasher.poseidonHash([hId, nonce]);
 
+    // temporary placeholder for salt generation, will be exposed through bindings in the future
+    const macSalt = await (async (id: Scalar) => {
+      const derivationSalt = Scalar.fromBigint(hexToBigInt("0x41414141"));
+      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
+    })(state.id);
+    // temporary placeholder for MAC computation, will be exposed through bindings in the future
+    const macCommitment = Scalar.fromBigint(hexToBigInt("0x4242424242"));
+
     const hNullifierOld = await this.cryptoClient.hasher.poseidonHash([
       nullifierOld
     ]);
@@ -115,7 +123,9 @@ export class WithdrawAction extends NoteAction {
       idHiding,
       merkleRoot,
       value: Scalar.fromBigint(amount),
-      commitment
+      commitment,
+      macSalt,
+      macCommitment
     };
   }
 
@@ -142,6 +152,12 @@ export class WithdrawAction extends NoteAction {
     );
 
     const nonce = this.nonceGenerator.randomIdHidingNonce();
+
+    // temporary placeholder for salt generation, will be exposed through bindings in the future
+    const macSalt = await (async (id: Scalar) => {
+      const derivationSalt = Scalar.fromBigint(hexToBigInt("0x41414141"));
+      return await this.cryptoClient.hasher.poseidonHash([id, derivationSalt]);
+    })(state.id);
 
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
@@ -186,7 +202,8 @@ export class WithdrawAction extends NoteAction {
         value: Scalar.fromBigint(amount),
         nullifierNew,
         trapdoorNew,
-        commitment
+        commitment,
+        macSalt
       })
       .catch((e) => {
         throw new Error(`Failed to prove withdrawal: ${e}`);
