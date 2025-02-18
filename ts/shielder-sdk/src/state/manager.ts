@@ -7,7 +7,9 @@ import {
 import { StorageInterface } from "./storageSchema";
 import { Hex } from "viem";
 import { AccountState } from "./types";
-import { nativeTokenAddress, storageSchemaVersion } from "@/constants";
+import { storageSchemaVersion } from "@/constants";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export class StateManager {
   private storage: StorageInterface;
@@ -26,7 +28,8 @@ export class StateManager {
     this.cryptoClient = cryptoClient;
   }
 
-  async accountState(tokenAddress: `0x${string}`): Promise<AccountState> {
+  async accountState(token: Token): Promise<AccountState> {
+    const tokenAddress = getTokenAddress(token);
     const res = await this.storage.getItem(tokenAddress);
     const id = await this.getId();
 
@@ -42,6 +45,7 @@ export class StateManager {
       }
       return {
         id,
+        token,
         nonce: BigInt(obj.nonce),
         balance: BigInt(obj.balance),
         currentNote: Scalar.fromBigint(BigInt(obj.currentNote)),
@@ -49,13 +53,11 @@ export class StateManager {
         storageSchemaVersion: obj.storageSchemaVersion
       };
     }
-    return await this.emptyAccountState(tokenAddress);
+    return await this.emptyAccountState(token);
   }
 
-  async updateAccountState(
-    tokenAddress: `0x${string}`,
-    accountState: AccountState
-  ) {
+  async updateAccountState(token: Token, accountState: AccountState) {
+    const tokenAddress = getTokenAddress(token);
     if (accountState.currentNoteIndex == undefined) {
       throw new Error("currentNoteIndex must be set.");
     }
@@ -79,8 +81,8 @@ export class StateManager {
     });
   }
 
-  async emptyAccountState(tokenAddress: `0x${string}`): Promise<AccountState> {
-    return emptyAccountState(tokenAddress, await this.getId());
+  async emptyAccountState(token: Token): Promise<AccountState> {
+    return emptyAccountState(token, await this.getId());
   }
 
   // TODO: Create independent id for each token address
@@ -103,16 +105,14 @@ export class StateManager {
   }
 }
 
-const emptyAccountState = (
-  tokenAddress: `0x${string}`,
-  id: Scalar
-): AccountState => {
-  if (tokenAddress !== nativeTokenAddress) {
+const emptyAccountState = (token: Token, id: Scalar): AccountState => {
+  if (token.type !== "native") {
     throw new Error("Not implemented");
   }
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
     id,
+    token,
     nonce: 0n,
     balance: 0n,
     currentNote: Scalar.fromBigint(0n),

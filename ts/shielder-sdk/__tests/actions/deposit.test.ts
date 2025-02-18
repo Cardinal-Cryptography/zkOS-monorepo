@@ -14,6 +14,9 @@ import { DepositAction } from "../../src/actions/deposit";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
+import { nativeToken } from "../../src/types";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
@@ -90,7 +93,7 @@ describe("DepositAction", () => {
     ]);
     contract = {
       getAddress: vitest.fn().mockReturnValue(mockAddress),
-      depositCalldata: vitest
+      depositNativeCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -124,7 +127,8 @@ describe("DepositAction", () => {
         Scalar.fromBigint(5n)
       ),
       currentNoteIndex: 100n,
-      storageSchemaVersion: 0
+      storageSchemaVersion: 0,
+      token: nativeToken()
     };
   });
 
@@ -167,7 +171,8 @@ describe("DepositAction", () => {
         amount,
         Scalar.fromBigint(nonce),
         prevNullifier,
-        merkleRoot
+        merkleRoot,
+        nativeTokenAddress
       );
 
       await expectPubInputsCorrect(
@@ -191,7 +196,8 @@ describe("DepositAction", () => {
           amount,
           Scalar.fromBigint(nonce),
           prevNullifier,
-          merkleRoot
+          merkleRoot,
+          nativeTokenAddress
         )
       ).rejects.toThrow(
         "Failed to deposit, possibly due to insufficient balance"
@@ -319,7 +325,7 @@ describe("DepositAction", () => {
         mockAddress
       );
 
-      expect(contract.depositCalldata).toHaveBeenCalledWith(
+      expect(contract.depositNativeCalldata).toHaveBeenCalledWith(
         expectedVersion,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.idHiding),
@@ -353,7 +359,7 @@ describe("DepositAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      contract.depositCalldata = vitest
+      contract.depositNativeCalldata = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,

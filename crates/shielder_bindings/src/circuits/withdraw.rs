@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::withdraw::{WithdrawInstance, WithdrawProverKnowledge};
-use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -30,6 +29,7 @@ impl WithdrawCircuit {
         nullifier_old: Vec<u8>,
         trapdoor_old: Vec<u8>,
         account_balance_old: Vec<u8>,
+        token_address: Vec<u8>,
         path: Vec<u8>,
         value: Vec<u8>,
         nullifier_new: Vec<u8>,
@@ -44,7 +44,7 @@ impl WithdrawCircuit {
                 nullifier_old: vec_to_f(nullifier_old),
                 trapdoor_old: vec_to_f(trapdoor_old),
                 account_old_balance: vec_to_f(account_balance_old),
-                token_address: NATIVE_TOKEN_ADDRESS,
+                token_address: vec_to_f(token_address),
                 path: vec_to_path(path),
                 withdrawal_value: vec_to_f(value),
                 nullifier_new: vec_to_f(nullifier_new),
@@ -64,10 +64,11 @@ impl WithdrawCircuit {
         h_nullifier_old: Vec<u8>,
         h_note_new: Vec<u8>,
         value: Vec<u8>,
-        proof: Vec<u8>,
         commitment: Vec<u8>,
+        token_address: Vec<u8>,
         mac_salt: Vec<u8>,
         mac_commitment: Vec<u8>,
+        proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: WithdrawInstance| {
             let value = match input {
@@ -77,7 +78,7 @@ impl WithdrawCircuit {
                 WithdrawInstance::HashedNewNote => &h_note_new,
                 WithdrawInstance::WithdrawalValue => &value,
                 WithdrawInstance::Commitment => &commitment,
-                WithdrawInstance::TokenAddress => &NATIVE_TOKEN_ADDRESS.to_bytes().to_vec(),
+                WithdrawInstance::TokenAddress => &token_address,
                 WithdrawInstance::MacSalt => &mac_salt,
                 WithdrawInstance::MacCommitment => &mac_commitment,
             };

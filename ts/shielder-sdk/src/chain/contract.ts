@@ -69,7 +69,7 @@ export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
   anonymityRevokerPubkey: () => Promise<AsymPublicKey<bigint>>;
-  newAccountCalldata: (
+  newAccountNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
@@ -78,8 +78,31 @@ export type IContract = {
     symKeyEncryption: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
-  depositCalldata: (
+  newAccountTokenCalldata: (
     expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    newNote: bigint,
+    idHash: bigint,
+    amount: bigint,
+    symKeyEncryption: bigint,
+    proof: Uint8Array
+  ) => Promise<`0x${string}`>;
+  depositNativeCalldata: (
+    expectedContractVersion: `0x${string}`,
+    from: Address,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => Promise<`0x${string}`>;
+  depositTokenCalldata: (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
     from: Address,
     idHiding: bigint,
     oldNoteNullifierHash: bigint,
@@ -121,7 +144,7 @@ export class Contract implements IContract {
     };
   };
 
-  newAccountCalldata = async (
+  newAccountNativeCalldata = async (
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
@@ -155,7 +178,46 @@ export class Contract implements IContract {
     });
   };
 
-  depositCalldata = async (
+  newAccountTokenCalldata = async (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    newNote: bigint,
+    idHash: bigint,
+    amount: bigint,
+    symKeyEncryption: bigint,
+    proof: Uint8Array
+  ) => {
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.newAccountERC20(
+        [
+          expectedContractVersion,
+          tokenAddress,
+          amount,
+          newNote,
+          idHash,
+          symKeyEncryption,
+          bytesToHex(proof)
+        ],
+        { account: from, gas: shieldActionGasLimit }
+      );
+    });
+    return encodeFunctionData({
+      abi,
+      functionName: "newAccountERC20",
+      args: [
+        expectedContractVersion,
+        tokenAddress,
+        amount,
+        newNote,
+        idHash,
+        symKeyEncryption,
+        bytesToHex(proof)
+      ]
+    });
+  };
+
+  depositNativeCalldata = async (
     expectedContractVersion: `0x${string}`,
     from: Address,
     idHiding: bigint,
@@ -187,6 +249,54 @@ export class Contract implements IContract {
       functionName: "depositNative",
       args: [
         expectedContractVersion,
+        idHiding,
+        oldNoteNullifierHash,
+        newNote,
+        merkleRoot,
+        macSalt,
+        macCommitment,
+        bytesToHex(proof)
+      ]
+    });
+  };
+
+  depositTokenCalldata = async (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => {
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.depositERC20(
+        [
+          expectedContractVersion,
+          tokenAddress,
+          amount,
+          idHiding,
+          oldNoteNullifierHash,
+          newNote,
+          merkleRoot,
+          macSalt,
+          macCommitment,
+          bytesToHex(proof)
+        ],
+        { account: from, gas: shieldActionGasLimit }
+      );
+    });
+    return encodeFunctionData({
+      abi,
+      functionName: "depositERC20",
+      args: [
+        expectedContractVersion,
+        tokenAddress,
+        amount,
         idHiding,
         oldNoteNullifierHash,
         newNote,

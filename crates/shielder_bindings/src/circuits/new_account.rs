@@ -4,7 +4,6 @@ use shielder_circuits::{
     new_account::{NewAccountInstance, NewAccountProverKnowledge},
     AsymPublicKey,
 };
-use shielder_setup::native_token::NATIVE_TOKEN_ADDRESS;
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -25,12 +24,14 @@ impl NewAccountCircuit {
         NewAccountCircuit(super::NewAccountCircuit::new_pronto())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn prove(
         &self,
         id: Vec<u8>,
         nullifier: Vec<u8>,
         trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
+        token_address: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
         anonymity_revoker_public_key_y: Vec<u8>,
     ) -> Vec<u8> {
@@ -40,7 +41,7 @@ impl NewAccountCircuit {
                 nullifier: vec_to_f(nullifier),
                 trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
-                token_address: NATIVE_TOKEN_ADDRESS,
+                token_address: vec_to_f(token_address),
                 anonymity_revoker_public_key: AsymPublicKey {
                     x: vec_to_f(anonymity_revoker_public_key_x),
                     y: vec_to_f(anonymity_revoker_public_key_y),
@@ -56,17 +57,18 @@ impl NewAccountCircuit {
         h_note: Vec<u8>,
         h_id: Vec<u8>,
         initial_deposit: Vec<u8>,
-        proof: Vec<u8>,
+        token_address: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
         anonymity_revoker_public_key_y: Vec<u8>,
         sym_key_encryption: Vec<u8>,
+        proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: NewAccountInstance| {
             let value = match input {
                 NewAccountInstance::HashedId => &h_id,
                 NewAccountInstance::HashedNote => &h_note,
                 NewAccountInstance::InitialDeposit => &initial_deposit,
-                NewAccountInstance::TokenAddress => &NATIVE_TOKEN_ADDRESS.to_bytes().to_vec(),
+                NewAccountInstance::TokenAddress => &token_address,
                 NewAccountInstance::AnonymityRevokerPublicKeyX => &anonymity_revoker_public_key_x,
                 NewAccountInstance::AnonymityRevokerPublicKeyY => &anonymity_revoker_public_key_y,
                 NewAccountInstance::SymKeyEncryption => &sym_key_encryption,

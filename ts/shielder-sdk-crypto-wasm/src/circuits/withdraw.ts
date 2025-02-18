@@ -35,6 +35,7 @@ export class WithdrawCircuit
         values.nullifierOld.bytes,
         values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
+        values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
         values.nullifierNew.bytes,
@@ -58,10 +59,11 @@ export class WithdrawCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
-          proof,
           pubInputs.commitment.bytes,
+          pubInputs.tokenAddress.bytes,
           pubInputs.macSalt.bytes,
-          pubInputs.macCommitment.bytes
+          pubInputs.macCommitment.bytes,
+          proof
         )
       );
     } catch (e) {
