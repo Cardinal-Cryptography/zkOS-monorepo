@@ -21,6 +21,7 @@ rand = { workspace = true, features = ["small_rng"] }
 rayon = { workspace = true, optional = true }
 shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
+shielder-setup = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }
 uniffi = { workspace = true, features = ["cli"], optional = true }

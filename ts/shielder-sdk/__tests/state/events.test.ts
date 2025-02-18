@@ -14,6 +14,7 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { nativeToken } from "../../src/types";
 
 const expectStatesEqual = (state1: AccountState, state2: AccountState) => {
   expect(scalarsEqual(state1.id, state2.id)).toBe(true);
@@ -62,14 +63,15 @@ describe("StateEventsFilter", () => {
       currentNoteIndex: 1n,
       nonce: 0n,
       balance: 100n,
-      storageSchemaVersion: 1
+      storageSchemaVersion: 1,
+      token: nativeToken()
     };
   });
 
   describe("newStateByEvent", () => {
-    it("should handle NewAccountNative event", async () => {
+    it("should handle NewAccount event", async () => {
       const noteEvent: NoteEvent = {
-        name: "NewAccountNative",
+        name: "NewAccount",
         amount: 50n,
         newNote: scalarToBigint(
           await cryptoClient.hasher.poseidonHash([Scalar.fromBigint(50n)])
@@ -102,9 +104,9 @@ describe("StateEventsFilter", () => {
       expectStatesEqual(newState, expectedNewState);
     });
 
-    it("should handle DepositNative event", async () => {
+    it("should handle Deposit event", async () => {
       const noteEvent: NoteEvent = {
-        name: "DepositNative",
+        name: "Deposit",
         amount: 25n,
         newNote: scalarToBigint(
           await cryptoClient.hasher.poseidonHash([Scalar.fromBigint(25n)])
@@ -136,9 +138,9 @@ describe("StateEventsFilter", () => {
       expectStatesEqual(newState, expectedNewState);
     });
 
-    it("should handle WithdrawNative event", async () => {
+    it("should handle Withdraw event", async () => {
       const noteEvent: NoteEvent = {
-        name: "WithdrawNative",
+        name: "Withdraw",
         amount: 10n,
         newNote: scalarToBigint(
           await cryptoClient.hasher.poseidonHash([Scalar.fromBigint(10n)])
@@ -171,7 +173,7 @@ describe("StateEventsFilter", () => {
 
     it("should return null if action fails", async () => {
       const noteEvent: NoteEvent = {
-        name: "WithdrawNative",
+        name: "Withdraw",
         amount: 200n,
         newNote: scalarToBigint(
           await cryptoClient.hasher.poseidonHash([Scalar.fromBigint(200n)])
@@ -200,7 +202,7 @@ describe("StateEventsFilter", () => {
       const noteEvents: NoteEvent[] = [
         // This event should be kept
         {
-          name: "DepositNative",
+          name: "Deposit",
           amount: 50n,
           newNote: scalarToBigint(correctNewStateNote),
           newNoteIndex: 2n,
@@ -210,7 +212,7 @@ describe("StateEventsFilter", () => {
         },
         // This event should be filtered out
         {
-          name: "DepositNative",
+          name: "Deposit",
           amount: 25n,
           newNote: 1n,
           newNoteIndex: 2n,
@@ -226,7 +228,7 @@ describe("StateEventsFilter", () => {
       );
 
       expect(filteredEvents.length).toBe(1);
-      expect(filteredEvents[0].name).toBe("DepositNative");
+      expect(filteredEvents[0].name).toBe("Deposit");
       expect(filteredEvents[0].txHash).toBe("0x1234");
     });
 
@@ -234,7 +236,7 @@ describe("StateEventsFilter", () => {
       const invalidNote = 999999n; // Different from what would be calculated
       const noteEvents: NoteEvent[] = [
         {
-          name: "NewAccountNative",
+          name: "NewAccount",
           amount: 50n,
           newNote: invalidNote, // This won't match the calculated note
           newNoteIndex: 2n,
@@ -243,7 +245,7 @@ describe("StateEventsFilter", () => {
           block: 1n
         },
         {
-          name: "WithdrawNative",
+          name: "Withdraw",
           amount: 10000n,
           newNote: invalidNote, // This won't match the calculated note
           newNoteIndex: 2n,

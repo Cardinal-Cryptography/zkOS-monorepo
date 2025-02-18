@@ -2,7 +2,8 @@ import {
   Proof,
   DepositAdvice,
   DepositPubInputs,
-  DepositCircuit as IDepositCircuit
+  DepositCircuit as IDepositCircuit,
+  Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
@@ -35,12 +36,46 @@ export class DepositCircuit
         values.nullifierOld.bytes,
         values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
+        values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
         values.nullifierNew.bytes,
-        values.trapdoorNew.bytes
+        values.trapdoorNew.bytes,
+        values.macSalt.bytes
       )
     );
+  }
+
+  async pubInputs(values: DepositAdvice): Promise<DepositPubInputs> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    const pubInputsBytes = this.wasmModule.deposit_pub_inputs(
+      values.id.bytes,
+      values.nonce.bytes,
+      values.nullifierOld.bytes,
+      values.trapdoorOld.bytes,
+      values.accountBalanceOld.bytes,
+      values.tokenAddress.bytes,
+      values.path,
+      values.value.bytes,
+      values.nullifierNew.bytes,
+      values.trapdoorNew.bytes,
+      values.macSalt.bytes
+    );
+    return Promise.resolve({
+      idHiding: new Scalar(pubInputsBytes.id_hiding),
+      merkleRoot: new Scalar(pubInputsBytes.merkle_root),
+      hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
+      hNoteNew: new Scalar(pubInputsBytes.h_note_new),
+      value: new Scalar(pubInputsBytes.value),
+      tokenAddress: new Scalar(pubInputsBytes.token_address),
+      macSalt: new Scalar(pubInputsBytes.mac_salt),
+      macCommitment: new Scalar(pubInputsBytes.mac_commitment)
+    });
   }
 
   async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
@@ -55,6 +90,9 @@ export class DepositCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
+          pubInputs.tokenAddress.bytes,
+          pubInputs.macSalt.bytes,
+          pubInputs.macCommitment.bytes,
           proof
         )
       );

@@ -80,7 +80,7 @@ where
 
     pub fn new(rng: &mut impl RngCore) -> Self {
         let (params, k, pk, vk) =
-            generate_keys_with_min_k::<PK::Circuit>(generate_setup_params(MAX_K, rng))
+            generate_keys_with_min_k(PK::Circuit::default(), generate_setup_params(MAX_K, rng))
                 .expect("keys should not fail to generate");
 
         Circuit {

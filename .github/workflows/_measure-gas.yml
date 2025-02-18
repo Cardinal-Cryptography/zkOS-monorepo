@@ -7,7 +7,7 @@ on:
 
 jobs:
   main:
-    name: Measure circuits
+    name: Measure gas
     runs-on: [self-hosted, Linux, X64, large]
     timeout-minutes: 20
     steps:
@@ -28,10 +28,10 @@ jobs:
         with:
           solc-version: 0.8.26
 
+      #################### Run measurements on the current branch ####################
+
       - name: Build binary
         run: cargo build -p integration-tests --bin gas-consumption --release
-
-      #################### Run measurements on the current branch ####################
 
       - name: Install dependencies
         run: make deps
@@ -39,7 +39,7 @@ jobs:
       - name: Generate all contracts
         run: make generate-contracts
 
-      - name: Run measure-circuits binary on the current branch
+      - name: Run gas-consumption binary on the current branch
         run: |
           export CONTRACTS_DIR="contracts"
           export CARGO_MANIFEST_DIR=./Cargo.toml
@@ -56,21 +56,28 @@ jobs:
           ref: main
           path: main
 
-      - name: Install dependencies
+      - name: Build binary
         run: |
           cd main
-          make deps
+          cargo build -p integration-tests --bin gas-consumption --release
+
+      - name: Install dependencies
+        working-directory: main
+        run: make deps
 
       - name: Generate all contracts
-        run: |
-          cd main
-          make generate-contracts
+        working-directory: main
+        run: make generate-contracts
 
-      - name: Run measure-circuits on the `main` branch
+      - name: Build binary (main branch)
+        working-directory: main
+        run: cargo build -p integration-tests --bin gas-consumption --release
+
+      - name: Run gas-consumption on the `main` branch
         run: |
           export CONTRACTS_DIR="main/contracts"
           export CARGO_MANIFEST_DIR=./main/Cargo.toml
-          ./target/release/gas-consumption main-report.txt
+          ./main/target/release/gas-consumption main-report.txt
 
       - name: Print gas measured on the `main` branch
         run: cat main-report.txt

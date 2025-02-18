@@ -2,7 +2,8 @@ import {
   Proof,
   NewAccountAdvice,
   NewAccountPubInputs,
-  NewAccountCircuit as INewAccountCircuit
+  NewAccountCircuit as INewAccountCircuit,
+  Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
@@ -33,9 +34,41 @@ export class NewAccountCircuit
         values.id.bytes,
         values.nullifier.bytes,
         values.trapdoor.bytes,
-        values.initialDeposit.bytes
+        values.initialDeposit.bytes,
+        values.tokenAddress.bytes,
+        values.anonymityRevokerPubkey.x.bytes,
+        values.anonymityRevokerPubkey.y.bytes
       )
     );
+  }
+  async pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    const pubInputsBytes = this.wasmModule.new_account_pub_inputs(
+      values.id.bytes,
+      values.nullifier.bytes,
+      values.trapdoor.bytes,
+      values.initialDeposit.bytes,
+      values.tokenAddress.bytes,
+      values.anonymityRevokerPubkey.x.bytes,
+      values.anonymityRevokerPubkey.y.bytes
+    );
+
+    return Promise.resolve({
+      hNote: new Scalar(pubInputsBytes.hashed_note),
+      hId: new Scalar(pubInputsBytes.hashed_id),
+      initialDeposit: new Scalar(pubInputsBytes.initial_deposit),
+      tokenAddress: new Scalar(pubInputsBytes.token_address),
+      anonymityRevokerPubkey: {
+        x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
+        y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
+      },
+      symKeyEncryption: new Scalar(pubInputsBytes.sym_key_encryption)
+    });
   }
 
   async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
@@ -49,6 +82,10 @@ export class NewAccountCircuit
           pubInputs.hNote.bytes,
           pubInputs.hId.bytes,
           pubInputs.initialDeposit.bytes,
+          pubInputs.tokenAddress.bytes,
+          pubInputs.anonymityRevokerPubkey.x.bytes,
+          pubInputs.anonymityRevokerPubkey.y.bytes,
+          pubInputs.symKeyEncryption.bytes,
           proof
         )
       );

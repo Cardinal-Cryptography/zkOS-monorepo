@@ -148,5 +148,7 @@ async fn prepare_relayer_query(
         new_note: calldata.newNote,
         proof: calldata.proof,
         fee_token: FeeToken::Native,
+        mac_salt: calldata.macSalt,
+        mac_commitment: calldata.macCommitment,
     })
 }

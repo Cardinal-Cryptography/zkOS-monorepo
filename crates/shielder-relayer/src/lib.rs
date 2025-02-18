@@ -78,6 +78,8 @@ pub struct RelayQuery {
     pub new_note: U256,
     pub proof: Bytes,
     pub fee_token: FeeToken,
+    pub mac_salt: U256,
+    pub mac_commitment: U256,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

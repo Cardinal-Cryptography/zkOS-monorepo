@@ -39,8 +39,8 @@ fn handle_relation<PK: ProverKnowledge>(full_params: Params, relation: &str) {
 fn generate_solidity_verification_bundle<PK: ProverKnowledge>(
     full_parameters: ParamsKZG<Bn256>,
 ) -> String {
-    let (parameters, _, _, vk) =
-        generate_keys_with_min_k::<PK::Circuit>(full_parameters).expect("Failed to generate keys");
+    let (parameters, _, _, vk) = generate_keys_with_min_k(PK::Circuit::default(), full_parameters)
+        .expect("Failed to generate keys");
     SolidityGenerator::new(&parameters, &vk, Bdfg21, PK::PublicInput::COUNT)
         .render()
         .expect("Failed to generate separate contracts")
@@ -124,7 +124,7 @@ mod test {
             generate_solidity_verification_bundle::<PK>(full_parameters.clone());
 
         let (parameters, _, pk, _) =
-            generate_keys_with_min_k::<PK::Circuit>(full_parameters).unwrap();
+            generate_keys_with_min_k(PK::Circuit::default(), full_parameters).unwrap();
         let circuit = prover_knowledge.create_circuit();
         let proof = generate_proof(&parameters, &pk, circuit, &public_input, &mut rng);
 

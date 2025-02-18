@@ -6,13 +6,16 @@ use shielder_circuits::{
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Field, Fr, ProverKnowledge, PublicInputProvider,
+    AsymPublicKey, Field, Fr, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
-    ShielderContract::{depositCall, newAccountCall, withdrawCall},
+    ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
     WithdrawCommitment,
 };
-use shielder_setup::version::{contract_version, ContractVersion};
+use shielder_setup::{
+    native_token::NATIVE_TOKEN_ADDRESS,
+    version::{contract_version, ContractVersion},
+};
 use type_conversions::{field_to_u256, u256_to_field};
 
 use super::secrets::generate_id_hiding_nonce;
@@ -53,20 +56,25 @@ pub trait CallType {
 
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
-    type Extra = ();
+    type Extra = AsymPublicKey<U256>;
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
-    type Calldata = newAccountCall;
+    type Calldata = newAccountNativeCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
         amount: U256,
-        _: &Self::Extra,
+        anonymity_revoker_public_key: &Self::Extra,
     ) -> Self::ProverKnowledge {
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
+            anonymity_revoker_public_key: AsymPublicKey {
+                x: u256_to_field(anonymity_revoker_public_key.x),
+                y: u256_to_field(anonymity_revoker_public_key.y),
+            },
         }
     }
 
@@ -76,12 +84,13 @@ impl CallType for NewAccountCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
-        newAccountCall {
+        newAccountNativeCall {
             expectedContractVersion: contract_version().to_bytes(),
-            tokenAddress: Address::ZERO,
-            amount: field_to_u256(prover_knowledge.compute_public_input(InitialDeposit)),
             newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
+            symKeyEncryption: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryption),
+            ),
             proof: Bytes::from(proof),
         }
     }
@@ -97,7 +106,7 @@ impl CallType for DepositCallType {
     type Extra = MerkleProof;
     type ProverKnowledge = DepositProverKnowledge<Fr>;
 
-    type Calldata = depositCall;
+    type Calldata = depositNativeCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -120,10 +129,12 @@ impl CallType for DepositCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
             path: map_path_to_field(merkle.path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
+            mac_salt: u256_to_field(account.mac_salt),
         }
     }
 
@@ -133,14 +144,14 @@ impl CallType for DepositCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
-        depositCall {
+        depositNativeCall {
             expectedContractVersion: contract_version().to_bytes(),
-            tokenAddress: Address::ZERO,
-            amount: field_to_u256(pk.compute_public_input(DepositValue)),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
             oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
             merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
+            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
+            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof.to_vec()),
         }
     }
@@ -158,7 +169,7 @@ pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
     type ProverKnowledge = WithdrawProverKnowledge<Fr>;
-    type Calldata = withdrawCall;
+    type Calldata = withdrawNativeCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -188,11 +199,13 @@ impl CallType for WithdrawCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
+            token_address: NATIVE_TOKEN_ADDRESS,
             path: map_path_to_field(extra.merkle_proof.path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
             commitment: u256_to_field(commitment),
+            mac_salt: u256_to_field(account.mac_salt),
         }
     }
 
@@ -202,10 +215,9 @@ impl CallType for WithdrawCallType {
         extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
-        withdrawCall {
+        withdrawNativeCall {
             expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
-            tokenAddress: Address::ZERO,
             amount: field_to_u256(pk.compute_public_input(WithdrawalValue)),
             withdrawalAddress: extra.to,
             merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
@@ -214,6 +226,8 @@ impl CallType for WithdrawCallType {
             proof: Bytes::from(proof),
             relayerAddress: extra.relayer_address,
             relayerFee: extra.relayer_fee,
+            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
+            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
         }
     }
 }

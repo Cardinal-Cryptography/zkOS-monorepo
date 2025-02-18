@@ -6,7 +6,10 @@ use std::fmt::Debug;
 use alloy_contract::CallDecoder;
 use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolCall};
-use shielder_setup::version::{contract_version, ContractVersion};
+use shielder_setup::{
+    shielder_circuits::AsymPublicKey,
+    version::{contract_version, ContractVersion},
+};
 use ShielderContract::*;
 
 use crate::ShielderContractError;
@@ -21,7 +24,7 @@ sol! {
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
-            uint256 newNoteIndex
+            uint256 newNoteIndex,
         );
         event Deposit(
             bytes3 contractVersion,
@@ -29,7 +32,9 @@ sol! {
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
-            uint256 newNoteIndex
+            uint256 newNoteIndex,
+            uint256 macSalt,
+            uint256 macCommitment,
         );
         event Withdraw(
             bytes3 contractVersion,
@@ -40,7 +45,9 @@ sol! {
             uint256 newNote,
             uint256 newNoteIndex,
             address relayerAddress,
-            uint256 fee
+            uint256 fee,
+            uint256 macSalt,
+            uint256 macCommitment,
         );
 
         error DepositVerificationFailed();
@@ -48,7 +55,6 @@ sol! {
         error FeeHigherThanAmount();
         error MerkleRootDoesNotExist();
         error NativeTransferFailed();
-        error ERC20TransferFailed();
         error WithdrawVerificationFailed();
         error NewAccountVerificationFailed();
         error ZeroAmount();
@@ -59,13 +65,14 @@ sol! {
         error PrecompileCallFailed();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
-        error IncorrectNativeAmount();
 
         function depositLimit() external view returns (uint256);
 
         function initialize(
             address initialOwner,
-            uint256 _depositLimit
+            uint256 _depositLimit,
+            uint256 _anonymityRevokerPublicKeyX,
+            uint256 _anonymityRevokerPublicKeyY,
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
@@ -73,15 +80,33 @@ sol! {
         function pause() external;
         function unpause() external;
 
-        function newAccount(
+        function newAccountNative(
+            bytes3 expectedContractVersion,
+            uint256 newNote,
+            uint256 idHash,
+            uint256 symKeyEncryption,
+            bytes calldata proof
+        ) external payable whenNotPaused;
+        function newAccountERC20(
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
             uint256 idHash,
+            uint256 symKeyEncryption,
             bytes calldata proof
-        ) external payable;
-        function deposit(
+        ) external whenNotPaused;
+        function depositNative(
+            bytes3 expectedContractVersion,
+            uint256 idHiding,
+            uint256 oldNullifierHash,
+            uint256 newNote,
+            uint256 merkleRoot,
+            uint256 macSalt,
+            uint256 macCommitment,
+            bytes calldata proof
+        ) external payable whenNotPaused;
+        function depositERC20(
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
@@ -89,9 +114,25 @@ sol! {
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
-        ) external payable;
-        function withdraw(
+        ) external whenNotPaused;
+        function withdrawNative(
+            bytes3 expectedContractVersion,
+            uint256 idHiding,
+            uint256 amount,
+            address withdrawalAddress,
+            uint256 merkleRoot,
+            uint256 oldNullifierHash,
+            uint256 newNote,
+            bytes calldata proof,
+            address relayerAddress,
+            uint256 relayerFee,
+            uint256 macSalt,
+            uint256 macCommitment,
+        ) external whenNotPaused;
+        function withdrawERC20(
             bytes3 expectedContractVersion,
             uint256 idHiding,
             address tokenAddress,
@@ -102,14 +143,17 @@ sol! {
             uint256 newNote,
             bytes calldata proof,
             address relayerAddress,
-            uint256 relayerFee
-        ) external;
+            uint256 relayerFee,
+            uint256 macSalt,
+            uint256 macCommitment,
+        ) external whenNotPaused;
 
         function getMerklePath(
             uint256 id
         ) external view returns (uint256[] memory);
 
         function setDepositLimit(uint256 _depositLimit) external;
+        function anonymityRevokerPubkey() public view returns (uint256, uint256);
     }
 }
 
@@ -184,9 +228,12 @@ macro_rules! impl_unit_call {
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
 
-impl_unit_call!(newAccountCall);
-impl_unit_call!(depositCall);
-impl_unit_call!(withdrawCall);
+impl_unit_call!(newAccountNativeCall);
+impl_unit_call!(depositNativeCall);
+impl_unit_call!(withdrawNativeCall);
+impl_unit_call!(newAccountERC20Call);
+impl_unit_call!(depositERC20Call);
+impl_unit_call!(withdrawERC20Call);
 
 impl ShielderContractCall for getMerklePathCall {
     type UnwrappedResult = Vec<U256>;
@@ -199,5 +246,15 @@ impl ShielderContractCall for nullifiersCall {
     type UnwrappedResult = U256;
     fn unwrap_result(nullifier: nullifiersReturn) -> Self::UnwrappedResult {
         nullifier._0
+    }
+}
+
+impl ShielderContractCall for anonymityRevokerPubkeyCall {
+    type UnwrappedResult = AsymPublicKey<U256>;
+    fn unwrap_result(pubkey: anonymityRevokerPubkeyReturn) -> Self::UnwrappedResult {
+        AsymPublicKey {
+            x: pubkey._0,
+            y: pubkey._1,
+        }
     }
 }

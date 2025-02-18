@@ -1,3 +1,4 @@
+import { Token } from "@/types";
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, Hex } from "viem";
 
@@ -6,6 +7,10 @@ export type AccountState = {
    * Account id, a scalar derived from the private key.
    */
   id: Scalar;
+  /**
+   * Account token
+   */
+  token: Token;
   /**
    * Account nonce, increments for each new action.
    */
@@ -29,7 +34,7 @@ export type AccountState = {
 };
 
 export type ShielderTransaction = {
-  type: "NewAccountNative" | "DepositNative" | "WithdrawNative";
+  type: "NewAccount" | "Deposit" | "Withdraw";
   amount: bigint;
   to?: Address;
   txHash: Hex;

@@ -2,7 +2,8 @@ import {
   Proof,
   WithdrawPubInputs,
   WithdrawAdvice,
-  WithdrawCircuit as IWithdrawCircuit
+  WithdrawCircuit as IWithdrawCircuit,
+  Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
@@ -35,13 +36,50 @@ export class WithdrawCircuit
         values.nullifierOld.bytes,
         values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
+        values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
         values.nullifierNew.bytes,
         values.trapdoorNew.bytes,
-        values.commitment.bytes
+        values.commitment.bytes,
+        values.macSalt.bytes
       )
     );
+  }
+
+  async pubInputs(values: WithdrawAdvice): Promise<WithdrawPubInputs> {
+    if (!this.wasmCircuit) {
+      throw new Error("Circuit not initialized");
+    }
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not loaded");
+    }
+    const pubInputsBytes = this.wasmModule.withdraw_pub_inputs(
+      values.id.bytes,
+      values.nonce.bytes,
+      values.nullifierOld.bytes,
+      values.trapdoorOld.bytes,
+      values.accountBalanceOld.bytes,
+      values.tokenAddress.bytes,
+      values.path,
+      values.value.bytes,
+      values.nullifierNew.bytes,
+      values.trapdoorNew.bytes,
+      values.commitment.bytes,
+      values.macSalt.bytes
+    );
+
+    return Promise.resolve({
+      idHiding: new Scalar(pubInputsBytes.id_hiding),
+      merkleRoot: new Scalar(pubInputsBytes.merkle_root),
+      hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
+      hNoteNew: new Scalar(pubInputsBytes.h_note_new),
+      value: new Scalar(pubInputsBytes.withdrawal_value),
+      commitment: new Scalar(pubInputsBytes.commitment),
+      tokenAddress: new Scalar(pubInputsBytes.token_address),
+      macSalt: new Scalar(pubInputsBytes.mac_salt),
+      macCommitment: new Scalar(pubInputsBytes.mac_commitment)
+    });
   }
 
   async verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean> {
@@ -57,8 +95,11 @@ export class WithdrawCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
-          proof,
-          pubInputs.commitment.bytes
+          pubInputs.commitment.bytes,
+          pubInputs.tokenAddress.bytes,
+          pubInputs.macSalt.bytes,
+          pubInputs.macCommitment.bytes,
+          proof
         )
       );
     } catch (e) {

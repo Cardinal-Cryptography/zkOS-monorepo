@@ -5,7 +5,7 @@ use shielder_account::{
     call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::withdrawCall;
+use shielder_contract::ShielderContract::withdrawNativeCall;
 use shielder_setup::version::ContractVersion;
 
 use crate::shielder::{
@@ -35,7 +35,7 @@ pub fn prepare_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     args: PrepareCallArgs,
-) -> (withdrawCall, U256) {
+) -> (withdrawNativeCall, U256) {
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
@@ -73,7 +73,7 @@ pub fn prepare_call(
 pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
-    calldata: &withdrawCall,
+    calldata: &withdrawNativeCall,
 ) -> CallResult {
     let call_result = invoke_shielder_call(deployment, calldata, None);
 
@@ -100,7 +100,7 @@ mod tests {
     use shielder_account::ShielderAccount;
     use shielder_circuits::Fr;
     use shielder_contract::ShielderContract::{
-        withdrawCall, ShielderContractErrors, ShielderContractEvents, Withdraw,
+        withdrawNativeCall, ShielderContractErrors, ShielderContractEvents, Withdraw,
         WrongContractVersion,
     };
 
@@ -172,6 +172,8 @@ mod tests {
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
                 fee: U256::from(1),
+                macSalt: U256::ZERO,
+                macCommitment: withdraw_calldata.macCommitment,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
@@ -221,6 +223,8 @@ mod tests {
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
                 fee: U256::from(1),
+                macSalt: U256::ZERO,
+                macCommitment: withdraw_calldata.macCommitment,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, U256::from(30)));
@@ -351,9 +355,8 @@ mod tests {
     fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = withdrawCall {
+        let calldata = withdrawNativeCall {
             expectedContractVersion: FixedBytes([9, 8, 7]),
-            tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
             withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -363,6 +366,8 @@ mod tests {
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,
             proof: Bytes::from(vec![]),
+            macSalt: U256::ZERO,
+            macCommitment: U256::ZERO,
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -383,9 +388,8 @@ mod tests {
     fn fails_if_merkle_root_does_not_exist(mut deployment: Deployment) {
         let mut shielder_account = ShielderAccount::default();
 
-        let calldata = withdrawCall {
+        let calldata = withdrawNativeCall {
             expectedContractVersion: FixedBytes([0, 1, 0]),
-            tokenAddress: Address::ZERO,
             idHiding: U256::ZERO,
             withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -395,6 +399,8 @@ mod tests {
             oldNullifierHash: U256::ZERO,
             newNote: U256::ZERO,
             proof: Bytes::from(vec![]),
+            macSalt: U256::ZERO,
+            macCommitment: U256::ZERO,
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
