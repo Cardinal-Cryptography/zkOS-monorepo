@@ -3,7 +3,7 @@ use std::fmt::{self, Debug};
 use halo2_proofs::{
     halo2curves::{bn256, ff::Field},
     plonk::VerifyingKey,
-    poly::{commitment::ParamsProver, kzg::commitment::ParamsKZG, Rotation},
+    poly::{kzg::commitment::ParamsKZG, Rotation},
 };
 use itertools::{chain, Itertools};
 pub use pcs::BatchOpenScheme;

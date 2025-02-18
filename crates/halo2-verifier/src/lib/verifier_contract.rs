@@ -14,7 +14,7 @@ sol! {
 pub fn encode_calldata(proof: &[u8], instances: &[Fr]) -> Vec<u8> {
     verifyProofCall {
         proof: Bytes::from(proof.to_vec()),
-        instances: instances.iter().map(field_to_u256::<Fr, 32>).collect(),
+        instances: instances.iter().map(field_to_u256::<Fr>).collect(),
     }
     .abi_encode()
 }

@@ -1070,6 +1070,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "blake2"
+version = "0.10.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46502ad458c9a52b69d4d4d32775c788b7a1b85e8bc9d482d92250fc0e3f8efe"
+dependencies = [
+ "digest 0.10.7",
+]
+
+[[package]]
 name = "blake2b_simd"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2110,14 +2119,57 @@ dependencies = [
 ]
 
 [[package]]
+name = "halo2_backend"
+version = "0.4.0"
+source = "git+https://github.com/privacy-scaling-explorations/halo2?tag=v0.4.0#7eb156ac79589093719ffdd24ccf4440d717e405"
+dependencies = [
+ "blake2b_simd",
+ "ff",
+ "group",
+ "halo2_middleware",
+ "halo2curves",
+ "rand_chacha",
+ "rand_core",
+ "rayon",
+ "sha3 0.9.1",
+ "tracing",
+]
+
+[[package]]
+name = "halo2_frontend"
+version = "0.4.0"
+source = "git+https://github.com/privacy-scaling-explorations/halo2?tag=v0.4.0#7eb156ac79589093719ffdd24ccf4440d717e405"
+dependencies = [
+ "blake2b_simd",
+ "ff",
+ "group",
+ "halo2_middleware",
+ "halo2curves",
+ "serde",
+ "serde_derive",
+ "tracing",
+]
+
+[[package]]
+name = "halo2_middleware"
+version = "0.4.0"
+source = "git+https://github.com/privacy-scaling-explorations/halo2?tag=v0.4.0#7eb156ac79589093719ffdd24ccf4440d717e405"
+dependencies = [
+ "ff",
+ "halo2curves",
+ "rayon",
+]
+
+[[package]]
 name = "halo2_poseidon"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?rev=ce317a6#ce317a65e0f1148ce9220a7f3281ef0f27544fb4"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/poseidon-gadget?rev=pow7-halo2-v0.4.0#e13b511cb0db151c6b4ab63e9df785c622b07d21"
 dependencies = [
  "arrayvec",
  "bitvec",
  "ff",
  "group",
+ "halo2_frontend",
  "halo2_proofs",
  "halo2curves",
  "hex",
@@ -2129,20 +2181,15 @@ dependencies = [
 
 [[package]]
 name = "halo2_proofs"
-version = "0.3.0"
-source = "git+https://github.com/privacy-scaling-explorations/halo2?tag=v0.3.0#73408a140737d8336490452193b21f5a7a94e7de"
+version = "0.4.0"
+source = "git+https://github.com/privacy-scaling-explorations/halo2?tag=v0.4.0#7eb156ac79589093719ffdd24ccf4440d717e405"
 dependencies = [
- "blake2b_simd",
- "ff",
  "group",
+ "halo2_backend",
+ "halo2_frontend",
+ "halo2_middleware",
  "halo2curves",
- "rand_chacha",
  "rand_core",
- "rayon",
- "serde",
- "serde_derive",
- "sha3 0.9.1",
- "tracing",
 ]
 
 [[package]]
@@ -2153,6 +2200,7 @@ dependencies = [
  "alloy-sol-types",
  "askama",
  "evm-utils",
+ "halo2_frontend",
  "halo2_proofs",
  "itertools 0.13.0",
  "powers-of-tau",
@@ -2164,15 +2212,18 @@ dependencies = [
 
 [[package]]
 name = "halo2curves"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db81d01d0bbfec9f624d7590fc6929ee2537a64ec1e080d8f8c9e2d2da291405"
+checksum = "d380afeef3f1d4d3245b76895172018cfb087d9976a7cabcd5597775b2933e07"
 dependencies = [
- "blake2b_simd",
+ "blake2",
+ "digest 0.10.7",
  "ff",
  "group",
+ "halo2derive",
  "lazy_static",
  "num-bigint",
+ "num-integer",
  "num-traits",
  "pairing",
  "pasta_curves",
@@ -2180,8 +2231,24 @@ dependencies = [
  "rand",
  "rand_core",
  "rayon",
+ "sha2",
  "static_assertions",
  "subtle",
+ "unroll",
+]
+
+[[package]]
+name = "halo2derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdb99e7492b4f5ff469d238db464131b86c2eaac814a78715acba369f64d2c76"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2947,7 +3014,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0f4e50b#0f4e50bb47c625efe71815232b4f86998e7165be"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=6fd4f1e#6fd4f1e1235f3180d91d60e3556b01045d52466b"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -4567,8 +4634,9 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0f4e50b#0f4e50bb47c625efe71815232b4f86998e7165be"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=6fd4f1e#6fd4f1e1235f3180d91d60e3556b01045d52466b"
 dependencies = [
+ "halo2_frontend",
  "halo2_poseidon",
  "halo2_proofs",
  "human_bytes",
@@ -5428,7 +5496,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=0f4e50b#0f4e50bb47c625efe71815232b4f86998e7165be"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=6fd4f1e#6fd4f1e1235f3180d91d60e3556b01045d52466b"
 dependencies = [
  "halo2_proofs",
  "itertools 0.13.0",
@@ -5652,6 +5720,16 @@ checksum = "fc1de2c688dc15305988b563c3854064043356019f97a4b46276fe734c4f07ea"
 dependencies = [
  "crypto-common",
  "subtle",
+]
+
+[[package]]
+name = "unroll"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ad948c1cb799b1a70f836077721a92a35ac177d4daddf4c20a633786d4cf618"
+dependencies = [
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]

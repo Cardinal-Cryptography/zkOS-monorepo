@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf, str::FromStr};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
@@ -46,15 +46,16 @@ impl CircuitType {
     pub fn generate_keys(self, full_params: Params) -> Result<(Params, u32, ProvingKey)> {
         let (params, k, pk, _) = match self {
             CircuitType::NewAccount => {
-                generate_keys_with_min_k(NewAccountCircuit::default(), full_params)?
+                generate_keys_with_min_k(NewAccountCircuit::default(), full_params)
             }
             CircuitType::Deposit => {
-                generate_keys_with_min_k(DepositCircuit::default(), full_params)?
+                generate_keys_with_min_k(DepositCircuit::default(), full_params)
             }
             CircuitType::Withdraw => {
-                generate_keys_with_min_k(WithdrawCircuit::default(), full_params)?
+                generate_keys_with_min_k(WithdrawCircuit::default(), full_params)
             }
-        };
+        }
+        .map_err(|e| anyhow!("Failed to generate keys: {e}"))?;
         debug!("Generated keys for {self:?} circuit with k={k}");
         Ok((params, k, pk))
     }
@@ -117,11 +118,7 @@ fn get_equipment(
             let (params, k, pk) = circuit_type.generate_keys(full_params)?;
             debug!("Generated new proving key");
 
-            save_content(
-                file.clone(),
-                &marshall_pk(k, &pk)
-                    .map_err(|_| anyhow::Error::msg("Failed to marshall proving key"))?,
-            )?;
+            save_content(file.clone(), &marshall_pk(k, &pk))?;
             debug!("Saved proving key to {file:?}");
 
             Ok((params, pk))
