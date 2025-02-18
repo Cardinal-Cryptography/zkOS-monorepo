@@ -14,7 +14,7 @@ import { NewAccountAction } from "../../src/actions/newAccount";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
-import { createNativeToken } from "../../src/types";
+import { nativeToken } from "../../src/types";
 import { nativeTokenAddress } from "../../src/constants";
 
 const ANONYMITY_REVOKER_PUBKEY = 1n;
@@ -87,7 +87,7 @@ describe("NewAccountAction", () => {
       balance: 0n,
       currentNote: Scalar.fromBigint(0n),
       storageSchemaVersion: 0,
-      token: createNativeToken()
+      token: nativeToken()
     };
   });
 

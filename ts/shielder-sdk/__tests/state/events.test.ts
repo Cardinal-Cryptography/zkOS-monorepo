@@ -14,7 +14,7 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { createNativeToken } from "../../src/types";
+import { nativeToken } from "../../src/types";
 
 const expectStatesEqual = (state1: AccountState, state2: AccountState) => {
   expect(scalarsEqual(state1.id, state2.id)).toBe(true);
@@ -64,7 +64,7 @@ describe("StateEventsFilter", () => {
       nonce: 0n,
       balance: 100n,
       storageSchemaVersion: 1,
-      token: createNativeToken()
+      token: nativeToken()
     };
   });
 

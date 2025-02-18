@@ -14,7 +14,7 @@ import { DepositAction } from "../../src/actions/deposit";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
-import { createNativeToken } from "../../src/types";
+import { nativeToken } from "../../src/types";
 import { nativeTokenAddress } from "../../src/constants";
 
 const expectPubInputsCorrect = async (
@@ -126,7 +126,7 @@ describe("DepositAction", () => {
       ),
       currentNoteIndex: 100n,
       storageSchemaVersion: 0,
-      token: createNativeToken()
+      token: nativeToken()
     };
   });
 
