@@ -17,7 +17,10 @@ import { SendShielderTransaction } from "../../src/client";
 import { nativeToken } from "../../src/types";
 import { nativeTokenAddress } from "../../src/constants";
 
-const ANONYMITY_REVOKER_PUBKEY = 1n;
+const ANONYMITY_REVOKER_PUBKEY = {
+  x: 123n,
+  y: 456n
+};
 
 const expectPubInputsCorrect = async (
   pubInputs: NewAccountPubInputs,

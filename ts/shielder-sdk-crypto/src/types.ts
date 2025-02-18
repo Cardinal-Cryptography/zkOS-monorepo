@@ -1,13 +1,17 @@
 import { Scalar } from "./scalar";
 
 export type Proof = Uint8Array;
+export type AsymPublicKey<T> = {
+  x: T;
+  y: T;
+};
 
 export type NewAccountPubInputs = {
   hNote: Scalar;
   hId: Scalar;
   initialDeposit: Scalar;
   tokenAddress: Scalar;
-  anonymityRevokerPubkey: Scalar;
+  anonymityRevokerPubkey: AsymPublicKey<Scalar>;
   symKeyEncryption: Scalar;
 };
 
@@ -17,7 +21,7 @@ export type NewAccountAdvice = {
   trapdoor: Scalar;
   initialDeposit: Scalar;
   tokenAddress: Scalar;
-  anonymityRevokerPubkey: Scalar; // temporary, will be a curve point in the future
+  anonymityRevokerPubkey: AsymPublicKey<Scalar>;
 };
 
 export type DepositPubInputs = {
@@ -27,6 +31,8 @@ export type DepositPubInputs = {
   hNoteNew: Scalar;
   value: Scalar;
   tokenAddress: Scalar;
+  macSalt: Scalar;
+  macCommitment: Scalar;
 };
 
 export type DepositAdvice = {
@@ -40,6 +46,7 @@ export type DepositAdvice = {
   value: Scalar;
   nullifierNew: Scalar;
   trapdoorNew: Scalar;
+  macSalt: Scalar;
 };
 
 export type WithdrawPubInputs = {
@@ -50,6 +57,8 @@ export type WithdrawPubInputs = {
   value: Scalar;
   commitment: Scalar;
   tokenAddress: Scalar;
+  macSalt: Scalar;
+  macCommitment: Scalar;
 };
 
 export type WithdrawAdvice = {
@@ -64,6 +73,7 @@ export type WithdrawAdvice = {
   nullifierNew: Scalar;
   trapdoorNew: Scalar;
   commitment: Scalar;
+  macSalt: Scalar;
 };
 
 export type ShielderActionSecrets = {

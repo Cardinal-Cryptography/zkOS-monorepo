@@ -13,6 +13,8 @@ contract AcceptingShielder {
         uint256 newNote,
         bytes calldata proof,
         address relayerAddress,
-        uint256 relayerFee
+        uint256 relayerFee,
+        uint256 macSalt,
+        uint256 macCommitment
     ) external {}
 }

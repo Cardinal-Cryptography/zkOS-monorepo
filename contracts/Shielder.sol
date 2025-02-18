@@ -74,7 +74,9 @@ contract Shielder is
         address tokenAddress,
         uint256 amount,
         uint256 newNote,
-        uint256 newNoteIndex
+        uint256 newNoteIndex,
+        uint256 macSalt,
+        uint256 macCommitment
     );
     event Withdraw(
         bytes3 contractVersion,
@@ -85,7 +87,9 @@ contract Shielder is
         uint256 newNote,
         uint256 newNoteIndex,
         address relayerAddress,
-        uint256 fee
+        uint256 fee,
+        uint256 macSalt,
+        uint256 macCommitment
     );
 
     // -- Errors --
@@ -118,13 +122,17 @@ contract Shielder is
     function initialize(
         address initialOwner,
         uint256 _depositLimit,
-        uint256 _anonymityRevokerPublicKey
+        uint256 _anonymityRevokerPublicKeyX,
+        uint256 _anonymityRevokerPublicKeyY
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
         __MerkleTree_init();
         __DepositLimit_init(_depositLimit);
-        __AnonymityRevoker_init(_anonymityRevokerPublicKey);
+        __AnonymityRevoker_init(
+            _anonymityRevokerPublicKeyX,
+            _anonymityRevokerPublicKeyY
+        );
         _pause();
     }
 
@@ -244,13 +252,17 @@ contract Shielder is
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](6);
+        uint256[] memory publicInputs = new uint256[](7);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
         publicInputs[3] = addressToUInt256(tokenAddress);
-        publicInputs[4] = anonymityRevokerPubkey();
-        publicInputs[5] = symKeyEncryption;
+
+        (uint256 arX, uint256 arY) = anonymityRevokerPubkey();
+        publicInputs[4] = arX;
+        publicInputs[5] = arY;
+
+        publicInputs[6] = symKeyEncryption;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
@@ -271,6 +283,8 @@ contract Shielder is
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
+        uint256 macSalt,
+        uint256 macCommitment,
         bytes calldata proof
     ) external payable whenNotPaused {
         uint256 amount = msg.value;
@@ -286,6 +300,8 @@ contract Shielder is
             oldNullifierHash,
             newNote,
             merkleRoot,
+            macSalt,
+            macCommitment,
             proof
         );
 
@@ -295,7 +311,9 @@ contract Shielder is
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             newNote,
-            newNoteIndex
+            newNoteIndex,
+            macSalt,
+            macCommitment
         );
     }
 
@@ -310,6 +328,8 @@ contract Shielder is
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
+        uint256 macSalt,
+        uint256 macCommitment,
         bytes calldata proof
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
@@ -328,6 +348,8 @@ contract Shielder is
             oldNullifierHash,
             newNote,
             merkleRoot,
+            macSalt,
+            macCommitment,
             proof
         );
 
@@ -339,7 +361,9 @@ contract Shielder is
             tokenAddress,
             amount,
             newNote,
-            newNoteIndex
+            newNoteIndex,
+            macSalt,
+            macCommitment
         );
     }
 
@@ -351,6 +375,8 @@ contract Shielder is
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
+        uint256 macSalt,
+        uint256 macCommitment,
         bytes calldata proof
     )
         private
@@ -366,13 +392,15 @@ contract Shielder is
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](6);
+        uint256[] memory publicInputs = new uint256[](8);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
         publicInputs[5] = addressToUInt256(tokenAddress);
+        publicInputs[6] = macSalt;
+        publicInputs[7] = macCommitment;
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
@@ -397,7 +425,9 @@ contract Shielder is
         uint256 newNote,
         bytes calldata proof,
         address relayerAddress,
-        uint256 relayerFee
+        uint256 relayerFee,
+        uint256 macSalt,
+        uint256 macCommitment
     ) external whenNotPaused {
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
@@ -410,7 +440,9 @@ contract Shielder is
             newNote,
             proof,
             relayerAddress,
-            relayerFee
+            relayerFee,
+            macSalt,
+            macCommitment
         );
 
         // return the tokens
@@ -436,7 +468,9 @@ contract Shielder is
             newNote,
             newNoteIndex,
             relayerAddress,
-            relayerFee
+            relayerFee,
+            macSalt,
+            macCommitment
         );
     }
 
@@ -451,7 +485,9 @@ contract Shielder is
         uint256 newNote,
         bytes calldata proof,
         address relayerAddress,
-        uint256 relayerFee
+        uint256 relayerFee,
+        uint256 macSalt,
+        uint256 macCommitment
     ) external whenNotPaused {
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
@@ -464,7 +500,9 @@ contract Shielder is
             newNote,
             proof,
             relayerAddress,
-            relayerFee
+            relayerFee,
+            macSalt,
+            macCommitment
         );
 
         IERC20 token = IERC20(tokenAddress);
@@ -480,7 +518,9 @@ contract Shielder is
             newNote,
             newNoteIndex,
             relayerAddress,
-            relayerFee
+            relayerFee,
+            macSalt,
+            macCommitment
         );
     }
 
@@ -495,7 +535,9 @@ contract Shielder is
         uint256 newNote,
         bytes calldata proof,
         address relayerAddress,
-        uint256 relayerFee
+        uint256 relayerFee,
+        uint256 macSalt,
+        uint256 macCommitment
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -512,13 +554,15 @@ contract Shielder is
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](7);
+        uint256[] memory publicInputs = new uint256[](9);
         publicInputs[0] = idHiding;
         publicInputs[1] = merkleRoot;
         publicInputs[2] = oldNullifierHash;
         publicInputs[3] = newNote;
         publicInputs[4] = amount;
         publicInputs[5] = addressToUInt256(tokenAddress);
+        publicInputs[7] = macSalt;
+        publicInputs[8] = macCommitment;
 
         bytes memory commitment = abi.encodePacked(
             CONTRACT_VERSION,

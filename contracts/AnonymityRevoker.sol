@@ -10,9 +10,9 @@ abstract contract AnonymityRevoker is Initializable {
 
     /// @custom:storage-location erc7201:zkos.storage.AnonymityRevoker
     struct AnonymityRevokerStorage {
-        // temporary, will be replaced with a curve point (two or three field elements)
         // IMPORTANT: curve point should be validated in the circuit or the contract!
-        uint256 anonymityRevokerPublicKey;
+        uint256 anonymityRevokerPublicKeyX;
+        uint256 anonymityRevokerPublicKeyY;
     }
 
     /*
@@ -20,10 +20,12 @@ abstract contract AnonymityRevoker is Initializable {
      */
     // solhint-disable func-name-mixedcase
     function __AnonymityRevoker_init(
-        uint256 anonymityRevokerPubkey
+        uint256 anonymityRevokerPubkeyX,
+        uint256 anonymityRevokerPubkeyY
     ) internal onlyInitializing {
         AnonymityRevokerStorage storage $ = _getAnonymityRevokerStorage();
-        $.anonymityRevokerPublicKey = anonymityRevokerPubkey;
+        $.anonymityRevokerPublicKeyX = anonymityRevokerPubkeyX;
+        $.anonymityRevokerPublicKeyY = anonymityRevokerPubkeyY;
     }
 
     function _getAnonymityRevokerStorage()
@@ -36,8 +38,8 @@ abstract contract AnonymityRevoker is Initializable {
         }
     }
 
-    function anonymityRevokerPubkey() public view returns (uint256) {
+    function anonymityRevokerPubkey() public view returns (uint256, uint256) {
         AnonymityRevokerStorage storage $ = _getAnonymityRevokerStorage();
-        return $.anonymityRevokerPublicKey;
+        return ($.anonymityRevokerPublicKeyX, $.anonymityRevokerPublicKeyY);
     }
 }
