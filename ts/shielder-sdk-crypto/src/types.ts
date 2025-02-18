@@ -1,12 +1,16 @@
 import { Scalar } from "./scalar";
 
 export type Proof = Uint8Array;
+export type AsymPublicKey<T> = {
+  x: T;
+  y: T;
+};
 
 export type NewAccountPubInputs = {
   hNote: Scalar;
   hId: Scalar;
   initialDeposit: Scalar;
-  anonymityRevokerPubkey: Scalar;
+  anonymityRevokerPubkey: AsymPublicKey<Scalar>;
   symKeyEncryption: Scalar;
 };
 
@@ -15,7 +19,7 @@ export type NewAccountAdvice = {
   nullifier: Scalar;
   trapdoor: Scalar;
   initialDeposit: Scalar;
-  anonymityRevokerPubkey: Scalar; // temporary, will be a curve point in the future
+  anonymityRevokerPubkey: AsymPublicKey<Scalar>;
 };
 
 export type DepositPubInputs = {

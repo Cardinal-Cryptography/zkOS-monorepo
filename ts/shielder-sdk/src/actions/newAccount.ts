@@ -1,5 +1,6 @@
 import { IContract } from "@/chain/contract";
 import {
+  AsymPublicKey,
   CryptoClient,
   NewAccountPubInputs,
   Proof,
@@ -23,6 +24,7 @@ export interface NewAccountCalldata {
 
 export class NewAccountAction extends NoteAction {
   contract: IContract;
+
   constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
     this.contract = contract;
@@ -49,7 +51,7 @@ export class NewAccountAction extends NoteAction {
   async preparePubInputs(
     state: AccountState,
     amount: bigint,
-    anonymityRevokerPubkey: bigint
+    anonymityRevokerPubkey: AsymPublicKey<bigint>
   ): Promise<NewAccountPubInputs> {
     const hId = await this.cryptoClient.hasher.poseidonHash([state.id]);
     const newState = await this.rawNewAccount(state, amount);
@@ -72,7 +74,10 @@ export class NewAccountAction extends NoteAction {
       hId,
       hNote,
       initialDeposit: Scalar.fromBigint(amount),
-      anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey),
+      anonymityRevokerPubkey: {
+        x: Scalar.fromBigint(anonymityRevokerPubkey.x),
+        y: Scalar.fromBigint(anonymityRevokerPubkey.y)
+      },
       symKeyEncryption: encryption
     };
   }
@@ -101,7 +106,10 @@ export class NewAccountAction extends NoteAction {
         nullifier,
         trapdoor,
         initialDeposit: Scalar.fromBigint(amount),
-        anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey)
+        anonymityRevokerPubkey: {
+          x: Scalar.fromBigint(anonymityRevokerPubkey.x),
+          y: Scalar.fromBigint(anonymityRevokerPubkey.y)
+        }
       })
       .catch((e) => {
         throw new Error(`Failed to prove new account: ${e}`);

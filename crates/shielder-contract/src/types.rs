@@ -6,7 +6,10 @@ use std::fmt::Debug;
 use alloy_contract::CallDecoder;
 use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolCall};
-use shielder_setup::version::{contract_version, ContractVersion};
+use shielder_setup::{
+    shielder_circuits::AsymPublicKey,
+    version::{contract_version, ContractVersion},
+};
 use ShielderContract::*;
 
 use crate::ShielderContractError;
@@ -68,7 +71,8 @@ sol! {
         function initialize(
             address initialOwner,
             uint256 _depositLimit,
-            uint256 _anonymityRevokerPublicKey
+            uint256 _anonymityRevokerPublicKeyX,
+            uint256 _anonymityRevokerPublicKeyY,
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
@@ -149,7 +153,7 @@ sol! {
         ) external view returns (uint256[] memory);
 
         function setDepositLimit(uint256 _depositLimit) external;
-        function anonymityRevokerPubkey() public view returns (uint256);
+        function anonymityRevokerPubkey() public view returns (uint256, uint256);
     }
 }
 
@@ -246,8 +250,11 @@ impl ShielderContractCall for nullifiersCall {
 }
 
 impl ShielderContractCall for anonymityRevokerPubkeyCall {
-    type UnwrappedResult = U256;
+    type UnwrappedResult = AsymPublicKey<U256>;
     fn unwrap_result(pubkey: anonymityRevokerPubkeyReturn) -> Self::UnwrappedResult {
-        pubkey._0
+        AsymPublicKey {
+            x: pubkey._0,
+            y: pubkey._1,
+        }
     }
 }

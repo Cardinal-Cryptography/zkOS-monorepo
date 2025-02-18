@@ -1,7 +1,10 @@
 use alloy_signer_local::PrivateKeySigner;
 use rand::{rngs::StdRng, SeedableRng};
 use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
-use shielder_circuits::circuits::{Params, ProvingKey};
+use shielder_circuits::{
+    circuits::{Params, ProvingKey},
+    AsymPublicKey,
+};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     ConnectionPolicy,
@@ -15,7 +18,10 @@ pub struct Actor {
     pub account: ShielderAccount,
 }
 
-const ANONYMITY_REVOKER_PKEY: U256 = U256::from_limbs([65, 78, 79, 78]); // ANON
+const ANONYMITY_REVOKER_PKEY: AsymPublicKey<U256> = AsymPublicKey {
+    x: U256::from_limbs([65, 78, 79, 78]), // ANON
+    y: U256::from_limbs([89, 77, 73, 84]), // YMIT
+};
 
 impl Actor {
     pub fn new(id: u32, rpc_url: String, shielder: Address) -> Self {

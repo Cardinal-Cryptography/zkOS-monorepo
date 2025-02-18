@@ -6,7 +6,7 @@ use shielder_circuits::{
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Field, Fr, ProverKnowledge, PublicInputProvider,
+    AsymPublicKey, Field, Fr, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
     ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
@@ -56,7 +56,7 @@ pub trait CallType {
 
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
-    type Extra = U256; // temporarily; target: `AsymPublicKey` (not yet visible)
+    type Extra = AsymPublicKey<U256>;
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountNativeCall;
 
@@ -71,7 +71,10 @@ impl CallType for NewAccountCallType {
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
             token_address: NATIVE_TOKEN_ADDRESS,
-            anonymity_revoker_public_key: u256_to_field(anonymity_revoker_public_key),
+            anonymity_revoker_public_key: AsymPublicKey {
+                x: u256_to_field(anonymity_revoker_public_key.x),
+                y: u256_to_field(anonymity_revoker_public_key.y),
+            },
         }
     }
 
