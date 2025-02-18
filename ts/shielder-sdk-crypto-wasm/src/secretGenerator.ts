@@ -24,4 +24,15 @@ export class SecretGenerator
       trapdoor: new Scalar(result.trapdoor)
     });
   }
+
+  getIdPerToken(
+    privateKey: `0x${string}`,
+    tokenAddress: `0x${string}`
+  ): Promise<Scalar> {
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not initialized");
+    }
+    const result = this.wasmModule.get_id_per_token(privateKey, tokenAddress);
+    return Promise.resolve(new Scalar(result));
+  }
 }
