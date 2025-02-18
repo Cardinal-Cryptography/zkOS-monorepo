@@ -71,7 +71,7 @@ mod tests {
     #[test]
     pub fn derive_id_is_correct() {
         // Calculated using online tools as the Keccak-256 of the concatenation of:
-        //   000000000000000000000000000000000000000000000000000000000000000f (15)
+        //   000000000000000000000000000000000000000000000000000000000000000f
         //   6964 ("id")
         //   000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
         let expected_before_modulo =
