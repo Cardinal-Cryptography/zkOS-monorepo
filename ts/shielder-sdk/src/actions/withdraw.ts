@@ -13,6 +13,8 @@ import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
+import { Token } from "@/types";
+import { getTokenAddress } from "@/utils";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;

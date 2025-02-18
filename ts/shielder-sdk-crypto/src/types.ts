@@ -60,6 +60,7 @@ export type WithdrawPubInputs = {
   value: Scalar;
   tokenAddress: Scalar;
   commitment: Scalar;
+  tokenAddress: Scalar;
   macSalt: Scalar;
   macCommitment: Scalar;
 };
