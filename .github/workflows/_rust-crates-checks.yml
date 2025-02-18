@@ -63,6 +63,9 @@ jobs:
       - name: Run tests for shielder_bindings
         run: cd crates/shielder_bindings && make test
 
+      - name: Run tests for powers of tau
+        run: cd crates/powers-of-tau && cargo test
+
       - name: Run tests for other Shielder libs
         run: |
           cargo test --release -p shielder-account --all-features

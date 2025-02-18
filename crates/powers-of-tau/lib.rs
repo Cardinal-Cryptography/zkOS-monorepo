@@ -234,7 +234,7 @@ mod tests {
     use shielder_circuits::Field;
 
     use super::read;
-    use crate::powers_of_tau::{get_ptau_file_path, Format};
+    use crate::{get_ptau_file_path, Format};
 
     #[test]
     fn test_commit_lagrange() {
