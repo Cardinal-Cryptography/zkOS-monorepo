@@ -386,4 +386,9 @@ export class ShielderClient {
   }
 }
 
-export { SendShielderTransaction, OutdatedSdkError, ShielderCallbacks };
+export {
+  SendShielderTransaction,
+  OutdatedSdkError,
+  ShielderCallbacks,
+  ShielderOperation
+};

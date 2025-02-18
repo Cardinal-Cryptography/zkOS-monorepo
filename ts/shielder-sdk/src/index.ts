@@ -3,7 +3,8 @@ export {
   SendShielderTransaction,
   ShielderCallbacks,
   OutdatedSdkError,
-  ShielderClient
+  ShielderClient,
+  ShielderOperation
 } from "@/client";
 export { type AccountState, type ShielderTransaction } from "@/state";
 export { accountObjectSchema, InjectedStorageInterface } from "@/state";

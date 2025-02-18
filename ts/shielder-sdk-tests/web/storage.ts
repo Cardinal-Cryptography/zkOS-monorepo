@@ -1,28 +1,46 @@
 import { InjectedStorageInterface } from "@cardinal-cryptography/shielder-sdk";
 
+export const STORAGE_KEY = "test-mocked-storage";
+
+type SubStorage = {
+  [key: string]: string;
+};
+
 export const mockedStorage = (
-  address: `0x${string}`
-): InjectedStorageInterface => {
+  mainKey: `0x${string}`
+): InjectedStorageInterface & {
+  clear: () => void;
+} => {
+  const getSubStorage = (): SubStorage => {
+    const stored = window.localStorage.getItem(mainKey);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return stored ? JSON.parse(stored) : {};
+  };
+
+  const saveSubStorage = (storage: SubStorage): void => {
+    window.localStorage.setItem(mainKey, JSON.stringify(storage));
+  };
+
+  // eslint-disable-next-line @typescript-eslint/require-await
   const setItem = async (key: string, value: string): Promise<void> => {
     try {
-      // prevent storage from being shared between different addresses in different tests
-      window.localStorage.setItem(key + address, value);
+      const storage = getSubStorage();
+      storage[key] = value;
+      saveSubStorage(storage);
     } catch (error) {
       console.error(`Failed to save storage value for key ${key}:`, error);
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   const getItem = async (key: string): Promise<string | null> => {
-    const storedValue: string | null = window.localStorage.getItem(
-      // prevent storage from being shared between different addresses in different tests
-      key + address
-    );
-
-    if (!storedValue) {
-      return null;
-    }
-    return storedValue;
+    const storage = getSubStorage();
+    return storage[key] ?? null;
   };
 
-  return { getItem, setItem };
+  const clear = (): void => {
+    window.localStorage.removeItem(mainKey);
+  };
+
+  return { getItem, setItem, clear };
 };

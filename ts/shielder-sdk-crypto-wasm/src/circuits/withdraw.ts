@@ -64,7 +64,7 @@ export class WithdrawCircuit
       values.trapdoorNew.bytes,
       values.commitment.bytes
     );
-    const pubInputs = splitUint8(pubInputsBytes, 7).map(
+    const pubInputs = splitUint8(pubInputsBytes, 32).map(
       (bytes) => new Scalar(bytes)
     );
 

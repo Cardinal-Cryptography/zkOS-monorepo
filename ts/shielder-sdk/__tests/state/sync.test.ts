@@ -12,8 +12,10 @@ import {
   UnexpectedVersionInEvent
 } from "../../src/state/sync";
 import { MockedCryptoClient } from "../helpers";
-import { Address } from "viem";
 import { nativeTokenAddress } from "../../src/constants";
+import { createNativeToken } from "../../src/types";
+
+const nativeToken = createNativeToken();
 
 // Test helpers
 const createAccountState = (
@@ -27,16 +29,17 @@ const createAccountState = (
   nonce,
   balance,
   currentNote: Scalar.fromBigint(currentNote),
-  storageSchemaVersion
+  storageSchemaVersion,
+  token: nativeToken
 });
 
 const createNoteEvent = (
-  name: "NewAccountNative" | "DepositNative" | "WithdrawNative",
+  name: "NewAccount" | "Deposit" | "Withdraw",
   amount: bigint,
   to: `0x${string}` | undefined,
   block: bigint,
   newNote: bigint,
-  contractVersion: `0x${string}` = "0x000001",
+  contractVersion: `0x${string}` = "0x000100",
   txHash: `0x${string}` = "0xabc"
 ): NoteEvent => ({
   name,
@@ -149,7 +152,7 @@ describe("StateSynchronizer", () => {
     it("should sync single state transition", async () => {
       const initialState = createAccountState();
       const newState = createAccountState(1n, 1n, 100n, 1n);
-      const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
+      const event = createNoteEvent("Deposit", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
       vitest
@@ -174,7 +177,7 @@ describe("StateSynchronizer", () => {
         newState
       );
       expect(syncCallback).toHaveBeenCalledWith({
-        type: "DepositNative",
+        type: "Deposit",
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
@@ -189,16 +192,8 @@ describe("StateSynchronizer", () => {
         createAccountState(1n, 2n, 50n, 2n)
       ];
       const events = [
-        createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n),
-        createNoteEvent(
-          "WithdrawNative",
-          50n,
-          "0x456",
-          2n,
-          2n,
-          "0x000001",
-          "0xdef"
-        )
+        createNoteEvent("Deposit", 100n, "0x123", 1n, 1n),
+        createNoteEvent("Withdraw", 50n, "0x456", 2n, 2n, "0x000100", "0xdef")
       ];
 
       // Setup mocks
@@ -231,14 +226,14 @@ describe("StateSynchronizer", () => {
       expect(stateManager.updateAccountState).toHaveBeenCalledTimes(2);
       expect(syncCallback).toHaveBeenCalledTimes(2);
       expect(syncCallback).toHaveBeenNthCalledWith(1, {
-        type: "DepositNative",
+        type: "Deposit",
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
         block: 1n
       });
       expect(syncCallback).toHaveBeenNthCalledWith(2, {
-        type: "WithdrawNative",
+        type: "Withdraw",
         amount: 50n,
         to: "0x456",
         txHash: "0xdef",
@@ -249,7 +244,7 @@ describe("StateSynchronizer", () => {
     it("should throw on unsupported contract version", async () => {
       const state = createAccountState();
       const event = createNoteEvent(
-        "DepositNative",
+        "Deposit",
         100n,
         "0x123",
         1n,
@@ -272,7 +267,7 @@ describe("StateSynchronizer", () => {
 
     it("should throw on found, but non-transitioning event", async () => {
       const state = createAccountState();
-      const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
+      const event = createNoteEvent("Deposit", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
       vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
@@ -316,16 +311,8 @@ describe("StateSynchronizer", () => {
         createAccountState(1n, 2n, 50n, 2n)
       ];
       const events = [
-        createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n),
-        createNoteEvent(
-          "WithdrawNative",
-          50n,
-          "0x456",
-          2n,
-          2n,
-          "0x000001",
-          "0xdef"
-        )
+        createNoteEvent("Deposit", 100n, "0x123", 1n, 1n),
+        createNoteEvent("Withdraw", 50n, "0x456", 2n, 2n, "0x000100", "0xdef")
       ];
 
       // Setup mocks
@@ -361,14 +348,14 @@ describe("StateSynchronizer", () => {
       }
       expect(transactions).toHaveLength(2);
       expect(transactions[0]).toEqual({
-        type: "DepositNative",
+        type: "Deposit",
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
         block: 1n
       });
       expect(transactions[1]).toEqual({
-        type: "WithdrawNative",
+        type: "Withdraw",
         amount: 50n,
         to: "0x456",
         txHash: "0xdef",
@@ -393,7 +380,7 @@ describe("StateSynchronizer", () => {
 
     it("should throw on found, but non-transitioning event", async () => {
       const state = createAccountState();
-      const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
+      const event = createNoteEvent("Deposit", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
       vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);

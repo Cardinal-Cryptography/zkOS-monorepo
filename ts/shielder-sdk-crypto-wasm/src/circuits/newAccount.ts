@@ -53,7 +53,7 @@ export class NewAccountCircuit
       values.tokenAddress.bytes,
       values.anonymityRevokerPubkey.bytes
     );
-    const pubInputs = splitUint8(pubInputsBytes, 6).map(
+    const pubInputs = splitUint8(pubInputsBytes, 32).map(
       (bytes) => new Scalar(bytes)
     );
 

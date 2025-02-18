@@ -1,15 +1,22 @@
 import { useEffect } from "react";
 import {
+  createNativeToken,
   createShielderClient,
   InjectedStorageInterface,
+  NativeToken,
   ShielderCallbacks,
-  ShielderClient
+  ShielderClient,
+  ShielderTransaction
 } from "@cardinal-cryptography/shielder-sdk";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
 import { envThreadsNumber } from "./testUtils";
-import { mockedStorage } from "./storage";
-import { ContractTestFixture, setupContractTest } from "./chain/testUtils";
+import {
+  ShielderClientFixture,
+  setupShielderClient
+} from "./fixtures/setupShielderClient";
+import { CallbacksFixture, setupCallbacks } from "./fixtures/setupCallbacks";
+import { validateTxHistory } from "./validators/txHistory";
 
 declare global {
   interface Window {
@@ -17,9 +24,8 @@ declare global {
       cryptoClient: Promise<CryptoClient>;
     };
 
-    testUtils: {
-      setupContractTest: (
-        initialPublicBalance: bigint,
+    testFixtures: {
+      setupShielderClient: (
         chainConfig: {
           chainId: number;
           rpcHttpEndpoint: string;
@@ -29,8 +35,22 @@ declare global {
         relayerConfig: {
           url: string;
         },
-        privateKeyAlice: `0x${string}`
-      ) => Promise<ContractTestFixture>;
+        privateKey: `0x${string}`,
+        shielderKey: `0x${string}`,
+        clientCallbacks?: ShielderCallbacks
+      ) => Promise<ShielderClientFixture>;
+      setupCallbacks: () => CallbacksFixture;
+    };
+
+    validators: {
+      validateTxHistory: (
+        txHistory: ShielderTransaction[],
+        expected: {
+          type: "NewAccount" | "Deposit" | "Withdraw";
+          amount: bigint;
+          to?: `0x${string}`;
+        }[]
+      ) => boolean;
     };
 
     shielder: {
@@ -44,21 +64,30 @@ declare global {
         cryptoClient: CryptoClient,
         callbacks?: ShielderCallbacks
       ) => ShielderClient;
+      createNativeToken: () => NativeToken;
     };
+
+    initialized: boolean;
   }
 }
 
 function EntryPoint() {
   useEffect(() => {
-    // test utils
-    window.testUtils = window.testUtils || {};
-    window.testUtils.setupContractTest = setupContractTest;
+    // test fixtures initialization
+    window.testFixtures = window.testFixtures || {};
+    window.testFixtures.setupShielderClient = setupShielderClient;
+    window.testFixtures.setupCallbacks = setupCallbacks;
+    // validators initialization
+    window.validators = window.validators || {};
+    window.validators.validateTxHistory = validateTxHistory;
     // Wasm crypto client initialization
     window.wasmCryptoClient = window.wasmCryptoClient || {};
     window.wasmCryptoClient.cryptoClient = initWasmWorker(envThreadsNumber());
     // Expose shielder utilities
     window.shielder = window.shielder || {};
     window.shielder.createShielderClient = createShielderClient;
+    window.shielder.createNativeToken = createNativeToken;
+    window.initialized = true;
   }, []);
 
   return null;

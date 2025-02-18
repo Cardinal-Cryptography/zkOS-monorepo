@@ -1,10 +1,22 @@
 // Utils to be used in our Node.js Playwright testing code.
 
 import { test, type Page } from "@playwright/test";
+import {
+  GlobalConfigFixture,
+  globalConfigFixture
+} from "./playwrightFixtures/globalConfig";
+import {
+  perTestConfigFixture,
+  PerTestConfigFixture
+} from "./playwrightFixtures/perTestConfig";
+import { workerPageFixture } from "./playwrightFixtures/workerPage";
 
 export const sdkTest = test.extend<
-  object,
   {
+    perTestConfigFixture: PerTestConfigFixture;
+  },
+  {
+    globalConfigFixture: GlobalConfigFixture;
     workerPage: Page;
   }
 >({
@@ -14,31 +26,12 @@ export const sdkTest = test.extend<
   // One `Page` is shared between all tests that are run in the same Playwright worker. This is
   // done to save time on WASM initialization. Within worker, tests are run sequentially, so there
   // are no thread-safety concerns here.
-  workerPage: [
-    async ({ browser }, use) => {
-      const context = await browser.newContext();
-      const page = await context.newPage();
-      await page.goto("/index.html");
-      page.on("console", (msg) => {
-        console.log(msg);
-      });
+  workerPage: [workerPageFixture, { scope: "worker" }],
 
-      await initWasmModule(page);
-      await use(page);
+  globalConfigFixture: [globalConfigFixture, { scope: "worker" }],
 
-      await context.close();
-    },
-    { scope: "worker" }
-  ]
+  perTestConfigFixture: [perTestConfigFixture, { scope: "test" }]
 });
-
-// Makes the WASM module ready for use in the context of the browser's main thread.
-async function initWasmModule(page: Page): Promise<void> {
-  const threads = await page.evaluate(async () => {
-    return await window.wasmCryptoClient.cryptoClient;
-  });
-  console.log(`WASM module initialized with ${threads} thread(s).`);
-}
 
 // Handles a `Uint8Array` returned from `page.evaluate`. Probably due to the way Playwright handles
 // serialization, when the function executed inside `page.evaluate` returns a `Uint8Array`, the

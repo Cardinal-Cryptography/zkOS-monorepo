@@ -1,5 +1,5 @@
 import path from "path";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -38,7 +38,8 @@ export default defineConfig(({ mode }) => {
           "../../shielder-sdk",
           "../../shielder-sdk-crypto",
           "../../shielder-sdk-crypto-wasm",
-          "../../../crates/shielder-wasm/pkg"
+          "../../shielder-sdk-tests",
+          "../../../crates/shielder_bindings/pkg"
         ]
       }
     }
