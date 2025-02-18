@@ -65,6 +65,7 @@ impl NewAccountCircuit {
         NewAccountCircuit(super::NewAccountCircuit::new_pronto())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn prove(
         &self,
         id: Vec<u8>,
