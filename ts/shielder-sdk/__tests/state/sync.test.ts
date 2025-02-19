@@ -12,6 +12,8 @@ import {
   UnexpectedVersionInEvent
 } from "../../src/state/sync";
 import { MockedCryptoClient } from "../helpers";
+import { Address } from "viem";
+import { nativeTokenAddress } from "../../src/constants";
 import { nativeToken } from "../../src/types";
 
 // Test helpers

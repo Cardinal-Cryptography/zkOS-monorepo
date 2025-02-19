@@ -147,14 +147,14 @@ export class WithdrawAction extends NoteAction {
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
    * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
-   * @param address recipient address
+   * @param withdrawalAddress recipient address
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
     totalFee: bigint,
-    address: Address,
+    withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
     if (state.balance < amount) {
@@ -172,7 +172,7 @@ export class WithdrawAction extends NoteAction {
       state,
       amount,
       expectedContractVersion,
-      address,
+      withdrawalAddress,
       totalFee
     );
 
@@ -194,7 +194,7 @@ export class WithdrawAction extends NoteAction {
       },
       provingTimeMillis: provingTime,
       amount,
-      withdrawalAddress: address,
+      withdrawalAddress,
       token: state.token
     };
   }
