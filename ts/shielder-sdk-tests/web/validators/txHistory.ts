@@ -1,17 +1,40 @@
+import { ShielderClientFixture } from "@/fixtures/setupShielderClient";
 import { ShielderTransaction } from "@cardinal-cryptography/shielder-sdk";
-import { ShortTx } from "@tests/types";
+import {
+  AccountNames,
+  AccountValue,
+  ShortTx,
+  TestDescription
+} from "@tests/types";
 
 export const validateTxHistory = (
   txHistory: ShielderTransaction[],
-  expected: ShortTx[]
+  actions: TestDescription["actions"],
+  webSdk: AccountValue<ShielderClientFixture>,
+  actor: AccountNames
 ): boolean => {
-  if (txHistory.length !== expected.length) {
+  const expectedTxHistory = actions
+    .filter(({ actor: a }) => a == actor)
+    .map(({ op }) => {
+      if (op.type == "Withdraw") {
+        return {
+          ...op,
+          to: webSdk[op.to!].signerAccount.account.address
+        } as ShortTx;
+      } else
+        return {
+          ...op,
+          to: undefined
+        } as ShortTx;
+    });
+
+  if (txHistory.length !== expectedTxHistory.length) {
     return false;
   }
 
   for (let i = 0; i < txHistory.length; i++) {
     const tx = txHistory[i];
-    const expectedTx = expected[i];
+    const expectedTx = expectedTxHistory[i];
 
     if (tx.type !== expectedTx.type) {
       return false;

@@ -16,7 +16,7 @@ import {
   setupShielderClient
 } from "./fixtures/setupShielderClient";
 import { validateTxHistory } from "./validators/txHistory";
-import { ShortTx } from "@tests/types";
+import { AccountNames, AccountValue, TestDescription } from "@tests/types";
 
 declare global {
   interface Window {
@@ -43,7 +43,9 @@ declare global {
     validators: {
       validateTxHistory: (
         txHistory: ShielderTransaction[],
-        expected: ShortTx[]
+        actions: TestDescription["actions"],
+        webSdk: AccountValue<ShielderClientFixture>,
+        actor: AccountNames
       ) => boolean;
     };
 

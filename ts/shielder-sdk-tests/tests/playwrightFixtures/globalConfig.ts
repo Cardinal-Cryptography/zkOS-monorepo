@@ -1,13 +1,13 @@
 import { BalanceManager } from "@tests/balanceManager";
 import { getChainConfig, getRelayerConfig } from "@tests/chainConfig";
 import { ACCOUNT_NAMES, INITIAL_EVM_BALANCE } from "@tests/constants";
-import { AccountKeys } from "@tests/types";
+import { AccountValue } from "@tests/types";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 
 export type GlobalConfigFixture = {
   chainConfig: ReturnType<typeof getChainConfig>;
   relayerConfig: ReturnType<typeof getRelayerConfig>;
-  privateKeys: AccountKeys;
+  privateKeys: AccountValue<`0x${string}`>;
 };
 
 export const globalConfigFixture = async (
@@ -18,7 +18,7 @@ export const globalConfigFixture = async (
   const chainConfig = getChainConfig();
   const relayerConfig = getRelayerConfig();
 
-  const privateKeys = {} as AccountKeys;
+  const privateKeys = {} as AccountValue<`0x${string}`>;
 
   for (const name of ACCOUNT_NAMES) {
     privateKeys[name] = generatePrivateKey();

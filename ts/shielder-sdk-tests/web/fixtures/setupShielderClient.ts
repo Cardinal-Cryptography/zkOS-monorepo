@@ -91,6 +91,7 @@ export interface ShielderClientFixture {
     totalFee: bigint;
   }>;
   getBalance: (token: Token) => Promise<bigint>;
+  getChainBalance: (token: Token) => Promise<bigint>;
 }
 
 export const setupShielderClient = async (
@@ -173,6 +174,12 @@ export const setupShielderClient = async (
     },
     getBalance: async (token) => {
       return shielderClient.accountState(token).then((state) => state.balance);
+    },
+    getChainBalance: async (token) => {
+      if (token.type !== "native") throw new Error("Not implemented");
+      return signerAccount.getBalance({
+        address: signerAccount.account.address
+      });
     }
   };
 };

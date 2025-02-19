@@ -1,8 +1,8 @@
 import { ACCOUNT_NAMES } from "./constants";
 
 export type AccountNames = (typeof ACCOUNT_NAMES)[number];
-export type AccountKeys = {
-  [K in AccountNames]: `0x${string}`;
+export type AccountValue<T> = {
+  [K in AccountNames]: T;
 };
 
 export type ShieldTx = {
@@ -17,3 +17,15 @@ export type WithdrawTx = {
 };
 
 export type ShortTx = ShieldTx | WithdrawTx;
+
+export type TestDescription = {
+  id: number;
+  actions: {
+    op: {
+      type: "NewAccount" | "Deposit" | "Withdraw";
+      amount: bigint;
+      to?: AccountNames;
+    };
+    actor: AccountNames;
+  }[];
+};

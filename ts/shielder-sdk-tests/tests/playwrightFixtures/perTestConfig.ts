@@ -3,14 +3,10 @@ import { ACCOUNT_NAMES } from "@tests/constants";
 import { generatePrivateKey } from "viem/accounts";
 import { GlobalConfigFixture } from "./globalConfig";
 import { JSHandle, Page } from "@playwright/test";
-import { AccountKeys, AccountNames } from "@tests/types";
-
-export type WebSdk = {
-  [K in AccountNames]: ShielderClientFixture;
-};
+import { AccountValue } from "@tests/types";
 
 export type PerTestConfigFixture = {
-  webSdk: JSHandle<WebSdk>;
+  webSdk: JSHandle<AccountValue<ShielderClientFixture>>;
 };
 
 export const perTestConfigFixture = async (
@@ -20,7 +16,7 @@ export const perTestConfigFixture = async (
   }: { workerPage: Page; globalConfig: GlobalConfigFixture },
   use: (r: PerTestConfigFixture) => Promise<void>
 ) => {
-  const shielderKeys = {} as AccountKeys;
+  const shielderKeys = {} as AccountValue<`0x${string}`>;
   for (const name of ACCOUNT_NAMES) {
     shielderKeys[name] = generatePrivateKey();
   }
@@ -41,10 +37,10 @@ const createWebSdk = async ({
   accountNames
 }: {
   globalConfig: GlobalConfigFixture;
-  shielderKeys: AccountKeys;
+  shielderKeys: AccountValue<`0x${string}`>;
   accountNames: typeof ACCOUNT_NAMES;
-}): Promise<WebSdk> => {
-  const webSdk = {} as WebSdk;
+}): Promise<AccountValue<ShielderClientFixture>> => {
+  const webSdk = {} as AccountValue<ShielderClientFixture>;
 
   for (const name of accountNames) {
     const clientFixture = await window.testFixtures.setupShielderClient(
