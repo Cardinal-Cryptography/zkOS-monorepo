@@ -123,7 +123,6 @@ describe("StateManager", () => {
 
   describe("updateAccountState", () => {
     it("updates state when all conditions are met", async () => {
-      const nativeToken = createNativeToken();
       const newState: AccountState = {
         id: testId,
         nonce: 1n,
