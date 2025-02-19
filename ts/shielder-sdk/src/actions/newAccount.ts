@@ -26,6 +26,7 @@ export interface NewAccountCalldata {
 
 export class NewAccountAction extends NoteAction {
   contract: IContract;
+
   constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
     this.contract = contract;
@@ -66,7 +67,10 @@ export class NewAccountAction extends NoteAction {
       trapdoor,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
-      anonymityRevokerPubkey: Scalar.fromBigint(anonymityRevokerPubkey)
+      anonymityRevokerPubkey: {
+        x: Scalar.fromBigint(anonymityRevokerPubkey.x),
+        y: Scalar.fromBigint(anonymityRevokerPubkey.y)
+      }
     };
   }
 

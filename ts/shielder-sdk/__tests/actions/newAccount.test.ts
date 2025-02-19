@@ -14,10 +14,14 @@ import { NewAccountAction } from "../../src/actions/newAccount";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
-import { createNativeToken } from "../../src/types";
-import { nativeTokenAddress } from "../../src/constants";
+import { nativeToken } from "../../src/types";
 
-const ANONYMITY_REVOKER_PUBKEY = 1n;
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+
+const ANONYMITY_REVOKER_PUBKEY = {
+  x: 123n,
+  y: 456n
+};
 
 describe("NewAccountAction", () => {
   let cryptoClient: MockedCryptoClient;
@@ -57,7 +61,7 @@ describe("NewAccountAction", () => {
       balance: 0n,
       currentNote: Scalar.fromBigint(0n),
       storageSchemaVersion: 0,
-      token: createNativeToken()
+      token: nativeToken()
     };
   });
 

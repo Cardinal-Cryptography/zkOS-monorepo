@@ -1,9 +1,10 @@
 export {
+  ShielderClient,
   createShielderClient,
   SendShielderTransaction,
-  ShielderCallbacks,
   OutdatedSdkError,
-  ShielderClient,
+  ShielderCallbacks,
+  QuotedFees,
   ShielderOperation
 } from "@/client";
 export { type AccountState, type ShielderTransaction } from "@/state";
@@ -12,7 +13,7 @@ export {
   type ERC20Token,
   type NativeToken,
   type Token,
-  createERC20Token,
-  createNativeToken
+  nativeToken,
+  erc20Token
 } from "@/types";
 export { shieldActionGasLimit } from "@/constants";

@@ -39,7 +39,7 @@ vitest.mock("viem", async () => {
 });
 
 import { StateSynchronizer } from "../src/state";
-import { createNativeToken } from "../src/types";
+import { nativeToken } from "../src/types";
 
 describe("ShielderClient", () => {
   let client: ShielderClient;
@@ -263,7 +263,7 @@ describe("ShielderClient", () => {
         balance: 1000n,
         currentNote: {} as any,
         storageSchemaVersion: 1,
-        token: createNativeToken()
+        token: nativeToken()
       };
 
       const state = await client.accountState(nativeTokenAddress);

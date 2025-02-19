@@ -19,8 +19,9 @@ import {
   WithdrawResponse
 } from "../../src/chain/relayer";
 import { encodePacked, hexToBigInt, keccak256 } from "viem";
-import { createNativeToken } from "../../src/types";
-import { nativeTokenAddress } from "../../src/constants";
+import { nativeToken } from "../../src/types";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectPubInputsCorrect = async (
   pubInputs: WithdrawPubInputs,
@@ -159,7 +160,7 @@ describe("WithdrawAction", () => {
       ),
       currentNoteIndex: 100n,
       storageSchemaVersion: 0,
-      token: createNativeToken()
+      token: nativeToken()
     };
   });
 

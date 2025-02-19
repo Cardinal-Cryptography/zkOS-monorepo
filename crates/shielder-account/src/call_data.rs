@@ -6,7 +6,7 @@ use shielder_circuits::{
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Field, Fr, ProverKnowledge, PublicInputProvider,
+    AsymPublicKey, Field, Fr, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
     ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
@@ -56,7 +56,7 @@ pub trait CallType {
 
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
-    type Extra = U256; // temporarily; target: `AsymPublicKey` (not yet visible)
+    type Extra = AsymPublicKey<U256>;
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountNativeCall;
 
@@ -71,7 +71,10 @@ impl CallType for NewAccountCallType {
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
             token_address: NATIVE_TOKEN_ADDRESS,
-            anonymity_revoker_public_key: u256_to_field(anonymity_revoker_public_key),
+            anonymity_revoker_public_key: AsymPublicKey {
+                x: u256_to_field(anonymity_revoker_public_key.x),
+                y: u256_to_field(anonymity_revoker_public_key.y),
+            },
         }
     }
 
@@ -131,6 +134,7 @@ impl CallType for DepositCallType {
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
+            mac_salt: u256_to_field(account.mac_salt),
         }
     }
 
@@ -146,6 +150,8 @@ impl CallType for DepositCallType {
             oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
             merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
+            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
+            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof.to_vec()),
         }
     }
@@ -199,6 +205,7 @@ impl CallType for WithdrawCallType {
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
             commitment: u256_to_field(commitment),
+            mac_salt: u256_to_field(account.mac_salt),
         }
     }
 
@@ -219,6 +226,8 @@ impl CallType for WithdrawCallType {
             proof: Bytes::from(proof),
             relayerAddress: extra.relayer_address,
             relayerFee: extra.relayer_fee,
+            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
+            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
         }
     }
 }

@@ -14,8 +14,9 @@ import { DepositAction } from "../../src/actions/deposit";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
-import { createNativeToken } from "../../src/types";
-import { nativeTokenAddress } from "../../src/constants";
+import { nativeToken } from "../../src/types";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
@@ -126,7 +127,7 @@ describe("DepositAction", () => {
       ),
       currentNoteIndex: 100n,
       storageSchemaVersion: 0,
-      token: createNativeToken()
+      token: nativeToken()
     };
   });
 
@@ -266,6 +267,8 @@ describe("DepositAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.calldata.proof
       );
 
@@ -300,6 +303,8 @@ describe("DepositAction", () => {
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()

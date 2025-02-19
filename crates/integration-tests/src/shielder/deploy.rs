@@ -8,6 +8,7 @@ use evm_utils::{
     EvmRunner,
 };
 use rstest::{fixture, rstest};
+use shielder_circuits::AsymPublicKey;
 use shielder_contract::ShielderContract::initializeCall;
 
 use crate::{
@@ -52,7 +53,10 @@ pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 
 
 pub const INITIAL_DEPOSIT_LIMIT: U256 = U256::MAX;
 
-pub const ANONYMITY_REVOKER_PKEY: U256 = U256::from_limbs([65, 78, 79, 78]); // ANON
+pub const ANONYMITY_REVOKER_PKEY: AsymPublicKey<U256> = AsymPublicKey {
+    x: U256::from_limbs([65, 78, 79, 78]), // ANON
+    y: U256::from_limbs([89, 77, 73, 84]), // YMIT
+};
 
 /// Contains full deployment addresses.
 pub struct ShielderContractSuite {
@@ -186,7 +190,8 @@ pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address 
     let initialization_data = initializeCall {
         initialOwner: owner,
         _depositLimit: INITIAL_DEPOSIT_LIMIT,
-        _anonymityRevokerPublicKey: ANONYMITY_REVOKER_PKEY,
+        _anonymityRevokerPublicKeyX: ANONYMITY_REVOKER_PKEY.x,
+        _anonymityRevokerPublicKeyY: ANONYMITY_REVOKER_PKEY.y,
     }
     .abi_encode();
 

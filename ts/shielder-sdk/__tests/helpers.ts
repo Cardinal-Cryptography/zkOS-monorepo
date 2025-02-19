@@ -138,7 +138,10 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
       hId: Scalar.fromBigint(0n),
       initialDeposit: Scalar.fromBigint(0n),
       tokenAddress: Scalar.fromBigint(0n),
-      anonymityRevokerPubkey: Scalar.fromBigint(0n),
+      anonymityRevokerPubkey: {
+        x: Scalar.fromBigint(0n),
+        y: Scalar.fromBigint(0n)
+      },
       symKeyEncryption: Scalar.fromBigint(0n)
     });
   }
@@ -160,7 +163,9 @@ class MockedDepositCircuit implements DepositCircuit {
       hNullifierOld: Scalar.fromBigint(0n),
       hNoteNew: Scalar.fromBigint(0n),
       value: Scalar.fromBigint(0n),
-      tokenAddress: Scalar.fromBigint(0n)
+      tokenAddress: Scalar.fromBigint(0n),
+      macSalt: Scalar.fromBigint(0n),
+      macCommitment: Scalar.fromBigint(0n)
     });
   }
 
@@ -182,7 +187,9 @@ class MockedWithdrawCircuit implements WithdrawCircuit {
       hNoteNew: Scalar.fromBigint(0n),
       value: Scalar.fromBigint(0n),
       tokenAddress: Scalar.fromBigint(0n),
-      commitment: Scalar.fromBigint(0n)
+      commitment: Scalar.fromBigint(0n),
+      macSalt: Scalar.fromBigint(0n),
+      macCommitment: Scalar.fromBigint(0n)
     });
   }
 
