@@ -156,6 +156,9 @@ jobs:
         run: pnpm build
         working-directory: ts
 
+      - name: Build shielder-relayer
+        run: cd crates/shielder-relayer && make build
+
       - name: Run e2e sdk tests
         run: |
           NO_FORMATTING=true ./tooling-e2e-tests/ts_sdk_tests.sh
