@@ -7,7 +7,6 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
-import { splitUint8 } from "@/utils";
 
 type WasmNewAccountCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").NewAccountCircuit
