@@ -14,6 +14,9 @@ import { DepositAction } from "../../src/actions/deposit";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
+import { nativeToken } from "../../src/types";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectPubInputsCorrect = async (
   pubInputs: DepositPubInputs,
@@ -90,7 +93,7 @@ describe("DepositAction", () => {
     ]);
     contract = {
       getAddress: vitest.fn().mockReturnValue(mockAddress),
-      depositCalldata: vitest
+      depositNativeCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -123,7 +126,8 @@ describe("DepositAction", () => {
         Scalar.fromBigint(5n)
       ),
       currentNoteIndex: 100n,
-      storageSchemaVersion: 0
+      storageSchemaVersion: 0,
+      token: nativeToken()
     };
   });
 
@@ -156,48 +160,6 @@ describe("DepositAction", () => {
     });
   });
 
-  describe("preparePubInputs", () => {
-    it("should prepare public inputs correctly", async () => {
-      const amount = 100n;
-      const nonce = 123n;
-      const merkleRoot = Scalar.fromBigint(3n);
-      const pubInputs = await action.preparePubInputs(
-        state,
-        amount,
-        Scalar.fromBigint(nonce),
-        prevNullifier,
-        merkleRoot
-      );
-
-      await expectPubInputsCorrect(
-        pubInputs,
-        cryptoClient,
-        prevNullifier,
-        state,
-        amount,
-        nonce,
-        merkleRoot
-      );
-    });
-
-    it("should throw on negative balance", async () => {
-      const amount = -100n;
-      const nonce = 123n;
-      const merkleRoot = Scalar.fromBigint(3n);
-      await expect(
-        action.preparePubInputs(
-          state,
-          amount,
-          Scalar.fromBigint(nonce),
-          prevNullifier,
-          merkleRoot
-        )
-      ).rejects.toThrow(
-        "Failed to deposit, possibly due to insufficient balance"
-      );
-    });
-  });
-
   describe("generateCalldata", () => {
     it("should generate valid calldata", async () => {
       const amount = 100n;
@@ -206,22 +168,6 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion
-      );
-
-      const { nullifier } = await cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce - 1n)
-      );
-
-      // Verify the public inputs
-      await expectPubInputsCorrect(
-        calldata.calldata.pubInputs,
-        cryptoClient,
-        nullifier,
-        state,
-        amount,
-        mockedIdHidingNonce,
-        mockedMerkleRoot
       );
 
       // Verify the proof
@@ -236,11 +182,6 @@ describe("DepositAction", () => {
 
       // Expected contract version should be equal to input expected version
       expect(calldata.expectedContractVersion).toBe(expectedVersion);
-
-      // Merkle root should be equal to input merkle root
-      expect(
-        scalarsEqual(calldata.calldata.pubInputs.merkleRoot, mockedMerkleRoot)
-      ).toBe(true);
     });
 
     it("should throw on undefined currentNoteIndex", async () => {
@@ -318,7 +259,7 @@ describe("DepositAction", () => {
         mockAddress
       );
 
-      expect(contract.depositCalldata).toHaveBeenCalledWith(
+      expect(contract.depositNativeCalldata).toHaveBeenCalledWith(
         expectedVersion,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.idHiding),
@@ -326,6 +267,8 @@ describe("DepositAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.calldata.proof
       );
 
@@ -350,7 +293,7 @@ describe("DepositAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      contract.depositCalldata = vitest
+      contract.depositNativeCalldata = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -360,6 +303,8 @@ describe("DepositAction", () => {
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()

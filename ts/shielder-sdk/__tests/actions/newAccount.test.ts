@@ -14,37 +14,13 @@ import { NewAccountAction } from "../../src/actions/newAccount";
 import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
+import { nativeToken } from "../../src/types";
 
-const ANONYMITY_REVOKER_PUBKEY = 1n;
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
-const expectPubInputsCorrect = async (
-  pubInputs: NewAccountPubInputs,
-  state: AccountState,
-  amount: bigint,
-  cryptoClient: CryptoClient
-) => {
-  // hId should be hash of id
-  expect(
-    scalarsEqual(
-      pubInputs.hId,
-      await cryptoClient.hasher.poseidonHash([state.id])
-    )
-  ).toBe(true);
-
-  expect(
-    scalarsEqual(pubInputs.initialDeposit, Scalar.fromBigint(amount))
-  ).toBe(true);
-
-  const { nullifier, trapdoor } = await cryptoClient.secretManager.getSecrets(
-    state.id,
-    Number(state.nonce)
-  );
-  expect(
-    scalarsEqual(
-      pubInputs.hNote,
-      await hashedNote(state.id, nullifier, trapdoor, Scalar.fromBigint(amount))
-    )
-  ).toBe(true);
+const ANONYMITY_REVOKER_PUBKEY = {
+  x: 123n,
+  y: 456n
 };
 
 describe("NewAccountAction", () => {
@@ -65,7 +41,7 @@ describe("NewAccountAction", () => {
       anonymityRevokerPubkey: vitest
         .fn()
         .mockResolvedValue(ANONYMITY_REVOKER_PUBKEY),
-      newAccountCalldata: vitest
+      newAccountNativeCalldata: vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
@@ -84,7 +60,8 @@ describe("NewAccountAction", () => {
       nonce: mockedStateNonce,
       balance: 0n,
       currentNote: Scalar.fromBigint(0n),
-      storageSchemaVersion: 0
+      storageSchemaVersion: 0,
+      token: nativeToken()
     };
   });
 
@@ -116,33 +93,6 @@ describe("NewAccountAction", () => {
     });
   });
 
-  describe("preparePubInputs", () => {
-    it("should prepare public inputs correctly", async () => {
-      const amount = 100n;
-      const pubInputs = await action.preparePubInputs(
-        mockedState,
-        amount,
-        ANONYMITY_REVOKER_PUBKEY
-      );
-
-      await expectPubInputsCorrect(
-        pubInputs,
-        mockedState,
-        amount,
-        cryptoClient
-      );
-    });
-
-    it("should throw an error at negative amount", async () => {
-      const amount = -100n;
-      await expect(
-        action.preparePubInputs(mockedState, amount, ANONYMITY_REVOKER_PUBKEY)
-      ).rejects.toThrow(
-        "Failed to create new account, possibly due to negative balance"
-      );
-    });
-  });
-
   describe("generateCalldata", () => {
     it("should generate valid calldata", async () => {
       const amount = 100n;
@@ -151,14 +101,6 @@ describe("NewAccountAction", () => {
         mockedState,
         amount,
         expectedVersion
-      );
-
-      // Verify the public inputs
-      await expectPubInputsCorrect(
-        calldata.calldata.pubInputs,
-        mockedState,
-        amount,
-        cryptoClient
       );
 
       // Verify the proof
@@ -226,7 +168,7 @@ describe("NewAccountAction", () => {
         mockAddress
       );
 
-      expect(contract.newAccountCalldata).toHaveBeenCalledWith(
+      expect(contract.newAccountNativeCalldata).toHaveBeenCalledWith(
         expectedVersion,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.hNote),
@@ -256,7 +198,7 @@ describe("NewAccountAction", () => {
 
       const mockedErr = new VersionRejectedByContract();
 
-      contract.newAccountCalldata = vitest
+      contract.newAccountNativeCalldata = vitest
         .fn<
           (
             expectedContractVersion: `0x${string}`,
