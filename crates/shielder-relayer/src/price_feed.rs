@@ -24,7 +24,7 @@ pub enum Coin {
 /// A collection of prices for various coins.
 ///
 /// The underlying structure is behind a mutex and a process to update it
-/// asynchronously can be strated with `start_price_feed`.
+/// asynchronously can be started with `start_price_feed`.
 #[derive(Clone)]
 pub struct Prices {
     validity: time::Duration,
