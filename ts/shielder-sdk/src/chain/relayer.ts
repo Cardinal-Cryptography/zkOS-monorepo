@@ -1,4 +1,5 @@
 import { feeAddressPath, feePath, relayPath } from "@/constants";
+import { Token } from "@/types";
 import { CustomError } from "ts-custom-error";
 import { Address } from "viem";
 import { z } from "zod";
@@ -35,13 +36,16 @@ export type IRelayer = {
   address: () => Promise<Address>;
   withdraw: (
     expectedContractVersion: `0x${string}`,
+    token: Token,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
     amount: bigint,
     proof: Uint8Array,
-    withdrawAddress: `0x${string}`
+    withdrawalAddress: `0x${string}`,
+    macSalt: bigint,
+    macCommitment: bigint
   ) => Promise<WithdrawResponse>;
   quoteFees: () => Promise<QuoteFeesResponse>;
 };
@@ -55,13 +59,16 @@ export class Relayer implements IRelayer {
 
   withdraw = async (
     expectedContractVersion: `0x${string}`,
+    token: Token,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
     amount: bigint,
     proof: Uint8Array,
-    withdrawAddress: `0x${string}`
+    withdrawalAddress: `0x${string}`,
+    macSalt: bigint,
+    macCommitment: bigint
   ): Promise<WithdrawResponse> => {
     let response;
     try {
@@ -75,10 +82,18 @@ export class Relayer implements IRelayer {
             expected_contract_version: expectedContractVersion,
             id_hiding: idHiding,
             amount,
-            withdraw_address: withdrawAddress,
+            withdraw_address: withdrawalAddress,
             merkle_root: merkleRoot,
             nullifier_hash: oldNullifierHash,
             new_note: newNote,
+            mac_salt: macSalt,
+            mac_commitment: macCommitment,
+            fee_token:
+              token.type === "native"
+                ? "Native"
+                : {
+                    ERC20: token.address
+                  },
             proof: Array.from(proof)
           },
           (_, value: unknown) =>

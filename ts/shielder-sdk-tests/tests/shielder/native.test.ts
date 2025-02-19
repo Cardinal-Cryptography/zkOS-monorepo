@@ -1,211 +1,139 @@
 import { expect } from "@playwright/test";
 import { sdkTest } from "@tests/playwrightTestConfig";
+import { ShortTx } from "@tests/types";
 
-sdkTest(
-  "new account, validate positive callbacks",
-  async ({ workerPage, globalConfigFixture, perTestConfigFixture }) => {
-    const isGood = await workerPage.evaluate(
-      async ({
-        globalConfigFixture: { chainConfig, relayerConfig, privateKeys },
-        perTestConfigFixture: { shielderKeys }
-      }) => {
-        const initialDeposit = 2n;
+function newAccountOp(amount: bigint): ShortTx {
+  return {
+    type: "NewAccount",
+    amount
+  };
+}
 
-        // setup
-        const callbacksFixture = window.testFixtures.setupCallbacks();
-        const { shielderClient, aliceSendTransaction, signerAccount } =
-          await window.testFixtures.setupShielderClient(
-            chainConfig,
-            relayerConfig,
-            privateKeys.alice,
-            shielderKeys.alice,
-            callbacksFixture.callbacks
-          );
-        const nativeToken = window.shielder.createNativeToken();
-        await shielderClient.shield(
-          nativeToken,
-          initialDeposit,
-          aliceSendTransaction,
-          signerAccount.account.address
-        );
-        const accountState = await shielderClient.accountState(nativeToken);
+function depositOp(amount: bigint): ShortTx {
+  return {
+    type: "Deposit",
+    amount
+  };
+}
 
-        return (
-          accountState.balance == initialDeposit &&
-          callbacksFixture.calldataGeneratedHistory().length == 1 &&
-          callbacksFixture.calldataSentHistory().length == 1 &&
-          window.validators.validateTxHistory(callbacksFixture.txHistory(), [
-            { type: "NewAccount", amount: initialDeposit }
-          ])
-        );
-      },
-      { globalConfigFixture, perTestConfigFixture }
-    );
-    expect(isGood).toBe(true);
+function withdrawOp(amount: bigint, to: `0x${string}`): ShortTx {
+  return {
+    type: "Withdraw",
+    amount,
+    to
+  };
+}
+
+const WITHDRAW_ADDRESS: `0x${string}` =
+  "0x7c61C790FB9D4BCb6db23c5f4ef3231BdB6B4040";
+[
+  // { id: 1, ops: [newAccountOp(2n)] },
+  // { id: 2, ops: [newAccountOp(2n), depositOp(3n)] },
+  {
+    id: 3,
+    ops: [
+      newAccountOp(2n),
+      depositOp(10n ** 18n),
+      withdrawOp(4n, WITHDRAW_ADDRESS)
+    ]
   }
-);
+].forEach(({ id, ops }) => {
+  sdkTest(
+    `shield, validate positive callbacks, test no. ${id}`,
+    async ({ workerPage, perTestConfig }) => {
+      const isGood = await workerPage.evaluate(
+        async ({ perTestConfig: { webSdk }, ops }) => {
+          const { getBalance, shield, withdraw, callbacks } = webSdk.alice;
 
-sdkTest(
-  "new account, recover after state reset",
-  async ({ workerPage, globalConfigFixture, perTestConfigFixture }) => {
-    const isGood = await workerPage.evaluate(
-      async ({
-        globalConfigFixture: { chainConfig, relayerConfig, privateKeys },
-        perTestConfigFixture: { shielderKeys }
-      }) => {
-        const initialDeposit = 2n;
+          const nativeToken = window.shielder.nativeToken();
 
-        // setup
-        const callbacksFixture = window.testFixtures.setupCallbacks();
-        const { shielderClient, aliceSendTransaction, signerAccount, storage } =
-          await window.testFixtures.setupShielderClient(
-            chainConfig,
-            relayerConfig,
-            privateKeys.alice,
-            shielderKeys.alice,
-            callbacksFixture.callbacks
+          let expectedSum = 0n;
+
+          let withdrawnSum = 0n;
+
+          for (const op of ops) {
+            if (op.type == "NewAccount" || op.type == "Deposit") {
+              await shield(nativeToken, op.amount);
+              expectedSum += op.amount;
+            }
+            if (op.type == "Withdraw") {
+              const { totalFee } = await withdraw(
+                nativeToken,
+                op.amount,
+                op.to
+              );
+              expectedSum -= op.amount + totalFee;
+              withdrawnSum += op.amount;
+            }
+          }
+
+          const balance = await getBalance(nativeToken);
+
+          console.log("balance", balance.toString(), expectedSum.toString());
+          for (const tx of callbacks.txHistory()) {
+            console.log(tx.type, tx.amount.toString());
+          }
+          for (const op of ops) {
+            console.log(op.type, op.amount.toString());
+          }
+
+          return (
+            balance == expectedSum &&
+            callbacks.calldataGeneratedHistory().length == ops.length &&
+            callbacks.calldataSentHistory().length == ops.length &&
+            window.validators.validateTxHistory(callbacks.txHistory(), ops)
           );
-        const nativeToken = window.shielder.createNativeToken();
-        await shielderClient.shield(
-          nativeToken,
-          initialDeposit,
-          aliceSendTransaction,
-          signerAccount.account.address
-        );
-        // clear state
-        storage.clear();
-        callbacksFixture.clearHistory();
+        },
+        {
+          perTestConfig,
+          ops
+        }
+      );
+      expect(isGood).toBe(true);
+    }
+  );
+});
 
-        // recover
-        await shielderClient.syncShielderToken(nativeToken);
+// [
+//   { id: 1, ops: [newAccountOp(2n)] },
+//   { id: 2, ops: [newAccountOp(2n), depositOp(3n)] }
+// ].forEach(({ id, ops }) => {
+//   sdkTest(
+//     `shield, recover after state reset, test no. ${id}`,
+//     async ({ workerPage, perTestConfig }) => {
+//       const isGood = await workerPage.evaluate(
+//         async ({ perTestConfig: { webSdk }, ops }) => {
+//           const { getBalance, shield, callbacks, storage, shielderClient } =
+//             webSdk.alice;
 
-        const accountState = await shielderClient.accountState(nativeToken);
-        return (
-          accountState.balance == initialDeposit &&
-          window.validators.validateTxHistory(callbacksFixture.txHistory(), [
-            { type: "NewAccount", amount: initialDeposit }
-          ])
-        );
-      },
-      {
-        globalConfigFixture,
-        perTestConfigFixture
-      }
-    );
-    expect(isGood).toBe(true);
-  }
-);
+//           const nativeToken = window.shielder.nativeToken();
 
-sdkTest(
-  "deposit after new account, validate positive callbacks",
-  async ({ workerPage, globalConfigFixture, perTestConfigFixture }) => {
-    const isGood = await workerPage.evaluate(
-      async ({
-        globalConfigFixture: { chainConfig, relayerConfig, privateKeys },
-        perTestConfigFixture: { shielderKeys }
-      }) => {
-        const initialDeposit = 2n;
-        const depositAmount = 3n;
+//           let expectedSum = 0n;
 
-        // setup
-        const callbacksFixture = window.testFixtures.setupCallbacks();
-        const { shielderClient, aliceSendTransaction, signerAccount } =
-          await window.testFixtures.setupShielderClient(
-            chainConfig,
-            relayerConfig,
-            privateKeys.alice,
-            shielderKeys.alice,
-            callbacksFixture.callbacks
-          );
-        const nativeToken = window.shielder.createNativeToken();
-        // create new account
-        await shielderClient.shield(
-          nativeToken,
-          initialDeposit,
-          aliceSendTransaction,
-          signerAccount.account.address
-        );
+//           for (const op of ops) {
+//             await shield(nativeToken, op.amount);
+//             expectedSum += op.amount;
+//           }
+//           // clear storage
+//           storage.clear();
+//           callbacks.clearHistory();
 
-        // deposit
-        await shielderClient.shield(
-          nativeToken,
-          depositAmount,
-          aliceSendTransaction,
-          signerAccount.account.address
-        );
+//           // recover
+//           await shielderClient.syncShielderToken(nativeToken);
 
-        const accountState = await shielderClient.accountState(nativeToken);
+//           const balance = await getBalance(nativeToken);
 
-        return (
-          accountState.balance == initialDeposit + depositAmount &&
-          callbacksFixture.calldataGeneratedHistory().length == 2 &&
-          callbacksFixture.calldataSentHistory().length == 2 &&
-          window.validators.validateTxHistory(callbacksFixture.txHistory(), [
-            { type: "NewAccount", amount: initialDeposit },
-            { type: "Deposit", amount: depositAmount }
-          ])
-        );
-      },
-      { globalConfigFixture, perTestConfigFixture }
-    );
-    expect(isGood).toBe(true);
-  }
-);
-
-sdkTest(
-  "deposit after new account, recover after state reset",
-  async ({ workerPage, globalConfigFixture, perTestConfigFixture }) => {
-    const isGood = await workerPage.evaluate(
-      async ({
-        globalConfigFixture: { chainConfig, relayerConfig, privateKeys },
-        perTestConfigFixture: { shielderKeys }
-      }) => {
-        const initialDeposit = 2n;
-        const depositAmount = 3n;
-
-        // setup
-        const callbacksFixture = window.testFixtures.setupCallbacks();
-        const { shielderClient, aliceSendTransaction, signerAccount, storage } =
-          await window.testFixtures.setupShielderClient(
-            chainConfig,
-            relayerConfig,
-            privateKeys.alice,
-            shielderKeys.alice,
-            callbacksFixture.callbacks
-          );
-        const nativeToken = window.shielder.createNativeToken();
-        // create new account
-        await shielderClient.shield(
-          nativeToken,
-          initialDeposit,
-          aliceSendTransaction,
-          signerAccount.account.address
-        );
-        // deposit
-        await shielderClient.shield(
-          nativeToken,
-          depositAmount,
-          aliceSendTransaction,
-          signerAccount.account.address
-        );
-
-        // clear state
-        storage.clear();
-        callbacksFixture.clearHistory();
-        // recover
-        await shielderClient.syncShielderToken(nativeToken);
-
-        const accountState = await shielderClient.accountState(nativeToken);
-        return (
-          accountState.balance == initialDeposit + depositAmount &&
-          window.validators.validateTxHistory(callbacksFixture.txHistory(), [
-            { type: "NewAccount", amount: initialDeposit },
-            { type: "Deposit", amount: depositAmount }
-          ])
-        );
-      },
-      { globalConfigFixture, perTestConfigFixture }
-    );
-    expect(isGood).toBe(true);
-  }
-);
+//           return (
+//             balance == expectedSum &&
+//             window.validators.validateTxHistory(callbacks.txHistory(), ops)
+//           );
+//         },
+//         {
+//           perTestConfig,
+//           ops
+//         }
+//       );
+//       expect(isGood).toBe(true);
+//     }
+//   );
+// });

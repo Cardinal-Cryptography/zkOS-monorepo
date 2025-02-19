@@ -22,7 +22,7 @@ export interface WithdrawCalldata {
   };
   provingTimeMillis: number;
   amount: bigint;
-  address: Address;
+  withdrawalAddress: Address;
   token: Token;
 }
 
@@ -194,7 +194,7 @@ export class WithdrawAction extends NoteAction {
       },
       provingTimeMillis: provingTime,
       amount,
-      address,
+      withdrawalAddress: address,
       token: state.token
     };
   }
@@ -211,18 +211,21 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       calldata: { pubInputs, proof },
       amount,
-      address
+      withdrawalAddress
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
         expectedContractVersion,
+        calldata.token,
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
         amount,
         proof,
-        address
+        withdrawalAddress,
+        scalarToBigint(pubInputs.macSalt),
+        scalarToBigint(pubInputs.macCommitment)
       )
       .catch((e) => {
         if (e instanceof VersionRejectedByRelayer) {

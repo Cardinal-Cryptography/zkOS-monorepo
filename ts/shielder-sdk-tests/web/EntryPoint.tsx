@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import {
-  createNativeToken,
+  nativeToken,
   createShielderClient,
   InjectedStorageInterface,
   NativeToken,
@@ -15,8 +15,8 @@ import {
   ShielderClientFixture,
   setupShielderClient
 } from "./fixtures/setupShielderClient";
-import { CallbacksFixture, setupCallbacks } from "./fixtures/setupCallbacks";
 import { validateTxHistory } from "./validators/txHistory";
+import { ShortTx } from "@tests/types";
 
 declare global {
   interface Window {
@@ -36,20 +36,14 @@ declare global {
           url: string;
         },
         privateKey: `0x${string}`,
-        shielderKey: `0x${string}`,
-        clientCallbacks?: ShielderCallbacks
+        shielderKey: `0x${string}`
       ) => Promise<ShielderClientFixture>;
-      setupCallbacks: () => CallbacksFixture;
     };
 
     validators: {
       validateTxHistory: (
         txHistory: ShielderTransaction[],
-        expected: {
-          type: "NewAccount" | "Deposit" | "Withdraw";
-          amount: bigint;
-          to?: `0x${string}`;
-        }[]
+        expected: ShortTx[]
       ) => boolean;
     };
 
@@ -64,7 +58,7 @@ declare global {
         cryptoClient: CryptoClient,
         callbacks?: ShielderCallbacks
       ) => ShielderClient;
-      createNativeToken: () => NativeToken;
+      nativeToken: () => NativeToken;
     };
 
     initialized: boolean;
@@ -76,7 +70,6 @@ function EntryPoint() {
     // test fixtures initialization
     window.testFixtures = window.testFixtures || {};
     window.testFixtures.setupShielderClient = setupShielderClient;
-    window.testFixtures.setupCallbacks = setupCallbacks;
     // validators initialization
     window.validators = window.validators || {};
     window.validators.validateTxHistory = validateTxHistory;
@@ -86,7 +79,7 @@ function EntryPoint() {
     // Expose shielder utilities
     window.shielder = window.shielder || {};
     window.shielder.createShielderClient = createShielderClient;
-    window.shielder.createNativeToken = createNativeToken;
+    window.shielder.nativeToken = nativeToken;
     window.initialized = true;
   }, []);
 

@@ -37,6 +37,7 @@ export type ShielderTransaction = {
   type: "NewAccount" | "Deposit" | "Withdraw";
   amount: bigint;
   to?: Address;
+  relayerFee?: bigint;
   txHash: Hex;
   block: bigint;
 };

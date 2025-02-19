@@ -1,12 +1,9 @@
 import { ShielderTransaction } from "@cardinal-cryptography/shielder-sdk";
+import { ShortTx } from "@tests/types";
 
 export const validateTxHistory = (
   txHistory: ShielderTransaction[],
-  expected: {
-    type: "NewAccount" | "Deposit" | "Withdraw";
-    amount: bigint;
-    to?: `0x${string}`;
-  }[]
+  expected: ShortTx[]
 ): boolean => {
   if (txHistory.length !== expected.length) {
     return false;
@@ -20,12 +17,16 @@ export const validateTxHistory = (
       return false;
     }
 
-    if (tx.amount !== expectedTx.amount) {
-      return false;
-    }
-
-    if (expectedTx.to) {
+    if (expectedTx.type === "Withdraw") {
+      if (tx.to === undefined || tx.relayerFee === undefined) return false;
       if (tx.to !== expectedTx.to) {
+        return false;
+      }
+      if (tx.amount - tx.relayerFee !== expectedTx.amount) {
+        return false;
+      }
+    } else {
+      if (tx.amount !== expectedTx.amount) {
         return false;
       }
     }

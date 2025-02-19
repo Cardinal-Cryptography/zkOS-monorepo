@@ -51,6 +51,7 @@ export type NoteEvent = {
   newNote: bigint;
   txHash: Hash;
   to?: Address;
+  relayerFee?: bigint;
   block: bigint;
 };
 
@@ -359,6 +360,10 @@ export class Contract implements IContract {
         to:
           event.eventName === "Withdraw"
             ? (event.args.withdrawalAddress as Address)
+            : undefined,
+        relayerFee:
+          event.eventName === "Withdraw"
+            ? (event.args.fee as bigint)
             : undefined
       } as NoteEvent;
     });

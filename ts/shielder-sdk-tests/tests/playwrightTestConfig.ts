@@ -13,10 +13,10 @@ import { workerPageFixture } from "./playwrightFixtures/workerPage";
 
 export const sdkTest = test.extend<
   {
-    perTestConfigFixture: PerTestConfigFixture;
+    perTestConfig: PerTestConfigFixture;
   },
   {
-    globalConfigFixture: GlobalConfigFixture;
+    globalConfig: GlobalConfigFixture;
     workerPage: Page;
   }
 >({
@@ -27,10 +27,10 @@ export const sdkTest = test.extend<
   // done to save time on WASM initialization. Within worker, tests are run sequentially, so there
   // are no thread-safety concerns here.
   workerPage: [workerPageFixture, { scope: "worker" }],
-
-  globalConfigFixture: [globalConfigFixture, { scope: "worker" }],
-
-  perTestConfigFixture: [perTestConfigFixture, { scope: "test" }]
+  // Setup EVM accounts, prefilled with some funds.
+  globalConfig: [globalConfigFixture, { scope: "worker" }],
+  // Setup clients for each EVM account with newly generated Shielder keys.
+  perTestConfig: [perTestConfigFixture, { scope: "test" }]
 });
 
 // Handles a `Uint8Array` returned from `page.evaluate`. Probably due to the way Playwright handles

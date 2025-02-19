@@ -1,10 +1,7 @@
 import { BalanceManager } from "@tests/balanceManager";
 import { getChainConfig, getRelayerConfig } from "@tests/chainConfig";
-import {
-  ACCOUNT_NAMES,
-  AccountKeys,
-  INITIAL_EVM_BALANCE
-} from "@tests/constants";
+import { ACCOUNT_NAMES, INITIAL_EVM_BALANCE } from "@tests/constants";
+import { AccountKeys } from "@tests/types";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 
 export type GlobalConfigFixture = {
