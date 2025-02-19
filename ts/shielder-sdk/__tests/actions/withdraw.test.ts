@@ -19,7 +19,7 @@ import {
   WithdrawResponse
 } from "../../src/chain/relayer";
 import { encodePacked, hexToBigInt, keccak256 } from "viem";
-import { nativeToken } from "../../src/types";
+import { nativeToken, Token } from "../../src/types";
 
 const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
@@ -330,13 +330,16 @@ describe("WithdrawAction", () => {
 
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
+        nativeToken(),
         scalarToBigint(calldata.calldata.pubInputs.idHiding),
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
         calldata.calldata.proof,
-        mockAddress
+        mockAddress,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment)
       );
 
       expect(txHash).toBe("0xtxHash");
@@ -360,13 +363,16 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
+            token: Token,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array,
-            withdrawAddress: `0x${string}`
+            withdrawalAddress: `0x${string}`,
+            macSalt: bigint,
+            macCommitment: bigint
           ) => Promise<WithdrawResponse>
         >()
         .mockRejectedValue(mockedErr);
@@ -392,13 +398,16 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
+            token: Token,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array,
-            withdrawAddress: `0x${string}`
+            withdrawalAddress: `0x${string}`,
+            macSalt: bigint,
+            macCommitment: bigint
           ) => Promise<WithdrawResponse>
         >()
         .mockRejectedValue(new Error("mocked contract rejection"));

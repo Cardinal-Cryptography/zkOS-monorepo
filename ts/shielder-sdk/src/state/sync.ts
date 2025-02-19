@@ -148,6 +148,7 @@ const eventToTransaction = (event: NoteEvent): ShielderTransaction => {
     type: event.name,
     amount: event.amount,
     to: event.to,
+    relayerFee: event.relayerFee,
     txHash: event.txHash,
     block: event.block
   };
