@@ -6,6 +6,6 @@ export default defineConfig({
   ...baseConfig,
   webServer: {
     ...baseConfig.webServer,
-    command: "VITE_PUBLIC_THREADS=1 PLASMO_PUBLIC_STORAGE_MODE=webapp pnpm vite"
+    command: "VITE_PUBLIC_THREADS=1 pnpm vite"
   }
 });
