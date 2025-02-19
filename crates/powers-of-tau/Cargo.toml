@@ -16,7 +16,5 @@ byteorder = { workspace = true }
 halo2_proofs = { workspace = true }
 halo2curves = { workspace = true }
 num-bigint = { workspace = true }
-shielder-circuits = { workspace = true }
-
-[dev-dependencies]
 rand = { workspace = true }
+shielder-circuits = { workspace = true }
