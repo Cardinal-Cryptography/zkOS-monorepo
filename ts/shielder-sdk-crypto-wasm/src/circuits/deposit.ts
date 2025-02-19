@@ -66,7 +66,6 @@ export class DepositCircuit
       values.trapdoorNew.bytes,
       values.macSalt.bytes
     );
-
     return Promise.resolve({
       idHiding: new Scalar(pubInputsBytes.id_hiding),
       merkleRoot: new Scalar(pubInputsBytes.merkle_root),

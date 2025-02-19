@@ -41,7 +41,6 @@ export class NewAccountCircuit
       )
     );
   }
-
   async pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
