@@ -4,11 +4,7 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -25,21 +21,10 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./web/*"
-      ],
-      "@tests/*": [
-        "./tests/*"
-      ],
-      "~*": [
-        "./web/*"
-      ]
+      "@/*": ["./web/*"],
+      "@tests/*": ["./tests/*"],
+      "~*": ["./web/*"]
     }
   },
-  "include": [
-    ".plasmo/index.d.ts",
-    "web/**/*",
-    "tests/**/*"
-  ],
-  "extends": "plasmo/templates/tsconfig.base"
+  "include": [".plasmo/index.d.ts", "web/**/*", "tests/**/*"]
 }

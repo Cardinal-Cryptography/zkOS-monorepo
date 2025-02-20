@@ -30,17 +30,20 @@ export class WithdrawAction extends NoteAction {
   private contract: IContract;
   private relayer: IRelayer;
   private nonceGenerator: INonceGenerator;
+  private chainId: bigint;
 
   constructor(
     contract: IContract,
     relayer: IRelayer,
     cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator
+    nonceGenerator: INonceGenerator,
+    chainId: bigint
   ) {
     super(cryptoClient);
     this.contract = contract;
     this.relayer = relayer;
     this.nonceGenerator = nonceGenerator;
+    this.chainId = chainId;
   }
 
   /**
@@ -70,12 +73,13 @@ export class WithdrawAction extends NoteAction {
     const encodingHash = hexToBigInt(
       keccak256(
         encodePacked(
-          ["bytes3", "uint256", "uint256", "uint256"],
+          ["bytes3", "uint256", "uint256", "uint256", "uint256"],
           [
             expectedContractVersion,
             hexToBigInt(address),
             hexToBigInt(relayerAddress),
-            relayerFee
+            relayerFee,
+            this.chainId
           ]
         )
       )

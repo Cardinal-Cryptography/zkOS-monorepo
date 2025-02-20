@@ -12,8 +12,6 @@ import {
   UnexpectedVersionInEvent
 } from "../../src/state/sync";
 import { MockedCryptoClient } from "../helpers";
-import { Address } from "viem";
-import { nativeTokenAddress } from "../../src/constants";
 import { nativeToken } from "../../src/types";
 
 // Test helpers
@@ -169,10 +167,10 @@ describe("StateSynchronizer", () => {
         1n
       ); // Initial nullifier hash -> block 1
 
-      await synchronizer.syncAccountState(nativeTokenAddress);
+      await synchronizer.syncAccountState(nativeToken());
 
       expect(stateManager.updateAccountState).toHaveBeenCalledWith(
-        nativeTokenAddress,
+        nativeToken(),
         newState
       );
       expect(syncCallback).toHaveBeenCalledWith({
@@ -220,7 +218,7 @@ describe("StateSynchronizer", () => {
         .mockResolvedValueOnce(states[1])
         .mockResolvedValueOnce(states[2]);
 
-      await synchronizer.syncAccountState(nativeTokenAddress);
+      await synchronizer.syncAccountState(nativeToken());
 
       expect(stateManager.updateAccountState).toHaveBeenCalledTimes(2);
       expect(syncCallback).toHaveBeenCalledTimes(2);
@@ -260,7 +258,7 @@ describe("StateSynchronizer", () => {
       );
 
       await expect(
-        synchronizer.syncAccountState(nativeTokenAddress)
+        synchronizer.syncAccountState(nativeToken())
       ).rejects.toThrow(UnexpectedVersionInEvent);
     });
 
@@ -281,7 +279,7 @@ describe("StateSynchronizer", () => {
       ); // Initial nullifier hash -> block 1
 
       await expect(
-        synchronizer.syncAccountState(nativeTokenAddress)
+        synchronizer.syncAccountState(nativeToken())
       ).rejects.toThrow("State is null, this should not happen");
     });
 
@@ -297,7 +295,7 @@ describe("StateSynchronizer", () => {
       ); // Initial nullifier hash -> block 1
 
       await expect(
-        synchronizer.syncAccountState(nativeTokenAddress)
+        synchronizer.syncAccountState(nativeToken())
       ).rejects.toThrow("Unexpected number of events: 0, expected 1 event");
     });
   });
@@ -341,7 +339,7 @@ describe("StateSynchronizer", () => {
 
       const transactions: ShielderTransaction[] = [];
       for await (const tx of synchronizer.getShielderTransactions(
-        nativeTokenAddress
+        nativeToken()
       )) {
         transactions.push(tx);
       }
@@ -370,7 +368,7 @@ describe("StateSynchronizer", () => {
       contract.setNullifierBlock(1n, null); // No transactions
       const transactions: ShielderTransaction[] = [];
       for await (const tx of synchronizer.getShielderTransactions(
-        nativeTokenAddress
+        nativeToken()
       )) {
         transactions.push(tx);
       }
@@ -395,7 +393,7 @@ describe("StateSynchronizer", () => {
 
       // Should throw on first iteration
       await expect(
-        synchronizer.getShielderTransactions(nativeTokenAddress).next()
+        synchronizer.getShielderTransactions(nativeToken()).next()
       ).rejects.toThrow("State is null, this should not happen");
     });
   });

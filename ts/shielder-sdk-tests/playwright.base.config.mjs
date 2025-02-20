@@ -9,8 +9,8 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
+      use: { ...devices["Desktop Chrome"] }
+    }
     // Not including webkit (Safari) because WASM doesn't seem to work with it.
   ],
   reporter: process.env.CI ? "blob" : "list",
@@ -18,11 +18,11 @@ export default defineConfig({
   testMatch: ["tests/**/*.test.ts"],
   timeout: 240 * 1000, // 240 seconds
   use: {
-    baseURL: url,
+    baseURL: url
   },
   webServer: {
     url,
-    reuseExistingServer: false,
+    reuseExistingServer: false
   },
-  workers: 1,
+  workers: 1
 });

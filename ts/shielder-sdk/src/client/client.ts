@@ -62,6 +62,7 @@ export const createShielderClient = (
 
   return new ShielderClient(
     shielderSeedPrivateKey,
+    chainId,
     contract,
     relayer,
     storage,
@@ -98,6 +99,7 @@ export class ShielderClient {
    */
   constructor(
     shielderSeedPrivateKey: `0x${string}`,
+    chainId: number,
     contract: IContract,
     relayer: IRelayer,
     storage: InjectedStorageInterface,
@@ -122,7 +124,8 @@ export class ShielderClient {
       contract,
       relayer,
       cryptoClient,
-      nonceGenerator
+      nonceGenerator,
+      BigInt(chainId)
     );
     const stateEventsFilter = new StateEventsFilter(
       this.newAccountAction,
