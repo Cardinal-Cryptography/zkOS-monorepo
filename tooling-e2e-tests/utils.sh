@@ -65,6 +65,7 @@ deploy_contracts() {
       --rpc-url "${NODE_RPC_URL}" \
       --broadcast \
       --non-interactive \
+      2> output.log \
     | grep 'Shielder deployed at:' | awk '{print $NF}')
   export SHIELDER_CONTRACT_ADDRESS
 
@@ -146,7 +147,7 @@ setup() {
 setup_shielder_sdk() {
   if [[ ! -n "${TESTNET:-}" ]]; then
     start_node
-    # endow_accounts
+    endow_accounts
   fi
 
   deploy_contracts
