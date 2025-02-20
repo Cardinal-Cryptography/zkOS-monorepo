@@ -45,7 +45,7 @@ run() {
   pushd $SCRIPT_DIR/.. &>> output.log
 
   setup_shielder_sdk
-  # scenario
+  scenario
 
   popd &>> output.log
 }

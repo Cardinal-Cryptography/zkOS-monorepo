@@ -150,7 +150,7 @@ setup_shielder_sdk() {
   fi
 
   deploy_contracts
-  # start_relayer
+  start_relayer
 }
 
 cleanup() {
