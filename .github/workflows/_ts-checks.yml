@@ -48,7 +48,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.2.0
 
       - name: Install dependencies (workspace)
         run: pnpm install-deps
@@ -79,11 +79,10 @@ jobs:
         with:
           path: ts/shielder-sdk/coverage/coverage-report.md
 
-  # Run heavy tests for shielder-relayer and e2e tooling tests.
-  full-testing:
-    name: Run heavy tests
+  e2e-tests:
+    name: Run E2E tests on local anvil node
     runs-on: [self-hosted, Linux, X64, large]
-    timeout-minutes: 60
+    timeout-minutes: 10
     env:
       RUSTC_WRAPPER: sccache
     steps:
@@ -135,7 +134,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.2.0
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1.2.0
