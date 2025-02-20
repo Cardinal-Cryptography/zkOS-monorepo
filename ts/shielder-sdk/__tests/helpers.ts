@@ -107,7 +107,7 @@ class MockedSecretManager implements SecretManager {
     };
   }
 
-  async getIdPerToken(privateKey: `0x${string}`, tokenAddress: `0x${string}`): Promise<Scalar> {
+  async deriveId(privateKey: `0x${string}`, tokenAddress: `0x${string}`): Promise<Scalar> {
     return await mockedHash(
       [Scalar.fromBigint(hexToBigInt(privateKey)), Scalar.fromBigint(hexToBigInt(tokenAddress)), Scalar.fromBigint(2n)]
     );
