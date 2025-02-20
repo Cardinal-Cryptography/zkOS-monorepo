@@ -1,5 +1,5 @@
 import { mockedStorage } from "@/storage";
-import {
+import type {
   InjectedStorageInterface,
   SendShielderTransaction,
   ShielderCallbacks,
@@ -14,12 +14,12 @@ import {
   defineChain,
   http,
   publicActions,
-  TransactionExecutionError,
   type Chain,
   type HttpTransport,
   type PrivateKeyAccount,
   type PublicClient,
   type PublicRpcSchema,
+  type TransactionExecutionError,
   type WalletClient,
   type WalletRpcSchema
 } from "viem";

@@ -2,12 +2,12 @@
 
 import { test, type Page } from "@playwright/test";
 import {
-  GlobalConfigFixture,
+  type GlobalConfigFixture,
   globalConfigFixture
 } from "./playwrightFixtures/globalConfig";
 import {
   perTestConfigFixture,
-  PerTestConfigFixture
+  type PerTestConfigFixture
 } from "./playwrightFixtures/perTestConfig";
 import { workerPageFixture } from "./playwrightFixtures/workerPage";
 

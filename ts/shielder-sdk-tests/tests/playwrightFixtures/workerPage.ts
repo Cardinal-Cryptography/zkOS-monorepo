@@ -1,4 +1,4 @@
-import { Browser, Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
 
 export const workerPageFixture = async (
   { browser }: { browser: Browser },

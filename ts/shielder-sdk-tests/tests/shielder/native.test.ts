@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { sdkTest } from "@tests/playwrightTestConfig";
-import { AccountNames, AccountValue, TestDescription } from "@tests/types";
+import type { AccountNames, AccountValue, TestDescription } from "@tests/types";
 
 function newAccountOp(amount: bigint) {
   return {

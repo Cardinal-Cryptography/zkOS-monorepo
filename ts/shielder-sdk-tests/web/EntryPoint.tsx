@@ -2,21 +2,21 @@ import { useEffect } from "react";
 import {
   nativeToken,
   createShielderClient,
-  InjectedStorageInterface,
-  NativeToken,
-  ShielderCallbacks,
-  ShielderClient,
-  ShielderTransaction
+  type InjectedStorageInterface,
+  type NativeToken,
+  type ShielderCallbacks,
+  type ShielderClient,
+  type ShielderTransaction
 } from "@cardinal-cryptography/shielder-sdk";
-import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import type { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
 import { envThreadsNumber } from "./testUtils";
-import {
+import type {
   ShielderClientFixture,
   setupShielderClient
 } from "./fixtures/setupShielderClient";
 import { validateTxHistory } from "./validators/txHistory";
-import { AccountNames, AccountValue, TestDescription } from "@tests/types";
+import type { AccountNames, AccountValue, TestDescription } from "@tests/types";
 
 declare global {
   interface Window {

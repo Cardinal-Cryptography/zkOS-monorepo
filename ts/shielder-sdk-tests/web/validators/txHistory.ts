@@ -1,6 +1,6 @@
-import { ShielderClientFixture } from "@/fixtures/setupShielderClient";
-import { ShielderTransaction } from "@cardinal-cryptography/shielder-sdk";
-import {
+import type { ShielderClientFixture } from "@/fixtures/setupShielderClient";
+import type { ShielderTransaction } from "@cardinal-cryptography/shielder-sdk";
+import type {
   AccountNames,
   AccountValue,
   ShortTx,

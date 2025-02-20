@@ -1,9 +1,9 @@
-import { ShielderClientFixture } from "@/fixtures/setupShielderClient";
+import type { ShielderClientFixture } from "@/fixtures/setupShielderClient";
 import { ACCOUNT_NAMES } from "@tests/constants";
 import { generatePrivateKey } from "viem/accounts";
-import { GlobalConfigFixture } from "./globalConfig";
-import { JSHandle, Page } from "@playwright/test";
-import { AccountNames, AccountValue } from "@tests/types";
+import type { GlobalConfigFixture } from "./globalConfig";
+import type { JSHandle, Page } from "@playwright/test";
+import type { AccountNames, AccountValue } from "@tests/types";
 
 export type PerTestConfigFixture = {
   webSdk: JSHandle<AccountValue<ShielderClientFixture>>;

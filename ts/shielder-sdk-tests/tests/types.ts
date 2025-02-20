@@ -1,4 +1,4 @@
-import { ACCOUNT_NAMES } from "./constants";
+import type { ACCOUNT_NAMES } from "./constants";
 
 export type AccountNames = (typeof ACCOUNT_NAMES)[number];
 export type AccountValue<T> = {

@@ -1,4 +1,4 @@
-import { InjectedStorageInterface } from "@cardinal-cryptography/shielder-sdk";
+import type { InjectedStorageInterface } from "@cardinal-cryptography/shielder-sdk";
 
 export const STORAGE_KEY = "test-mocked-storage";
 
