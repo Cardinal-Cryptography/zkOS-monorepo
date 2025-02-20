@@ -5022,17 +5022,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "test-ts-conversions"
-version = "0.1.0"
-dependencies = [
- "clap",
- "halo2_proofs",
- "shielder-account",
- "shielder-circuits",
- "type-conversions",
-]
-
-[[package]]
 name = "testcontainers"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

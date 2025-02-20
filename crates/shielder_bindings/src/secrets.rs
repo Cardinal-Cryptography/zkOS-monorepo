@@ -1,7 +1,10 @@
 use alloc::vec::Vec;
 
 use alloy_primitives::{hex::FromHex, Address, U256};
-use shielder_account::secrets::{derive_id, derive_nullifier, derive_trapdoor};
+use shielder_account::secrets::{
+    self,
+    nonced::{derive_nullifier, derive_trapdoor},
+};
 use type_conversions::{bytes_to_u256, hex_to_u256, u256_to_bytes};
 #[cfg(feature = "build-wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -30,8 +33,8 @@ pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn get_id_per_token(private_key_hex: &str, token_address_hex: &str) -> Vec<u8> {
-    u256_to_bytes(derive_id(
+pub fn derive_id(private_key_hex: &str, token_address_hex: &str) -> Vec<u8> {
+    u256_to_bytes(secrets::derive_id(
         hex_to_u256(private_key_hex).unwrap(),
         Address::from_hex(token_address_hex).unwrap(),
     ))

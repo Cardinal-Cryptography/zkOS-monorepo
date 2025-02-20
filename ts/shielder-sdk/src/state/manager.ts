@@ -88,7 +88,7 @@ export class StateManager {
   private async getId(tokenAddress: `0x${string}`): Promise<Scalar> {
     let id = this.idPerToken.get(tokenAddress);
     if (!id) {
-      id = await this.cryptoClient.secretManager.getIdPerToken(
+      id = await this.cryptoClient.secretManager.deriveId(
         this.privateKey,
         tokenAddress
       );

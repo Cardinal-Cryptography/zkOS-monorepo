@@ -105,26 +105,26 @@ impl ShielderAccount {
 
     /// Generate the nullifier for the next action to be done.
     pub fn next_nullifier(&self) -> U256 {
-        secrets::derive_nullifier(self.id, self.nonce)
+        secrets::nonced::derive_nullifier(self.id, self.nonce)
     }
 
     /// Generate the nullifier for the previous action. If the account has no actions, `self.id`
     /// is used as 'pre-nullifier'.
     pub fn previous_nullifier(&self) -> U256 {
-        self.nonce
-            .checked_sub(1)
-            .map_or(self.id, |nonce| secrets::derive_nullifier(self.id, nonce))
+        self.nonce.checked_sub(1).map_or(self.id, |nonce| {
+            secrets::nonced::derive_nullifier(self.id, nonce)
+        })
     }
 
     /// Generate the trapdoor for the next action to be done.
     pub fn next_trapdoor(&self) -> U256 {
-        secrets::derive_trapdoor(self.id, self.nonce)
+        secrets::nonced::derive_trapdoor(self.id, self.nonce)
     }
 
     /// Generate the trapdoor for the previous action. If the account has no actions, return `None`.
     pub fn previous_trapdoor(&self) -> Option<U256> {
         self.nonce
             .checked_sub(1)
-            .map(|nonce| secrets::derive_trapdoor(self.id, nonce))
+            .map(|nonce| secrets::nonced::derive_trapdoor(self.id, nonce))
     }
 }

@@ -36,7 +36,7 @@ export interface Hasher {
 
 export interface SecretManager {
   getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets>;
-  getIdPerToken(
+  deriveId(
     privateKey: `0x${string}`,
     tokenAddress: `0x${string}`
   ): Promise<Scalar>;
