@@ -65,7 +65,6 @@ deploy_contracts() {
       --rpc-url "${NODE_RPC_URL}" \
       --broadcast \
       --non-interactive \
-      2> /dev/null \
     | grep 'Shielder deployed at:' | awk '{print $NF}')
   export SHIELDER_CONTRACT_ADDRESS
 
