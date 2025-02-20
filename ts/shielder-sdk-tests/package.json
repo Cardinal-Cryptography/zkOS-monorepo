@@ -33,16 +33,5 @@
     "typescript-eslint": "^8.24.1",
     "vite": "^5.3.5",
     "vite-tsconfig-paths": "^4.3.2"
-  },
-  "manifest": {
-    "host_permissions": [
-      "https://*/*"
-    ],
-    "permissions": [
-      "storage"
-    ],
-    "content_security_policy": {
-      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
-    }
   }
 }

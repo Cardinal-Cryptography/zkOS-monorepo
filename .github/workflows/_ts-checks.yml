@@ -155,6 +155,10 @@ jobs:
       - name: Contract deps
         run: make deps
 
+      - name: build tests
+        run: pnpm build:tests
+        working-directory: ts
+
       - name: Run e2e sdk tests
         run: |
           NO_FORMATTING=true ./tooling-e2e-tests/ts_sdk_tests.sh

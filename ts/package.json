@@ -15,7 +15,7 @@
     "build-package:crypto": "pnpm build:crypto",
     "build-package:crypto-wasm": "pnpm build:crypto && pnpm build:crypto-wasm",
     "build-package:sdk": "pnpm build:crypto && pnpm build:sdk",
-    "build-package:tests": "pnpm build:crypto-wasm && pnpm build:sdk && pnpm build:tests",
+    "build-package:tests": "pnpm build:crypto && pnpm build:crypto-wasm && pnpm build:sdk && pnpm build:tests",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "install-deps": "pnpm install --frozen-lockfile"
