@@ -41,7 +41,6 @@ const createWebSdk = async ({
 
   for (const untypedActor in shielderKeys) {
     const name = untypedActor as AccountNames;
-    console.log("name", name);
     const clientFixture = await window.testFixtures.setupShielderClient(
       globalConfig.chainConfig,
       globalConfig.relayerConfig,

@@ -11,8 +11,8 @@ import {
 import type { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
 import { envThreadsNumber } from "./testUtils";
-import type {
-  ShielderClientFixture,
+import {
+  type ShielderClientFixture,
   setupShielderClient
 } from "./fixtures/setupShielderClient";
 import { validateTxHistory } from "./validators/txHistory";
