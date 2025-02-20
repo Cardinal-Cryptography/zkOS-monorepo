@@ -84,6 +84,7 @@ describe("ShielderClient", () => {
     // Create client instance
     client = new ShielderClient(
       mockShielderSeedPrivateKey,
+      1,
       mockContract,
       mockRelayer,
       mockStorageInterface,

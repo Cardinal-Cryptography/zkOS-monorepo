@@ -48,7 +48,8 @@ describe("StateEventsFilter", () => {
       contract,
       relayer,
       cryptoClient,
-      nonceGenerator
+      nonceGenerator,
+      1n
     );
 
     stateEventsFilter = new StateEventsFilter(
