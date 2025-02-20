@@ -1,17 +1,17 @@
 import {
-  Chain,
   createTestClient,
   defineChain,
   http,
-  HttpTransport,
-  PrivateKeyAccount,
   publicActions,
-  PublicClient,
-  PublicRpcSchema,
-  TestClient,
   walletActions,
-  WalletClient,
-  WalletRpcSchema
+  type Chain,
+  type HttpTransport,
+  type PrivateKeyAccount,
+  type PublicClient,
+  type PublicRpcSchema,
+  type TestClient,
+  type WalletClient,
+  type WalletRpcSchema
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -36,10 +36,10 @@ export class BalanceManager {
   constructor(
     rpcHttpEndpoint: string,
     chainId: number,
-    testnetPrivateKey: `0x${string}`
+    faucetPrivateKey: `0x${string}`
   ) {
     this.testClient = createTestClient({
-      account: privateKeyToAccount(testnetPrivateKey),
+      account: privateKeyToAccount(faucetPrivateKey),
       chain: defineChain({
         name: chainName,
         id: chainId,

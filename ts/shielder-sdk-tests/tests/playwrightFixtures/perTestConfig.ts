@@ -3,7 +3,7 @@ import { ACCOUNT_NAMES } from "@tests/constants";
 import { generatePrivateKey } from "viem/accounts";
 import { GlobalConfigFixture } from "./globalConfig";
 import { JSHandle, Page } from "@playwright/test";
-import { AccountValue } from "@tests/types";
+import { AccountNames, AccountValue } from "@tests/types";
 
 export type PerTestConfigFixture = {
   webSdk: JSHandle<AccountValue<ShielderClientFixture>>;
@@ -22,8 +22,7 @@ export const perTestConfigFixture = async (
   }
   const webSdk = await workerPage.evaluateHandle(createWebSdk, {
     globalConfig,
-    shielderKeys,
-    accountNames: ACCOUNT_NAMES
+    shielderKeys
   });
 
   await use({ webSdk });
@@ -33,16 +32,16 @@ export const perTestConfigFixture = async (
 
 const createWebSdk = async ({
   globalConfig,
-  shielderKeys,
-  accountNames
+  shielderKeys
 }: {
   globalConfig: GlobalConfigFixture;
   shielderKeys: AccountValue<`0x${string}`>;
-  accountNames: typeof ACCOUNT_NAMES;
 }): Promise<AccountValue<ShielderClientFixture>> => {
   const webSdk = {} as AccountValue<ShielderClientFixture>;
 
-  for (const name of accountNames) {
+  for (const untypedActor in shielderKeys) {
+    const name = untypedActor as AccountNames;
+    console.log("name", name);
     const clientFixture = await window.testFixtures.setupShielderClient(
       globalConfig.chainConfig,
       globalConfig.relayerConfig,

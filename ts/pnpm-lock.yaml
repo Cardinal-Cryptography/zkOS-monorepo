@@ -182,9 +182,6 @@ importers:
 
   shielder-sdk-tests:
     dependencies:
-      '9':
-        specifier: ^0.0.1
-        version: 0.0.1
       viem:
         specifier: ^2.22.22
         version: 2.22.22(typescript@5.7.3)(zod@3.24.1)
@@ -248,9 +245,6 @@ importers:
         version: 4.3.2(typescript@5.7.3)(vite@5.4.14(@types/node@20.17.19)(less@4.2.2)(lightningcss@1.29.1)(sass@1.85.0))
 
 packages:
-
-  9@0.0.1:
-    resolution: {integrity: sha512-HCR5IDw/uWq2KN5cvHxvNLIYkH4b8HnlGyqlJBQJgSSeOGNjd+PCVaQhXRwIXo1JhNf2tgYiDByFZEQin0GzhQ==}
 
   '@adraffy/ens-normalize@1.11.0':
     resolution: {integrity: sha512-/3DDPKHqqIqxUULp8yP4zODUY1i+2xvVWsv8A79xGWdCAG+8sb0hRh0Rk2QyOJUnnbyPUAZYcpBuRe3nS2OIUg==}
@@ -2252,8 +2246,6 @@ packages:
     resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
 
 snapshots:
-
-  9@0.0.1: {}
 
   '@adraffy/ens-normalize@1.11.0': {}
 
