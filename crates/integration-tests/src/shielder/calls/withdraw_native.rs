@@ -64,6 +64,7 @@ pub fn prepare_call(
                 circuit_version: 1,
                 patch_version: 0,
             },
+            chain_id: U256::from(1),
         },
     );
 

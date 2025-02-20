@@ -163,6 +163,7 @@ pub struct WithdrawExtra {
     pub relayer_address: Address,
     pub relayer_fee: U256,
     pub contract_version: ContractVersion,
+    pub chain_id: U256,
 }
 
 pub enum WithdrawCallType {}
@@ -189,6 +190,7 @@ impl CallType for WithdrawCallType {
             withdraw_address: extra.to,
             relayer_address: extra.relayer_address,
             relayer_fee: extra.relayer_fee,
+            chain_id: extra.chain_id,
         }
         .commitment_hash();
         let nonce = id_hiding_nonce();

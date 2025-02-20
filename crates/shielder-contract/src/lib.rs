@@ -74,6 +74,7 @@ pub struct WithdrawCommitment {
     pub withdraw_address: Address,
     pub relayer_address: Address,
     pub relayer_fee: U256,
+    pub chain_id: U256,
 }
 
 impl WithdrawCommitment {
@@ -85,6 +86,7 @@ impl WithdrawCommitment {
                 address_to_u256(self.withdraw_address),
                 address_to_u256(self.relayer_address),
                 self.relayer_fee,
+                self.chain_id,
             )
                 .abi_encode_packed(),
         )
@@ -118,6 +120,7 @@ mod tests {
             withdraw_address: Address::random(),
             relayer_address: Address::random(),
             relayer_fee: rng.gen(),
+            chain_id: rng.gen(),
         }
     }
 
