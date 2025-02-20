@@ -22,7 +22,7 @@ export interface WithdrawCalldata {
   };
   provingTimeMillis: number;
   amount: bigint;
-  address: Address;
+  withdrawalAddress: Address;
   token: Token;
 }
 
@@ -147,14 +147,14 @@ export class WithdrawAction extends NoteAction {
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
    * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
-   * @param address recipient address
+   * @param withdrawalAddress recipient address
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
     totalFee: bigint,
-    address: Address,
+    withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
     if (state.balance < amount) {
@@ -172,7 +172,7 @@ export class WithdrawAction extends NoteAction {
       state,
       amount,
       expectedContractVersion,
-      address,
+      withdrawalAddress,
       totalFee
     );
 
@@ -194,7 +194,7 @@ export class WithdrawAction extends NoteAction {
       },
       provingTimeMillis: provingTime,
       amount,
-      address,
+      withdrawalAddress,
       token: state.token
     };
   }
@@ -211,18 +211,21 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       calldata: { pubInputs, proof },
       amount,
-      address
+      withdrawalAddress
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
         expectedContractVersion,
+        calldata.token,
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
         amount,
         proof,
-        address
+        withdrawalAddress,
+        scalarToBigint(pubInputs.macSalt),
+        scalarToBigint(pubInputs.macCommitment)
       )
       .catch((e) => {
         if (e instanceof VersionRejectedByRelayer) {

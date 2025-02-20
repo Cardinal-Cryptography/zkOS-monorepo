@@ -13,6 +13,7 @@ export {
   type ERC20Token,
   type NativeToken,
   type Token,
-  nativeToken
+  nativeToken,
+  erc20Token
 } from "@/types";
 export { shieldActionGasLimit } from "@/constants";

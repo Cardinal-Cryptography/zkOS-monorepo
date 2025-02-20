@@ -13,6 +13,6 @@ export function nativeToken(): NativeToken {
   return { type: "native" };
 }
 
-export function ERC20Token(address: `0x${string}`): ERC20Token {
+export function erc20Token(address: `0x${string}`): ERC20Token {
   return { type: "erc20", address };
 }

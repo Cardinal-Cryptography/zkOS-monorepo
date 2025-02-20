@@ -4,7 +4,7 @@ export const chainNativeCurrency = {
   symbol: "AZERO",
   decimals: 18
 };
-export const contractVersion = "0x000001";
+export const contractVersion = "0x000100";
 export const relayPath = "/relay";
 export const feePath = "/quote_fees";
 export const feeAddressPath = "/fee_address";
