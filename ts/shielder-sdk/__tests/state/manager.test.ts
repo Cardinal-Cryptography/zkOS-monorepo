@@ -44,14 +44,14 @@ describe("StateManager", () => {
     };
     cryptoClient = new MockedCryptoClient();
     stateManager = new StateManager(testPrivateKey, storage, cryptoClient);
-    testId = await cryptoClient.converter.privateKeyToScalar(testPrivateKey);
+    testId = await cryptoClient.converter.hex32ToScalar(testPrivateKey);
   });
 
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
       const state = await stateManager.accountState(nativeToken());
       const expectedId =
-        await cryptoClient.converter.privateKeyToScalar(testPrivateKey);
+        await cryptoClient.converter.hex32ToScalar(testPrivateKey);
 
       expect(state).toEqual({
         id: expectedId,

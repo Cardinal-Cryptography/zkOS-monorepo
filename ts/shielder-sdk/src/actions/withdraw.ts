@@ -140,7 +140,7 @@ export class WithdrawAction extends NoteAction {
       nullifierNew,
       trapdoorNew,
       commitment,
-      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
+      macSalt: await this.randomMacSalt()
     };
   }
 

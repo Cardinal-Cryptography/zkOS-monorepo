@@ -69,7 +69,7 @@ pub fn field_to_bytes<F: PrimeField<Repr = [u8; BYTE_LENGTH]>, const BYTE_LENGTH
 }
 
 /// Since the private key is an arbitrary 32-byte number, this is a non-reversible mapping.
-pub fn private_key_to_field<F: From<[u64; 4]>>(hex: &str) -> Result<F> {
+pub fn hex_32_to_f<F: From<[u64; 4]>>(hex: &str) -> Result<F> {
     let u256 = match U256::from_str(hex) {
         Ok(u256) => u256,
         Err(_) => return Err(Error::HexU256ParseError),
@@ -151,10 +151,10 @@ mod tests {
     }
 
     #[test]
-    fn from_private_key_to_field() {
+    fn from_hex_32_to_to_field() {
         let hex = "0x0000000000000000000000000000000000000000000000000000000000000029";
         let field = Fr::from(41);
-        assert_eq!(private_key_to_field::<Fr>(hex), Ok(field));
+        assert_eq!(hex_32_to_f::<Fr>(hex), Ok(field));
     }
 
     #[test]

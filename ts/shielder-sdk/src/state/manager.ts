@@ -88,7 +88,7 @@ export class StateManager {
   // TODO: Create independent id for each token address
   private async getId(): Promise<Scalar> {
     if (!this.id) {
-      this.id = await this.cryptoClient.converter.privateKeyToScalar(
+      this.id = await this.cryptoClient.converter.hex32ToScalar(
         this.privateKey
       );
     }

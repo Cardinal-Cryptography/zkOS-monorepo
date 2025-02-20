@@ -40,7 +40,7 @@ export interface SecretManager {
 
 export interface Converter {
   // convert a 32-byte hex (66 characters, starting with 0x) string to a Scalar
-  privateKeyToScalar(hex: `0x${string}`): Promise<Scalar>;
+  hex32ToScalar(hex: `0x${string}`): Promise<Scalar>;
 }
 
 export interface NoteTreeConfig {

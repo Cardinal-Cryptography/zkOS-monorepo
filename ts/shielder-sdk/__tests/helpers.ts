@@ -112,7 +112,7 @@ class MockedSecretManager implements SecretManager {
 }
 
 class MockedConverter implements Converter {
-  privateKeyToScalar(hex: `0x${string}`): Promise<Scalar> {
+  hex32ToScalar(hex: `0x${string}`): Promise<Scalar> {
     return Promise.resolve(Scalar.fromBigint(hexToBigInt(hex) % SCALAR_MODULO));
   }
 }
