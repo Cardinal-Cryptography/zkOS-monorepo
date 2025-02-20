@@ -146,7 +146,7 @@ setup() {
 setup_shielder_sdk() {
   if [[ ! -n "${TESTNET:-}" ]]; then
     start_node
-    endow_accounts
+    # endow_accounts
   fi
 
   deploy_contracts
