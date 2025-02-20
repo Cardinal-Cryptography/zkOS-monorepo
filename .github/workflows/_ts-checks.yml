@@ -81,7 +81,7 @@ jobs:
 
   e2e-tests:
     name: Run E2E tests on local anvil node
-    runs-on: [self-hosted, Linux, X64, large]
+    runs-on: [self-hosted, Linux, X64, small]
     timeout-minutes: 10
     env:
       RUSTC_WRAPPER: sccache
