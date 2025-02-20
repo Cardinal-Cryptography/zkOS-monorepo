@@ -153,8 +153,8 @@ jobs:
         run: pnpm build
         working-directory: ts
 
-      - name: Build shielder-relayer
-        run: cd crates/shielder-relayer && make build
+      - name: Contract deps
+        run: make deps
 
       - name: Run e2e sdk tests
         run: |
