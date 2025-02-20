@@ -6,7 +6,7 @@ import { CustomUpgrades } from "./Utils.sol";
 import { Upgrades, Options } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 import { Shielder } from "../contracts/Shielder.sol";
-import { ShielderV2Mock } from "../contracts/ShielderV2Mock.sol";
+import { ShielderV2Mock } from "./ShielderV2Mock.sol";
 
 contract ShielderUpgrade is Test {
     address public owner;
