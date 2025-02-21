@@ -14,8 +14,8 @@ import { getTokenAddress } from "@/utils";
 export class StateManager {
   private storage: StorageInterface;
   private privateKey: Hex;
-  private id: Scalar | undefined;
-  private idHash: Scalar | undefined;
+  private idPerToken: Map<`0x${string}`, Scalar> = new Map();
+  private idHashPerToken: Map<`0x${string}`, Scalar> = new Map();
   private cryptoClient: CryptoClient;
 
   constructor(
@@ -31,10 +31,10 @@ export class StateManager {
   async accountState(token: Token): Promise<AccountState> {
     const tokenAddress = getTokenAddress(token);
     const res = await this.storage.getItem(tokenAddress);
-    const id = await this.getId();
+    const id = await this.getId(tokenAddress);
 
     if (res) {
-      const expectedIdHash = await this.getIdHash();
+      const expectedIdHash = await this.getIdHash(tokenAddress);
       const storageIdHash = Scalar.fromBigint(res.idHash);
       if (!scalarsEqual(expectedIdHash, storageIdHash)) {
         throw new Error("Id hash in storage does not matched the configured.");
@@ -61,7 +61,7 @@ export class StateManager {
     if (accountState.currentNoteIndex == undefined) {
       throw new Error("currentNoteIndex must be set.");
     }
-    if (!scalarsEqual(accountState.id, await this.getId())) {
+    if (!scalarsEqual(accountState.id, await this.getId(tokenAddress))) {
       throw new Error("New account id does not match the configured.");
     }
     if (accountState.storageSchemaVersion != storageSchemaVersion) {
@@ -82,26 +82,30 @@ export class StateManager {
   }
 
   async emptyAccountState(token: Token): Promise<AccountState> {
-    return emptyAccountState(token, await this.getId());
+    return emptyAccountState(token, await this.getId(getTokenAddress(token)));
   }
 
-  // TODO: Create independent id for each token address
-  private async getId(): Promise<Scalar> {
-    if (!this.id) {
-      this.id = await this.cryptoClient.converter.hex32ToScalar(
-        this.privateKey
+  private async getId(tokenAddress: `0x${string}`): Promise<Scalar> {
+    let id = this.idPerToken.get(tokenAddress);
+    if (!id) {
+      id = await this.cryptoClient.secretManager.deriveId(
+        this.privateKey,
+        tokenAddress
       );
+      this.idPerToken.set(tokenAddress, id);
     }
-    return this.id;
+    return id;
   }
 
-  private async getIdHash(): Promise<Scalar> {
-    if (!this.idHash) {
-      this.idHash = await this.cryptoClient.hasher.poseidonHash([
-        await this.getId()
+  private async getIdHash(tokenAddress: `0x${string}`): Promise<Scalar> {
+    let idHash = this.idHashPerToken.get(tokenAddress);
+    if (!idHash) {
+      idHash = await this.cryptoClient.hasher.poseidonHash([
+        await this.getId(tokenAddress)
       ]);
+      this.idHashPerToken.set(tokenAddress, idHash);
     }
-    return this.idHash;
+    return idHash;
   }
 }
 
