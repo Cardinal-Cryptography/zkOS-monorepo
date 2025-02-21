@@ -79,7 +79,6 @@ deploy_erc20_token() {
       --private-key "${DEPLOYER_PRIVATE_KEY}" \
       --broadcast \
       --constructor-args "${1}" "${2}" \
-      # 2> output.log \
     | grep 'Deployed to:' | awk '{print $NF}'
   )
 }
