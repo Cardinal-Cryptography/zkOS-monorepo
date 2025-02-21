@@ -24,7 +24,7 @@ export const testnetPrivateKey =
     throw new Error("TESTNET_PRIVATE_KEY env not defined");
   })();
 export const tokenContractAddresses = process.env.TOKEN_CONTRACT_ADDRESSES
-  ? process.env.TOKEN_CONTRACT_ADDRESSES.split(" ")
+  ? process.env.TOKEN_CONTRACT_ADDRESSES.split(",")
   : (() => {
       throw new Error("TOKEN_CONTRACT_ADDRESSES env not defined");
     })();
