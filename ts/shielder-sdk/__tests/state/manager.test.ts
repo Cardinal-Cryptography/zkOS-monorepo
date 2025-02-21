@@ -29,8 +29,7 @@ describe("StateManager", () => {
   let stateManager: StateManager;
   let storage: StorageInterface;
   let cryptoClient: MockedCryptoClient;
-  const nativeTokenAddress =
-    "0x0000000000000000000000000000000000000000";
+  const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
   const testPrivateKey =
     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
   let testId: Scalar;
@@ -46,14 +45,19 @@ describe("StateManager", () => {
     };
     cryptoClient = new MockedCryptoClient();
     stateManager = new StateManager(testPrivateKey, storage, cryptoClient);
-    testId = await cryptoClient.secretManager.deriveId(testPrivateKey, nativeTokenAddress);
+    testId = await cryptoClient.secretManager.deriveId(
+      testPrivateKey,
+      nativeTokenAddress
+    );
   });
 
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
       const state = await stateManager.accountState(nativeToken());
-      const expectedId =
-        await cryptoClient.secretManager.deriveId(testPrivateKey, nativeTokenAddress);
+      const expectedId = await cryptoClient.secretManager.deriveId(
+        testPrivateKey,
+        nativeTokenAddress
+      );
 
       expect(state).toEqual({
         id: expectedId,

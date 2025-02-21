@@ -7,6 +7,7 @@ import { Hasher } from "@/hasher";
 import { SecretGenerator } from "@/secretGenerator";
 import { NoteTreeConfig } from "@/noteTreeConfig";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { Converter } from "@/conversion";
 
 export type Caller = "web_singlethreaded" | "web_multithreaded";
 
@@ -18,6 +19,7 @@ export class WasmClient implements CryptoClient {
   hasher: Hasher;
   secretManager: SecretGenerator;
   noteTreeConfig: NoteTreeConfig;
+  converter: Converter;
   initialized: boolean = false;
 
   constructor() {
@@ -27,6 +29,7 @@ export class WasmClient implements CryptoClient {
     this.hasher = new Hasher();
     this.secretManager = new SecretGenerator();
     this.noteTreeConfig = new NoteTreeConfig();
+    this.converter = new Converter();
   }
 
   async init(
@@ -50,6 +53,7 @@ export class WasmClient implements CryptoClient {
     this.hasher.init(caller);
     this.secretManager.init(caller);
     this.noteTreeConfig.init(caller);
+    this.converter.init(caller);
     this.initialized = true;
     if (caller == "web_singlethreaded") {
       console.log(`Initialized shielder_bindings in ${Date.now() - time}ms`);

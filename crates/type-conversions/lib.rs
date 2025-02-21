@@ -68,6 +68,12 @@ pub fn field_to_bytes<F: PrimeField<Repr = [u8; BYTE_LENGTH]>, const BYTE_LENGTH
     value.to_repr().to_vec()
 }
 
+/// Since the private key is an arbitrary 32-byte number, this is a non-reversible mapping.
+pub fn hex_32_to_f<F: From<[u64; 4]>>(hex: &str) -> Result<F> {
+    let u256 = hex_to_u256(hex)?;
+    Ok(u256_to_field(u256))
+}
+
 /// Convert a hex string (with "0x" prefix) to U256.
 pub fn hex_to_u256(hex: &str) -> Result<U256> {
     U256::from_str(hex).map_err(|_| Error::HexU256ParseError)
@@ -151,6 +157,13 @@ mod tests {
         let hex = "0x0000000000000000000000000000000000000000000000000000000000000029";
         let u256 = U256::from(41);
         assert_eq!(hex_to_u256(hex), Ok(u256));
+    }
+
+    #[test]
+    fn from_hex_32_to_to_field() {
+        let hex = "0x0000000000000000000000000000000000000000000000000000000000000029";
+        let field = Fr::from(41);
+        assert_eq!(hex_32_to_f::<Fr>(hex), Ok(field));
     }
 
     #[test]

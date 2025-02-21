@@ -9,6 +9,7 @@ pub use wasm_bindgen_rayon::init_thread_pool;
 extern crate alloc;
 
 pub mod circuits;
+pub mod conversions;
 pub mod hash;
 pub mod note_config;
 pub mod secrets;
