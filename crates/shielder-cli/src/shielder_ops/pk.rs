@@ -117,11 +117,7 @@ fn get_equipment(
             let (params, k, pk) = circuit_type.generate_keys(full_params)?;
             debug!("Generated new proving key");
 
-            save_content(
-                file.clone(),
-                &marshall_pk(k, &pk)
-                    .map_err(|_| anyhow::Error::msg("Failed to marshall proving key"))?,
-            )?;
+            save_content(file.clone(), &marshall_pk(k, &pk))?;
             debug!("Saved proving key to {file:?}");
 
             Ok((params, pk))
