@@ -29,7 +29,7 @@ jobs:
 
       - name: Lint contracts code (excluding generated code)
         shell: bash
-        run: make deps && make lint-contracts
+        run: make lint-contracts
 
       - name: Regenerate verifier and Poseidon contracts and ensure that they are up-to-date
         run: |

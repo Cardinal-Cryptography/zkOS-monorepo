@@ -78,8 +78,10 @@ deploy_erc20_token() {
       --rpc-url "${NODE_RPC_URL}" \
       --private-key "${DEPLOYER_PRIVATE_KEY}" \
       --broadcast \
+      --json \
       --constructor-args "${1}" "${2}" \
-    | grep 'Deployed to:' | awk '{print $NF}'
+      2> output.log \
+    | jq -r '.deployedTo'
   )
 }
 
@@ -88,7 +90,6 @@ deploy_erc20_tokens() {
   export TOKEN_CONTRACT_ADDRESSES
   # set FEE_TOKENS for relayer
   export FEE_TOKENS=${TOKEN_CONTRACT_ADDRESSES}
-  echo $TOKEN_CONTRACT_ADDRESSES
 
   log_progress "✅ Tokens deployed"
 }
