@@ -33,16 +33,8 @@ jobs:
           poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1.2.0
-        with:
-          cache-key: custom-seed-coverage-${{ github.ref_name }}
-          cache-restore-keys: |-
-            contract-suite
-          version: nightly-31dd1f77fd9156d09836486d97963cec7f555343
-
-      - name: Install deps
-        run: make deps
+      - name: Prepare Solidity environment
+        uses: ./.github/actions/prepare-sol-env
 
       # for "dev" we use default owner address, as it's not important
       - name: Set environment-specific variables
