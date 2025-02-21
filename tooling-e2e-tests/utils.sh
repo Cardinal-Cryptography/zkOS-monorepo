@@ -57,7 +57,7 @@ mtzero() {
 ####################################################################################################
 #### CONTRACTS #####################################################################################
 ####################################################################################################
-deploy_contracts() {
+deploy_shielder_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
     PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
     OWNER_ADDRESS="$(cast wallet address ${DEPLOYER_PRIVATE_KEY})" \
@@ -183,7 +183,7 @@ setup() {
   build_cli
   clear_local_cli_state
 
-  deploy_contracts
+  deploy_shielder_contracts
   start_relayer
 }
 
@@ -193,7 +193,7 @@ setup_shielder_sdk() {
     endow_accounts
   fi
 
-  deploy_contracts
+  deploy_shielder_contracts
   deploy_erc20_tokens
   mint_erc20_tokens
   start_relayer
