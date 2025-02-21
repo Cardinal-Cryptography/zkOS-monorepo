@@ -1,5 +1,5 @@
 ---
-name: "Prepare Contracts environment"
+name: "Prepare Solidity environment"
 description: >
   Installs Foundry toolchain, installs contracts npm dependencies
 
@@ -15,4 +15,5 @@ runs:
         version: v1.0.0
 
     - name: Contract deps
+      shell: bash
       run: make deps
