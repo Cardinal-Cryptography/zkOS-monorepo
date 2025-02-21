@@ -70,8 +70,8 @@ export class MockedCryptoClient implements CryptoClient {
   withdrawCircuit: WithdrawCircuit;
   hasher: Hasher;
   secretManager: SecretManager;
-  converter: Converter;
   noteTreeConfig: NoteTreeConfig;
+  converter: Converter;
 
   constructor() {
     this.newAccountCircuit = new MockedNewAccountCircuit();
@@ -79,8 +79,8 @@ export class MockedCryptoClient implements CryptoClient {
     this.withdrawCircuit = new MockedWithdrawCircuit();
     this.hasher = new MockedHasher();
     this.secretManager = new MockedSecretManager();
-    this.converter = new MockedConverter();
     this.noteTreeConfig = new MockedNoteTreeConfig();
+    this.converter = new MockedConverter();
   }
 }
 
@@ -108,6 +108,17 @@ class MockedSecretManager implements SecretManager {
         Scalar.fromBigint(1n)
       ])
     };
+  }
+
+  async deriveId(
+    privateKey: `0x${string}`,
+    tokenAddress: `0x${string}`
+  ): Promise<Scalar> {
+    return await mockedHash([
+      Scalar.fromBigint(hexToBigInt(privateKey)),
+      Scalar.fromBigint(hexToBigInt(tokenAddress)),
+      Scalar.fromBigint(2n)
+    ]);
   }
 }
 

@@ -36,6 +36,10 @@ export interface Hasher {
 
 export interface SecretManager {
   getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets>;
+  deriveId(
+    privateKey: `0x${string}`,
+    tokenAddress: `0x${string}`
+  ): Promise<Scalar>;
 }
 
 export interface Converter {
@@ -57,6 +61,6 @@ export interface CryptoClient {
   withdrawCircuit: WithdrawCircuit;
   hasher: Hasher;
   secretManager: SecretManager;
-  converter: Converter;
   noteTreeConfig: NoteTreeConfig;
+  converter: Converter;
 }
