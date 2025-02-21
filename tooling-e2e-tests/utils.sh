@@ -89,6 +89,7 @@ deploy_erc20_tokens() {
   export TOKEN_CONTRACT_ADDRESSES
   # set FEE_TOKENS for relayer
   export FEE_TOKENS=${TOKEN_CONTRACT_ADDRESSES}
+  echo $TOKEN_CONTRACT_ADDRESSES
 
   log_progress "✅ Tokens deployed"
 }
