@@ -57,7 +57,7 @@ mtzero() {
 ####################################################################################################
 #### CONTRACTS #####################################################################################
 ####################################################################################################
-deploy_contracts() {
+deploy_shielder_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
     PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
     OWNER_ADDRESS="$(cast wallet address ${DEPLOYER_PRIVATE_KEY})" \
@@ -70,6 +70,50 @@ deploy_contracts() {
   export SHIELDER_CONTRACT_ADDRESS
 
   log_progress "✅ Contracts deployed"
+}
+
+deploy_erc20_token() {
+  echo $(
+    forge create TestERC20 \
+      --rpc-url "${NODE_RPC_URL}" \
+      --private-key "${DEPLOYER_PRIVATE_KEY}" \
+      --broadcast \
+      --json \
+      --constructor-args "${1}" "${2}" \
+      2> output.log \
+    | jq -r '.deployedTo'
+  )
+}
+
+deploy_erc20_tokens() {
+  TOKEN_CONTRACT_ADDRESSES=$(deploy_erc20_token "TestToken1" "TT1")","$(deploy_erc20_token "TestToken2" "TT2")
+  export TOKEN_CONTRACT_ADDRESSES
+  # set FEE_TOKENS for relayer
+  export FEE_TOKENS=${TOKEN_CONTRACT_ADDRESSES}
+
+  log_progress "✅ Tokens deployed"
+}
+
+mint_erc20_tokens() {
+  AMOUNT=$(mtzero 100000)
+
+  keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}")
+
+  for key in "${keys[@]}"; do
+    for token in $(echo ${TOKEN_CONTRACT_ADDRESSES} | sed "s/,/ /g"); do
+      cast send \
+        --rpc-url "${NODE_RPC_URL}" \
+        --private-key "${DEPLOYER_PRIVATE_KEY}" \
+        ${token} \
+        "mint(address,uint256)" \
+        ${key} \
+        ${AMOUNT} \
+        &>> output.log
+    done
+  done
+
+  log_progress "✅ Tokens minted"
+
 }
 
 ####################################################################################################
@@ -140,7 +184,7 @@ setup() {
   build_cli
   clear_local_cli_state
 
-  deploy_contracts
+  deploy_shielder_contracts
   start_relayer
 }
 
@@ -150,7 +194,9 @@ setup_shielder_sdk() {
     endow_accounts
   fi
 
-  deploy_contracts
+  deploy_shielder_contracts
+  deploy_erc20_tokens
+  mint_erc20_tokens
   start_relayer
 }
 
