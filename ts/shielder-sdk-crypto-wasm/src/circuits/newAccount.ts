@@ -67,7 +67,14 @@ export class NewAccountCircuit
         x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
         y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
       },
-      symKeyEncryption: new Scalar(pubInputsBytes.sym_key_encryption)
+      symKeyEncryptionCiphertext1: {
+        x: new Scalar(pubInputsBytes.sym_key_encryption_ciphertext_1_x),
+        y: new Scalar(pubInputsBytes.sym_key_encryption_ciphertext_1_y)
+      },
+      symKeyEncryptionCiphertext2: {
+        x: new Scalar(pubInputsBytes.sym_key_encryption_ciphertext_2_x),
+        y: new Scalar(pubInputsBytes.sym_key_encryption_ciphertext_2_y)
+      }
     });
   }
 
@@ -85,7 +92,10 @@ export class NewAccountCircuit
           pubInputs.tokenAddress.bytes,
           pubInputs.anonymityRevokerPubkey.x.bytes,
           pubInputs.anonymityRevokerPubkey.y.bytes,
-          pubInputs.symKeyEncryption.bytes,
+          pubInputs.symKeyEncryptionCiphertext1.x.bytes,
+          pubInputs.symKeyEncryptionCiphertext1.y.bytes,
+          pubInputs.symKeyEncryptionCiphertext2.x.bytes,
+          pubInputs.symKeyEncryptionCiphertext2.y.bytes,
           proof
         )
       );

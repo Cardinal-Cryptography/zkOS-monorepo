@@ -12,7 +12,7 @@ import { BaseError, ContractFunctionRevertedError } from "viem";
 
 import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
-import { AsymPublicKey } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { AffinePoint } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 export class VersionRejectedByContract extends CustomError {
   public constructor() {
@@ -69,7 +69,7 @@ const getShielderContract = (
 export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
-  anonymityRevokerPubkey: () => Promise<AsymPublicKey<bigint>>;
+  anonymityRevokerPubkey: () => Promise<AffinePoint<bigint>>;
   newAccountNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
@@ -137,7 +137,7 @@ export class Contract implements IContract {
     return merklePath as readonly bigint[];
   };
 
-  anonymityRevokerPubkey = async (): Promise<AsymPublicKey<bigint>> => {
+  anonymityRevokerPubkey = async (): Promise<AffinePoint<bigint>> => {
     const key = await this.contract.read.anonymityRevokerPubkey();
     return {
       x: key[0],

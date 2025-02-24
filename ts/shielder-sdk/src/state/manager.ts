@@ -36,6 +36,7 @@ export class StateManager {
     if (res) {
       const expectedIdHash = await this.getIdHash(tokenAddress);
       const storageIdHash = Scalar.fromBigint(res.idHash);
+      console.log("expectedIdHash", scalarToBigint(expectedIdHash).toString());
       if (!scalarsEqual(expectedIdHash, storageIdHash)) {
         throw new Error("Id hash in storage does not matched the configured.");
       }

@@ -138,7 +138,7 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption),
+            scalarToBigint(pubInputs.symKeyEncryptionCiphertext1.x),
             proof
           )
         : await this.contract.newAccountTokenCalldata(
@@ -148,7 +148,7 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption),
+            scalarToBigint(pubInputs.symKeyEncryptionCiphertext1.x),
             proof
           );
     const txHash = await sendShielderTransaction({
