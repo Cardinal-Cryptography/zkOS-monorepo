@@ -12,7 +12,6 @@ import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
-import { bytesToHex } from "viem";
 
 export interface NewAccountCalldata {
   calldata: {

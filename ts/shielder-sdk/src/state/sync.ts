@@ -10,7 +10,6 @@ import { isVersionSupported } from "@/utils";
 import { StateManager } from "./manager";
 import { AccountState, ShielderTransaction } from "./types";
 import { Token } from "@/types";
-import { bytesToHex } from "viem";
 
 export class UnexpectedVersionInEvent extends CustomError {
   public constructor(message: string) {
