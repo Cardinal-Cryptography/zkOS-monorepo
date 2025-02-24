@@ -1,5 +1,5 @@
 import { BalanceManager } from "@tests/balanceManager";
-import { getChainConfig, getRelayerConfig } from "@tests/chainConfig";
+import { getChainConfig, getRelayerConfig } from "@tests/envConfig";
 import { ACCOUNT_NAMES, INITIAL_EVM_BALANCE } from "@tests/constants";
 import type { AccountValue } from "@tests/types";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
