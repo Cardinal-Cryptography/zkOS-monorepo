@@ -259,7 +259,12 @@ export class ShielderClient {
         ? await this.newAccount(token, amount, sendShielderTransaction, from)
         : await this.deposit(token, amount, sendShielderTransaction, from);
     if (this.publicClient) {
-      await this.publicClient.waitForTransactionReceipt({ hash: txHash });
+      const txReceipt = await this.publicClient.waitForTransactionReceipt({
+        hash: txHash
+      });
+      if (txReceipt.status !== "success") {
+        throw new Error("Shield transaction failed");
+      }
       await this.syncShielderToken(token);
     }
     return txHash;
@@ -296,7 +301,12 @@ export class ShielderClient {
       "withdraw"
     );
     if (this.publicClient) {
-      await this.publicClient.waitForTransactionReceipt({ hash: txHash });
+      const txReceipt = await this.publicClient.waitForTransactionReceipt({
+        hash: txHash
+      });
+      if (txReceipt.status !== "success") {
+        throw new Error("Withdraw transaction failed");
+      }
       await this.syncShielderToken(token);
     }
     return txHash;

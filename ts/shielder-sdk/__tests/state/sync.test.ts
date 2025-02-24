@@ -178,7 +178,8 @@ describe("StateSynchronizer", () => {
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
-        block: 1n
+        block: 1n,
+        token: nativeToken()
       });
     });
 
@@ -227,14 +228,16 @@ describe("StateSynchronizer", () => {
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
-        block: 1n
+        block: 1n,
+        token: nativeToken()
       });
       expect(syncCallback).toHaveBeenNthCalledWith(2, {
         type: "Withdraw",
         amount: 50n,
         to: "0x456",
         txHash: "0xdef",
-        block: 2n
+        block: 2n,
+        token: nativeToken()
       });
     });
 
@@ -349,14 +352,16 @@ describe("StateSynchronizer", () => {
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
-        block: 1n
+        block: 1n,
+        token: nativeToken()
       });
       expect(transactions[1]).toEqual({
         type: "Withdraw",
         amount: 50n,
         to: "0x456",
         txHash: "0xdef",
-        block: 2n
+        block: 2n,
+        token: nativeToken()
       });
     });
 

@@ -52,9 +52,9 @@ export class NewAccountAction extends NoteAction {
 
   async prepareAdvice(
     state: AccountState,
-    amount: bigint,
-    tokenAddress: `0x${string}`
+    amount: bigint
   ): Promise<NewAccountAdvice> {
+    const tokenAddress = getTokenAddress(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -85,11 +85,10 @@ export class NewAccountAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
-    const tokenAddress = getTokenAddress(state.token);
-
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount, tokenAddress);
+    const advice = await this.prepareAdvice(state, amount);
+
     const proof = await this.cryptoClient.newAccountCircuit
       .prove(advice)
       .catch((e) => {
@@ -155,7 +154,7 @@ export class NewAccountAction extends NoteAction {
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),
-      value: amount
+      value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
       throw new Error(`Failed to create new account: ${e}`);
     });
