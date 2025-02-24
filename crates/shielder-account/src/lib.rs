@@ -50,9 +50,9 @@ impl ShielderAccount {
     ///
     /// Note: You SHOULD prefer using `Self::new` instead of `Default::default()`, unless you are
     /// writing single-actor tests.
-    pub fn new(id: U256) -> Self {
+    pub fn new(id_seed: U256) -> Self {
         Self {
-            id: field_to_u256(generate_user_id(u256_to_field::<Fr>(id).to_bytes())),
+            id: field_to_u256(generate_user_id(u256_to_field::<Fr>(id_seed).to_bytes())),
             ..Default::default()
         }
     }

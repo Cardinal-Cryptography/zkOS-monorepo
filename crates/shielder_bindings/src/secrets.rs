@@ -35,11 +35,11 @@ pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 pub fn derive_id(private_key_hex: &str, token_address_hex: &str) -> Vec<u8> {
-    let id_u256 = secrets::derive_id(
+    let id_seed_u256 = secrets::derive_id(
         hex_to_u256(private_key_hex).unwrap(),
         Address::from_hex(token_address_hex).unwrap(),
     );
-    let id_fr: Fr = u256_to_field(id_u256);
-    let on_curve_id = shielder_circuits::generate_user_id(id_fr.to_bytes());
+    let id_seed_fr: Fr = u256_to_field(id_seed_u256);
+    let on_curve_id = shielder_circuits::generate_user_id(id_seed_fr.to_bytes());
     field_to_bytes(on_curve_id)
 }
