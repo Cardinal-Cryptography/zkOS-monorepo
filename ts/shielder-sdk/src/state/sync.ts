@@ -10,6 +10,7 @@ import { isVersionSupported } from "@/utils";
 import { StateManager } from "./manager";
 import { AccountState, ShielderTransaction } from "./types";
 import { Token } from "@/types";
+import { bytesToHex } from "viem";
 
 export class UnexpectedVersionInEvent extends CustomError {
   public constructor(message: string) {
@@ -60,7 +61,7 @@ export class StateSynchronizer {
           throw new Error("State is null, this should not happen");
         }
         state = newState;
-        const transaction = eventToTransaction(event);
+        const transaction = eventToTransaction(event, token);
         if (this.syncCallback) this.syncCallback(transaction);
         await this.stateManager.updateAccountState(token, state);
       }
@@ -84,7 +85,7 @@ export class StateSynchronizer {
         throw new Error("State is null, this should not happen");
       }
       state = newState;
-      const transaction = eventToTransaction(event);
+      const transaction = eventToTransaction(event, token);
       yield transaction;
     }
   }
@@ -124,9 +125,12 @@ export class StateSynchronizer {
    */
   private async findStateTransitionEvent(state: AccountState) {
     const nullifier = await this.getNullifier(state);
+    const nullifierHash = await this.cryptoClient.hasher.poseidonHash([
+      nullifier
+    ]);
 
     const block = await this.contract.nullifierBlock(
-      scalarToBigint(await this.cryptoClient.hasher.poseidonHash([nullifier]))
+      scalarToBigint(nullifierHash)
     );
     if (!block) {
       /// this is the last shielder transaction
@@ -143,13 +147,17 @@ export class StateSynchronizer {
   }
 }
 
-const eventToTransaction = (event: NoteEvent): ShielderTransaction => {
+const eventToTransaction = (
+  event: NoteEvent,
+  token: Token
+): ShielderTransaction => {
   return {
     type: event.name,
     amount: event.amount,
     to: event.to,
     relayerFee: event.relayerFee,
     txHash: event.txHash,
-    block: event.block
+    block: event.block,
+    token
   };
 };

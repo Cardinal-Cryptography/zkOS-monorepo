@@ -110,9 +110,6 @@ export class StateManager {
 }
 
 const emptyAccountState = (token: Token, id: Scalar): AccountState => {
-  if (token.type !== "native") {
-    throw new Error("Not implemented");
-  }
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
     id,

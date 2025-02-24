@@ -181,7 +181,7 @@ export class DepositAction extends NoteAction {
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),
-      value: amount
+      value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
       if (e instanceof VersionRejectedByContract) {
         throw e;

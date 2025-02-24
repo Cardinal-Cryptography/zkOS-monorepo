@@ -40,4 +40,5 @@ export type ShielderTransaction = {
   relayerFee?: bigint;
   txHash: Hex;
   block: bigint;
+  token: Token;
 };
