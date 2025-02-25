@@ -1,7 +1,6 @@
 import { tokenToKey } from "@/testUtils";
 import type {
   ShielderCallbacks,
-  ShielderOperation,
   ShielderTransaction,
   Token
 } from "@cardinal-cryptography/shielder-sdk";

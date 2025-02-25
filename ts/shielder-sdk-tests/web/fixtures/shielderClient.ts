@@ -6,10 +6,6 @@ import type {
   Token
 } from "@cardinal-cryptography/shielder-sdk";
 import { createAccount, type SeededAccount } from "@tests/chainAccount";
-import {
-  ContractFunctionRevertedError,
-  type TransactionExecutionError
-} from "viem";
 import { type CallbacksFixture, setupCallbacks } from "./callbacks";
 
 export interface ShielderClientFixture {
