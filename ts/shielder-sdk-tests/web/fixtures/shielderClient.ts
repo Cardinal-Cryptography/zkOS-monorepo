@@ -53,23 +53,10 @@ export const setupShielderClient = async (
   const storage = mockedStorage(shielderKey);
   const cryptoClient = await window.wasmCryptoClient.cryptoClient;
   const sendingTransaction: SendShielderTransaction = async (calldata) => {
-    const tx = await chainAccount
-      .sendTransaction({
-        ...calldata,
-        gas: 3000000n
-      })
-      .catch((err: TransactionExecutionError) => {
-        const revertError = err.walk(
-          (err) => err instanceof ContractFunctionRevertedError
-        );
-        console.log(revertError);
-        if (revertError instanceof ContractFunctionRevertedError) {
-          const errorName = revertError.data?.errorName ?? "";
-          console.log(errorName);
-          // do something with `errorName`
-        }
-        throw err;
-      });
+    const tx = await chainAccount.sendTransaction({
+      ...calldata,
+      gas: 3000000n
+    });
     return tx;
   };
   const callbacks = setupCallbacks();

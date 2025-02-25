@@ -1,6 +1,6 @@
 import type { Token } from "@cardinal-cryptography/shielder-sdk";
 import type { ShortTx } from "@tests/types";
-import { setupBalanceRecorder } from "./counter";
+import { setupBalanceRecorder } from "./balanceRecorder";
 
 export interface RegistrarFixture {
   registerShield(token: Token, amount: bigint): void;
@@ -20,7 +20,7 @@ export const setupRegistrar = (): RegistrarFixture => {
     if (!tokenTxHistory.has(key)) {
       tokenTxHistory.set(key, []);
     }
-    // new account if not exists
+    // new account if not existing
     if (tokenTxHistory.get(key)!.length === 0) {
       tokenTxHistory.get(key)!.push({
         type: "NewAccount",

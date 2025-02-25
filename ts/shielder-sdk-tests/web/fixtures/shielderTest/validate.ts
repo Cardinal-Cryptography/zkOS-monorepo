@@ -2,7 +2,7 @@ import type { Token } from "@cardinal-cryptography/shielder-sdk";
 import type { RegistrarFixture } from "../registrar";
 import type { ShielderClientFixture } from "../shielderClient";
 import type { WithdrawalAccountFixture } from "../withdrawalAccount";
-import type { BalanceRecorderFixture } from "../counter";
+import type { BalanceRecorderFixture } from "../balanceRecorder";
 import { tokenToKey } from "@/testUtils";
 
 export const validateShielderBalance =

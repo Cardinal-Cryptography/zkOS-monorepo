@@ -9,16 +9,12 @@ import type {
 export interface CallbacksFixture {
   callbacks: ShielderCallbacks;
   txHistory: (token: Token) => ShielderTransaction[];
-  calldataGeneratedHistory: () => ShielderOperation[];
-  calldataSentHistory: () => ShielderOperation[];
   clearHistory: () => void;
 }
 
 export const setupCallbacks = (): CallbacksFixture => {
   let txHistory: Map<"native" | `0x${string}`, ShielderTransaction[]> =
     new Map();
-  let calldataGeneratedHistory: ShielderOperation[] = [];
-  let calldataSentHistory: ShielderOperation[] = [];
 
   const callbacks: ShielderCallbacks = {
     onNewTransaction: (tx) => {
@@ -27,19 +23,11 @@ export const setupCallbacks = (): CallbacksFixture => {
         txHistory.set(token, []);
       }
       txHistory.get(token)!.push(tx);
-    },
-    onCalldataGenerated: (_, op) => {
-      calldataGeneratedHistory.push(op);
-    },
-    onCalldataSent: (_, op) => {
-      calldataSentHistory.push(op);
     }
   };
 
   const clearHistory = () => {
     txHistory = new Map();
-    calldataGeneratedHistory = [];
-    calldataSentHistory = [];
   };
 
   return {
@@ -47,8 +35,6 @@ export const setupCallbacks = (): CallbacksFixture => {
     txHistory: (token: Token) => {
       return txHistory.get(tokenToKey(token)) ?? [];
     },
-    calldataGeneratedHistory: () => calldataGeneratedHistory,
-    calldataSentHistory: () => calldataSentHistory,
     clearHistory
   };
 };

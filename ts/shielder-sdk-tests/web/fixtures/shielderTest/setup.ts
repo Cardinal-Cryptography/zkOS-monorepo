@@ -11,7 +11,10 @@ import {
   setupWithdrawalAccount,
   type WithdrawalAccountFixture
 } from "../withdrawalAccount";
-import { type BalanceRecorderFixture, setupBalanceRecorder } from "../counter";
+import {
+  type BalanceRecorderFixture,
+  setupBalanceRecorder
+} from "../balanceRecorder";
 import {
   validateShielderBalance as validateShielderBalanceSingle,
   validateWithdrawnBalance as validateWithdrawnBalanceSingle,
@@ -82,8 +85,6 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
       } else {
         throw new Error(`Unknown action type`);
       }
-
-      // add token to used tokens (copy to avoid mutation)
     } catch (e) {
       console.error((e as Error).message);
       throw new Error((e as Error).message);
