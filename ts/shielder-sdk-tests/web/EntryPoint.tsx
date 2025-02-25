@@ -6,17 +6,17 @@ import {
   type NativeToken,
   type ShielderCallbacks,
   type ShielderClient,
-  type ShielderTransaction
+  type ERC20Token,
+  erc20Token
 } from "@cardinal-cryptography/shielder-sdk";
 import type { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
 import { envThreadsNumber } from "./testUtils";
+import type { GlobalConfigFixture } from "@tests/playwrightFixtures/globalConfig";
 import {
-  type ShielderClientFixture,
-  setupShielderClient
-} from "./fixtures/setupShielderClient";
-import { validateTxHistory } from "./validators/txHistory";
-import type { AccountNames, AccountValue, TestDescription } from "@tests/types";
+  type ShielderTestFixture,
+  setupShielderTest
+} from "./fixtures/shielderTest/setup";
 
 declare global {
   interface Window {
@@ -25,28 +25,9 @@ declare global {
     };
 
     testFixtures: {
-      setupShielderClient: (
-        chainConfig: {
-          chainId: number;
-          rpcHttpEndpoint: string;
-          contractAddress: `0x${string}`;
-          testnetPrivateKey: `0x${string}`;
-        },
-        relayerConfig: {
-          url: string;
-        },
-        privateKey: `0x${string}`,
-        shielderKey: `0x${string}`
-      ) => Promise<ShielderClientFixture>;
-    };
-
-    validators: {
-      validateTxHistory: (
-        txHistory: ShielderTransaction[],
-        actions: TestDescription["actions"],
-        webSdk: AccountValue<ShielderClientFixture>,
-        actor: AccountNames
-      ) => boolean;
+      setupHappyTest: (
+        globalConfig: GlobalConfigFixture
+      ) => Promise<ShielderTestFixture>;
     };
 
     shielder: {
@@ -61,6 +42,7 @@ declare global {
         callbacks?: ShielderCallbacks
       ) => ShielderClient;
       nativeToken: () => NativeToken;
+      erc20Token: (address: `0x${string}`) => ERC20Token;
     };
 
     initialized: boolean;
@@ -71,10 +53,7 @@ function EntryPoint() {
   useEffect(() => {
     // test fixtures initialization
     window.testFixtures = window.testFixtures || {};
-    window.testFixtures.setupShielderClient = setupShielderClient;
-    // validators initialization
-    window.validators = window.validators || {};
-    window.validators.validateTxHistory = validateTxHistory;
+    window.testFixtures.setupHappyTest = setupShielderTest;
     // Wasm crypto client initialization
     window.wasmCryptoClient = window.wasmCryptoClient || {};
     window.wasmCryptoClient.cryptoClient = initWasmWorker(envThreadsNumber());
@@ -82,6 +61,7 @@ function EntryPoint() {
     window.shielder = window.shielder || {};
     window.shielder.createShielderClient = createShielderClient;
     window.shielder.nativeToken = nativeToken;
+    window.shielder.erc20Token = erc20Token;
     window.initialized = true;
   }, []);
 

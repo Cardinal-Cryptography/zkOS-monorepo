@@ -1,8 +1,8 @@
-import { BalanceManager } from "@tests/balanceManager";
 import { getChainConfig, getRelayerConfig } from "@tests/envConfig";
 import { ACCOUNT_NAMES, INITIAL_EVM_BALANCE } from "@tests/constants";
 import type { AccountValue } from "@tests/types";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
+import { createAccount } from "@tests/chainAccount";
 
 export type GlobalConfigFixture = {
   chainConfig: ReturnType<typeof getChainConfig>;
@@ -24,17 +24,24 @@ export const globalConfigFixture = async (
     privateKeys[name] = generatePrivateKey();
   }
 
-  const balanceManager = new BalanceManager(
-    chainConfig.rpcHttpEndpoint,
+  const faucet = createAccount(
+    chainConfig.testnetPrivateKey,
     chainConfig.chainId,
-    chainConfig.testnetPrivateKey
+    chainConfig.rpcHttpEndpoint
   );
 
   for (const name of ACCOUNT_NAMES) {
-    await balanceManager.setBalance(
+    await faucet.sendNative(
       privateKeyToAddress(privateKeys[name]),
       INITIAL_EVM_BALANCE
     );
+    for (const tokenAddress of chainConfig.tokenContractAddresses) {
+      await faucet.sendERC20(
+        tokenAddress as `0x${string}`,
+        privateKeyToAddress(privateKeys[name]),
+        INITIAL_EVM_BALANCE
+      );
+    }
   }
 
   await use({ chainConfig, relayerConfig, privateKeys });

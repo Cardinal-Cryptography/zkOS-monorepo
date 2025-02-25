@@ -34,7 +34,8 @@ export const getChainConfig = () => {
     chainId: parseInt(chainId),
     rpcHttpEndpoint: rpcHttpEndpoint,
     contractAddress: shielderContractAddress as `0x${string}`,
-    testnetPrivateKey: testnetPrivateKey as `0x${string}`
+    testnetPrivateKey: testnetPrivateKey as `0x${string}`,
+    tokenContractAddresses: tokenContractAddresses
   };
 };
 
