@@ -1,6 +1,13 @@
-use alloy_primitives::U256;
+use alloy_primitives::{
+    private::rand::{rngs::OsRng, Rng},
+    U256,
+};
 use anyhow::Result;
-use shielder_account::{call_data::NewAccountCallType, ShielderAction};
+use shielder_account::{
+    call_data::{NewAccountCallExtra, NewAccountCallType},
+    ShielderAction,
+};
+use shielder_circuits::consts::FIELD_BITS;
 use shielder_contract::{
     call_type::{Call, DryRun},
     events::get_event,
@@ -17,14 +24,17 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
     let amount = U256::from(amount);
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
     let user = app_state.create_shielder_user();
-    let anonymity_revoker_pkey = user.anonymity_revoker_pubkey::<DryRun>().await?;
+    let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
     let (tx_hash, block_hash) = user
         .create_new_account_native::<Call>(
             app_state.account.prepare_call::<NewAccountCallType>(
                 &params,
                 &pk,
                 amount,
-                &anonymity_revoker_pkey,
+                &NewAccountCallExtra {
+                    anonymity_revoker_public_key,
+                    encryption_salt: get_encryption_salt(),
+                },
             ),
             amount,
         )
@@ -48,4 +58,9 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
         ));
     info!("Created new account with {amount} tokens");
     Ok(())
+}
+
+fn get_encryption_salt() -> [U256; FIELD_BITS] {
+    let mut rng = OsRng;
+    core::array::from_fn(|_| U256::from(rng.gen_bool(0.5)))
 }

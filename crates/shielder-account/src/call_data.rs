@@ -2,11 +2,14 @@ use alloy_primitives::{Address, Bytes, U256};
 use rand::rngs::OsRng;
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
+    consts::{
+        merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
+        FIELD_BITS,
+    },
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    AsymPublicKey, Field, Fr, ProverKnowledge, PublicInputProvider,
+    Field, Fr, GrumpkinPointAffine, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
     ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
@@ -54,16 +57,21 @@ pub trait CallType {
     ) -> Self::Calldata;
 }
 
+pub struct NewAccountCallExtra {
+    pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
+    pub encryption_salt: [U256; FIELD_BITS],
+}
+
 pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
-    type Extra = AsymPublicKey<U256>;
+    type Extra = NewAccountCallExtra;
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountNativeCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
         amount: U256,
-        anonymity_revoker_public_key: &Self::Extra,
+        extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
@@ -71,9 +79,10 @@ impl CallType for NewAccountCallType {
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
             token_address: NATIVE_TOKEN_ADDRESS,
-            anonymity_revoker_public_key: AsymPublicKey {
-                x: u256_to_field(anonymity_revoker_public_key.x),
-                y: u256_to_field(anonymity_revoker_public_key.y),
+            encryption_salt: extra.encryption_salt.map(u256_to_field),
+            anonymity_revoker_public_key: GrumpkinPointAffine {
+                x: u256_to_field(extra.anonymity_revoker_public_key.x),
+                y: u256_to_field(extra.anonymity_revoker_public_key.y),
             },
         }
     }
@@ -88,8 +97,17 @@ impl CallType for NewAccountCallType {
             expectedContractVersion: contract_version().to_bytes(),
             newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
-            symKeyEncryption: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryption),
+            symKeyEncryptionC1X: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1X),
+            ),
+            symKeyEncryptionC1Y: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1Y),
+            ),
+            symKeyEncryptionC2X: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2X),
+            ),
+            symKeyEncryptionC2Y: field_to_u256(
+                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2Y),
             ),
             proof: Bytes::from(proof),
         }

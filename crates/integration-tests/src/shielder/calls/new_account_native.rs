@@ -1,5 +1,9 @@
 use alloy_primitives::{TxHash, U256};
-use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
+use shielder_account::{
+    call_data::{NewAccountCallExtra, NewAccountCallType},
+    ShielderAccount,
+};
+use shielder_circuits::consts::FIELD_BITS;
 use shielder_contract::ShielderContract::{newAccountNativeCall, ShielderContractErrors};
 
 use crate::{
@@ -17,7 +21,10 @@ pub fn prepare_call(
         &params,
         &pk,
         amount,
-        &ANONYMITY_REVOKER_PKEY,
+        &NewAccountCallExtra {
+            anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
+            encryption_salt: [U256::from(1); FIELD_BITS],
+        },
     )
 }
 
@@ -58,7 +65,6 @@ pub fn create_account_and_call(
 
 #[cfg(test)]
 mod tests {
-
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Address, FixedBytes, U256};
