@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::{
+    field_element_to_le_bits,
     new_account::{NewAccountInstance, NewAccountProverKnowledge},
     Fr, GrumpkinPointAffine, PublicInputProvider,
 };
@@ -85,7 +86,7 @@ impl NewAccountCircuit {
         trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
         token_address: Vec<u8>,
-        encryption_salt: Vec<u8>, // vector of bits
+        encryption_salt: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
         anonymity_revoker_public_key_y: Vec<u8>,
     ) -> Vec<u8> {
@@ -96,12 +97,7 @@ impl NewAccountCircuit {
                 trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
                 token_address: vec_to_f(token_address),
-                encryption_salt: encryption_salt
-                    .into_iter()
-                    .map(|v| Fr::from(v as u64))
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .expect("Invalid length"),
+                encryption_salt: field_element_to_le_bits(vec_to_f(encryption_salt)),
                 anonymity_revoker_public_key: GrumpkinPointAffine {
                     x: vec_to_f(anonymity_revoker_public_key_x),
                     y: vec_to_f(anonymity_revoker_public_key_y),
@@ -165,12 +161,7 @@ pub fn new_account_pub_inputs(
         trapdoor: vec_to_f(trapdoor),
         initial_deposit: vec_to_f(initial_deposit),
         token_address: vec_to_f(token_address),
-        encryption_salt: encryption_salt
-            .into_iter()
-            .map(|v| Fr::from(v as u64))
-            .collect::<Vec<_>>()
-            .try_into()
-            .expect("Invalid length"),
+        encryption_salt: field_element_to_le_bits(vec_to_f(encryption_salt)),
         anonymity_revoker_public_key: GrumpkinPointAffine {
             x: vec_to_f(anonymity_revoker_public_key_x),
             y: vec_to_f(anonymity_revoker_public_key_y),

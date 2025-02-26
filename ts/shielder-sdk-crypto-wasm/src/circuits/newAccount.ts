@@ -3,7 +3,7 @@ import {
   NewAccountAdvice,
   NewAccountPubInputs,
   NewAccountCircuit as INewAccountCircuit,
-  Scalar, toBits
+  Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
@@ -37,7 +37,7 @@ export class NewAccountCircuit
         values.trapdoor.bytes,
         values.initialDeposit.bytes,
         values.tokenAddress.bytes,
-        toBits(values.encryptionSalt),
+        values.encryptionSalt.bytes,
         values.anonymityRevokerPubkey.x.bytes,
         values.anonymityRevokerPubkey.y.bytes
       )
