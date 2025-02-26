@@ -59,22 +59,6 @@ export class Scalar {
     const addressBigint = hexToBigInt(address);
     return Scalar.fromBigint(addressBigint);
   }
-
-  /**
-   * Converts a scalar to little endian bit array, represented as Uint8Array.
-   *
-   * @returns the scalar as a little-endian bit array. Every bit is represented
-   * as Uint8. The length of the array is 254.
-   */
-  toBits() {
-    const result = new Uint8Array(254);
-    for (let i = 0; i < 32; i++) {
-      for (let j = 0; j < 8; j++) {
-        result[i * 8 + j] = (this.bytes[i] >> j) & 1 ? 1 : 0;
-      }
-    }
-    return result;
-  }
 }
 
 /**
@@ -115,4 +99,20 @@ export function scalarToBigint(scalar: Scalar): bigint {
 
 export function scalarsEqual(a: Scalar, b: Scalar): boolean {
   return a.bytes.every((byte, i) => byte === b.bytes[i]);
+}
+
+/**
+ * Converts a scalar to little endian bit array, represented as Uint8Array.
+ *
+ * @returns the scalar as a little-endian bit array. Every bit is represented
+ * as Uint8. The length of the array is 254.
+ */
+export function toBits(scalar: Scalar) {
+  const result = new Uint8Array(254);
+  for (let i = 0; i < 32; i++) {
+    for (let j = 0; j < 8; j++) {
+      result[i * 8 + j] = (scalar.bytes[i] >> j) & 1 ? 1 : 0;
+    }
+  }
+  return result;
 }
