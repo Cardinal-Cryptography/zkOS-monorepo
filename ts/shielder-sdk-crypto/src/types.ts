@@ -13,10 +13,8 @@ export type NewAccountPubInputs = {
   initialDeposit: Scalar;
   tokenAddress: Scalar;
   anonymityRevokerPubkey: CurvePointAffine<Scalar>;
-  symKeyEncryption1X: Scalar;
-  symKeyEncryption1Y: Scalar;
-  symKeyEncryption2X: Scalar;
-  symKeyEncryption2Y: Scalar;
+  symKeyEncryption1: CurvePointAffine<Scalar>;
+  symKeyEncryption2: CurvePointAffine<Scalar>;
 };
 
 export type NewAccountAdvice = {

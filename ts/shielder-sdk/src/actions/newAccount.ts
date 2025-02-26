@@ -131,6 +131,15 @@ export class NewAccountAction extends NoteAction {
       expectedContractVersion,
       amount
     } = calldata;
+
+    const symKeyEncryption1 = {
+      x: scalarToBigint(pubInputs.symKeyEncryption1.x),
+      y: scalarToBigint(pubInputs.symKeyEncryption1.y)
+    };
+    const symKeyEncryption2 = {
+      x: scalarToBigint(pubInputs.symKeyEncryption2.x),
+      y: scalarToBigint(pubInputs.symKeyEncryption2.y)
+    };
     const encodedCalldata =
       calldata.token.type === "native"
         ? await this.contract.newAccountNativeCalldata(
@@ -139,10 +148,8 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption1X),
-            scalarToBigint(pubInputs.symKeyEncryption1Y),
-            scalarToBigint(pubInputs.symKeyEncryption2X),
-            scalarToBigint(pubInputs.symKeyEncryption2Y),
+            symKeyEncryption1,
+            symKeyEncryption2,
             proof
           )
         : await this.contract.newAccountTokenCalldata(
@@ -152,10 +159,8 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption1X),
-            scalarToBigint(pubInputs.symKeyEncryption1Y),
-            scalarToBigint(pubInputs.symKeyEncryption2X),
-            scalarToBigint(pubInputs.symKeyEncryption2Y),
+            symKeyEncryption1,
+            symKeyEncryption2,
             proof
           );
     const txHash = await sendShielderTransaction({

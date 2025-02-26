@@ -17,6 +17,7 @@ export class NewAccountCircuit
   implements INewAccountCircuit
 {
   private wasmCircuit: InstanceType<WasmNewAccountCircuit> | undefined;
+
   init(caller: Caller) {
     super.init(caller);
     if (!this.wasmModule) {
@@ -42,6 +43,7 @@ export class NewAccountCircuit
       )
     );
   }
+
   async pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
@@ -69,10 +71,14 @@ export class NewAccountCircuit
         x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
         y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
       },
-      symKeyEncryption1X: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
-      symKeyEncryption1Y: new Scalar(pubInputsBytes.sym_key_encryption_1_y),
-      symKeyEncryption2X: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
-      symKeyEncryption2Y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
+      symKeyEncryption1: {
+        x: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
+        y: new Scalar(pubInputsBytes.sym_key_encryption_1_y)
+      },
+      symKeyEncryption2: {
+        x: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
+        y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
+      }
     });
   }
 
@@ -90,10 +96,10 @@ export class NewAccountCircuit
           pubInputs.tokenAddress.bytes,
           pubInputs.anonymityRevokerPubkey.x.bytes,
           pubInputs.anonymityRevokerPubkey.y.bytes,
-          pubInputs.symKeyEncryption1X.bytes,
-          pubInputs.symKeyEncryption1Y.bytes,
-          pubInputs.symKeyEncryption2X.bytes,
-          pubInputs.symKeyEncryption2Y.bytes,
+          pubInputs.symKeyEncryption1.x.bytes,
+          pubInputs.symKeyEncryption1.y.bytes,
+          pubInputs.symKeyEncryption2.x.bytes,
+          pubInputs.symKeyEncryption2.y.bytes,
           proof
         )
       );
