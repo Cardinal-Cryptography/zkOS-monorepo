@@ -60,7 +60,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
     Ok(())
 }
 
-fn get_encryption_salt() -> [U256; FIELD_BITS] {
+fn get_encryption_salt() -> [bool; FIELD_BITS] {
     let mut rng = OsRng;
-    core::array::from_fn(|_| U256::from(rng.gen_bool(0.5)))
+    core::array::from_fn(|_| rng.gen_bool(0.5))
 }

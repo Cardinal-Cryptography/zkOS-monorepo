@@ -59,7 +59,7 @@ pub trait CallType {
 
 pub struct NewAccountCallExtra {
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
-    pub encryption_salt: [U256; FIELD_BITS],
+    pub encryption_salt: [bool; FIELD_BITS],
 }
 
 pub enum NewAccountCallType {}
@@ -79,7 +79,7 @@ impl CallType for NewAccountCallType {
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
             token_address: NATIVE_TOKEN_ADDRESS,
-            encryption_salt: extra.encryption_salt.map(u256_to_field),
+            encryption_salt: extra.encryption_salt.map(|b| Fr::from(b as u64)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
                 x: u256_to_field(extra.anonymity_revoker_public_key.x),
                 y: u256_to_field(extra.anonymity_revoker_public_key.y),

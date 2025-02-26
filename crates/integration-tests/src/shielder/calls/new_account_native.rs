@@ -23,7 +23,7 @@ pub fn prepare_call(
         amount,
         &NewAccountCallExtra {
             anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
-            encryption_salt: [U256::from(1); FIELD_BITS],
+            encryption_salt: [true; FIELD_BITS],
         },
     )
 }
