@@ -21,7 +21,7 @@ use shielder_setup::{
     native_token::NATIVE_TOKEN_ADDRESS,
     version::{contract_version, ContractVersion},
 };
-use type_conversions::{field_to_u256, u256_to_field};
+use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
 use super::secrets::generate_id_hiding_nonce;
 use crate::ShielderAccount;
@@ -33,10 +33,19 @@ struct ActionSecrets {
     trapdoor_new: U256,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Token {
     Native,
     ERC20(Address),
+}
+
+impl Token {
+    pub fn address(&self) -> Address {
+        match self {
+            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
+            Token::ERC20(address) => *address,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -125,6 +134,7 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
 }
 
 pub struct NewAccountCallExtra {
+    pub token: Token,
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     pub encryption_salt: [bool; FIELD_BITS],
 }
@@ -145,7 +155,7 @@ impl CallType for NewAccountCallType {
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(extra.token.address()),
             encryption_salt: extra.encryption_salt.map(|b| Fr::from(b as u64)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
                 x: u256_to_field(extra.anonymity_revoker_public_key.x),
@@ -157,12 +167,12 @@ impl CallType for NewAccountCallType {
     fn prepare_call_data(
         prover_knowledge: &Self::ProverKnowledge,
         proof: Vec<u8>,
-        _: &Self::Extra,
+        extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
         NewAccountCall {
             amount: field_to_u256(prover_knowledge.initial_deposit),
-            token: Token::Native,
+            token: extra.token,
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             id_hash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),

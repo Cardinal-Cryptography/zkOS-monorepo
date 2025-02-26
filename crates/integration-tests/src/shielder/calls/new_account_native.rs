@@ -1,6 +1,6 @@
 use alloy_primitives::{TxHash, U256};
 use shielder_account::{
-    call_data::{NewAccountCallExtra, NewAccountCallType},
+    call_data::{NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAccount,
 };
 use shielder_circuits::consts::FIELD_BITS;
@@ -23,6 +23,7 @@ pub fn prepare_call(
             &pk,
             amount,
             &NewAccountCallExtra {
+                token: Token::Native,
                 anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
                 encryption_salt: [true; FIELD_BITS],
             },

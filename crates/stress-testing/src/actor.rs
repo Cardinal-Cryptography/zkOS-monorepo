@@ -1,7 +1,7 @@
 use alloy_signer_local::PrivateKeySigner;
 use rand::{rngs::StdRng, SeedableRng};
 use shielder_account::{
-    call_data::{NewAccountCallExtra, NewAccountCallType},
+    call_data::{NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAccount,
 };
 use shielder_circuits::{
@@ -56,6 +56,7 @@ impl Actor {
                 pk,
                 amount,
                 &NewAccountCallExtra {
+                    token: Token::Native,
                     anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
                     encryption_salt: [Default::default(); FIELD_BITS],
                 },

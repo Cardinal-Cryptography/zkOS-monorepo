@@ -4,7 +4,7 @@ use alloy_primitives::{
 };
 use anyhow::Result;
 use shielder_account::{
-    call_data::{NewAccountCallExtra, NewAccountCallType},
+    call_data::{NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAction,
 };
 use shielder_circuits::consts::FIELD_BITS;
@@ -34,6 +34,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
                     &pk,
                     amount,
                     &NewAccountCallExtra {
+                        token: Token::Native,
                         anonymity_revoker_public_key,
                         encryption_salt: get_encryption_salt(),
                     },
