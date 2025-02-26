@@ -1,6 +1,3 @@
-// Copied from:
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol
-
 use alloy_sol_types::sol;
 
 sol! {
