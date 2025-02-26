@@ -38,7 +38,7 @@ start_node() {
 #### ACCOUNTS ######################################################################################
 ####################################################################################################
 endow_accounts() {
-  AMOUNT=$(mtzero 1000000)
+  AMOUNT=$(mtzero 100000)
 
   keys=("${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}" "${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}")
   for key in "${keys[@]}"; do
