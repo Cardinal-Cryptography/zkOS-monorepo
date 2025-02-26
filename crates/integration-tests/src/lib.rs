@@ -27,8 +27,18 @@ fn read_contract(contract_name: &str) -> String {
 }
 
 fn deploy_contract(contract_filename: &str, contract_name: &str, evm: &mut EvmRunner) -> Address {
+    deploy_contract_with_caller(contract_filename, contract_name, None, evm)
+}
+
+// Allows to deploy a contract while specifying the address that performs the deployment.
+fn deploy_contract_with_caller(
+    contract_filename: &str,
+    contract_name: &str,
+    caller: Option<Address>,
+    evm: &mut EvmRunner,
+) -> Address {
     let solidity_code = read_contract(contract_filename);
     let compiled_bytecode = source_to_bytecode(solidity_code, contract_name, true);
-    evm.create(compiled_bytecode, None)
+    evm.create(compiled_bytecode, caller)
         .unwrap_or_else(|_| panic!("Failed to deploy {contract_name} contract"))
 }

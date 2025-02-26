@@ -7,12 +7,13 @@ use evm_utils::{
     revm_primitives::{AccountInfo, Bytecode},
     EvmRunner,
 };
-use rstest::{fixture, rstest};
+use rstest::fixture;
 use shielder_circuits::AsymPublicKey;
 use shielder_contract::ShielderContract::initializeCall;
 
 use crate::{
     deploy_contract,
+    erc20::ERC20Token,
     proving_utils::{
         deposit_proving_params, new_account_proving_params, withdraw_proving_params, ProvingParams,
     },
@@ -24,31 +25,37 @@ use crate::{
     verifier::deploy_verifiers,
 };
 
+pub const ERC20_TOKEN_FAUCET_ADDRESS: &str = "9999999999999999999999999999999999999999";
+
 /// The address of the deployer account.
 ///
 /// This is one of the default accounts in the Anvil testnet.
 pub const DEPLOYER_ADDRESS: &str = "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-pub const DEPLOYER_INITIAL_BALANCE: U256 = U256::MAX;
+pub const DEPLOYER_INITIAL_NATIVE_BALANCE: U256 = U256::MAX;
+pub const DEPLOYER_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::ZERO;
 
 /// The address of the actor account.
 ///
 /// This is one of the default accounts in the Anvil testnet.
 pub const ACTOR_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79C8";
-pub const ACTOR_INITIAL_BALANCE: U256 = U256::MAX;
+pub const ACTOR_INITIAL_NATIVE_BALANCE: U256 = U256::MAX;
+pub const ACTOR_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::MAX;
 
 /// The private key of the actor account.
 pub const ACTOR_PRIVATE_KEY: &str =
     "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
 
 pub const RECIPIENT_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79C9";
-pub const RECIPIENT_INITIAL_BALANCE: U256 = U256::ZERO;
+pub const RECIPIENT_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
+pub const RECIPIENT_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::ZERO;
 
 pub const RELAYER_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79CA";
-pub const RELAYER_INITIAL_BALANCE: U256 = U256::ZERO;
+pub const RELAYER_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
+pub const RELAYER_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::ZERO;
 
 // Will always revert when receiving funds.
-pub const REVERTING_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79CB";
-pub const REVERTING_ADDRESS_INITIAL_BALANCE: U256 = U256::ZERO;
+pub const REVERTING_ADDRESS: &str = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+pub const REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
 pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 DUP1 REVERT
 
 pub const INITIAL_DEPOSIT_LIMIT: U256 = U256::MAX;
@@ -65,21 +72,29 @@ pub struct ShielderContractSuite {
 
 pub fn prepare_account(
     evm: &mut EvmRunner,
+    erc20_token: &ERC20Token,
     address: &str,
-    balance: U256,
+    native_balance: U256,
+    erc20_token_balance: Option<U256>,
     code: Option<Bytecode>,
 ) -> Address {
-    let caller = Address::from_str(address).unwrap();
+    let address = Address::from_str(address).unwrap();
+
     evm.db.insert_account_info(
-        caller,
+        address,
         AccountInfo {
             nonce: 0_u64,
-            balance,
+            balance: native_balance,
             code_hash: keccak256(Bytes::new()),
             code,
         },
     );
-    caller
+
+    if let Some(balance) = erc20_token_balance {
+        erc20_token.faucet(evm, address, balance).unwrap()
+    }
+
+    address
 }
 
 /// Solc leaves this placeholder for a Poseidon2 contract address.
@@ -90,6 +105,7 @@ const WITHDRAW_VERIFIER_LIB_PLACEHOLDER: &str = "__$06bb88608c3ade14b496e12c6067
 
 pub struct Deployment {
     pub evm: EvmRunner,
+    pub erc20_token: ERC20Token,
     pub contract_suite: ShielderContractSuite,
     pub new_account_proving_params: ProvingParams,
     pub deposit_proving_params: ProvingParams,
@@ -104,15 +120,51 @@ pub fn deployment(
     withdraw_proving_params: &ProvingParams,
 ) -> Deployment {
     let mut evm = EvmRunner::aleph_evm();
-    let owner = prepare_account(&mut evm, DEPLOYER_ADDRESS, DEPLOYER_INITIAL_BALANCE, None);
-    prepare_account(&mut evm, ACTOR_ADDRESS, ACTOR_INITIAL_BALANCE, None);
-    prepare_account(&mut evm, RECIPIENT_ADDRESS, RECIPIENT_INITIAL_BALANCE, None);
-    prepare_account(&mut evm, RELAYER_ADDRESS, RELAYER_INITIAL_BALANCE, None);
+
+    let erc20_token = ERC20Token::deploy(
+        &mut evm,
+        Address::from_str(ERC20_TOKEN_FAUCET_ADDRESS).unwrap(),
+    );
+
+    let owner = prepare_account(
+        &mut evm,
+        &erc20_token,
+        DEPLOYER_ADDRESS,
+        DEPLOYER_INITIAL_NATIVE_BALANCE,
+        Some(DEPLOYER_INITIAL_ERC20_TOKEN_BALANCE),
+        None,
+    );
+    prepare_account(
+        &mut evm,
+        &erc20_token,
+        ACTOR_ADDRESS,
+        ACTOR_INITIAL_NATIVE_BALANCE,
+        Some(ACTOR_INITIAL_ERC20_TOKEN_BALANCE),
+        None,
+    );
+    prepare_account(
+        &mut evm,
+        &erc20_token,
+        RECIPIENT_ADDRESS,
+        RECIPIENT_INITIAL_NATIVE_BALANCE,
+        Some(RECIPIENT_INITIAL_ERC20_TOKEN_BALANCE),
+        None,
+    );
+    prepare_account(
+        &mut evm,
+        &erc20_token,
+        RELAYER_ADDRESS,
+        RELAYER_INITIAL_NATIVE_BALANCE,
+        Some(RELAYER_INITIAL_ERC20_TOKEN_BALANCE),
+        None,
+    );
     let reverting_bytecode = Bytecode::new_raw(Bytes::from_static(&REVERTING_BYTECODE));
     prepare_account(
         &mut evm,
+        &erc20_token,
         REVERTING_ADDRESS,
-        REVERTING_ADDRESS_INITIAL_BALANCE,
+        REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE,
+        None, // Cannot transfer to this address because the testing token will revert.
         Some(reverting_bytecode),
     );
 
@@ -121,6 +173,7 @@ pub fn deployment(
 
     Deployment {
         evm,
+        erc20_token,
         contract_suite: ShielderContractSuite {
             shielder: shielder_address,
         },
@@ -211,7 +264,14 @@ pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address 
         .expect("Failed to deploy Shielder contract through a proxy")
 }
 
-#[rstest]
-fn deploy_shielder_suite(_deployment: Deployment) {
-    // Deployment successful.
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use crate::deploy::{deployment, Deployment};
+
+    #[rstest]
+    fn deploy_shielder_suite(_deployment: Deployment) {
+        // Deployment successful.
+    }
 }

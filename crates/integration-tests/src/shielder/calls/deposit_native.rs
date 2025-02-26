@@ -75,18 +75,20 @@ mod tests {
         recipient_balance_increased_by, relayer_balance_increased_by,
         shielder::{
             actor_balance_decreased_by,
-            calls::new_account_native,
+            calls::new_account,
             deploy::{deployment, Deployment},
             limits::{get_deposit_limit, set_deposit_limit},
         },
+        TestToken,
     };
 
     const GAS_CONSUMPTION: u64 = 1827769;
 
     #[rstest]
     fn gas_consumption_regression(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10),
         )
@@ -105,8 +107,9 @@ mod tests {
 
     #[rstest]
     fn succeeds(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10),
         )
@@ -136,8 +139,9 @@ mod tests {
     }
     #[rstest]
     fn fails_if_incorrect_expected_version(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10),
         )
@@ -165,8 +169,9 @@ mod tests {
 
     #[rstest]
     fn can_consume_entire_contract_balance_limit(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from((1u128 << 112) - 2),
         )
@@ -185,8 +190,9 @@ mod tests {
 
     #[rstest]
     fn fails_if_contract_balance_limit_reached(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from((1u128 << 112) - 1),
         )
@@ -208,8 +214,9 @@ mod tests {
 
     #[rstest]
     fn cannot_use_same_note_twice(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10),
         )
@@ -231,8 +238,9 @@ mod tests {
 
     #[rstest]
     fn cannot_use_input_greater_than_field_modulus(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10),
         )
@@ -292,8 +300,9 @@ mod tests {
 
     #[rstest]
     fn fails_if_proof_incorrect(mut deployment: Deployment) {
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10),
         )
@@ -314,8 +323,9 @@ mod tests {
     #[rstest]
     fn rejects_value_zero(mut deployment: Deployment) {
         let initial_amount = U256::from(10);
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             initial_amount,
         )
@@ -332,8 +342,9 @@ mod tests {
     #[rstest]
     fn fails_if_over_deposit_limit(mut deployment: Deployment) {
         let initial_amount = U256::from(101);
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             initial_amount,
         )
@@ -357,8 +368,9 @@ mod tests {
         assert_eq!(returned_new_limit, U256::from(100));
 
         let initial_amount = U256::from(10);
-        let mut shielder_account = new_account_native::create_account_and_call(
+        let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(2),
             initial_amount,
         )

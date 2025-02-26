@@ -4,7 +4,7 @@ use revm::{
     primitives::{address, Address, EVMError, ExecutionResult, Output, TxKind, U256},
     Evm, InMemoryDB,
 };
-use revm_primitives::{AccountInfo, Bytecode, Bytes, Log};
+use revm_primitives::{AccountInfo, Bytecode, Bytes, Log, TxEnv};
 use thiserror::Error;
 
 use crate::{compilation::source_to_bytecode, repo_root_dir};
@@ -124,18 +124,46 @@ impl EvmRunner {
     ) -> Result<SuccessResult, EvmRunnerError> {
         let mut evm = Evm::builder()
             .with_db(&mut self.db)
-            .modify_tx_env(|tx| {
-                tx.caller = caller.unwrap_or(address!("0000000000000000000000000000000000000000"));
-                tx.gas_limit = u64::MAX;
-                tx.transact_to = TxKind::Call(address);
-                tx.data = calldata.into();
-                tx.value = U256::from(value.unwrap_or(U256::ZERO));
-                tx.chain_id = Some(1);
-            })
+            .modify_tx_env(|tx| Self::set_tx_env_for_call(address, calldata, caller, value, tx))
             .build();
 
-        let result = evm.transact_commit()?;
+        Self::handle_call_result(evm.transact_commit()?)
+    }
 
+    /// Apply `call` transaction to given `address` with `calldata`, but do not commit changes
+    /// to db. Return a tuple of `gas_used` and `return_data`.
+    pub fn dry_run(
+        &self,
+        address: Address,
+        calldata: Vec<u8>,
+        caller: Option<Address>,
+        value: Option<U256>,
+    ) -> Result<SuccessResult, EvmRunnerError> {
+        let mut evm = Evm::builder()
+            .with_ref_db(&self.db)
+            .modify_tx_env(|tx| Self::set_tx_env_for_call(address, calldata, caller, value, tx))
+            .build();
+
+        let result = evm.transact()?.result;
+        Self::handle_call_result(result)
+    }
+
+    fn set_tx_env_for_call(
+        address: Address,
+        calldata: Vec<u8>,
+        caller: Option<Address>,
+        value: Option<U256>,
+        tx: &mut TxEnv,
+    ) {
+        tx.caller = caller.unwrap_or(address!("0000000000000000000000000000000000000000"));
+        tx.gas_limit = u64::MAX;
+        tx.transact_to = TxKind::Call(address);
+        tx.data = calldata.into();
+        tx.value = U256::from(value.unwrap_or(U256::ZERO));
+        tx.chain_id = Some(1);
+    }
+
+    fn handle_call_result(result: ExecutionResult) -> Result<SuccessResult, EvmRunnerError> {
         match result {
             ExecutionResult::Success {
                 output,

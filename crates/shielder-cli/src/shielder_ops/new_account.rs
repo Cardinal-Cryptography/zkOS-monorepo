@@ -1,6 +1,6 @@
 use alloy_primitives::U256;
 use anyhow::Result;
-use shielder_account::{call_data::NewAccountCallType, ShielderAction};
+use shielder_account::{call_data::NewAccountNativeCallType, ShielderAction};
 use shielder_contract::{
     call_type::{Call, DryRun},
     events::get_event,
@@ -20,7 +20,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
     let anonymity_revoker_pkey = user.anonymity_revoker_pubkey::<DryRun>().await?;
     let (tx_hash, block_hash) = user
         .create_new_account_native::<Call>(
-            app_state.account.prepare_call::<NewAccountCallType>(
+            app_state.account.prepare_call::<NewAccountNativeCallType>(
                 &params,
                 &pk,
                 amount,

@@ -7,25 +7,21 @@ use integration_tests::{
         deposit_native::{
             invoke_call as deposit_native_call, prepare_call as deposit_native_calldata,
         },
-        new_account_native::{
-            invoke_call as new_account_native_call, prepare_call as new_account_native_calldata,
-        },
+        new_account::{invoke_call as new_account_call, prepare_call as new_account_calldata},
         withdraw_native::{
             invoke_call as withdraw_native_call, prepare_args,
             prepare_call as withdraw_native_calldata,
         },
     },
     deploy::{deployment, Deployment},
-    deposit_proving_params, new_account_proving_params, withdraw_proving_params,
+    deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,
 };
-use shielder_account::ShielderAccount;
-use shielder_contract::ShielderContract::{
-    depositNativeCall, newAccountNativeCall, withdrawNativeCall,
-};
+use shielder_account::{call_data::NewAccountGenericCall, ShielderAccount};
+use shielder_contract::ShielderContract::{depositNativeCall, withdrawNativeCall};
 
 #[derive(Debug)]
 enum Calldata {
-    NewAccount(newAccountNativeCall),
+    NewAccount(NewAccountGenericCall),
     Deposit(depositNativeCall),
     Withdraw(withdrawNativeCall),
 }
@@ -53,9 +49,10 @@ fn main() {
 
     let mut shielder_account = ShielderAccount::new(U256::from(1));
     let amount = U256::from(10);
-    let calldata = Calldata::NewAccount(new_account_native_calldata(
+    let calldata = Calldata::NewAccount(new_account_calldata(
         &mut deployment,
         &mut shielder_account,
+        TestToken::Native,
         amount,
     ));
 
@@ -95,7 +92,7 @@ fn measure_gas(
 ) -> u64 {
     match calldata {
         Calldata::NewAccount(calldata) => {
-            new_account_native_call(deployment, shielder_account, U256::from(10), calldata)
+            new_account_call(deployment, shielder_account, TestToken::Native, calldata)
                 .unwrap()
                 .1
                 .gas_used

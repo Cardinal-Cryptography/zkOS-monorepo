@@ -1,6 +1,6 @@
 use alloy_signer_local::PrivateKeySigner;
 use rand::{rngs::StdRng, SeedableRng};
-use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
+use shielder_account::{call_data::NewAccountNativeCallType, ShielderAccount};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     AsymPublicKey,
@@ -46,8 +46,12 @@ impl Actor {
         pk: &ProvingKey,
         amount: U256,
     ) -> newAccountNativeCall {
-        self.account
-            .prepare_call::<NewAccountCallType>(params, pk, amount, &ANONYMITY_REVOKER_PKEY)
+        self.account.prepare_call::<NewAccountNativeCallType>(
+            params,
+            pk,
+            amount,
+            &ANONYMITY_REVOKER_PKEY,
+        )
     }
 }
 
