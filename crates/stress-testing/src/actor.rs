@@ -50,15 +50,18 @@ impl Actor {
         pk: &ProvingKey,
         amount: U256,
     ) -> newAccountNativeCall {
-        self.account.prepare_call::<NewAccountCallType>(
-            params,
-            pk,
-            amount,
-            &NewAccountCallExtra {
-                anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
-                encryption_salt: [Default::default(); FIELD_BITS],
-            },
-        )
+        self.account
+            .prepare_call::<NewAccountCallType>(
+                params,
+                pk,
+                amount,
+                &NewAccountCallExtra {
+                    anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
+                    encryption_salt: [Default::default(); FIELD_BITS],
+                },
+            )
+            .try_into()
+            .unwrap()
     }
 }
 
