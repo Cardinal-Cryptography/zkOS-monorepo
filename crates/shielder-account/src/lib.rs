@@ -10,7 +10,7 @@ pub mod secrets;
 mod shielder_action;
 
 pub use shielder_action::{ShielderAction, ShielderTxData};
-use shielder_circuits::{note_hash, Note};
+use shielder_circuits::{generate_user_id, note_hash, Note};
 use shielder_setup::{native_token::NATIVE_TOKEN_ADDRESS, version::contract_version};
 use type_conversions::{field_to_u256, u256_to_field};
 
@@ -50,9 +50,9 @@ impl ShielderAccount {
     ///
     /// Note: You SHOULD prefer using `Self::new` instead of `Default::default()`, unless you are
     /// writing single-actor tests.
-    pub fn new(id: U256) -> Self {
+    pub fn new(id_seed: U256) -> Self {
         Self {
-            id,
+            id: field_to_u256(generate_user_id(u256_to_field::<Fr>(id_seed).to_bytes())),
             ..Default::default()
         }
     }
@@ -105,26 +105,26 @@ impl ShielderAccount {
 
     /// Generate the nullifier for the next action to be done.
     pub fn next_nullifier(&self) -> U256 {
-        secrets::nullifier(self.id, self.nonce)
+        secrets::nonced::derive_nullifier(self.id, self.nonce)
     }
 
     /// Generate the nullifier for the previous action. If the account has no actions, `self.id`
     /// is used as 'pre-nullifier'.
     pub fn previous_nullifier(&self) -> U256 {
-        self.nonce
-            .checked_sub(1)
-            .map_or(self.id, |nonce| secrets::nullifier(self.id, nonce))
+        self.nonce.checked_sub(1).map_or(self.id, |nonce| {
+            secrets::nonced::derive_nullifier(self.id, nonce)
+        })
     }
 
     /// Generate the trapdoor for the next action to be done.
     pub fn next_trapdoor(&self) -> U256 {
-        secrets::trapdoor(self.id, self.nonce)
+        secrets::nonced::derive_trapdoor(self.id, self.nonce)
     }
 
     /// Generate the trapdoor for the previous action. If the account has no actions, return `None`.
     pub fn previous_trapdoor(&self) -> Option<U256> {
         self.nonce
             .checked_sub(1)
-            .map(|nonce| secrets::trapdoor(self.id, nonce))
+            .map(|nonce| secrets::nonced::derive_trapdoor(self.id, nonce))
     }
 }

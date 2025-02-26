@@ -22,7 +22,7 @@ export interface WithdrawCalldata {
   };
   provingTimeMillis: number;
   amount: bigint;
-  address: Address;
+  withdrawalAddress: Address;
   token: Token;
 }
 
@@ -30,17 +30,20 @@ export class WithdrawAction extends NoteAction {
   private contract: IContract;
   private relayer: IRelayer;
   private nonceGenerator: INonceGenerator;
+  private chainId: bigint;
 
   constructor(
     contract: IContract,
     relayer: IRelayer,
     cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator
+    nonceGenerator: INonceGenerator,
+    chainId: bigint
   ) {
     super(cryptoClient);
     this.contract = contract;
     this.relayer = relayer;
     this.nonceGenerator = nonceGenerator;
+    this.chainId = chainId;
   }
 
   /**
@@ -70,12 +73,13 @@ export class WithdrawAction extends NoteAction {
     const encodingHash = hexToBigInt(
       keccak256(
         encodePacked(
-          ["bytes3", "uint256", "uint256", "uint256"],
+          ["bytes3", "uint256", "uint256", "uint256", "uint256"],
           [
             expectedContractVersion,
             hexToBigInt(address),
             hexToBigInt(relayerAddress),
-            relayerFee
+            relayerFee,
+            this.chainId
           ]
         )
       )
@@ -136,7 +140,7 @@ export class WithdrawAction extends NoteAction {
       nullifierNew,
       trapdoorNew,
       commitment,
-      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
+      macSalt: await this.randomMacSalt()
     };
   }
 
@@ -147,14 +151,14 @@ export class WithdrawAction extends NoteAction {
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
    * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
-   * @param address recipient address
+   * @param withdrawalAddress recipient address
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
     totalFee: bigint,
-    address: Address,
+    withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`
   ): Promise<WithdrawCalldata> {
     if (state.balance < amount) {
@@ -172,7 +176,7 @@ export class WithdrawAction extends NoteAction {
       state,
       amount,
       expectedContractVersion,
-      address,
+      withdrawalAddress,
       totalFee
     );
 
@@ -194,7 +198,7 @@ export class WithdrawAction extends NoteAction {
       },
       provingTimeMillis: provingTime,
       amount,
-      address,
+      withdrawalAddress,
       token: state.token
     };
   }
@@ -211,18 +215,21 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       calldata: { pubInputs, proof },
       amount,
-      address
+      withdrawalAddress
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
         expectedContractVersion,
+        calldata.token,
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
         amount,
         proof,
-        address
+        withdrawalAddress,
+        scalarToBigint(pubInputs.macSalt),
+        scalarToBigint(pubInputs.macCommitment)
       )
       .catch((e) => {
         if (e instanceof VersionRejectedByRelayer) {

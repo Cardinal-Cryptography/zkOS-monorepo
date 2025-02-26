@@ -23,6 +23,11 @@ export const testnetPrivateKey =
   (() => {
     throw new Error("TESTNET_PRIVATE_KEY env not defined");
   })();
+export const tokenContractAddresses = process.env.TOKEN_CONTRACT_ADDRESSES
+  ? process.env.TOKEN_CONTRACT_ADDRESSES.split(",")
+  : (() => {
+      throw new Error("TOKEN_CONTRACT_ADDRESSES env not defined");
+    })();
 
 export const getChainConfig = () => {
   return {
@@ -30,11 +35,12 @@ export const getChainConfig = () => {
     rpcHttpEndpoint: rpcHttpEndpoint,
     contractAddress: shielderContractAddress as `0x${string}`,
     testnetPrivateKey: testnetPrivateKey as `0x${string}`,
+    tokenContractAddresses: tokenContractAddresses
   };
 };
 
 export const getRelayerConfig = () => {
   return {
-    url: relayerUrl,
+    url: relayerUrl
   };
 };

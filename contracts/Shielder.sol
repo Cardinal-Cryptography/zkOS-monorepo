@@ -564,11 +564,14 @@ contract Shielder is
         publicInputs[7] = macSalt;
         publicInputs[8] = macCommitment;
 
+        uint256 chainId = block.chainid;
+
         bytes memory commitment = abi.encodePacked(
             CONTRACT_VERSION,
             addressToUInt256(withdrawalAddress),
             addressToUInt256(relayerAddress),
-            relayerFee
+            relayerFee,
+            chainId
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[6] = uint256(keccak256(commitment)) >> 4;

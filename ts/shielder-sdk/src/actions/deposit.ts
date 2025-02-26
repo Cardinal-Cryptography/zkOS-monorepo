@@ -13,7 +13,6 @@ import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
-import { hexToBigInt } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -93,7 +92,7 @@ export class DepositAction extends NoteAction {
       value: Scalar.fromBigint(amount),
       nullifierNew,
       trapdoorNew,
-      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
+      macSalt: await this.randomMacSalt()
     };
   }
 
@@ -182,7 +181,7 @@ export class DepositAction extends NoteAction {
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),
-      value: amount
+      value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
       if (e instanceof VersionRejectedByContract) {
         throw e;

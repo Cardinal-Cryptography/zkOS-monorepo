@@ -29,7 +29,9 @@ export class Hasher extends WasmClientModuleBase implements IHasher {
   }
 
   poseidonRate(): Promise<number> {
-    // TODO: implement when wasm module has this function
-    throw new Error("Method not implemented.");
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not initialized");
+    }
+    return Promise.resolve(this.wasmModule.poseidon_rate());
   }
 }

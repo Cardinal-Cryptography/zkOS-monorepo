@@ -122,6 +122,12 @@ async fn prepare_relayer_query(
     let (merkle_root, merkle_path) =
         get_current_merkle_path(leaf_index, &app_state.create_shielder_user()).await?;
 
+    let chain_id = app_state
+        .create_simple_provider()
+        .await?
+        .get_chain_id()
+        .await?;
+
     let calldata = app_state.account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
@@ -135,6 +141,7 @@ async fn prepare_relayer_query(
             relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
             relayer_fee,
             contract_version: contract_version(),
+            chain_id: U256::from(chain_id),
         },
     );
 

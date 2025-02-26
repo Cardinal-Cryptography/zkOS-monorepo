@@ -49,6 +49,7 @@ describe("ShielderClient", () => {
   let callbacks: Mocked<ShielderCallbacks>;
   let mockState: Mocked<AccountState>;
   const mockCryptoClient = new MockedCryptoClient();
+  const mockedChainId = 1;
 
   const mockShielderSeedPrivateKey =
     "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
@@ -64,7 +65,9 @@ describe("ShielderClient", () => {
     ) as Mocked<Contract>;
     mockRelayer = new Relayer("http://localhost") as Mocked<Relayer>;
     mockPublicClient = {
-      waitForTransactionReceipt: vitest.fn()
+      waitForTransactionReceipt: vitest
+        .fn()
+        .mockResolvedValue({ status: "success" })
     } as unknown as Mocked<PublicClient>;
 
     const mockStorageInterface: InjectedStorageInterface = {
@@ -84,6 +87,7 @@ describe("ShielderClient", () => {
     // Create client instance
     client = new ShielderClient(
       mockShielderSeedPrivateKey,
+      mockedChainId,
       mockContract,
       mockRelayer,
       mockStorageInterface,
@@ -279,13 +283,15 @@ describe("ShielderClient", () => {
           type: "NewAccount",
           amount: 1000n,
           txHash: "0x123" as Hash,
-          block: 1n
+          block: 1n,
+          token: nativeToken()
         },
         {
           type: "Deposit",
           amount: 2000n,
           txHash: "0x456" as Hash,
-          block: 2n
+          block: 2n,
+          token: nativeToken()
         }
       ];
       vitest

@@ -18,64 +18,7 @@ import {
   VersionRejectedByRelayer,
   WithdrawResponse
 } from "../../src/chain/relayer";
-import { encodePacked, hexToBigInt, keccak256 } from "viem";
-import { nativeToken } from "../../src/types";
-
-const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
-
-const expectPubInputsCorrect = async (
-  pubInputs: WithdrawPubInputs,
-  cryptoClient: CryptoClient,
-  prevNullifier: Scalar,
-  state: AccountState,
-  amount: bigint,
-  nonce: bigint,
-  merkleRoot: Scalar,
-  commitment: Scalar
-) => {
-  // hNullifierOld should be hash of nullifier
-  expect(
-    scalarsEqual(
-      pubInputs.hNullifierOld,
-      await cryptoClient.hasher.poseidonHash([prevNullifier])
-    )
-  ).toBe(true);
-
-  // hNoteNew should be hash of [id, newNullifier, newTrapdoor, amount]
-  const { nullifier: newNullifier, trapdoor: newTrapdoor } =
-    await cryptoClient.secretManager.getSecrets(state.id, Number(state.nonce));
-  expect(
-    scalarsEqual(
-      pubInputs.hNoteNew,
-      await hashedNote(
-        state.id,
-        newNullifier,
-        newTrapdoor,
-        Scalar.fromBigint(state.balance - amount)
-      )
-    )
-  ).toBe(true);
-
-  // idHiding should be hash of [id hash, nonce]
-  expect(
-    scalarsEqual(
-      pubInputs.idHiding,
-      await cryptoClient.hasher.poseidonHash([
-        await cryptoClient.hasher.poseidonHash([state.id]),
-        Scalar.fromBigint(nonce)
-      ])
-    )
-  ).toBe(true);
-
-  // merkleRoot should be equal to input merkleRoot
-  expect(scalarsEqual(pubInputs.merkleRoot, merkleRoot)).toBe(true);
-
-  // value should be amount
-  expect(scalarsEqual(pubInputs.value, Scalar.fromBigint(amount))).toBe(true);
-
-  // commitment should be equal to input commitment
-  expect(scalarsEqual(pubInputs.commitment, commitment)).toBe(true);
-};
+import { nativeToken, Token } from "../../src/types";
 
 describe("WithdrawAction", () => {
   let cryptoClient: MockedCryptoClient;
@@ -143,9 +86,15 @@ describe("WithdrawAction", () => {
           tx_hash: "0xtxHash" as `0x${string}`
         })
     } as unknown as IRelayer;
-    action = new WithdrawAction(contract, relayer, cryptoClient, {
-      randomIdHidingNonce: () => Scalar.fromBigint(mockedIdHidingNonce)
-    });
+    action = new WithdrawAction(
+      contract,
+      relayer,
+      cryptoClient,
+      {
+        randomIdHidingNonce: () => Scalar.fromBigint(mockedIdHidingNonce)
+      },
+      1n
+    );
 
     const id = Scalar.fromBigint(123n);
     state = {
@@ -330,13 +279,16 @@ describe("WithdrawAction", () => {
 
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
+        nativeToken(),
         scalarToBigint(calldata.calldata.pubInputs.idHiding),
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
         calldata.calldata.proof,
-        mockAddress
+        mockAddress,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment)
       );
 
       expect(txHash).toBe("0xtxHash");
@@ -360,13 +312,16 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
+            token: Token,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array,
-            withdrawAddress: `0x${string}`
+            withdrawalAddress: `0x${string}`,
+            macSalt: bigint,
+            macCommitment: bigint
           ) => Promise<WithdrawResponse>
         >()
         .mockRejectedValue(mockedErr);
@@ -392,13 +347,16 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
+            token: Token,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array,
-            withdrawAddress: `0x${string}`
+            withdrawalAddress: `0x${string}`,
+            macSalt: bigint,
+            macCommitment: bigint
           ) => Promise<WithdrawResponse>
         >()
         .mockRejectedValue(new Error("mocked contract rejection"));
