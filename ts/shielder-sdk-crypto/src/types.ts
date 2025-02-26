@@ -1,7 +1,7 @@
 import { Scalar } from "./scalar";
 
 export type Proof = Uint8Array;
-export type AsymPublicKey<T> = {
+export type CurvePointAffine<T> = {
   x: T;
   y: T;
 };
@@ -12,7 +12,7 @@ export type NewAccountPubInputs = {
   hId: Scalar;
   initialDeposit: Scalar;
   tokenAddress: Scalar;
-  anonymityRevokerPubkey: AsymPublicKey<Scalar>;
+  anonymityRevokerPubkey: CurvePointAffine<Scalar>;
   symKeyEncryption1X: Scalar;
   symKeyEncryption1Y: Scalar;
   symKeyEncryption2X: Scalar;
@@ -26,7 +26,7 @@ export type NewAccountAdvice = {
   initialDeposit: Scalar;
   tokenAddress: Scalar;
   encryptionSalt: Scalar;
-  anonymityRevokerPubkey: AsymPublicKey<Scalar>;
+  anonymityRevokerPubkey: CurvePointAffine<Scalar>;
 };
 
 // follows the order in shielder-circuits::circuits::deposit
