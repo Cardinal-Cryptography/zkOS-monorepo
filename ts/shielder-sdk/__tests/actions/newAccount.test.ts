@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
-  CryptoClient,
   NewAccountAdvice,
   NewAccountPubInputs,
   Scalar,
@@ -49,6 +48,10 @@ describe("NewAccountAction", () => {
             newNote: bigint,
             idHash: bigint,
             amount: bigint,
+            symKeyEncryption1X: bigint,
+            symKeyEncryption1Y: bigint,
+            symKeyEncryption2X: bigint,
+            symKeyEncryption2Y: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
@@ -174,7 +177,10 @@ describe("NewAccountAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNote),
         scalarToBigint(calldata.calldata.pubInputs.hId),
         amount,
-        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1X),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1Y),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2X),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2Y),
         calldata.calldata.proof
       );
 
@@ -206,7 +212,10 @@ describe("NewAccountAction", () => {
             newNote: bigint,
             idHash: bigint,
             amount: bigint,
-            symKeyEncryption: bigint,
+            symKeyEncryption1X: bigint,
+            symKeyEncryption1Y: bigint,
+            symKeyEncryption2X: bigint,
+            symKeyEncryption2Y: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
