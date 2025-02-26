@@ -98,7 +98,7 @@ impl NewAccountCircuit {
                 token_address: vec_to_f(token_address),
                 encryption_salt: encryption_salt
                     .into_iter()
-                    .map(|v|Fr::from(v as u64))
+                    .map(|v| Fr::from(v as u64))
                     .collect::<Vec<_>>()
                     .try_into()
                     .expect("Invalid length"),
@@ -167,7 +167,7 @@ pub fn new_account_pub_inputs(
         token_address: vec_to_f(token_address),
         encryption_salt: encryption_salt
             .into_iter()
-            .map(|v|Fr::from(v as u64))
+            .map(|v| Fr::from(v as u64))
             .collect::<Vec<_>>()
             .try_into()
             .expect("Invalid length"),
