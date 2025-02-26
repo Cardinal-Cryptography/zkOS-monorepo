@@ -39,7 +39,7 @@ format-contracts:
 .PHONY: lint-contracts
 lint-contracts: # Lint solidity contracts
 lint-contracts:
-	npx solhint -c .solhint.json 'contracts/**/*.sol' 'scripts/*.sol' 'test/*.sol'
+	npx solhint -c .solhint.json 'contracts/*.sol' 'scripts/*.sol' 'test/*.sol'
 
 .PHONY: compile-contracts
 compile-contracts: # Compile solidity contracts
