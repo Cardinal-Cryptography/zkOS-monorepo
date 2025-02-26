@@ -61,16 +61,19 @@ export class Scalar {
   }
 
   /**
-   * Converts a scalar to little endian bit array.
+   * Converts a scalar to little endian bit array, represented as Uint8Array.
    *
-   * @returns the scalar as a little-endian bit array.
+   * @returns the scalar as a little-endian bit array. Every bit is represented
+   * as Uint8. The length of the array is 254.
    */
-  toBits(): boolean[] {
-    const bits = [];
-    for (let i = 0; i < 254; i++) {
-      bits.push((this.bytes[i >> 3] & (1 << (i & 7))) !== 0);
+  toBits() {
+    const result = new Uint8Array(254);
+    for (let i = 0; i < 32; i++) {
+      for (let j = 0; j < 8; j++) {
+        result[i * 8 + j] = (this.bytes[i] >> j) & 1 ? 1 : 0;
+      }
     }
-    return bits;
+    return result;
   }
 }
 
