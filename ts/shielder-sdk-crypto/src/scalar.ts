@@ -59,6 +59,19 @@ export class Scalar {
     const addressBigint = hexToBigInt(address);
     return Scalar.fromBigint(addressBigint);
   }
+
+  /**
+   * Converts a scalar to little endian bit array.
+   *
+   * @returns the scalar as a little-endian bit array.
+   */
+  toBits(): boolean[] {
+    const bits = [];
+    for (let i = 0; i < 254; i++) {
+      bits.push((this.bytes[i >> 3] & (1 << (i & 7))) !== 0);
+    }
+    return bits;
+  }
 }
 
 /**

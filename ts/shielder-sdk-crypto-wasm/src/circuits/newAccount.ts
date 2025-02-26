@@ -37,7 +37,7 @@ export class NewAccountCircuit
         values.trapdoor.bytes,
         values.initialDeposit.bytes,
         values.tokenAddress.bytes,
-        values.encryptionSalt.bytes,
+        values.encryptionSalt.toBits(),
         values.anonymityRevokerPubkey.x.bytes,
         values.anonymityRevokerPubkey.y.bytes
       )
