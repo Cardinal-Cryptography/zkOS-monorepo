@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
+  CurvePointAffine,
   NewAccountAdvice,
   NewAccountPubInputs,
   Scalar,
@@ -177,10 +178,14 @@ describe("NewAccountAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNote),
         scalarToBigint(calldata.calldata.pubInputs.hId),
         amount,
-        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1X),
-        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1Y),
-        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2X),
-        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2Y),
+        {
+          x: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1.x),
+          y: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1.y)
+        },
+        {
+          x: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2.x),
+          y: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2.y)
+        },
         calldata.calldata.proof
       );
 
@@ -212,10 +217,8 @@ describe("NewAccountAction", () => {
             newNote: bigint,
             idHash: bigint,
             amount: bigint,
-            symKeyEncryption1X: bigint,
-            symKeyEncryption1Y: bigint,
-            symKeyEncryption2X: bigint,
-            symKeyEncryption2Y: bigint,
+            symKeyEncryption1: CurvePointAffine<bigint>,
+            symKeyEncryption2: CurvePointAffine<bigint>,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
