@@ -18,7 +18,7 @@ use shielder_setup::{
     native_token::NATIVE_TOKEN_ADDRESS,
     version::{contract_version, ContractVersion},
 };
-use type_conversions::{address_to_field, field_to_u256, u256_to_field};
+use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
 use super::secrets::generate_id_hiding_nonce;
 use crate::ShielderAccount;
@@ -139,24 +139,38 @@ impl CallType for NewAccountGenericCallType {
 
 pub enum NewAccountNativeCallType {}
 impl CallType for NewAccountNativeCallType {
-    type Extra = (Address, AsymPublicKey<U256>);
+    type Extra = AsymPublicKey<U256>;
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
     type Calldata = newAccountNativeCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
         amount: U256,
-        extra: &Self::Extra,
+        anonymity_revoker_public_key: &Self::Extra,
     ) -> Self::ProverKnowledge {
-        NewAccountGenericCallType::prepare_prover_knowledge(account, amount, extra)
+        NewAccountGenericCallType::prepare_prover_knowledge(
+            account,
+            amount,
+            &(
+                field_to_address(NATIVE_TOKEN_ADDRESS),
+                *anonymity_revoker_public_key,
+            ),
+        )
     }
 
     fn prepare_call_data(
         prover_knowledge: &Self::ProverKnowledge,
         proof: Vec<u8>,
-        extra: &Self::Extra,
+        anonymity_revoker_public_key: &Self::Extra,
     ) -> Self::Calldata {
-        let calldata = NewAccountGenericCallType::prepare_call_data(prover_knowledge, proof, extra);
+        let calldata = NewAccountGenericCallType::prepare_call_data(
+            prover_knowledge,
+            proof,
+            &(
+                field_to_address(NATIVE_TOKEN_ADDRESS),
+                *anonymity_revoker_public_key,
+            ),
+        );
         calldata.into()
     }
 }
