@@ -13,7 +13,7 @@ impl TestERC20 {
     pub fn deploy(evm: &mut EvmRunner, faucet_address: Address) -> TestERC20 {
         let contract_address = deploy_contract_with_caller(
             "../test/TestERC20.sol",
-            "TestERC20",
+            "RevmTestERC20",
             Some(faucet_address),
             evm,
         );

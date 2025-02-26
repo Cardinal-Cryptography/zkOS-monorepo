@@ -3,13 +3,7 @@ pragma solidity 0.8.26;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/**
- * ERC20 token for testing purposes, which additionally reverts transfers
- * to 0xffffffffffffffffffffffffffffffffffffffff.
- */
 contract TestERC20 is ERC20 {
-    error DestinationTriggeredRevert();
-
     constructor(
         string memory name_,
         string memory symbol_
@@ -17,6 +11,18 @@ contract TestERC20 is ERC20 {
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
+    }
+}
+
+/**
+ * Customized `TestERC20` used in `integration-tests`. Reverts transfers
+ * to 0xffffffffffffffffffffffffffffffffffffffff.
+ */
+contract RevmTestERC20 is TestERC20 {
+    error DestinationTriggeredRevert();
+
+    constructor() TestERC20("TestERC20", "TERC20") {
+        _mint(msg.sender, type(uint256).max);
     }
 
     /**
