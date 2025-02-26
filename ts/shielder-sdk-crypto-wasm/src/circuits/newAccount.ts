@@ -36,6 +36,7 @@ export class NewAccountCircuit
         values.trapdoor.bytes,
         values.initialDeposit.bytes,
         values.tokenAddress.bytes,
+        values.encryptionSalt.bytes,
         values.anonymityRevokerPubkey.x.bytes,
         values.anonymityRevokerPubkey.y.bytes
       )
@@ -54,6 +55,7 @@ export class NewAccountCircuit
       values.trapdoor.bytes,
       values.initialDeposit.bytes,
       values.tokenAddress.bytes,
+      values.encryptionSalt.bytes,
       values.anonymityRevokerPubkey.x.bytes,
       values.anonymityRevokerPubkey.y.bytes
     );
@@ -67,7 +69,10 @@ export class NewAccountCircuit
         x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
         y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
       },
-      symKeyEncryption: new Scalar(pubInputsBytes.sym_key_encryption)
+      symKeyEncryption1X: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
+      symKeyEncryption1Y: new Scalar(pubInputsBytes.sym_key_encryption_1_y),
+      symKeyEncryption2X: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
+      symKeyEncryption2Y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
     });
   }
 
@@ -85,7 +90,10 @@ export class NewAccountCircuit
           pubInputs.tokenAddress.bytes,
           pubInputs.anonymityRevokerPubkey.x.bytes,
           pubInputs.anonymityRevokerPubkey.y.bytes,
-          pubInputs.symKeyEncryption.bytes,
+          pubInputs.symKeyEncryption1X.bytes,
+          pubInputs.symKeyEncryption1Y.bytes,
+          pubInputs.symKeyEncryption2X.bytes,
+          pubInputs.symKeyEncryption2Y.bytes,
           proof
         )
       );

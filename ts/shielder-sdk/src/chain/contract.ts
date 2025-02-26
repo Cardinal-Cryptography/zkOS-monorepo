@@ -76,7 +76,10 @@ export type IContract = {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   newAccountTokenCalldata: (
@@ -86,7 +89,10 @@ export type IContract = {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   depositNativeCalldata: (
@@ -151,7 +157,10 @@ export class Contract implements IContract {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -160,7 +169,10 @@ export class Contract implements IContract {
           expectedContractVersion,
           newNote,
           idHash,
-          symKeyEncryption,
+          symKeyEncryption1X,
+          symKeyEncryption1Y,
+          symKeyEncryption2X,
+          symKeyEncryption2Y,
           bytesToHex(proof)
         ],
         { account: from, value: amount, gas: shieldActionGasLimit }
@@ -173,7 +185,10 @@ export class Contract implements IContract {
         expectedContractVersion,
         newNote,
         idHash,
-        symKeyEncryption,
+        symKeyEncryption1X,
+        symKeyEncryption1Y,
+        symKeyEncryption2X,
+        symKeyEncryption2Y,
         bytesToHex(proof)
       ]
     });
@@ -186,7 +201,10 @@ export class Contract implements IContract {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -197,7 +215,10 @@ export class Contract implements IContract {
           amount,
           newNote,
           idHash,
-          symKeyEncryption,
+          symKeyEncryption1X,
+          symKeyEncryption1Y,
+          symKeyEncryption2X,
+          symKeyEncryption2Y,
           bytesToHex(proof)
         ],
         { account: from, gas: shieldActionGasLimit }
@@ -212,7 +233,10 @@ export class Contract implements IContract {
         amount,
         newNote,
         idHash,
-        symKeyEncryption,
+        symKeyEncryption1X,
+        symKeyEncryption1Y,
+        symKeyEncryption2X,
+        symKeyEncryption2Y,
         bytesToHex(proof)
       ]
     });

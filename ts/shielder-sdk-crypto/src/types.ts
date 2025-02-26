@@ -13,7 +13,10 @@ export type NewAccountPubInputs = {
   initialDeposit: Scalar;
   tokenAddress: Scalar;
   anonymityRevokerPubkey: AsymPublicKey<Scalar>;
-  symKeyEncryption: Scalar;
+  symKeyEncryption1X: Scalar;
+  symKeyEncryption1Y: Scalar;
+  symKeyEncryption2X: Scalar;
+  symKeyEncryption2Y: Scalar;
 };
 
 export type NewAccountAdvice = {
@@ -22,6 +25,7 @@ export type NewAccountAdvice = {
   trapdoor: Scalar;
   initialDeposit: Scalar;
   tokenAddress: Scalar;
+  encryptionSalt: Scalar;
   anonymityRevokerPubkey: AsymPublicKey<Scalar>;
 };
 

@@ -67,6 +67,7 @@ export class NewAccountAction extends NoteAction {
       trapdoor,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
+      encryptionSalt: await this.randomSalt(),
       anonymityRevokerPubkey: {
         x: Scalar.fromBigint(anonymityRevokerPubkey.x),
         y: Scalar.fromBigint(anonymityRevokerPubkey.y)
@@ -138,7 +139,10 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption),
+            scalarToBigint(pubInputs.symKeyEncryption1X),
+            scalarToBigint(pubInputs.symKeyEncryption1Y),
+            scalarToBigint(pubInputs.symKeyEncryption2X),
+            scalarToBigint(pubInputs.symKeyEncryption2Y),
             proof
           )
         : await this.contract.newAccountTokenCalldata(
@@ -148,7 +152,10 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption),
+            scalarToBigint(pubInputs.symKeyEncryption1X),
+            scalarToBigint(pubInputs.symKeyEncryption1Y),
+            scalarToBigint(pubInputs.symKeyEncryption2X),
+            scalarToBigint(pubInputs.symKeyEncryption2Y),
             proof
           );
     const txHash = await sendShielderTransaction({
