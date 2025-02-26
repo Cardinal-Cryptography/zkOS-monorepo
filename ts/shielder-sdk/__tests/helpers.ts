@@ -153,7 +153,14 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
         x: Scalar.fromBigint(0n),
         y: Scalar.fromBigint(0n)
       },
-      symKeyEncryption: Scalar.fromBigint(0n)
+      symKeyEncryption1: {
+        x: Scalar.fromBigint(0n),
+        y: Scalar.fromBigint(0n)
+      },
+      symKeyEncryption2: {
+        x: Scalar.fromBigint(0n),
+        y: Scalar.fromBigint(0n)
+      }
     });
   }
 

@@ -140,7 +140,7 @@ export class WithdrawAction extends NoteAction {
       nullifierNew,
       trapdoorNew,
       commitment,
-      macSalt: await this.randomMacSalt()
+      macSalt: await this.randomSalt()
     };
   }
 

@@ -92,7 +92,7 @@ export class DepositAction extends NoteAction {
       value: Scalar.fromBigint(amount),
       nullifierNew,
       trapdoorNew,
-      macSalt: await this.randomMacSalt()
+      macSalt: await this.randomSalt()
     };
   }
 

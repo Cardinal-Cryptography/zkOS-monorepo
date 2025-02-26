@@ -76,7 +76,7 @@ export abstract class NoteAction {
     return [path, root];
   }
 
-  async randomMacSalt(): Promise<Scalar> {
+  async randomSalt(): Promise<Scalar> {
     const random32Bytes = crypto.getRandomValues(new Uint8Array(32));
     const random32BytesHex = bytesToHex(random32Bytes);
     return await this.cryptoClient.converter.hex32ToScalar(random32BytesHex);

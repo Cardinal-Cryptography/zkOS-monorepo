@@ -17,6 +17,7 @@ export class NewAccountCircuit
   implements INewAccountCircuit
 {
   private wasmCircuit: InstanceType<WasmNewAccountCircuit> | undefined;
+
   init(caller: Caller) {
     super.init(caller);
     if (!this.wasmModule) {
@@ -36,11 +37,13 @@ export class NewAccountCircuit
         values.trapdoor.bytes,
         values.initialDeposit.bytes,
         values.tokenAddress.bytes,
+        values.encryptionSalt.bytes,
         values.anonymityRevokerPubkey.x.bytes,
         values.anonymityRevokerPubkey.y.bytes
       )
     );
   }
+
   async pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
@@ -54,6 +57,7 @@ export class NewAccountCircuit
       values.trapdoor.bytes,
       values.initialDeposit.bytes,
       values.tokenAddress.bytes,
+      values.encryptionSalt.bytes,
       values.anonymityRevokerPubkey.x.bytes,
       values.anonymityRevokerPubkey.y.bytes
     );
@@ -67,7 +71,14 @@ export class NewAccountCircuit
         x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
         y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
       },
-      symKeyEncryption: new Scalar(pubInputsBytes.sym_key_encryption)
+      symKeyEncryption1: {
+        x: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
+        y: new Scalar(pubInputsBytes.sym_key_encryption_1_y)
+      },
+      symKeyEncryption2: {
+        x: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
+        y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
+      }
     });
   }
 
@@ -85,7 +96,10 @@ export class NewAccountCircuit
           pubInputs.tokenAddress.bytes,
           pubInputs.anonymityRevokerPubkey.x.bytes,
           pubInputs.anonymityRevokerPubkey.y.bytes,
-          pubInputs.symKeyEncryption.bytes,
+          pubInputs.symKeyEncryption1.x.bytes,
+          pubInputs.symKeyEncryption1.y.bytes,
+          pubInputs.symKeyEncryption2.x.bytes,
+          pubInputs.symKeyEncryption2.y.bytes,
           proof
         )
       );
