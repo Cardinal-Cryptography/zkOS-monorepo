@@ -27,15 +27,19 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
     let (tx_hash, block_hash) = user
         .create_new_account_native::<Call>(
-            app_state.account.prepare_call::<NewAccountCallType>(
-                &params,
-                &pk,
-                amount,
-                &NewAccountCallExtra {
-                    anonymity_revoker_public_key,
-                    encryption_salt: get_encryption_salt(),
-                },
-            ),
+            app_state
+                .account
+                .prepare_call::<NewAccountCallType>(
+                    &params,
+                    &pk,
+                    amount,
+                    &NewAccountCallExtra {
+                        anonymity_revoker_public_key,
+                        encryption_salt: get_encryption_salt(),
+                    },
+                )
+                .try_into()
+                .unwrap(),
             amount,
         )
         .await?;

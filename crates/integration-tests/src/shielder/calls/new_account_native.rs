@@ -17,15 +17,18 @@ pub fn prepare_call(
     amount: U256,
 ) -> newAccountNativeCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
-    shielder_account.prepare_call::<NewAccountCallType>(
-        &params,
-        &pk,
-        amount,
-        &NewAccountCallExtra {
-            anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
-            encryption_salt: [true; FIELD_BITS],
-        },
-    )
+    shielder_account
+        .prepare_call::<NewAccountCallType>(
+            &params,
+            &pk,
+            amount,
+            &NewAccountCallExtra {
+                anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
+                encryption_salt: [true; FIELD_BITS],
+            },
+        )
+        .try_into()
+        .unwrap()
 }
 
 pub fn invoke_call(
