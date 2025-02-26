@@ -13,7 +13,7 @@ use shielder_contract::ShielderContract::initializeCall;
 
 use crate::{
     deploy_contract,
-    erc20::ERC20Token,
+    erc20::TestERC20,
     proving_utils::{
         deposit_proving_params, new_account_proving_params, withdraw_proving_params, ProvingParams,
     },
@@ -25,21 +25,21 @@ use crate::{
     verifier::deploy_verifiers,
 };
 
-pub const ERC20_TOKEN_FAUCET_ADDRESS: &str = "9999999999999999999999999999999999999999";
+pub const TEST_ERC20_FAUCET_ADDRESS: &str = "9999999999999999999999999999999999999999";
 
 /// The address of the deployer account.
 ///
 /// This is one of the default accounts in the Anvil testnet.
 pub const DEPLOYER_ADDRESS: &str = "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 pub const DEPLOYER_INITIAL_NATIVE_BALANCE: U256 = U256::MAX;
-pub const DEPLOYER_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::ZERO;
+pub const DEPLOYER_INITIAL_ERC20_BALANCE: U256 = U256::ZERO;
 
 /// The address of the actor account.
 ///
 /// This is one of the default accounts in the Anvil testnet.
 pub const ACTOR_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79C8";
 pub const ACTOR_INITIAL_NATIVE_BALANCE: U256 = U256::MAX;
-pub const ACTOR_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::MAX;
+pub const ACTOR_INITIAL_ERC20_BALANCE: U256 = U256::MAX;
 
 /// The private key of the actor account.
 pub const ACTOR_PRIVATE_KEY: &str =
@@ -47,11 +47,11 @@ pub const ACTOR_PRIVATE_KEY: &str =
 
 pub const RECIPIENT_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79C9";
 pub const RECIPIENT_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
-pub const RECIPIENT_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::ZERO;
+pub const RECIPIENT_INITIAL_ERC20_BALANCE: U256 = U256::ZERO;
 
 pub const RELAYER_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79CA";
 pub const RELAYER_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
-pub const RELAYER_INITIAL_ERC20_TOKEN_BALANCE: U256 = U256::ZERO;
+pub const RELAYER_INITIAL_ERC20_BALANCE: U256 = U256::ZERO;
 
 // Will always revert when receiving funds.
 pub const REVERTING_ADDRESS: &str = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
@@ -72,10 +72,10 @@ pub struct ShielderContractSuite {
 
 pub fn prepare_account(
     evm: &mut EvmRunner,
-    erc20_token: &ERC20Token,
+    test_erc20: &TestERC20,
     address: &str,
     native_balance: U256,
-    erc20_token_balance: Option<U256>,
+    erc20_balance: Option<U256>,
     code: Option<Bytecode>,
 ) -> Address {
     let address = Address::from_str(address).unwrap();
@@ -90,8 +90,8 @@ pub fn prepare_account(
         },
     );
 
-    if let Some(balance) = erc20_token_balance {
-        erc20_token.faucet(evm, address, balance).unwrap()
+    if let Some(balance) = erc20_balance {
+        test_erc20.faucet(evm, address, balance).unwrap()
     }
 
     address
@@ -105,7 +105,7 @@ const WITHDRAW_VERIFIER_LIB_PLACEHOLDER: &str = "__$06bb88608c3ade14b496e12c6067
 
 pub struct Deployment {
     pub evm: EvmRunner,
-    pub erc20_token: ERC20Token,
+    pub test_erc20: TestERC20,
     pub contract_suite: ShielderContractSuite,
     pub new_account_proving_params: ProvingParams,
     pub deposit_proving_params: ProvingParams,
@@ -121,47 +121,47 @@ pub fn deployment(
 ) -> Deployment {
     let mut evm = EvmRunner::aleph_evm();
 
-    let erc20_token = ERC20Token::deploy(
+    let test_erc20 = TestERC20::deploy(
         &mut evm,
-        Address::from_str(ERC20_TOKEN_FAUCET_ADDRESS).unwrap(),
+        Address::from_str(TEST_ERC20_FAUCET_ADDRESS).unwrap(),
     );
 
     let owner = prepare_account(
         &mut evm,
-        &erc20_token,
+        &test_erc20,
         DEPLOYER_ADDRESS,
         DEPLOYER_INITIAL_NATIVE_BALANCE,
-        Some(DEPLOYER_INITIAL_ERC20_TOKEN_BALANCE),
+        Some(DEPLOYER_INITIAL_ERC20_BALANCE),
         None,
     );
     prepare_account(
         &mut evm,
-        &erc20_token,
+        &test_erc20,
         ACTOR_ADDRESS,
         ACTOR_INITIAL_NATIVE_BALANCE,
-        Some(ACTOR_INITIAL_ERC20_TOKEN_BALANCE),
+        Some(ACTOR_INITIAL_ERC20_BALANCE),
         None,
     );
     prepare_account(
         &mut evm,
-        &erc20_token,
+        &test_erc20,
         RECIPIENT_ADDRESS,
         RECIPIENT_INITIAL_NATIVE_BALANCE,
-        Some(RECIPIENT_INITIAL_ERC20_TOKEN_BALANCE),
+        Some(RECIPIENT_INITIAL_ERC20_BALANCE),
         None,
     );
     prepare_account(
         &mut evm,
-        &erc20_token,
+        &test_erc20,
         RELAYER_ADDRESS,
         RELAYER_INITIAL_NATIVE_BALANCE,
-        Some(RELAYER_INITIAL_ERC20_TOKEN_BALANCE),
+        Some(RELAYER_INITIAL_ERC20_BALANCE),
         None,
     );
     let reverting_bytecode = Bytecode::new_raw(Bytes::from_static(&REVERTING_BYTECODE));
     prepare_account(
         &mut evm,
-        &erc20_token,
+        &test_erc20,
         REVERTING_ADDRESS,
         REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE,
         None, // Cannot transfer to this address because the testing token will revert.
@@ -173,7 +173,7 @@ pub fn deployment(
 
     Deployment {
         evm,
-        erc20_token,
+        test_erc20,
         contract_suite: ShielderContractSuite {
             shielder: shielder_address,
         },

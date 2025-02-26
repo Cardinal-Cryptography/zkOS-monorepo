@@ -4,17 +4,21 @@ use evm_utils::{EvmRunner, EvmRunnerError};
 
 use crate::{deploy_contract_with_caller, ierc20::IERC20};
 
-pub struct ERC20Token {
+pub struct TestERC20 {
     pub contract_address: Address,
     pub faucet_address: Address,
 }
 
-impl ERC20Token {
-    pub fn deploy(evm: &mut EvmRunner, faucet_address: Address) -> ERC20Token {
-        let contract_address =
-            deploy_contract_with_caller("testing/ERC20.sol", "Token", Some(faucet_address), evm);
+impl TestERC20 {
+    pub fn deploy(evm: &mut EvmRunner, faucet_address: Address) -> TestERC20 {
+        let contract_address = deploy_contract_with_caller(
+            "../test/TestERC20.sol",
+            "TestERC20",
+            Some(faucet_address),
+            evm,
+        );
 
-        ERC20Token {
+        TestERC20 {
             contract_address,
             faucet_address,
         }
@@ -74,7 +78,7 @@ mod tests {
     use alloy_sol_types::SolCall;
     use evm_utils::EvmRunner;
 
-    use super::ERC20Token;
+    use super::TestERC20;
     use crate::ierc20::IERC20;
 
     const FAUCET_ADDRESS: &str = "5555555555555555555555555555555555555555";
@@ -87,7 +91,7 @@ mod tests {
         let recipient_address = Address::from_str(RECIPIENT_ADDRESS).unwrap();
 
         let mut evm = EvmRunner::aleph_evm();
-        let token = ERC20Token::deploy(&mut evm, faucet_address);
+        let token = TestERC20::deploy(&mut evm, faucet_address);
 
         assert!(token
             .faucet(&mut evm, recipient_address, U256::from(123))
@@ -106,7 +110,7 @@ mod tests {
         let recipient_address = Address::from_str(RECIPIENT_ADDRESS).unwrap();
 
         let mut evm = EvmRunner::aleph_evm();
-        let token = ERC20Token::deploy(&mut evm, faucet_address);
+        let token = TestERC20::deploy(&mut evm, faucet_address);
 
         assert!(token
             .approve(&mut evm, faucet_address, actor_address, U256::from(123))

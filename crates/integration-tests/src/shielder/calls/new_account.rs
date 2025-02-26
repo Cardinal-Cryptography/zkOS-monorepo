@@ -44,7 +44,7 @@ pub fn invoke_call(
         }
         TestToken::ERC20 => {
             deployment
-                .erc20_token
+                .test_erc20
                 .approve(
                     &mut deployment.evm,
                     Address::from_str(ACTOR_ADDRESS).unwrap(),
@@ -104,8 +104,7 @@ mod tests {
     use crate::{
         calls::new_account::{create_account_and_call, invoke_call, prepare_call, TestToken},
         deploy::{
-            deployment, ACTOR_ADDRESS, ACTOR_INITIAL_ERC20_TOKEN_BALANCE,
-            ACTOR_INITIAL_NATIVE_BALANCE,
+            deployment, ACTOR_ADDRESS, ACTOR_INITIAL_ERC20_BALANCE, ACTOR_INITIAL_NATIVE_BALANCE,
         },
         shielder::Deployment,
     };
@@ -117,7 +116,7 @@ mod tests {
         match token {
             TestToken::Native => deployment.evm.get_balance(address).unwrap(),
             TestToken::ERC20 => deployment
-                .erc20_token
+                .test_erc20
                 .get_balance(&deployment.evm, address)
                 .unwrap(),
         }
@@ -127,7 +126,7 @@ mod tests {
     fn actor_balance_decreased_by(deployment: &Deployment, token: TestToken, amount: U256) -> bool {
         let initial_balance = match token {
             TestToken::Native => ACTOR_INITIAL_NATIVE_BALANCE,
-            TestToken::ERC20 => ACTOR_INITIAL_ERC20_TOKEN_BALANCE,
+            TestToken::ERC20 => ACTOR_INITIAL_ERC20_BALANCE,
         };
         get_balance(deployment, token, ACTOR_ADDRESS) == initial_balance - amount
     }

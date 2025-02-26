@@ -82,7 +82,7 @@ impl TestToken {
     fn address(self, deployment: &Deployment) -> Address {
         match self {
             TestToken::Native => Address::ZERO,
-            TestToken::ERC20 => deployment.erc20_token.contract_address,
+            TestToken::ERC20 => deployment.test_erc20.contract_address,
         }
     }
 }
