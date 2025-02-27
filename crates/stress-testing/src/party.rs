@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use alloy_provider::Provider;
 use anyhow::Result;
-use shielder_account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra};
+use shielder_account::call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     withdraw::WithdrawCircuit,
@@ -111,6 +111,7 @@ async fn prepare_relay_query(
     let calldata = actor.account.prepare_call::<WithdrawCallType>(
         params,
         pk,
+        Token::Native,
         U256::from(WITHDRAW_AMOUNT),
         &WithdrawExtra {
             merkle_proof: MerkleProof {

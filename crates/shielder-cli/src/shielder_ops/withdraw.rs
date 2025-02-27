@@ -5,7 +5,7 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+    call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra},
     ShielderAction,
 };
 use shielder_contract::{
@@ -131,6 +131,7 @@ async fn prepare_relayer_query(
     let calldata = app_state.account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
+        Token::Native,
         amount,
         &WithdrawExtra {
             merkle_proof: MerkleProof {
