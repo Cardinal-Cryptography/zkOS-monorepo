@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes, FixedBytes, U256};
 use rand::rngs::OsRng;
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
@@ -12,14 +12,16 @@ use shielder_circuits::{
     Field, Fr, GrumpkinPointAffine, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
-    ShielderContract::{depositNativeCall, newAccountNativeCall, withdrawNativeCall},
+    ShielderContract::{
+        depositNativeCall, newAccountERC20Call, newAccountNativeCall, withdrawNativeCall,
+    },
     WithdrawCommitment,
 };
 use shielder_setup::{
     native_token::NATIVE_TOKEN_ADDRESS,
     version::{contract_version, ContractVersion},
 };
-use type_conversions::{field_to_u256, u256_to_field};
+use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
 use super::secrets::generate_id_hiding_nonce;
 use crate::ShielderAccount;
@@ -31,6 +33,34 @@ struct ActionSecrets {
     trapdoor_new: U256,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum Token {
+    Native,
+    ERC20(Address),
+}
+
+impl Token {
+    pub fn address(&self) -> Address {
+        match self {
+            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
+            Token::ERC20(address) => *address,
+        }
+    }
+}
+
+impl From<Address> for Token {
+    fn from(address: Address) -> Self {
+        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
+            Token::Native
+        } else {
+            Token::ERC20(address)
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CallTypeConversionError;
+
 /// A trait for the different types of calls, for which calldata can be prepared based on the
 /// ShielderAccount's state.
 pub trait CallType {
@@ -39,12 +69,13 @@ pub trait CallType {
     /// We suppose that every call has a corresponding circuit values struct used to generate a
     /// proof.
     type ProverKnowledge: ProverKnowledge;
-    /// The type of the contract call data.
+    /// The type of the contract call data. Must be a type convertible to `SolCall`.
     type Calldata;
 
     /// Prepare the prover knowledge for the call.
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge;
@@ -57,6 +88,60 @@ pub trait CallType {
     ) -> Self::Calldata;
 }
 
+#[derive(Clone, Debug)]
+pub struct NewAccountCall {
+    pub amount: U256,
+    pub token: Token,
+    pub expected_contract_version: FixedBytes<3>,
+    pub new_note: U256,
+    pub id_hash: U256,
+    pub sym_key_encryption_c1: GrumpkinPointAffine<U256>,
+    pub sym_key_encryption_c2: GrumpkinPointAffine<U256>,
+    pub proof: Bytes,
+}
+
+impl TryFrom<NewAccountCall> for newAccountNativeCall {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: NewAccountCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                newNote: calldata.new_note,
+                idHash: calldata.id_hash,
+                symKeyEncryptionC1X: calldata.sym_key_encryption_c1.x,
+                symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
+                symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
+                symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
+                proof: calldata.proof,
+            }),
+            Token::ERC20(_) => Err(CallTypeConversionError),
+        }
+    }
+}
+
+impl TryFrom<NewAccountCall> for newAccountERC20Call {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: NewAccountCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Err(CallTypeConversionError),
+            Token::ERC20(token_address) => Ok(Self {
+                tokenAddress: token_address,
+                amount: calldata.amount,
+                expectedContractVersion: calldata.expected_contract_version,
+                newNote: calldata.new_note,
+                idHash: calldata.id_hash,
+                symKeyEncryptionC1X: calldata.sym_key_encryption_c1.x,
+                symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
+                symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
+                symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
+                proof: calldata.proof,
+            }),
+        }
+    }
+}
+
 pub struct NewAccountCallExtra {
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     pub encryption_salt: [bool; FIELD_BITS],
@@ -66,10 +151,11 @@ pub enum NewAccountCallType {}
 impl CallType for NewAccountCallType {
     type Extra = NewAccountCallExtra;
     type ProverKnowledge = NewAccountProverKnowledge<Fr>;
-    type Calldata = newAccountNativeCall;
+    type Calldata = NewAccountCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -78,7 +164,7 @@ impl CallType for NewAccountCallType {
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(token.address()),
             encryption_salt: extra.encryption_salt.map(|b| Fr::from(b as u64)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
                 x: u256_to_field(extra.anonymity_revoker_public_key.x),
@@ -93,21 +179,19 @@ impl CallType for NewAccountCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
-        newAccountNativeCall {
-            expectedContractVersion: contract_version().to_bytes(),
-            newNote: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
-            idHash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
-            symKeyEncryptionC1X: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1X),
+        NewAccountCall {
+            amount: field_to_u256(prover_knowledge.initial_deposit),
+            token: field_to_address(prover_knowledge.token_address).into(),
+            expected_contract_version: contract_version().to_bytes(),
+            new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
+            id_hash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
+            sym_key_encryption_c1: GrumpkinPointAffine::<U256>::new(
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1X)),
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1Y)),
             ),
-            symKeyEncryptionC1Y: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1Y),
-            ),
-            symKeyEncryptionC2X: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2X),
-            ),
-            symKeyEncryptionC2Y: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2Y),
+            sym_key_encryption_c2: GrumpkinPointAffine::<U256>::new(
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2X)),
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2Y)),
             ),
             proof: Bytes::from(proof),
         }
@@ -128,6 +212,7 @@ impl CallType for DepositCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         merkle: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -147,7 +232,7 @@ impl CallType for DepositCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(token.address()),
             path: map_path_to_field(merkle.path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
@@ -192,6 +277,7 @@ impl CallType for WithdrawCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -219,7 +305,7 @@ impl CallType for WithdrawCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_proof.path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
@@ -257,10 +343,11 @@ impl ShielderAccount {
         &self,
         params: &Params,
         pk: &ProvingKey,
+        token: Token,
         amount: U256,
         extra: &CT::Extra,
     ) -> CT::Calldata {
-        let prover_knowledge = CT::prepare_prover_knowledge(self, amount, extra);
+        let prover_knowledge = CT::prepare_prover_knowledge(self, token, amount, extra);
         let proof = generate_proof(params, pk, &prover_knowledge);
         CT::prepare_call_data(&prover_knowledge, proof, extra)
     }
