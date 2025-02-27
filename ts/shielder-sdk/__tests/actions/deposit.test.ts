@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, vitest, it } from "vitest";
 import {
-  CryptoClient,
   DepositAdvice,
   DepositPubInputs,
   Scalar,
@@ -15,58 +14,6 @@ import { AccountState } from "../../src/state";
 import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 import { nativeToken } from "../../src/types";
-
-const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
-
-const expectPubInputsCorrect = async (
-  pubInputs: DepositPubInputs,
-  cryptoClient: CryptoClient,
-  prevNullifier: Scalar,
-  state: AccountState,
-  amount: bigint,
-  nonce: bigint,
-  merkleRoot: Scalar
-) => {
-  // hNullifierOld should be hash of nullifier
-  expect(
-    scalarsEqual(
-      pubInputs.hNullifierOld,
-      await cryptoClient.hasher.poseidonHash([prevNullifier])
-    )
-  ).toBe(true);
-
-  // hNoteNew should be hash of [id, newNullifier, newTrapdoor, amount]
-  const { nullifier: newNullifier, trapdoor: newTrapdoor } =
-    await cryptoClient.secretManager.getSecrets(state.id, Number(state.nonce));
-  expect(
-    scalarsEqual(
-      pubInputs.hNoteNew,
-      await hashedNote(
-        state.id,
-        newNullifier,
-        newTrapdoor,
-        Scalar.fromBigint(state.balance + amount)
-      )
-    )
-  ).toBe(true);
-
-  // idHiding should be hash of [id hash, nonce]
-  expect(
-    scalarsEqual(
-      pubInputs.idHiding,
-      await cryptoClient.hasher.poseidonHash([
-        await cryptoClient.hasher.poseidonHash([state.id]),
-        Scalar.fromBigint(nonce)
-      ])
-    )
-  ).toBe(true);
-
-  // merkleRoot should be equal to input merkleRoot
-  expect(scalarsEqual(pubInputs.merkleRoot, merkleRoot)).toBe(true);
-
-  // value should be amount
-  expect(scalarsEqual(pubInputs.value, Scalar.fromBigint(amount))).toBe(true);
-};
 
 describe("DepositAction", () => {
   let cryptoClient: MockedCryptoClient;
@@ -216,7 +163,7 @@ describe("DepositAction", () => {
 
       // mock cryptoClient to throw on cryptoClient.depositCircuit.prove
       cryptoClient.depositCircuit.prove = vitest
-        .fn<(values: DepositAdvice) => Promise<Uint8Array>>()
+        .fn<(values: DepositAdvice<Scalar>) => Promise<Uint8Array>>()
         .mockRejectedValue("error");
 
       await expect(
@@ -230,7 +177,12 @@ describe("DepositAction", () => {
 
       // mock cryptoClient to throw on cryptoClient.depositCircuit.prove
       cryptoClient.depositCircuit.verify = vitest
-        .fn<(proof: Uint8Array, values: DepositPubInputs) => Promise<boolean>>()
+        .fn<
+          (
+            proof: Uint8Array,
+            values: DepositPubInputs<Scalar>
+          ) => Promise<boolean>
+        >()
         .mockResolvedValue(false);
 
       await expect(

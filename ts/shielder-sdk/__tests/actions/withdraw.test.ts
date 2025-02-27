@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
-  CryptoClient,
   Scalar,
   scalarsEqual,
   scalarToBigint,
@@ -225,7 +224,7 @@ describe("WithdrawAction", () => {
       const totalFee = 1n;
 
       cryptoClient.withdrawCircuit.prove = vitest
-        .fn<(values: WithdrawAdvice) => Promise<Uint8Array>>()
+        .fn<(values: WithdrawAdvice<Scalar>) => Promise<Uint8Array>>()
         .mockRejectedValue("error");
 
       await expect(
@@ -246,7 +245,10 @@ describe("WithdrawAction", () => {
 
       cryptoClient.withdrawCircuit.verify = vitest
         .fn<
-          (proof: Uint8Array, values: WithdrawPubInputs) => Promise<boolean>
+          (
+            proof: Uint8Array,
+            values: WithdrawPubInputs<Scalar>
+          ) => Promise<boolean>
         >()
         .mockResolvedValue(false);
 

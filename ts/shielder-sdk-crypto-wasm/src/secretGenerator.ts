@@ -14,7 +14,10 @@ export class SecretGenerator
     super.init(caller);
   }
 
-  getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
+  getSecrets(
+    id: Scalar,
+    nonce: number
+  ): Promise<ShielderActionSecrets<Scalar>> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }

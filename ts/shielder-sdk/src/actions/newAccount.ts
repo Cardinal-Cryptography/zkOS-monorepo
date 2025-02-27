@@ -15,7 +15,7 @@ import { getTokenAddress } from "@/utils";
 
 export interface NewAccountCalldata {
   calldata: {
-    pubInputs: NewAccountPubInputs;
+    pubInputs: NewAccountPubInputs<Scalar>;
     proof: Proof;
   };
   expectedContractVersion: `0x${string}`;
@@ -53,14 +53,15 @@ export class NewAccountAction extends NoteAction {
   async prepareAdvice(
     state: AccountState,
     amount: bigint
-  ): Promise<NewAccountAdvice> {
+  ): Promise<NewAccountAdvice<Scalar>> {
     const tokenAddress = getTokenAddress(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
         Number(state.nonce)
       );
-    const anonymityRevokerPubkey = await this.contract.anonymityRevokerPubkey();
+    const [anonymityRevokerPublicKeyX, anonymityRevokerPublicKeyY] =
+      await this.contract.anonymityRevokerPubkey();
     return {
       id: state.id,
       nullifier,
@@ -68,10 +69,8 @@ export class NewAccountAction extends NoteAction {
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
       encryptionSalt: await this.randomSalt(),
-      anonymityRevokerPubkey: {
-        x: Scalar.fromBigint(anonymityRevokerPubkey.x),
-        y: Scalar.fromBigint(anonymityRevokerPubkey.y)
-      }
+      anonymityRevokerPublicKeyX: Scalar.fromBigint(anonymityRevokerPublicKeyX),
+      anonymityRevokerPublicKeyY: Scalar.fromBigint(anonymityRevokerPublicKeyY)
     };
   }
 
@@ -132,14 +131,6 @@ export class NewAccountAction extends NoteAction {
       amount
     } = calldata;
 
-    const symKeyEncryption1 = {
-      x: scalarToBigint(pubInputs.symKeyEncryption1.x),
-      y: scalarToBigint(pubInputs.symKeyEncryption1.y)
-    };
-    const symKeyEncryption2 = {
-      x: scalarToBigint(pubInputs.symKeyEncryption2.x),
-      y: scalarToBigint(pubInputs.symKeyEncryption2.y)
-    };
     const encodedCalldata =
       calldata.token.type === "native"
         ? await this.contract.newAccountNativeCalldata(
@@ -148,8 +139,10 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            symKeyEncryption1,
-            symKeyEncryption2,
+            scalarToBigint(pubInputs.symKeyEncryption1X),
+            scalarToBigint(pubInputs.symKeyEncryption1Y),
+            scalarToBigint(pubInputs.symKeyEncryption2X),
+            scalarToBigint(pubInputs.symKeyEncryption2Y),
             proof
           )
         : await this.contract.newAccountTokenCalldata(
@@ -159,8 +152,10 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            symKeyEncryption1,
-            symKeyEncryption2,
+            scalarToBigint(pubInputs.symKeyEncryption1X),
+            scalarToBigint(pubInputs.symKeyEncryption1Y),
+            scalarToBigint(pubInputs.symKeyEncryption2X),
+            scalarToBigint(pubInputs.symKeyEncryption2Y),
             proof
           );
     const txHash = await sendShielderTransaction({
