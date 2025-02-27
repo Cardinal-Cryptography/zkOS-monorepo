@@ -10,52 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-vars-and-secrets:
-    name: Check vars and secrets
-    uses: ./.github/workflows/_check-vars-and-secrets.yml
-    secrets: inherit
-
-  build-contracts:
-    name: Generate and compile contracts
-    needs: [check-vars-and-secrets]
-    uses: ./.github/workflows/_build-contracts.yml
-    secrets: inherit
-
-  deploy-contracts:
-    name: Deploy contracts
-    needs: [build-contracts]
-    uses: ./.github/workflows/_deploy-contracts.yml
-    secrets: inherit
-
-  rust-crates-checks:
-    name: Rust crates checks
-    needs: [build-contracts]
-    uses: ./.github/workflows/_rust-crates-checks.yml
-    secrets: inherit
-
-  build-wasm-packages:
-    name: Build wasm packages
-    needs: [check-vars-and-secrets]
-    uses: ./.github/workflows/_build-wasm-packages.yml
-    secrets: inherit
-
-  ts-checks:
-    name: Typescript modules checks
-    needs: [build-contracts, build-wasm-packages]
-    uses: ./.github/workflows/_ts-checks.yml
-    secrets: inherit
-
-  clean-wasm-artifact:
-    name: Clean wasm artifact
-    runs-on: ubuntu-22.04
-    if: ${{ always() }}
-    # dependencies should include all jobs, which interact with wasm artifact
-    needs: [build-wasm-packages, ts-checks]
-    steps:
-      - uses: geekyeggo/delete-artifact@v5
-        with:
-          name: wasm-pkg
-
   measure-gas-usage:
     name: Measure gas usage
     uses: ./.github/workflows/_measure-gas.yml
