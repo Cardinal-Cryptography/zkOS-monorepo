@@ -32,9 +32,9 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
                 .prepare_call::<NewAccountCallType>(
                     &params,
                     &pk,
+                    Token::Native,
                     amount,
                     &NewAccountCallExtra {
-                        token: Token::Native,
                         anonymity_revoker_public_key,
                         encryption_salt: get_encryption_salt(),
                     },

@@ -21,9 +21,9 @@ pub fn prepare_call(
         .prepare_call::<NewAccountCallType>(
             &params,
             &pk,
+            Token::Native,
             amount,
             &NewAccountCallExtra {
-                token: Token::Native,
                 anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
                 encryption_salt: [true; FIELD_BITS],
             },

@@ -48,6 +48,16 @@ impl Token {
     }
 }
 
+impl From<Address> for Token {
+    fn from(address: Address) -> Self {
+        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
+            Token::Native
+        } else {
+            Token::ERC20(address)
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct CallTypeConversionError;
 
@@ -65,6 +75,7 @@ pub trait CallType {
     /// Prepare the prover knowledge for the call.
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge;
@@ -134,7 +145,6 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
 }
 
 pub struct NewAccountCallExtra {
-    pub token: Token,
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     pub encryption_salt: [bool; FIELD_BITS],
 }
@@ -147,6 +157,7 @@ impl CallType for NewAccountCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -155,7 +166,7 @@ impl CallType for NewAccountCallType {
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
-            token_address: address_to_field(extra.token.address()),
+            token_address: address_to_field(token.address()),
             encryption_salt: extra.encryption_salt.map(|b| Fr::from(b as u64)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
                 x: u256_to_field(extra.anonymity_revoker_public_key.x),
@@ -167,12 +178,12 @@ impl CallType for NewAccountCallType {
     fn prepare_call_data(
         prover_knowledge: &Self::ProverKnowledge,
         proof: Vec<u8>,
-        extra: &Self::Extra,
+        _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
         NewAccountCall {
             amount: field_to_u256(prover_knowledge.initial_deposit),
-            token: extra.token,
+            token: field_to_address(prover_knowledge.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             id_hash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
@@ -207,6 +218,7 @@ impl CallType for DepositCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         merkle: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -226,7 +238,7 @@ impl CallType for DepositCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(token.address()),
             path: map_path_to_field(merkle.path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
@@ -271,6 +283,7 @@ impl CallType for WithdrawCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
+        token: Token,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -298,7 +311,7 @@ impl CallType for WithdrawCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_proof.path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
@@ -336,10 +349,11 @@ impl ShielderAccount {
         &self,
         params: &Params,
         pk: &ProvingKey,
+        token: Token,
         amount: U256,
         extra: &CT::Extra,
     ) -> CT::Calldata {
-        let prover_knowledge = CT::prepare_prover_knowledge(self, amount, extra);
+        let prover_knowledge = CT::prepare_prover_knowledge(self, token, amount, extra);
         let proof = generate_proof(params, pk, &prover_knowledge);
         CT::prepare_call_data(&prover_knowledge, proof, extra)
     }
