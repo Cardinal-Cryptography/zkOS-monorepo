@@ -178,7 +178,7 @@ impl CallType for NewAccountCallType {
         proof: Vec<u8>,
         _: &Self::Extra,
     ) -> Self::Calldata {
-        use shielder_circuits::circuits::new_account::NewAccountInstance::*;
+        use shielder_circuits::circuits::new_account::NewAccountFullInstance::*;
         NewAccountCall {
             amount: field_to_u256(prover_knowledge.initial_deposit),
             token: field_to_address(prover_knowledge.token_address).into(),
@@ -246,7 +246,7 @@ impl CallType for DepositCallType {
         proof: Vec<u8>,
         _: &Self::Extra,
     ) -> Self::Calldata {
-        use shielder_circuits::circuits::deposit::DepositInstance::*;
+        use shielder_circuits::circuits::deposit::DepositFullInstance::*;
         depositNativeCall {
             expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
@@ -320,7 +320,7 @@ impl CallType for WithdrawCallType {
         proof: Vec<u8>,
         extra: &Self::Extra,
     ) -> Self::Calldata {
-        use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
+        use shielder_circuits::circuits::withdraw::WithdrawFullInstance::*;
         withdrawNativeCall {
             expectedContractVersion: contract_version().to_bytes(),
             idHiding: field_to_u256(pk.compute_public_input(IdHiding)),

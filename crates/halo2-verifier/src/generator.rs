@@ -11,7 +11,7 @@ use shielder_circuits::{
     deposit::DepositProverKnowledge,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    EnumCount, ProverKnowledge, MAX_K,
+    ProverKnowledge, MAX_K,
 };
 
 const CONTRACTS_DIR: &str = "./contracts";
@@ -41,7 +41,7 @@ fn generate_solidity_verification_bundle<PK: ProverKnowledge>(
 ) -> String {
     let (parameters, _, _, vk) = generate_keys_with_min_k(PK::Circuit::default(), full_parameters)
         .expect("Failed to generate keys");
-    SolidityGenerator::new(&parameters, &vk, Bdfg21, PK::PublicInput::COUNT)
+    SolidityGenerator::new(&parameters, &vk, Bdfg21, 1)
         .render()
         .expect("Failed to generate separate contracts")
 }

@@ -14,6 +14,7 @@ import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/P
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Poseidon2T8Assembly as Poseidon2 } from "./Poseidon2T8Assembly.sol";
 
 using SafeERC20 for IERC20;
 
@@ -270,20 +271,29 @@ contract Shielder is
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](10);
-        publicInputs[0] = newNote;
-        publicInputs[1] = idHash;
-        publicInputs[2] = amount;
-        publicInputs[3] = addressToUInt256(tokenAddress);
 
+        uint256[7] memory innerHash;
+        innerHash[0] = symKeyEncryptionC1X;
+        innerHash[1] = symKeyEncryptionC1Y;
+        innerHash[2] = symKeyEncryptionC2X;
+        innerHash[3] = symKeyEncryptionC2Y;
+        innerHash[4] = 0;
+        innerHash[5] = 0;
+        innerHash[6] = 0;
+        uint256 innerHashValue = Poseidon2.hash(innerHash);
+
+        uint256[7] memory outerHash;
+        outerHash[0] = newNote;
+        outerHash[1] = idHash;
+        outerHash[2] = amount;
+        outerHash[3] = addressToUInt256(tokenAddress);
         (uint256 arX, uint256 arY) = anonymityRevokerPubkey();
-        publicInputs[4] = arX;
-        publicInputs[5] = arY;
+        outerHash[4] = arX;
+        outerHash[5] = arY;
+        outerHash[6] = innerHashValue;
 
-        publicInputs[6] = symKeyEncryptionC1X;
-        publicInputs[7] = symKeyEncryptionC1Y;
-        publicInputs[8] = symKeyEncryptionC2X;
-        publicInputs[9] = symKeyEncryptionC2Y;
+        uint256[] memory publicInputs = new uint256[](1);
+        publicInputs[0] = Poseidon2.hash(outerHash);
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
@@ -413,15 +423,27 @@ contract Shielder is
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](8);
-        publicInputs[0] = idHiding;
-        publicInputs[1] = merkleRoot;
-        publicInputs[2] = oldNullifierHash;
-        publicInputs[3] = newNote;
-        publicInputs[4] = amount;
-        publicInputs[5] = addressToUInt256(tokenAddress);
-        publicInputs[6] = macSalt;
-        publicInputs[7] = macCommitment;
+        uint256[7] memory innerHash;
+        innerHash[0] = macSalt;
+        innerHash[1] = macCommitment;
+        innerHash[2] = 0;
+        innerHash[3] = 0;
+        innerHash[4] = 0;
+        innerHash[5] = 0;
+        innerHash[6] = 0;
+        uint256 innerHashValue = Poseidon2.hash(innerHash);
+
+        uint256[7] memory outerHash;
+        outerHash[0] = idHiding;
+        outerHash[1] = merkleRoot;
+        outerHash[2] = oldNullifierHash;
+        outerHash[3] = newNote;
+        outerHash[4] = amount;
+        outerHash[5] = addressToUInt256(tokenAddress);
+        outerHash[6] = innerHashValue;
+
+        uint256[] memory publicInputs = new uint256[](1);
+        publicInputs[0] = Poseidon2.hash(outerHash);
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
@@ -575,16 +597,6 @@ contract Shielder is
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](9);
-        publicInputs[0] = idHiding;
-        publicInputs[1] = merkleRoot;
-        publicInputs[2] = oldNullifierHash;
-        publicInputs[3] = newNote;
-        publicInputs[4] = amount;
-        publicInputs[5] = addressToUInt256(tokenAddress);
-        publicInputs[7] = macSalt;
-        publicInputs[8] = macCommitment;
-
         uint256 chainId = block.chainid;
 
         bytes memory commitment = abi.encodePacked(
@@ -594,8 +606,29 @@ contract Shielder is
             relayerFee,
             chainId
         );
+
+        uint256[7] memory innerHash;
         // @dev shifting right by 4 bits so the commitment is smaller from r
-        publicInputs[6] = uint256(keccak256(commitment)) >> 4;
+        innerHash[0] = uint256(keccak256(commitment)) >> 4;
+        innerHash[1] = macSalt;
+        innerHash[2] = macCommitment;
+        innerHash[3] = 0;
+        innerHash[4] = 0;
+        innerHash[5] = 0;
+        innerHash[6] = 0;
+        uint256 innerHashValue = Poseidon2.hash(innerHash);
+
+        uint256[7] memory outerHash;
+        outerHash[0] = idHiding;
+        outerHash[1] = merkleRoot;
+        outerHash[2] = oldNullifierHash;
+        outerHash[3] = newNote;
+        outerHash[4] = amount;
+        outerHash[5] = addressToUInt256(tokenAddress);
+        outerHash[6] = innerHashValue;
+
+        uint256[] memory publicInputs = new uint256[](1);
+        publicInputs[0] = Poseidon2.hash(outerHash);
 
         bool success = WithdrawVerifier.verifyProof(proof, publicInputs);
 
