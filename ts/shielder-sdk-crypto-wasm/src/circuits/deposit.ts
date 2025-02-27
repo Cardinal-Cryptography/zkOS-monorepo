@@ -25,7 +25,7 @@ export class DepositCircuit
     this.wasmCircuit = new this.wasmModule.DepositCircuit();
   }
 
-  prove(values: DepositAdvice): Promise<Proof> {
+  prove(values: DepositAdvice<Scalar>): Promise<Proof> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -46,7 +46,9 @@ export class DepositCircuit
     );
   }
 
-  async pubInputs(values: DepositAdvice): Promise<DepositPubInputs> {
+  async pubInputs(
+    values: DepositAdvice<Scalar>
+  ): Promise<DepositPubInputs<Scalar>> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -78,7 +80,10 @@ export class DepositCircuit
     });
   }
 
-  async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
+  async verify(
+    proof: Proof,
+    pubInputs: DepositPubInputs<Scalar>
+  ): Promise<boolean> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }

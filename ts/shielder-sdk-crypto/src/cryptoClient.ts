@@ -11,21 +11,26 @@ import {
 } from "./types";
 
 export interface NewAccountCircuit {
-  prove(values: NewAccountAdvice): Promise<Proof>;
-  pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs>;
-  verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean>;
+  prove(values: NewAccountAdvice<Scalar>): Promise<Proof>;
+  pubInputs(
+    values: NewAccountAdvice<Scalar>
+  ): Promise<NewAccountPubInputs<Scalar>>;
+  verify(
+    proof: Proof,
+    pubInputs: NewAccountPubInputs<Scalar>
+  ): Promise<boolean>;
 }
 
 export interface DepositCircuit {
-  prove(values: DepositAdvice): Promise<Proof>;
-  pubInputs(values: DepositAdvice): Promise<DepositPubInputs>;
-  verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean>;
+  prove(values: DepositAdvice<Scalar>): Promise<Proof>;
+  pubInputs(values: DepositAdvice<Scalar>): Promise<DepositPubInputs<Scalar>>;
+  verify(proof: Proof, pubInputs: DepositPubInputs<Scalar>): Promise<boolean>;
 }
 
 export interface WithdrawCircuit {
-  prove(values: WithdrawAdvice): Promise<Proof>;
-  pubInputs(values: WithdrawAdvice): Promise<WithdrawPubInputs>;
-  verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean>;
+  prove(values: WithdrawAdvice<Scalar>): Promise<Proof>;
+  pubInputs(values: WithdrawAdvice<Scalar>): Promise<WithdrawPubInputs<Scalar>>;
+  verify(proof: Proof, pubInputs: WithdrawPubInputs<Scalar>): Promise<boolean>;
 }
 
 export interface Hasher {
@@ -35,7 +40,7 @@ export interface Hasher {
 }
 
 export interface SecretManager {
-  getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets>;
+  getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets<Scalar>>;
   deriveId(
     privateKey: `0x${string}`,
     tokenAddress: `0x${string}`

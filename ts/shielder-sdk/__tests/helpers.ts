@@ -95,7 +95,10 @@ class MockedHasher implements Hasher {
 }
 
 class MockedSecretManager implements SecretManager {
-  async getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
+  async getSecrets(
+    id: Scalar,
+    nonce: number
+  ): Promise<ShielderActionSecrets<Scalar>> {
     return {
       nullifier: await mockedHash([
         id,
@@ -139,42 +142,41 @@ class MockedNoteTreeConfig implements NoteTreeConfig {
 }
 
 class MockedNewAccountCircuit implements NewAccountCircuit {
-  prove(values: NewAccountAdvice): Promise<Proof> {
+  prove(values: NewAccountAdvice<Scalar>): Promise<Proof> {
     return Promise.resolve(new Uint8Array());
   }
 
-  pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
+  pubInputs(
+    values: NewAccountAdvice<Scalar>
+  ): Promise<NewAccountPubInputs<Scalar>> {
     return Promise.resolve({
       hNote: Scalar.fromBigint(0n),
       hId: Scalar.fromBigint(0n),
       initialDeposit: Scalar.fromBigint(0n),
       tokenAddress: Scalar.fromBigint(0n),
-      anonymityRevokerPubkey: {
-        x: Scalar.fromBigint(0n),
-        y: Scalar.fromBigint(0n)
-      },
-      symKeyEncryption1: {
-        x: Scalar.fromBigint(0n),
-        y: Scalar.fromBigint(0n)
-      },
-      symKeyEncryption2: {
-        x: Scalar.fromBigint(0n),
-        y: Scalar.fromBigint(0n)
-      }
+      anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
+      anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
+      symKeyEncryption1X: Scalar.fromBigint(0n),
+      symKeyEncryption1Y: Scalar.fromBigint(0n),
+      symKeyEncryption2X: Scalar.fromBigint(0n),
+      symKeyEncryption2Y: Scalar.fromBigint(0n)
     });
   }
 
-  async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
+  async verify(
+    proof: Proof,
+    pubInputs: NewAccountPubInputs<Scalar>
+  ): Promise<boolean> {
     return Promise.resolve(true);
   }
 }
 
 class MockedDepositCircuit implements DepositCircuit {
-  prove(values: DepositAdvice): Promise<Proof> {
+  prove(values: DepositAdvice<Scalar>): Promise<Proof> {
     return Promise.resolve(new Uint8Array());
   }
 
-  pubInputs(values: DepositAdvice): Promise<DepositPubInputs> {
+  pubInputs(values: DepositAdvice<Scalar>): Promise<DepositPubInputs<Scalar>> {
     return Promise.resolve({
       idHiding: Scalar.fromBigint(0n),
       merkleRoot: Scalar.fromBigint(0n),
@@ -187,7 +189,10 @@ class MockedDepositCircuit implements DepositCircuit {
     });
   }
 
-  async verify(proof: Proof, pubInputs: DepositPubInputs): Promise<boolean> {
+  async verify(
+    proof: Proof,
+    pubInputs: DepositPubInputs<Scalar>
+  ): Promise<boolean> {
     return Promise.resolve(true);
   }
 }
@@ -197,7 +202,9 @@ class MockedWithdrawCircuit implements WithdrawCircuit {
     return Promise.resolve(new Uint8Array());
   }
 
-  pubInputs(values: WithdrawAdvice): Promise<WithdrawPubInputs> {
+  pubInputs(
+    values: WithdrawAdvice<Scalar>
+  ): Promise<WithdrawPubInputs<Scalar>> {
     return Promise.resolve({
       idHiding: Scalar.fromBigint(0n),
       merkleRoot: Scalar.fromBigint(0n),

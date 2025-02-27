@@ -26,7 +26,7 @@ export class NewAccountCircuit
     this.wasmCircuit = new this.wasmModule.NewAccountCircuit();
   }
 
-  prove(values: NewAccountAdvice): Promise<Proof> {
+  prove(values: NewAccountAdvice<Scalar>): Promise<Proof> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -38,13 +38,15 @@ export class NewAccountCircuit
         values.initialDeposit.bytes,
         values.tokenAddress.bytes,
         values.encryptionSalt.bytes,
-        values.anonymityRevokerPubkey.x.bytes,
-        values.anonymityRevokerPubkey.y.bytes
+        values.anonymityRevokerPublicKeyX.bytes,
+        values.anonymityRevokerPublicKeyY.bytes
       )
     );
   }
 
-  async pubInputs(values: NewAccountAdvice): Promise<NewAccountPubInputs> {
+  async pubInputs(
+    values: NewAccountAdvice<Scalar>
+  ): Promise<NewAccountPubInputs<Scalar>> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -58,8 +60,8 @@ export class NewAccountCircuit
       values.initialDeposit.bytes,
       values.tokenAddress.bytes,
       values.encryptionSalt.bytes,
-      values.anonymityRevokerPubkey.x.bytes,
-      values.anonymityRevokerPubkey.y.bytes
+      values.anonymityRevokerPublicKeyX.bytes,
+      values.anonymityRevokerPublicKeyY.bytes
     );
 
     return Promise.resolve({
@@ -67,22 +69,23 @@ export class NewAccountCircuit
       hId: new Scalar(pubInputsBytes.hashed_id),
       initialDeposit: new Scalar(pubInputsBytes.initial_deposit),
       tokenAddress: new Scalar(pubInputsBytes.token_address),
-      anonymityRevokerPubkey: {
-        x: new Scalar(pubInputsBytes.anonymity_revoker_public_key_x),
-        y: new Scalar(pubInputsBytes.anonymity_revoker_public_key_y)
-      },
-      symKeyEncryption1: {
-        x: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
-        y: new Scalar(pubInputsBytes.sym_key_encryption_1_y)
-      },
-      symKeyEncryption2: {
-        x: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
-        y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
-      }
+      anonymityRevokerPublicKeyX: new Scalar(
+        pubInputsBytes.anonymity_revoker_public_key_x
+      ),
+      anonymityRevokerPublicKeyY: new Scalar(
+        pubInputsBytes.anonymity_revoker_public_key_y
+      ),
+      symKeyEncryption1X: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
+      symKeyEncryption1Y: new Scalar(pubInputsBytes.sym_key_encryption_1_y),
+      symKeyEncryption2X: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
+      symKeyEncryption2Y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
     });
   }
 
-  async verify(proof: Proof, pubInputs: NewAccountPubInputs): Promise<boolean> {
+  async verify(
+    proof: Proof,
+    pubInputs: NewAccountPubInputs<Scalar>
+  ): Promise<boolean> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -94,12 +97,12 @@ export class NewAccountCircuit
           pubInputs.hId.bytes,
           pubInputs.initialDeposit.bytes,
           pubInputs.tokenAddress.bytes,
-          pubInputs.anonymityRevokerPubkey.x.bytes,
-          pubInputs.anonymityRevokerPubkey.y.bytes,
-          pubInputs.symKeyEncryption1.x.bytes,
-          pubInputs.symKeyEncryption1.y.bytes,
-          pubInputs.symKeyEncryption2.x.bytes,
-          pubInputs.symKeyEncryption2.y.bytes,
+          pubInputs.anonymityRevokerPublicKeyX.bytes,
+          pubInputs.anonymityRevokerPublicKeyY.bytes,
+          pubInputs.symKeyEncryption1X.bytes,
+          pubInputs.symKeyEncryption1Y.bytes,
+          pubInputs.symKeyEncryption2X.bytes,
+          pubInputs.symKeyEncryption2Y.bytes,
           proof
         )
       );
