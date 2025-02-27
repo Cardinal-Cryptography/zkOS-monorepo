@@ -197,7 +197,6 @@ impl CallType for NewAccountCallType {
         }
     }
 }
-
 pub struct MerkleProof {
     pub root: U256,
     pub path: [[U256; ARITY]; NOTE_TREE_HEIGHT],

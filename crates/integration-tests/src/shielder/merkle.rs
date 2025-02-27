@@ -44,16 +44,20 @@ mod tests {
     use rstest::rstest;
     use shielder_contract::ShielderContract::getMerklePathCall;
 
-    use crate::shielder::{
-        calls::new_account_native,
-        deploy::{deployment, Deployment},
-        invoke_shielder_call,
+    use crate::{
+        shielder::{
+            calls::new_account,
+            deploy::{deployment, Deployment},
+            invoke_shielder_call,
+        },
+        TestToken,
     };
 
     #[rstest]
     fn succeeds(mut deployment: Deployment) {
-        assert!(new_account_native::create_account_and_call(
+        assert!(new_account::create_account_and_call(
             &mut deployment,
+            TestToken::Native,
             U256::from(1),
             U256::from(10)
         )
