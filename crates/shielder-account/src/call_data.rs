@@ -95,10 +95,8 @@ pub struct NewAccountCall {
     pub expected_contract_version: FixedBytes<3>,
     pub new_note: U256,
     pub id_hash: U256,
-    pub sym_key_encryption_c1_x: U256,
-    pub sym_key_encryption_c1_y: U256,
-    pub sym_key_encryption_c2_x: U256,
-    pub sym_key_encryption_c2_y: U256,
+    pub sym_key_encryption_c1: GrumpkinPointAffine<U256>,
+    pub sym_key_encryption_c2: GrumpkinPointAffine<U256>,
     pub proof: Bytes,
 }
 
@@ -111,10 +109,10 @@ impl TryFrom<NewAccountCall> for newAccountNativeCall {
                 expectedContractVersion: calldata.expected_contract_version,
                 newNote: calldata.new_note,
                 idHash: calldata.id_hash,
-                symKeyEncryptionC1X: calldata.sym_key_encryption_c1_x,
-                symKeyEncryptionC1Y: calldata.sym_key_encryption_c1_y,
-                symKeyEncryptionC2X: calldata.sym_key_encryption_c2_x,
-                symKeyEncryptionC2Y: calldata.sym_key_encryption_c2_y,
+                symKeyEncryptionC1X: calldata.sym_key_encryption_c1.x,
+                symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
+                symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
+                symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
                 proof: calldata.proof,
             }),
             Token::ERC20(_) => Err(CallTypeConversionError),
@@ -134,10 +132,10 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
                 expectedContractVersion: calldata.expected_contract_version,
                 newNote: calldata.new_note,
                 idHash: calldata.id_hash,
-                symKeyEncryptionC1X: calldata.sym_key_encryption_c1_x,
-                symKeyEncryptionC1Y: calldata.sym_key_encryption_c1_y,
-                symKeyEncryptionC2X: calldata.sym_key_encryption_c2_x,
-                symKeyEncryptionC2Y: calldata.sym_key_encryption_c2_y,
+                symKeyEncryptionC1X: calldata.sym_key_encryption_c1.x,
+                symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
+                symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
+                symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
                 proof: calldata.proof,
             }),
         }
@@ -187,17 +185,13 @@ impl CallType for NewAccountCallType {
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             id_hash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
-            sym_key_encryption_c1_x: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1X),
+            sym_key_encryption_c1: GrumpkinPointAffine::<U256>::new(
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1X)),
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1Y)),
             ),
-            sym_key_encryption_c1_y: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1Y),
-            ),
-            sym_key_encryption_c2_x: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2X),
-            ),
-            sym_key_encryption_c2_y: field_to_u256(
-                prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2Y),
+            sym_key_encryption_c2: GrumpkinPointAffine::<U256>::new(
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2X)),
+                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2Y)),
             ),
             proof: Bytes::from(proof),
         }
