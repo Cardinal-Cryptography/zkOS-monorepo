@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType},
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAccount,
 };
 use shielder_circuits::consts::FIELD_BITS;
@@ -38,16 +38,15 @@ pub fn prepare_call(
 pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
-    token: TestToken,
     calldata: &NewAccountCall,
 ) -> CallResult {
-    let call_result = match token {
-        TestToken::Native => {
+    let call_result = match calldata.token {
+        Token::Native => {
             let amount = Some(calldata.amount);
             let calldata: newAccountNativeCall = calldata.clone().try_into().unwrap();
             invoke_shielder_call(deployment, &calldata, amount)
         }
-        TestToken::ERC20 => {
+        Token::ERC20(_) => {
             deployment
                 .test_erc20
                 .approve(
@@ -83,7 +82,7 @@ pub fn create_account_and_call(
     let mut shielder_account = ShielderAccount::new(id);
 
     let calldata = prepare_call(deployment, &mut shielder_account, token, initial_amount);
-    let result = invoke_call(deployment, &mut shielder_account, token, &calldata);
+    let result = invoke_call(deployment, &mut shielder_account, &calldata);
 
     match result {
         Ok(_) => Ok(shielder_account),
@@ -147,7 +146,7 @@ mod tests {
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
         let (_, SuccessResult { gas_used, .. }) =
-            invoke_call(&mut deployment, &mut shielder_account, token, &calldata).unwrap();
+            invoke_call(&mut deployment, &mut shielder_account, &calldata).unwrap();
 
         let expected_gas_used = match token {
             TestToken::Native => GAS_CONSUMPTION_NATIVE,
@@ -167,7 +166,7 @@ mod tests {
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
-        let events = invoke_call(&mut deployment, &mut shielder_account, token, &calldata)
+        let events = invoke_call(&mut deployment, &mut shielder_account, &calldata)
             .unwrap()
             .0;
 
@@ -195,7 +194,7 @@ mod tests {
         let mut calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
         calldata.expected_contract_version = FixedBytes([9, 8, 7]);
 
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(
             result,
@@ -246,12 +245,12 @@ mod tests {
         let mut swap_value = U256::from_str(Fr::MODULUS).unwrap();
 
         mem::swap(&mut calldata.id_hash, &mut swap_value);
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.id_hash, &mut swap_value);
 
         mem::swap(&mut calldata.new_note, &mut swap_value);
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.new_note, &mut swap_value);
 
@@ -273,7 +272,7 @@ mod tests {
         let amount = U256::from((1u128 << 112) - 1);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert!(result.is_ok());
         let events = result.unwrap().0;
@@ -311,7 +310,7 @@ mod tests {
         let mut calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
         calldata.id_hash = calldata.id_hash.wrapping_add(U256::from(1));
 
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(
             result,
@@ -330,7 +329,7 @@ mod tests {
         let amount = U256::from(101);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert!(result.is_ok());
 
@@ -349,7 +348,7 @@ mod tests {
         let amount = U256::from(101);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
-        let result = invoke_call(&mut deployment, &mut shielder_account, token, &calldata);
+        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
         assert_matches!(
             result,

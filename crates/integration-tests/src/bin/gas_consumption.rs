@@ -92,7 +92,7 @@ fn measure_gas(
 ) -> u64 {
     match calldata {
         Calldata::NewAccount(calldata) => {
-            new_account_call(deployment, shielder_account, TestToken::Native, calldata)
+            new_account_call(deployment, shielder_account, calldata)
                 .unwrap()
                 .1
                 .gas_used
