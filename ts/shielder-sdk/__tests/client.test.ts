@@ -389,7 +389,7 @@ describe("ShielderClient", () => {
           .mockResolvedValue(mockTxHash);
         if (action === "withdrawAction") {
           vitest
-            .spyOn(client[action], "sendCalldataRelayer")
+            .spyOn(client[action], "sendCalldataWithRelayer")
             .mockResolvedValue(mockTxHash);
         }
       }
@@ -422,29 +422,24 @@ describe("ShielderClient", () => {
           ).toHaveBeenCalledWith({
             hash: mockTxHash
           });
-          // check that action.generateCalldata was called with the correct arguments
           expect(client[action].generateCalldata).toHaveBeenCalledWith(
             mockState,
             mockAmount,
             contractVersion
           );
-          // check that callback onCalldataGenerated was called
           expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
             expect.any(Object),
             "shield"
           );
-          // check that action.sendCalldata was called with the correct arguments
           expect(client[action].sendCalldata).toHaveBeenCalledWith(
             expect.any(Object),
             mockSendTransaction,
             mockFrom
           );
-          // check that callback onCalldataSent was called
           expect(callbacks.onCalldataSent).toHaveBeenCalledWith(
             mockTxHash,
             "shield"
           );
-          // shielder.sync() should be called after the transaction is sent
           expect(
             client["stateSynchronizer"].syncAccountState
           ).toHaveBeenCalledTimes(1);
@@ -470,7 +465,6 @@ describe("ShielderClient", () => {
             hash: mockTxHash
           }
         );
-        // check that withdrawAction.generateCalldata was called with the correct arguments
         expect(client["withdrawAction"].generateCalldata).toHaveBeenCalledWith(
           mockState,
           mockAmount,
@@ -479,21 +473,17 @@ describe("ShielderClient", () => {
           mockAddress,
           contractVersion
         );
-        // check that callback onCalldataGenerated was called
         expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
           expect.any(Object),
           "withdraw"
         );
-        // check that withdrawAction.sendCalldata was called
         expect(
-          client["withdrawAction"].sendCalldataRelayer
+          client["withdrawAction"].sendCalldataWithRelayer
         ).toHaveBeenCalledWith(expect.any(Object));
-        // check that callback onCalldataSent was called
         expect(callbacks.onCalldataSent).toHaveBeenCalledWith(
           mockTxHash,
           "withdraw"
         );
-        // shielder.sync() should be called after the transaction is sent
         expect(
           client["stateSynchronizer"].syncAccountState
         ).toHaveBeenCalledTimes(1);
@@ -538,7 +528,7 @@ describe("ShielderClient", () => {
           mockedError: new VersionRejectedByRelayer("123"),
           expectedError: new OutdatedSdkError(),
           action: "withdrawAction",
-          stage: "sendCalldataRelayer",
+          stage: "sendCalldataWithRelayer",
           clientTarget: "withdraw",
           nonce: 1n
         }
@@ -563,8 +553,7 @@ describe("ShielderClient", () => {
             client[clientTarget](mockAmount, mockSendTransaction, mockFrom)
           ).rejects.toThrow(expectedError);
 
-          // check that the correct callbacks were called
-          if (stage === "sendCalldata" || stage === "sendCalldataRelayer") {
+          if (stage === "sendCalldata" || stage === "sendCalldataWithRelayer") {
             expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
               expect.any(Object),
               clientTarget

@@ -270,7 +270,7 @@ describe("WithdrawAction", () => {
     });
   });
 
-  describe("sendCalldataRelayer", () => {
+  describe("sendCalldataWithRelayer", () => {
     it("should send transaction with correct parameters", async () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
@@ -284,7 +284,7 @@ describe("WithdrawAction", () => {
         expectedVersion
       );
 
-      const txHash = await action.sendCalldataRelayer(calldata);
+      const txHash = await action.sendCalldataWithRelayer(calldata);
 
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
@@ -336,9 +336,9 @@ describe("WithdrawAction", () => {
         >()
         .mockRejectedValue(mockedErr);
 
-      await expect(action.sendCalldataRelayer(calldata)).rejects.toThrowError(
-        mockedErr
-      );
+      await expect(
+        action.sendCalldataWithRelayer(calldata)
+      ).rejects.toThrowError(mockedErr);
     });
 
     it("should throw on other errors during send", async () => {
@@ -372,7 +372,7 @@ describe("WithdrawAction", () => {
         >()
         .mockRejectedValue(new Error("mocked contract rejection"));
 
-      await expect(action.sendCalldataRelayer(calldata)).rejects.toThrow(
+      await expect(action.sendCalldataWithRelayer(calldata)).rejects.toThrow(
         "Failed to withdraw: Error: mocked contract rejection"
       );
     });

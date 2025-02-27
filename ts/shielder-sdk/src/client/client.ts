@@ -299,7 +299,7 @@ export class ShielderClient {
           withdrawalAddress,
           contractVersion
         ),
-      (calldata) => this.withdrawAction.sendCalldataRelayer(calldata),
+      (calldata) => this.withdrawAction.sendCalldataWithRelayer(calldata),
       "withdraw"
     );
     if (this.publicClient) {

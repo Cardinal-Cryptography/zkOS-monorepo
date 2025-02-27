@@ -216,7 +216,7 @@ export class WithdrawAction extends NoteAction {
    * @returns transaction hash of the withdraw transaction
    * @throws VersionRejectedByRelayer
    */
-  async sendCalldataRelayer(calldata: WithdrawCalldata) {
+  async sendCalldataWithRelayer(calldata: WithdrawCalldata) {
     const {
       expectedContractVersion,
       calldata: { pubInputs, proof },
