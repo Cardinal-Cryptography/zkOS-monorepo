@@ -8,7 +8,7 @@ use evm_utils::{
     EvmRunner,
 };
 use rstest::fixture;
-use shielder_circuits::AsymPublicKey;
+use shielder_circuits::GrumpkinPointAffine;
 use shielder_contract::ShielderContract::initializeCall;
 
 use crate::{
@@ -60,7 +60,7 @@ pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 
 
 pub const INITIAL_DEPOSIT_LIMIT: U256 = U256::MAX;
 
-pub const ANONYMITY_REVOKER_PKEY: AsymPublicKey<U256> = AsymPublicKey {
+pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
     x: U256::from_limbs([65, 78, 79, 78]), // ANON
     y: U256::from_limbs([89, 77, 73, 84]), // YMIT
 };

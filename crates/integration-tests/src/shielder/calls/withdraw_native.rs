@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+    call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra},
     ShielderAccount,
 };
 use shielder_contract::ShielderContract::withdrawNativeCall;
@@ -50,6 +50,7 @@ pub fn prepare_call(
     let calldata = shielder_account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
+        Token::Native,
         U256::from(args.amount),
         &WithdrawExtra {
             merkle_proof: MerkleProof {

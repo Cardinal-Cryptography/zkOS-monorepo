@@ -1,8 +1,9 @@
 use alloc::vec::Vec;
 
 use shielder_circuits::{
+    field_element_to_le_bits,
     new_account::{NewAccountInstance, NewAccountProverKnowledge},
-    AsymPublicKey, Fr, PublicInputProvider,
+    Fr, GrumpkinPointAffine, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
 #[cfg(feature = "build-wasm")]
@@ -22,7 +23,10 @@ pub struct NewAccountPubInputsBytes {
     pub token_address: Vec<u8>,
     pub anonymity_revoker_public_key_x: Vec<u8>,
     pub anonymity_revoker_public_key_y: Vec<u8>,
-    pub sym_key_encryption: Vec<u8>,
+    pub sym_key_encryption_1_x: Vec<u8>,
+    pub sym_key_encryption_1_y: Vec<u8>,
+    pub sym_key_encryption_2_x: Vec<u8>,
+    pub sym_key_encryption_2_y: Vec<u8>,
 }
 
 impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
@@ -44,8 +48,17 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
             anonymity_revoker_public_key_y: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::AnonymityRevokerPublicKeyY),
             ),
-            sym_key_encryption: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryption),
+            sym_key_encryption_1_x: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext1X),
+            ),
+            sym_key_encryption_1_y: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext1Y),
+            ),
+            sym_key_encryption_2_x: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext2X),
+            ),
+            sym_key_encryption_2_y: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext2Y),
             ),
         }
     }
@@ -73,6 +86,7 @@ impl NewAccountCircuit {
         trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
         token_address: Vec<u8>,
+        encryption_salt: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
         anonymity_revoker_public_key_y: Vec<u8>,
     ) -> Vec<u8> {
@@ -83,7 +97,8 @@ impl NewAccountCircuit {
                 trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
                 token_address: vec_to_f(token_address),
-                anonymity_revoker_public_key: AsymPublicKey {
+                encryption_salt: field_element_to_le_bits(vec_to_f(encryption_salt)),
+                anonymity_revoker_public_key: GrumpkinPointAffine {
                     x: vec_to_f(anonymity_revoker_public_key_x),
                     y: vec_to_f(anonymity_revoker_public_key_y),
                 },
@@ -101,7 +116,10 @@ impl NewAccountCircuit {
         token_address: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
         anonymity_revoker_public_key_y: Vec<u8>,
-        sym_key_encryption: Vec<u8>,
+        sym_key_encryption_1_x: Vec<u8>,
+        sym_key_encryption_1_y: Vec<u8>,
+        sym_key_encryption_2_x: Vec<u8>,
+        sym_key_encryption_2_y: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: NewAccountInstance| {
@@ -112,7 +130,10 @@ impl NewAccountCircuit {
                 NewAccountInstance::TokenAddress => &token_address,
                 NewAccountInstance::AnonymityRevokerPublicKeyX => &anonymity_revoker_public_key_x,
                 NewAccountInstance::AnonymityRevokerPublicKeyY => &anonymity_revoker_public_key_y,
-                NewAccountInstance::SymKeyEncryption => &sym_key_encryption,
+                NewAccountInstance::SymKeyEncryptionCiphertext1X => &sym_key_encryption_1_x,
+                NewAccountInstance::SymKeyEncryptionCiphertext1Y => &sym_key_encryption_1_y,
+                NewAccountInstance::SymKeyEncryptionCiphertext2X => &sym_key_encryption_2_x,
+                NewAccountInstance::SymKeyEncryptionCiphertext2Y => &sym_key_encryption_2_y,
             };
             vec_to_f(value.clone())
         };
@@ -130,6 +151,7 @@ pub fn new_account_pub_inputs(
     trapdoor: Vec<u8>,
     initial_deposit: Vec<u8>,
     token_address: Vec<u8>,
+    encryption_salt: Vec<u8>, // vector of bits
     anonymity_revoker_public_key_x: Vec<u8>,
     anonymity_revoker_public_key_y: Vec<u8>,
 ) -> NewAccountPubInputsBytes {
@@ -139,7 +161,8 @@ pub fn new_account_pub_inputs(
         trapdoor: vec_to_f(trapdoor),
         initial_deposit: vec_to_f(initial_deposit),
         token_address: vec_to_f(token_address),
-        anonymity_revoker_public_key: AsymPublicKey {
+        encryption_salt: field_element_to_le_bits(vec_to_f(encryption_salt)),
+        anonymity_revoker_public_key: GrumpkinPointAffine {
             x: vec_to_f(anonymity_revoker_public_key_x),
             y: vec_to_f(anonymity_revoker_public_key_y),
         },

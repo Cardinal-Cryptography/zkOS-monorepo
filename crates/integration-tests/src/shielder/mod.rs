@@ -7,6 +7,7 @@ use deploy::{
     RECIPIENT_INITIAL_NATIVE_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_NATIVE_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
+use shielder_account::call_data::Token;
 use shielder_contract::ShielderContract::{
     unpauseCall, ShielderContractErrors, ShielderContractEvents,
 };
@@ -72,6 +73,10 @@ pub fn invoke_shielder_call(
     Ok((events, success_result))
 }
 
+/// Represents the token under test. Doesn't store the token address, as opposed to
+/// `shielder-account::call_data::Token`, because the token address is not known at compile time.
+///
+/// `TestToken` is convertible to `Token` via `token()`.
 #[derive(Copy, Clone)]
 pub enum TestToken {
     Native,
@@ -79,10 +84,17 @@ pub enum TestToken {
 }
 
 impl TestToken {
-    fn address(self, deployment: &Deployment) -> Address {
+    pub fn address(self, deployment: &Deployment) -> Address {
         match self {
             TestToken::Native => Address::ZERO,
             TestToken::ERC20 => deployment.test_erc20.contract_address,
+        }
+    }
+
+    pub fn token(self, deployment: &Deployment) -> Token {
+        match self {
+            TestToken::Native => Token::Native,
+            TestToken::ERC20 => Token::ERC20(deployment.test_erc20.contract_address),
         }
     }
 }

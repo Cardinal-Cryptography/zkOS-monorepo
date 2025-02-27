@@ -12,7 +12,6 @@ import { BaseError, ContractFunctionRevertedError } from "viem";
 
 import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
-import { AsymPublicKey } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 export class VersionRejectedByContract extends CustomError {
   public constructor() {
@@ -69,14 +68,17 @@ const getShielderContract = (
 export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
-  anonymityRevokerPubkey: () => Promise<AsymPublicKey<bigint>>;
+  anonymityRevokerPubkey: () => Promise<readonly [bigint, bigint]>;
   newAccountNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   newAccountTokenCalldata: (
@@ -86,7 +88,10 @@ export type IContract = {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   depositNativeCalldata: (
@@ -105,6 +110,37 @@ export type IContract = {
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
     from: Address,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => Promise<`0x${string}`>;
+  withdrawNativeCalldata: (
+    expectedContractVersion: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => Promise<`0x${string}`>;
+  withdrawTokenCalldata: (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
     idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
@@ -137,12 +173,9 @@ export class Contract implements IContract {
     return merklePath as readonly bigint[];
   };
 
-  anonymityRevokerPubkey = async (): Promise<AsymPublicKey<bigint>> => {
+  anonymityRevokerPubkey = async (): Promise<readonly [bigint, bigint]> => {
     const key = await this.contract.read.anonymityRevokerPubkey();
-    return {
-      x: key[0],
-      y: key[1]
-    };
+    return key;
   };
 
   newAccountNativeCalldata = async (
@@ -151,7 +184,10 @@ export class Contract implements IContract {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -160,7 +196,10 @@ export class Contract implements IContract {
           expectedContractVersion,
           newNote,
           idHash,
-          symKeyEncryption,
+          symKeyEncryption1X,
+          symKeyEncryption1Y,
+          symKeyEncryption2X,
+          symKeyEncryption2Y,
           bytesToHex(proof)
         ],
         { account: from, value: amount, gas: shieldActionGasLimit }
@@ -173,7 +212,10 @@ export class Contract implements IContract {
         expectedContractVersion,
         newNote,
         idHash,
-        symKeyEncryption,
+        symKeyEncryption1X,
+        symKeyEncryption1Y,
+        symKeyEncryption2X,
+        symKeyEncryption2Y,
         bytesToHex(proof)
       ]
     });
@@ -186,7 +228,10 @@ export class Contract implements IContract {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption: bigint,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -197,7 +242,10 @@ export class Contract implements IContract {
           amount,
           newNote,
           idHash,
-          symKeyEncryption,
+          symKeyEncryption1X,
+          symKeyEncryption1Y,
+          symKeyEncryption2X,
+          symKeyEncryption2Y,
           bytesToHex(proof)
         ],
         { account: from, gas: shieldActionGasLimit }
@@ -212,7 +260,10 @@ export class Contract implements IContract {
         amount,
         newNote,
         idHash,
-        symKeyEncryption,
+        symKeyEncryption1X,
+        symKeyEncryption1Y,
+        symKeyEncryption2X,
+        symKeyEncryption2Y,
         bytesToHex(proof)
       ]
     });
@@ -305,6 +356,117 @@ export class Contract implements IContract {
         macSalt,
         macCommitment,
         bytesToHex(proof)
+      ]
+    });
+  };
+
+  withdrawNativeCalldata = async (
+    expectedContractVersion: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => {
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.withdrawNative(
+        [
+          expectedContractVersion,
+          idHiding,
+          amount,
+          withdrawalAddress,
+          merkleRoot,
+          oldNoteNullifierHash,
+          newNote,
+          bytesToHex(proof),
+          relayerAddress,
+          relayerFee,
+          macSalt,
+          macCommitment
+        ],
+        { account: from, gas: shieldActionGasLimit }
+      );
+    });
+    return encodeFunctionData({
+      abi,
+      functionName: "withdrawNative",
+      args: [
+        expectedContractVersion,
+        idHiding,
+        amount,
+        withdrawalAddress,
+        merkleRoot,
+        oldNoteNullifierHash,
+        newNote,
+        bytesToHex(proof),
+        relayerAddress,
+        relayerFee,
+        macSalt,
+        macCommitment
+      ]
+    });
+  };
+
+  withdrawTokenCalldata = async (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => {
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.withdrawERC20(
+        [
+          expectedContractVersion,
+          idHiding,
+          tokenAddress,
+          amount,
+          withdrawalAddress,
+          merkleRoot,
+          oldNoteNullifierHash,
+          newNote,
+          bytesToHex(proof),
+          relayerAddress,
+          relayerFee,
+          macSalt,
+          macCommitment
+        ],
+        { account: from, gas: shieldActionGasLimit }
+      );
+    });
+    return encodeFunctionData({
+      abi,
+      functionName: "withdrawERC20",
+      args: [
+        expectedContractVersion,
+        idHiding,
+        tokenAddress,
+        amount,
+        withdrawalAddress,
+        merkleRoot,
+        oldNoteNullifierHash,
+        newNote,
+        bytesToHex(proof),
+        relayerAddress,
+        relayerFee,
+        macSalt,
+        macCommitment
       ]
     });
   };

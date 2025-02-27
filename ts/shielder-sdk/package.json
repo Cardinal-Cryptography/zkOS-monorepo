@@ -23,16 +23,11 @@
     "coverage": "vitest run --coverage",
     "coverage-report": "vitest run --coverage --coverage.reporter json-summary"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
-  },
   "files": [
     "/dist"
   ],
+  "type": "module",
+  "main": "dist/index.js",
   "devDependencies": {
     "@eslint/js": "^9.14.0",
     "@types/eslint__js": "^8.42.3",

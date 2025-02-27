@@ -16,12 +16,12 @@ use integration_tests::{
     deploy::{deployment, Deployment},
     deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,
 };
-use shielder_account::{call_data::NewAccountGenericCall, ShielderAccount};
+use shielder_account::{call_data::NewAccountCall, ShielderAccount};
 use shielder_contract::ShielderContract::{depositNativeCall, withdrawNativeCall};
 
 #[derive(Debug)]
 enum Calldata {
-    NewAccount(NewAccountGenericCall),
+    NewAccount(NewAccountCall),
     Deposit(depositNativeCall),
     Withdraw(withdrawNativeCall),
 }

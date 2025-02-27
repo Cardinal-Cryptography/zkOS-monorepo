@@ -25,7 +25,7 @@ export class WithdrawCircuit
     this.wasmCircuit = new this.wasmModule.WithdrawCircuit();
   }
 
-  prove(values: WithdrawAdvice): Promise<Proof> {
+  prove(values: WithdrawAdvice<Scalar>): Promise<Proof> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -47,7 +47,9 @@ export class WithdrawCircuit
     );
   }
 
-  async pubInputs(values: WithdrawAdvice): Promise<WithdrawPubInputs> {
+  async pubInputs(
+    values: WithdrawAdvice<Scalar>
+  ): Promise<WithdrawPubInputs<Scalar>> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -82,7 +84,10 @@ export class WithdrawCircuit
     });
   }
 
-  async verify(proof: Proof, pubInputs: WithdrawPubInputs): Promise<boolean> {
+  async verify(
+    proof: Proof,
+    pubInputs: WithdrawPubInputs<Scalar>
+  ): Promise<boolean> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }

@@ -1,4 +1,4 @@
-import { IContract } from "@/chain/contract";
+import { IContract, VersionRejectedByContract } from "@/chain/contract";
 import {
   CryptoClient,
   Proof,
@@ -13,16 +13,18 @@ import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
+import { SendShielderTransaction } from "@/client";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
   calldata: {
-    pubInputs: WithdrawPubInputs;
+    pubInputs: WithdrawPubInputs<Scalar>;
     proof: Proof;
   };
   provingTimeMillis: number;
   amount: bigint;
   withdrawalAddress: Address;
+  totalFee: bigint;
   token: Token;
 }
 
@@ -96,8 +98,9 @@ export class WithdrawAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
+    relayerAddress: `0x${string}`,
     totalFee: bigint
-  ): Promise<WithdrawAdvice> {
+  ): Promise<WithdrawAdvice<Scalar>> {
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
     }
@@ -124,7 +127,7 @@ export class WithdrawAction extends NoteAction {
     const commitment = this.calculateCommitment(
       expectedContractVersion,
       withdrawalAddress,
-      await this.relayer.address(),
+      relayerAddress,
       totalFee
     );
 
@@ -140,7 +143,7 @@ export class WithdrawAction extends NoteAction {
       nullifierNew,
       trapdoorNew,
       commitment,
-      macSalt: await this.randomMacSalt()
+      macSalt: await this.randomSalt()
     };
   }
 
@@ -157,6 +160,7 @@ export class WithdrawAction extends NoteAction {
   async generateCalldata(
     state: AccountState,
     amount: bigint,
+    relayerAddress: Address,
     totalFee: bigint,
     withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`
@@ -177,6 +181,7 @@ export class WithdrawAction extends NoteAction {
       amount,
       expectedContractVersion,
       withdrawalAddress,
+      relayerAddress,
       totalFee
     );
 
@@ -199,6 +204,7 @@ export class WithdrawAction extends NoteAction {
       provingTimeMillis: provingTime,
       amount,
       withdrawalAddress,
+      totalFee,
       token: state.token
     };
   }
@@ -210,7 +216,7 @@ export class WithdrawAction extends NoteAction {
    * @returns transaction hash of the withdraw transaction
    * @throws VersionRejectedByRelayer
    */
-  async sendCalldata(calldata: WithdrawCalldata) {
+  async sendCalldataWithRelayer(calldata: WithdrawCalldata) {
     const {
       expectedContractVersion,
       calldata: { pubInputs, proof },
@@ -238,5 +244,62 @@ export class WithdrawAction extends NoteAction {
         throw new Error(`Failed to withdraw: ${e}`);
       });
     return txHash as `0x${string}`;
+  }
+
+  async sendCalldata(
+    calldata: WithdrawCalldata,
+    sendShielderTransaction: SendShielderTransaction,
+    from: `0x${string}`
+  ) {
+    const {
+      calldata: { pubInputs, proof },
+      amount,
+      withdrawalAddress,
+      totalFee
+    } = calldata;
+    const encodedCalldata =
+      calldata.token.type === "native"
+        ? await this.contract.withdrawNativeCalldata(
+            calldata.expectedContractVersion,
+            from,
+            withdrawalAddress,
+            from, // use sender as relayer
+            totalFee,
+            scalarToBigint(pubInputs.idHiding),
+            scalarToBigint(pubInputs.hNullifierOld),
+            scalarToBigint(pubInputs.hNoteNew),
+            scalarToBigint(pubInputs.merkleRoot),
+            amount,
+            scalarToBigint(pubInputs.macSalt),
+            scalarToBigint(pubInputs.macCommitment),
+            proof
+          )
+        : await this.contract.withdrawTokenCalldata(
+            calldata.expectedContractVersion,
+            calldata.token.address,
+            from,
+            withdrawalAddress,
+            from, // use sender as relayer
+            totalFee,
+            scalarToBigint(pubInputs.idHiding),
+            scalarToBigint(pubInputs.hNullifierOld),
+            scalarToBigint(pubInputs.hNoteNew),
+            scalarToBigint(pubInputs.merkleRoot),
+            amount,
+            scalarToBigint(pubInputs.macSalt),
+            scalarToBigint(pubInputs.macCommitment),
+            proof
+          );
+    const txHash = await sendShielderTransaction({
+      data: encodedCalldata,
+      to: this.contract.getAddress(),
+      value: 0n
+    }).catch((e) => {
+      if (e instanceof VersionRejectedByContract) {
+        throw e;
+      }
+      throw new Error(`Failed to withdraw: ${e}`);
+    });
+    return txHash;
   }
 }

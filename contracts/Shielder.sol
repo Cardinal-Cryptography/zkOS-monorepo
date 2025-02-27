@@ -159,7 +159,10 @@ contract Shielder is
         bytes3 expectedContractVersion,
         uint256 newNote,
         uint256 idHash,
-        uint256 symKeyEncryption,
+        uint256 symKeyEncryptionC1X,
+        uint256 symKeyEncryptionC1Y,
+        uint256 symKeyEncryptionC2X,
+        uint256 symKeyEncryptionC2Y,
         bytes calldata proof
     ) external payable whenNotPaused {
         uint256 amount = msg.value;
@@ -174,7 +177,10 @@ contract Shielder is
             amount,
             newNote,
             idHash,
-            symKeyEncryption,
+            symKeyEncryptionC1X,
+            symKeyEncryptionC1Y,
+            symKeyEncryptionC2X,
+            symKeyEncryptionC2Y,
             proof
         );
 
@@ -199,7 +205,10 @@ contract Shielder is
         uint256 amount,
         uint256 newNote,
         uint256 idHash,
-        uint256 symKeyEncryption,
+        uint256 symKeyEncryptionC1X,
+        uint256 symKeyEncryptionC1Y,
+        uint256 symKeyEncryptionC2X,
+        uint256 symKeyEncryptionC2Y,
         bytes calldata proof
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
@@ -216,7 +225,10 @@ contract Shielder is
             amount,
             newNote,
             idHash,
-            symKeyEncryption,
+            symKeyEncryptionC1X,
+            symKeyEncryptionC1Y,
+            symKeyEncryptionC2X,
+            symKeyEncryptionC2Y,
             proof
         );
 
@@ -238,21 +250,27 @@ contract Shielder is
         uint256 amount,
         uint256 newNote,
         uint256 idHash,
-        uint256 symKeyEncryption,
+        uint256 symKeyEncryptionC1X,
+        uint256 symKeyEncryptionC1Y,
+        uint256 symKeyEncryptionC2X,
+        uint256 symKeyEncryptionC2Y,
         bytes calldata proof
     )
         private
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
         fieldElement(idHash)
-        fieldElement(symKeyEncryption)
+        fieldElement(symKeyEncryptionC1X)
+        fieldElement(symKeyEncryptionC1Y)
+        fieldElement(symKeyEncryptionC2X)
+        fieldElement(symKeyEncryptionC2Y)
         returns (uint256)
     {
         if (amount > depositLimit()) revert AmountOverDepositLimit();
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](7);
+        uint256[] memory publicInputs = new uint256[](10);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
@@ -262,7 +280,10 @@ contract Shielder is
         publicInputs[4] = arX;
         publicInputs[5] = arY;
 
-        publicInputs[6] = symKeyEncryption;
+        publicInputs[6] = symKeyEncryptionC1X;
+        publicInputs[7] = symKeyEncryptionC1Y;
+        publicInputs[8] = symKeyEncryptionC2X;
+        publicInputs[9] = symKeyEncryptionC2Y;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 

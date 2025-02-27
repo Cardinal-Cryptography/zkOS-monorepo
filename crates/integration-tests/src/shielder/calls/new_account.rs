@@ -2,9 +2,10 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{NewAccountGenericCall, NewAccountGenericCallType},
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType},
     ShielderAccount,
 };
+use shielder_circuits::consts::FIELD_BITS;
 use shielder_contract::ShielderContract::{
     newAccountERC20Call, newAccountNativeCall, ShielderContractErrors,
 };
@@ -20,13 +21,17 @@ pub fn prepare_call(
     shielder_account: &mut ShielderAccount,
     token: TestToken,
     amount: U256,
-) -> NewAccountGenericCall {
+) -> NewAccountCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
-    shielder_account.prepare_call::<NewAccountGenericCallType>(
+    shielder_account.prepare_call::<NewAccountCallType>(
         &params,
         &pk,
+        token.token(deployment),
         amount,
-        &(token.address(deployment), ANONYMITY_REVOKER_PKEY),
+        &NewAccountCallExtra {
+            anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
+            encryption_salt: [true; FIELD_BITS],
+        },
     )
 }
 
@@ -34,12 +39,12 @@ pub fn invoke_call(
     deployment: &mut Deployment,
     shielder_account: &mut ShielderAccount,
     token: TestToken,
-    calldata: &NewAccountGenericCall,
+    calldata: &NewAccountCall,
 ) -> CallResult {
     let call_result = match token {
         TestToken::Native => {
             let amount = Some(calldata.amount);
-            let calldata: newAccountNativeCall = calldata.clone().into();
+            let calldata: newAccountNativeCall = calldata.clone().try_into().unwrap();
             invoke_shielder_call(deployment, &calldata, amount)
         }
         TestToken::ERC20 => {
@@ -53,7 +58,7 @@ pub fn invoke_call(
                 )
                 .unwrap();
 
-            let calldata: newAccountERC20Call = calldata.clone().into();
+            let calldata: newAccountERC20Call = calldata.clone().try_into().unwrap();
             invoke_shielder_call(deployment, &calldata, None)
         }
     };
@@ -88,7 +93,6 @@ pub fn create_account_and_call(
 
 #[cfg(test)]
 mod tests {
-
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Address, FixedBytes, U256};

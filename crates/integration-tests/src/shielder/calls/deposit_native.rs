@@ -1,6 +1,6 @@
 use alloy_primitives::{TxHash, U256};
 use shielder_account::{
-    call_data::{DepositCallType, MerkleProof},
+    call_data::{DepositCallType, MerkleProof, Token},
     ShielderAccount,
 };
 use shielder_contract::ShielderContract::depositNativeCall;
@@ -26,6 +26,7 @@ pub fn prepare_call(
     let calldata = shielder_account.prepare_call::<DepositCallType>(
         &params,
         &pk,
+        Token::Native,
         amount,
         &MerkleProof {
             root: merkle_root,
