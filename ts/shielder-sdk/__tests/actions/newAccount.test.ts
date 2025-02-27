@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
-  CurvePointAffine,
   NewAccountAdvice,
   NewAccountPubInputs,
   Scalar,
@@ -16,12 +15,7 @@ import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 import { nativeToken } from "../../src/types";
 
-const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
-
-const ANONYMITY_REVOKER_PUBKEY = {
-  x: 123n,
-  y: 456n
-};
+const ANONYMITY_REVOKER_PUBKEY = [123n, 456n];
 
 describe("NewAccountAction", () => {
   let cryptoClient: MockedCryptoClient;
@@ -122,7 +116,7 @@ describe("NewAccountAction", () => {
       const amount = 100n;
       const expectedVersion = "0xversion" as `0x${string}`;
       const mockProve = vitest
-        .fn<(values: NewAccountAdvice) => Promise<Uint8Array>>()
+        .fn<(values: NewAccountAdvice<Scalar>) => Promise<Uint8Array>>()
         .mockRejectedValue(new Error("mocked prove failure"));
       cryptoClient.newAccountCircuit.prove = mockProve;
 
@@ -140,7 +134,7 @@ describe("NewAccountAction", () => {
         .fn<
           (
             proof: Uint8Array,
-            pubInputs: NewAccountPubInputs
+            pubInputs: NewAccountPubInputs<Scalar>
           ) => Promise<boolean>
         >()
         .mockResolvedValue(false);
@@ -178,14 +172,10 @@ describe("NewAccountAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.hNote),
         scalarToBigint(calldata.calldata.pubInputs.hId),
         amount,
-        {
-          x: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1.x),
-          y: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1.y)
-        },
-        {
-          x: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2.x),
-          y: scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2.y)
-        },
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1X),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1Y),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2X),
+        scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2Y),
         calldata.calldata.proof
       );
 
@@ -217,8 +207,10 @@ describe("NewAccountAction", () => {
             newNote: bigint,
             idHash: bigint,
             amount: bigint,
-            symKeyEncryption1: CurvePointAffine<bigint>,
-            symKeyEncryption2: CurvePointAffine<bigint>,
+            symKeyEncryption1X: bigint,
+            symKeyEncryption1Y: bigint,
+            symKeyEncryption2X: bigint,
+            symKeyEncryption2Y: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()

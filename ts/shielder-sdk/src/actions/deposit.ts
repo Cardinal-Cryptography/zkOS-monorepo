@@ -16,7 +16,7 @@ import { getTokenAddress } from "@/utils";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
-    pubInputs: DepositPubInputs;
+    pubInputs: DepositPubInputs<Scalar>;
     proof: Proof;
   };
   expectedContractVersion: `0x${string}`;
@@ -59,7 +59,7 @@ export class DepositAction extends NoteAction {
   async prepareAdvice(
     state: AccountState,
     amount: bigint
-  ): Promise<DepositAdvice> {
+  ): Promise<DepositAdvice<Scalar>> {
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
     }

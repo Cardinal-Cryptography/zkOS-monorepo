@@ -12,7 +12,6 @@ import { BaseError, ContractFunctionRevertedError } from "viem";
 
 import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
-import { CurvePointAffine } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 export class VersionRejectedByContract extends CustomError {
   public constructor() {
@@ -69,15 +68,17 @@ const getShielderContract = (
 export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
-  anonymityRevokerPubkey: () => Promise<CurvePointAffine<bigint>>;
+  anonymityRevokerPubkey: () => Promise<readonly [bigint, bigint]>;
   newAccountNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption1: CurvePointAffine<bigint>,
-    symKeyEncryption2: CurvePointAffine<bigint>,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   newAccountTokenCalldata: (
@@ -87,8 +88,10 @@ export type IContract = {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption1: CurvePointAffine<bigint>,
-    symKeyEncryption2: CurvePointAffine<bigint>,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   depositNativeCalldata: (
@@ -139,12 +142,9 @@ export class Contract implements IContract {
     return merklePath as readonly bigint[];
   };
 
-  anonymityRevokerPubkey = async (): Promise<CurvePointAffine<bigint>> => {
+  anonymityRevokerPubkey = async (): Promise<readonly [bigint, bigint]> => {
     const key = await this.contract.read.anonymityRevokerPubkey();
-    return {
-      x: key[0],
-      y: key[1]
-    };
+    return key;
   };
 
   newAccountNativeCalldata = async (
@@ -153,8 +153,10 @@ export class Contract implements IContract {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption1: CurvePointAffine<bigint>,
-    symKeyEncryption2: CurvePointAffine<bigint>,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -163,10 +165,10 @@ export class Contract implements IContract {
           expectedContractVersion,
           newNote,
           idHash,
-          symKeyEncryption1.x,
-          symKeyEncryption1.y,
-          symKeyEncryption2.x,
-          symKeyEncryption2.y,
+          symKeyEncryption1X,
+          symKeyEncryption1Y,
+          symKeyEncryption2X,
+          symKeyEncryption2Y,
           bytesToHex(proof)
         ],
         { account: from, value: amount, gas: shieldActionGasLimit }
@@ -179,10 +181,10 @@ export class Contract implements IContract {
         expectedContractVersion,
         newNote,
         idHash,
-        symKeyEncryption1.x,
-        symKeyEncryption1.y,
-        symKeyEncryption2.x,
-        symKeyEncryption2.y,
+        symKeyEncryption1X,
+        symKeyEncryption1Y,
+        symKeyEncryption2X,
+        symKeyEncryption2Y,
         bytesToHex(proof)
       ]
     });
@@ -195,8 +197,10 @@ export class Contract implements IContract {
     newNote: bigint,
     idHash: bigint,
     amount: bigint,
-    symKeyEncryption1: CurvePointAffine<bigint>,
-    symKeyEncryption2: CurvePointAffine<bigint>,
+    symKeyEncryption1X: bigint,
+    symKeyEncryption1Y: bigint,
+    symKeyEncryption2X: bigint,
+    symKeyEncryption2Y: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -207,10 +211,10 @@ export class Contract implements IContract {
           amount,
           newNote,
           idHash,
-          symKeyEncryption1.x,
-          symKeyEncryption1.y,
-          symKeyEncryption2.x,
-          symKeyEncryption2.y,
+          symKeyEncryption1X,
+          symKeyEncryption1Y,
+          symKeyEncryption2X,
+          symKeyEncryption2Y,
           bytesToHex(proof)
         ],
         { account: from, gas: shieldActionGasLimit }
@@ -225,10 +229,10 @@ export class Contract implements IContract {
         amount,
         newNote,
         idHash,
-        symKeyEncryption1.x,
-        symKeyEncryption1.y,
-        symKeyEncryption2.x,
-        symKeyEncryption2.y,
+        symKeyEncryption1X,
+        symKeyEncryption1Y,
+        symKeyEncryption2X,
+        symKeyEncryption2Y,
         bytesToHex(proof)
       ]
     });

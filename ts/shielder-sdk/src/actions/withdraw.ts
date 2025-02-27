@@ -17,7 +17,7 @@ import { getTokenAddress } from "@/utils";
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
   calldata: {
-    pubInputs: WithdrawPubInputs;
+    pubInputs: WithdrawPubInputs<Scalar>;
     proof: Proof;
   };
   provingTimeMillis: number;
@@ -97,7 +97,7 @@ export class WithdrawAction extends NoteAction {
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
     totalFee: bigint
-  ): Promise<WithdrawAdvice> {
+  ): Promise<WithdrawAdvice<Scalar>> {
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
     }
