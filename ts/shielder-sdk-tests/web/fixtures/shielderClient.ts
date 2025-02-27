@@ -25,6 +25,11 @@ export interface ShielderClientFixture {
     tx: `0x${string}`;
     totalFee: bigint;
   }>;
+  withdrawManual: (
+    token: Token,
+    amount: bigint,
+    to: `0x${string}`
+  ) => Promise<`0x${string}`>;
   shieldedBalance: (token: Token) => Promise<bigint>;
 }
 
@@ -98,6 +103,15 @@ export const setupShielderClient = async (
         ),
         totalFee: fees.totalFee
       };
+    },
+    withdrawManual: async (token, amount, to) => {
+      return shielderClient.withdrawManual(
+        token,
+        amount,
+        to,
+        sendingTransaction,
+        chainAccount.account.address
+      );
     },
     shieldedBalance: async (token) => {
       return shielderClient.accountState(token).then((state) => state.balance);

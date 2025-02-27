@@ -6,6 +6,7 @@ import {
   clearStorageOp,
   recoverOp,
   shieldOp,
+  withdrawManualOp,
   withdrawOp,
   type TestDescription
 } from "@tests/types";
@@ -25,6 +26,10 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
       },
       {
         op: shieldOp(ercToken, 2n * 10n ** 17n),
+        actor: "alice"
+      },
+      {
+        op: withdrawManualOp(ercToken, 10n ** 17n, "bob"),
         actor: "alice"
       },
       // clear and recover

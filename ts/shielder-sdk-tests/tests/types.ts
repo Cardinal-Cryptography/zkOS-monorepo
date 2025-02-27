@@ -18,6 +18,13 @@ export type WithdrawOp = {
   to: AccountNames;
 };
 
+export type WithdrawManualOp = {
+  type: "withdrawManual";
+  token: Token;
+  amount: bigint;
+  to: AccountNames;
+};
+
 export type ClearStorageOp = {
   type: "clearStorage";
 };
@@ -27,7 +34,7 @@ export type RecoverOp = {
 };
 
 export type TestAction = {
-  op: ShieldOp | WithdrawOp | ClearStorageOp | RecoverOp;
+  op: ShieldOp | WithdrawOp | ClearStorageOp | RecoverOp | WithdrawManualOp;
   actor: AccountNames;
 };
 
@@ -51,6 +58,19 @@ export function withdrawOp(
 ): WithdrawOp {
   return {
     type: "withdraw",
+    amount,
+    to,
+    token
+  };
+}
+
+export function withdrawManualOp(
+  token: Token,
+  amount: bigint,
+  to: AccountNames
+): WithdrawManualOp {
+  return {
+    type: "withdrawManual",
     amount,
     to,
     token

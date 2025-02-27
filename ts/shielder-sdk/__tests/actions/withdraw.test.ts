@@ -151,6 +151,7 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         address,
         expectedVersion
@@ -181,6 +182,7 @@ describe("WithdrawAction", () => {
             currentNoteIndex: undefined
           },
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -196,6 +198,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -211,6 +214,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -231,6 +235,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -256,6 +261,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -264,7 +270,7 @@ describe("WithdrawAction", () => {
     });
   });
 
-  describe("sendCalldata", () => {
+  describe("sendCalldataRelayer", () => {
     it("should send transaction with correct parameters", async () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
@@ -272,12 +278,13 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         mockAddress,
         expectedVersion
       );
 
-      const txHash = await action.sendCalldata(calldata);
+      const txHash = await action.sendCalldataRelayer(calldata);
 
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
@@ -303,6 +310,7 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         mockAddress,
         expectedVersion
@@ -328,7 +336,7 @@ describe("WithdrawAction", () => {
         >()
         .mockRejectedValue(mockedErr);
 
-      await expect(action.sendCalldata(calldata)).rejects.toThrowError(
+      await expect(action.sendCalldataRelayer(calldata)).rejects.toThrowError(
         mockedErr
       );
     });
@@ -340,6 +348,7 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         mockAddress,
         expectedVersion
@@ -363,7 +372,7 @@ describe("WithdrawAction", () => {
         >()
         .mockRejectedValue(new Error("mocked contract rejection"));
 
-      await expect(action.sendCalldata(calldata)).rejects.toThrow(
+      await expect(action.sendCalldataRelayer(calldata)).rejects.toThrow(
         "Failed to withdraw: Error: mocked contract rejection"
       );
     });

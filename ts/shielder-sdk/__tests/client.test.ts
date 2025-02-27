@@ -50,6 +50,8 @@ describe("ShielderClient", () => {
   let mockState: Mocked<AccountState>;
   const mockCryptoClient = new MockedCryptoClient();
   const mockedChainId = 1;
+  const mockedRelayerAddress =
+    "0x1234567890123456789012345678901234567890" as const;
 
   const mockShielderSeedPrivateKey =
     "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
@@ -63,7 +65,9 @@ describe("ShielderClient", () => {
       null as any,
       "0x" as Address
     ) as Mocked<Contract>;
-    mockRelayer = new Relayer("http://localhost") as Mocked<Relayer>;
+    mockRelayer = {
+      address: vitest.fn().mockResolvedValue(mockedRelayerAddress)
+    } as unknown as Mocked<Relayer>;
     mockPublicClient = {
       waitForTransactionReceipt: vitest
         .fn()
@@ -383,6 +387,11 @@ describe("ShielderClient", () => {
         vitest
           .spyOn(client[action], "sendCalldata")
           .mockResolvedValue(mockTxHash);
+        if (action === "withdrawAction") {
+          vitest
+            .spyOn(client[action], "sendCalldataRelayer")
+            .mockResolvedValue(mockTxHash);
+        }
       }
     });
     describe("shield", () => {
@@ -465,6 +474,7 @@ describe("ShielderClient", () => {
         expect(client["withdrawAction"].generateCalldata).toHaveBeenCalledWith(
           mockState,
           mockAmount,
+          mockedRelayerAddress,
           mockTotalFee,
           mockAddress,
           contractVersion
@@ -475,9 +485,9 @@ describe("ShielderClient", () => {
           "withdraw"
         );
         // check that withdrawAction.sendCalldata was called
-        expect(client["withdrawAction"].sendCalldata).toHaveBeenCalledWith(
-          expect.any(Object)
-        );
+        expect(
+          client["withdrawAction"].sendCalldataRelayer
+        ).toHaveBeenCalledWith(expect.any(Object));
         // check that callback onCalldataSent was called
         expect(callbacks.onCalldataSent).toHaveBeenCalledWith(
           mockTxHash,
@@ -528,7 +538,7 @@ describe("ShielderClient", () => {
           mockedError: new VersionRejectedByRelayer("123"),
           expectedError: new OutdatedSdkError(),
           action: "withdrawAction",
-          stage: "sendCalldata",
+          stage: "sendCalldataRelayer",
           clientTarget: "withdraw",
           nonce: 1n
         }
@@ -554,7 +564,7 @@ describe("ShielderClient", () => {
           ).rejects.toThrow(expectedError);
 
           // check that the correct callbacks were called
-          if (stage === "sendCalldata") {
+          if (stage === "sendCalldata" || stage === "sendCalldataRelayer") {
             expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
               expect.any(Object),
               clientTarget

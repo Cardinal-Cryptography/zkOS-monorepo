@@ -271,13 +271,13 @@ export class ShielderClient {
   }
 
   /**
-   * Withdraw `amount` to the `address` from the shielder account.
+   * Withdraw `amount` to the `address` from the shielder account using the configured relayer.
    * Emits callbacks for the shielder actions.
    * Mutates the shielder state.
    * @param {Token} token - token to withdraw
    * @param {bigint} amount - amount to withdraw, in wei
    * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
-   * @param {`0x${string}`} address - public address of the recipient
+   * @param {`0x${string}`} withdrawalAddress - public address of the recipient
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
@@ -285,7 +285,55 @@ export class ShielderClient {
     token: Token,
     amount: bigint,
     totalFee: bigint,
-    address: Address
+    withdrawalAddress: Address
+  ) {
+    const state = await this.stateManager.accountState(token);
+    const relayerAddress = await this.relayer.address();
+    const txHash = await this.handleCalldata(
+      () =>
+        this.withdrawAction.generateCalldata(
+          state,
+          amount,
+          relayerAddress,
+          totalFee,
+          withdrawalAddress,
+          contractVersion
+        ),
+      (calldata) => this.withdrawAction.sendCalldataRelayer(calldata),
+      "withdraw"
+    );
+    if (this.publicClient) {
+      const txReceipt = await this.publicClient.waitForTransactionReceipt({
+        hash: txHash
+      });
+      if (txReceipt.status !== "success") {
+        throw new Error("Withdraw transaction failed");
+      }
+      await this.syncShielderToken(token);
+    }
+    return txHash;
+  }
+
+  /**
+   * Withdraw `amount` to the `address` from the shielder account by sending the transaction directly to the shielder contract.
+   * WARNING: This method is not recommended for production use, as it bypasses the relayer and makes withdrawal non-anonymous.
+   * This method is useful when the relayer is not available or the user wants to withdraw the funds directly.
+   * Emits callbacks for the shielder actions.
+   * Mutates the shielder state.
+   * @param {Token} token - token to withdraw
+   * @param {bigint} amount - amount to withdraw, in wei
+   * @param {`0x${string}`} withdrawalAddress - public address of the recipient
+   * @param {SendShielderTransaction} sendShielderTransaction - function to send the shielder transaction to the blockchain
+   * @param {`0x${string}`} from - public address of the sender
+   * @returns transaction hash of the withdraw transaction
+   * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
+   */
+  async withdrawManual(
+    token: Token,
+    amount: bigint,
+    withdrawalAddress: Address,
+    sendShielderTransaction: SendShielderTransaction,
+    from: `0x${string}`
   ) {
     const state = await this.stateManager.accountState(token);
     const txHash = await this.handleCalldata(
@@ -293,11 +341,17 @@ export class ShielderClient {
         this.withdrawAction.generateCalldata(
           state,
           amount,
-          totalFee,
-          address,
+          from,
+          0n, // totalFee is 0, as it is not used in this case
+          withdrawalAddress,
           contractVersion
         ),
-      (calldata) => this.withdrawAction.sendCalldata(calldata),
+      (calldata) =>
+        this.withdrawAction.sendCalldata(
+          calldata,
+          sendShielderTransaction,
+          from
+        ),
       "withdraw"
     );
     if (this.publicClient) {
