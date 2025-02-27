@@ -119,6 +119,37 @@ export type IContract = {
     macCommitment: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
+  withdrawNativeCalldata: (
+    expectedContractVersion: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => Promise<`0x${string}`>;
+  withdrawTokenCalldata: (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => Promise<`0x${string}`>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
   getNoteEventsFromBlock: (block: bigint) => Promise<NoteEvent[]>;
 };
@@ -325,6 +356,117 @@ export class Contract implements IContract {
         macSalt,
         macCommitment,
         bytesToHex(proof)
+      ]
+    });
+  };
+
+  withdrawNativeCalldata = async (
+    expectedContractVersion: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => {
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.withdrawNative(
+        [
+          expectedContractVersion,
+          idHiding,
+          amount,
+          withdrawalAddress,
+          merkleRoot,
+          oldNoteNullifierHash,
+          newNote,
+          bytesToHex(proof),
+          relayerAddress,
+          relayerFee,
+          macSalt,
+          macCommitment
+        ],
+        { account: from, gas: shieldActionGasLimit }
+      );
+    });
+    return encodeFunctionData({
+      abi,
+      functionName: "withdrawNative",
+      args: [
+        expectedContractVersion,
+        idHiding,
+        amount,
+        withdrawalAddress,
+        merkleRoot,
+        oldNoteNullifierHash,
+        newNote,
+        bytesToHex(proof),
+        relayerAddress,
+        relayerFee,
+        macSalt,
+        macCommitment
+      ]
+    });
+  };
+
+  withdrawTokenCalldata = async (
+    expectedContractVersion: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    from: Address,
+    withdrawalAddress: Address,
+    relayerAddress: Address,
+    relayerFee: bigint,
+    idHiding: bigint,
+    oldNoteNullifierHash: bigint,
+    newNote: bigint,
+    merkleRoot: bigint,
+    amount: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
+    proof: Uint8Array
+  ) => {
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.withdrawERC20(
+        [
+          expectedContractVersion,
+          idHiding,
+          tokenAddress,
+          amount,
+          withdrawalAddress,
+          merkleRoot,
+          oldNoteNullifierHash,
+          newNote,
+          bytesToHex(proof),
+          relayerAddress,
+          relayerFee,
+          macSalt,
+          macCommitment
+        ],
+        { account: from, gas: shieldActionGasLimit }
+      );
+    });
+    return encodeFunctionData({
+      abi,
+      functionName: "withdrawERC20",
+      args: [
+        expectedContractVersion,
+        idHiding,
+        tokenAddress,
+        amount,
+        withdrawalAddress,
+        merkleRoot,
+        oldNoteNullifierHash,
+        newNote,
+        bytesToHex(proof),
+        relayerAddress,
+        relayerFee,
+        macSalt,
+        macCommitment
       ]
     });
   };
