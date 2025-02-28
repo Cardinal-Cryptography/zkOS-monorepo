@@ -58,13 +58,13 @@ jobs:
         run: |
           echo -n "Deposit: " > current-size.txt
           cat ./artifacts/DepositVerifier.sol/Halo2Verifier.json \
-            | jq -r '.bytecode.object' | wc -c >> current-size.txt
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> current-size.txt
           echo -n "Withdraw: " >> current-size.txt
           cat ./artifacts/WithdrawVerifier.sol/Halo2Verifier.json \
-            | jq -r '.bytecode.object' | wc -c >> current-size.txt
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> current-size.txt
           echo -n "NewAccount: " >> current-size.txt
           cat ./artifacts/NewAccountVerifier.sol/Halo2Verifier.json \
-            | jq -r '.bytecode.object' | wc -c >> current-size.txt
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> current-size.txt
 
       #################### Run measurements on the main branch ####################
 
@@ -108,13 +108,13 @@ jobs:
         run: |
           echo -n "Deposit: " > main-size.txt
           cat ./main/artifacts/DepositVerifier.sol/Halo2Verifier.json \
-            | jq -r '.bytecode.object' | wc -c >> main-size.txt
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> main-size.txt
           echo -n "Withdraw: " >> main-size.txt
           cat ./main/artifacts/WithdrawVerifier.sol/Halo2Verifier.json \
-            | jq -r '.bytecode.object' | wc -c >> main-size.txt
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> main-size.txt
           echo -n "NewAccount: " >> main-size.txt
           cat ./main/artifacts/NewAccountVerifier.sol/Halo2Verifier.json \
-            | jq -r '.bytecode.object' | wc -c >> main-size.txt
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> main-size.txt
 
       #################### Generate report ####################
 
