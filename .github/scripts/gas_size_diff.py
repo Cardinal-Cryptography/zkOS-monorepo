@@ -43,10 +43,8 @@ def main():
     current_size_data = parse_report('current-size.txt', '(size)')
 
     differences = calculate_differences(
-        main_gas_data,
-        current_gas_data,
-        main_size_data,
-        current_size_data
+        main_gas_data | main_size_data,
+        current_gas_data | current_size_data
     )
 
     html_report = generate_html_report(differences)
