@@ -58,5 +58,5 @@ jobs:
 
   measure-gas-usage-and-verifier-code-size:
     name: Measure gas usage
-    uses: _measure-gas-and-contract-size.yml
+    uses: ./.github/workflows/_measure-gas-and-contract-size.yml
     secrets: inherit
