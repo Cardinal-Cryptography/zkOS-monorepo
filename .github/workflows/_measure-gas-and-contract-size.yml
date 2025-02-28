@@ -20,6 +20,9 @@ jobs:
           poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
+      - name: Prepare Solidity environment
+        uses: ./.github/actions/prepare-sol-env
+
       - name: Setup node
         uses: asdf-vm/actions/install@v3
 
