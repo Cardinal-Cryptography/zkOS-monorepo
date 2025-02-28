@@ -7,7 +7,7 @@ on:
 
 jobs:
   main:
-    name: Measure gas
+    name: Measure gas and verifier code size
     runs-on: [self-hosted, Linux, X64, large]
     timeout-minutes: 20
     steps:
@@ -19,6 +19,9 @@ jobs:
         with:
           poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Prepare Solidity environment
+        uses: ./.github/actions/prepare-sol-env
 
       - name: Setup node
         uses: asdf-vm/actions/install@v3
@@ -39,14 +42,29 @@ jobs:
       - name: Generate all contracts
         run: make generate-contracts
 
+      - name: Compile all contracts
+        run: make compile-contracts
+
       - name: Run gas-consumption binary on the current branch
         run: |
           export CONTRACTS_DIR="contracts"
           export CARGO_MANIFEST_DIR=./Cargo.toml
-          ./target/release/gas-consumption current-report.txt
+          ./target/release/gas-consumption current-gas.txt
 
       - name: Print gas measured on the current branch
-        run: cat current-report.txt
+        run: cat current-gas.txt
+
+      - name: Measure verifiers code size
+        run: |
+          echo -n "Deposit: " > current-size.txt
+          cat ./artifacts/DepositVerifier.sol/Halo2Verifier.json \
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> current-size.txt
+          echo -n "Withdraw: " >> current-size.txt
+          cat ./artifacts/WithdrawVerifier.sol/Halo2Verifier.json \
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> current-size.txt
+          echo -n "NewAccount: " >> current-size.txt
+          cat ./artifacts/NewAccountVerifier.sol/Halo2Verifier.json \
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> current-size.txt
 
       #################### Run measurements on the main branch ####################
 
@@ -69,6 +87,10 @@ jobs:
         working-directory: main
         run: make generate-contracts
 
+      - name: Compile all contracts
+        working-directory: main
+        run: make compile-contracts
+
       - name: Build binary (main branch)
         working-directory: main
         run: cargo build -p integration-tests --bin gas-consumption --release
@@ -77,10 +99,22 @@ jobs:
         run: |
           export CONTRACTS_DIR="main/contracts"
           export CARGO_MANIFEST_DIR=./main/Cargo.toml
-          ./main/target/release/gas-consumption main-report.txt
+          ./main/target/release/gas-consumption main-gas.txt
 
       - name: Print gas measured on the `main` branch
-        run: cat main-report.txt
+        run: cat main-gas.txt
+
+      - name: Measure verifiers code size
+        run: |
+          echo -n "Deposit: " > main-size.txt
+          cat ./main/artifacts/DepositVerifier.sol/Halo2Verifier.json \
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> main-size.txt
+          echo -n "Withdraw: " >> main-size.txt
+          cat ./main/artifacts/WithdrawVerifier.sol/Halo2Verifier.json \
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> main-size.txt
+          echo -n "NewAccount: " >> main-size.txt
+          cat ./main/artifacts/NewAccountVerifier.sol/Halo2Verifier.json \
+            | jq -r '.bytecode.object' | wc -c | awk '{print $1 / 2}' >> main-size.txt
 
       #################### Generate report ####################
 
@@ -93,9 +127,9 @@ jobs:
         run: pip install prettytable
 
       - name: Run metrics-diff-presenter script
-        run: python3 .github/scripts/gas_diff.py > report.html
+        run: python3 .github/scripts/gas_size_diff.py > report.html
 
-      - name: Print gas report with diff
+      - name: Print gas and size report with diff
         run: cat report.html
 
       - name: Post measurements difference
