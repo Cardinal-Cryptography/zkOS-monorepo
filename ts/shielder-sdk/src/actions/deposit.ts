@@ -13,11 +13,10 @@ import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { Token } from "@/types";
 import { getTokenAddress } from "@/utils";
-import { hexToBigInt } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
-    pubInputs: DepositPubInputs;
+    pubInputs: DepositPubInputs<Scalar>;
     proof: Proof;
   };
   expectedContractVersion: `0x${string}`;
@@ -60,7 +59,7 @@ export class DepositAction extends NoteAction {
   async prepareAdvice(
     state: AccountState,
     amount: bigint
-  ): Promise<DepositAdvice> {
+  ): Promise<DepositAdvice<Scalar>> {
     if (state.currentNoteIndex === undefined) {
       throw new Error("currentNoteIndex must be set");
     }
@@ -93,7 +92,7 @@ export class DepositAction extends NoteAction {
       value: Scalar.fromBigint(amount),
       nullifierNew,
       trapdoorNew,
-      macSalt: Scalar.fromBigint(hexToBigInt("0x41414141"))
+      macSalt: await this.randomSalt()
     };
   }
 
@@ -182,7 +181,7 @@ export class DepositAction extends NoteAction {
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),
-      value: amount
+      value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
       if (e instanceof VersionRejectedByContract) {
         throw e;

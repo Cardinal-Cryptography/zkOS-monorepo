@@ -3,7 +3,7 @@ import { StateManager } from "../../src/state/manager";
 import { MockedCryptoClient } from "../helpers";
 import { StorageInterface } from "../../src/state/storageSchema";
 import { AccountState } from "../../src/state/types";
-import { nativeTokenAddress, storageSchemaVersion } from "../../src/constants";
+import { storageSchemaVersion } from "../../src/constants";
 import {
   Scalar,
   scalarsEqual,
@@ -29,6 +29,7 @@ describe("StateManager", () => {
   let stateManager: StateManager;
   let storage: StorageInterface;
   let cryptoClient: MockedCryptoClient;
+  const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
   const testPrivateKey =
     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
   let testId: Scalar;
@@ -44,14 +45,19 @@ describe("StateManager", () => {
     };
     cryptoClient = new MockedCryptoClient();
     stateManager = new StateManager(testPrivateKey, storage, cryptoClient);
-    testId = await cryptoClient.converter.privateKeyToScalar(testPrivateKey);
+    testId = await cryptoClient.secretManager.deriveId(
+      testPrivateKey,
+      nativeTokenAddress
+    );
   });
 
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
       const state = await stateManager.accountState(nativeToken());
-      const expectedId =
-        await cryptoClient.converter.privateKeyToScalar(testPrivateKey);
+      const expectedId = await cryptoClient.secretManager.deriveId(
+        testPrivateKey,
+        nativeTokenAddress
+      );
 
       expect(state).toEqual({
         id: expectedId,
@@ -133,9 +139,9 @@ describe("StateManager", () => {
         token: nativeToken()
       };
 
-      await stateManager.updateAccountState(nativeToken, newState);
+      await stateManager.updateAccountState(nativeToken(), newState);
 
-      const storedState = await stateManager.accountState(nativeToken);
+      const storedState = await stateManager.accountState(nativeToken());
       expectStatesEqual(storedState, newState);
     });
 

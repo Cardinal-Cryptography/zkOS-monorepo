@@ -10,10 +10,10 @@ export class Converter extends WasmClientModuleBase implements IConverter {
     super.init(caller);
   }
 
-  privateKeyToScalar(hex: `0x${string}`): Promise<Scalar> {
+  hex32ToScalar(hex: `0x${string}`): Promise<Scalar> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    return Promise.resolve(new Scalar(this.wasmModule.private_key_to_f(hex)));
+    return Promise.resolve(new Scalar(this.wasmModule.hex_32_to_f(hex)));
   }
 }

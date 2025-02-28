@@ -7,7 +7,7 @@ use alloy_contract::CallDecoder;
 use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolCall};
 use shielder_setup::{
-    shielder_circuits::AsymPublicKey,
+    shielder_circuits::GrumpkinPointAffine,
     version::{contract_version, ContractVersion},
 };
 use ShielderContract::*;
@@ -84,7 +84,10 @@ sol! {
             bytes3 expectedContractVersion,
             uint256 newNote,
             uint256 idHash,
-            uint256 symKeyEncryption,
+            uint256 symKeyEncryptionC1X,
+            uint256 symKeyEncryptionC1Y,
+            uint256 symKeyEncryptionC2X,
+            uint256 symKeyEncryptionC2Y,
             bytes calldata proof
         ) external payable whenNotPaused;
         function newAccountERC20(
@@ -93,7 +96,10 @@ sol! {
             uint256 amount,
             uint256 newNote,
             uint256 idHash,
-            uint256 symKeyEncryption,
+            uint256 symKeyEncryptionC1X,
+            uint256 symKeyEncryptionC1Y,
+            uint256 symKeyEncryptionC2X,
+            uint256 symKeyEncryptionC2Y,
             bytes calldata proof
         ) external whenNotPaused;
         function depositNative(
@@ -250,9 +256,9 @@ impl ShielderContractCall for nullifiersCall {
 }
 
 impl ShielderContractCall for anonymityRevokerPubkeyCall {
-    type UnwrappedResult = AsymPublicKey<U256>;
+    type UnwrappedResult = GrumpkinPointAffine<U256>;
     fn unwrap_result(pubkey: anonymityRevokerPubkeyReturn) -> Self::UnwrappedResult {
-        AsymPublicKey {
+        GrumpkinPointAffine {
             x: pubkey._0,
             y: pubkey._1,
         }

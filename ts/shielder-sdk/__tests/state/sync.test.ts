@@ -12,8 +12,7 @@ import {
   UnexpectedVersionInEvent
 } from "../../src/state/sync";
 import { MockedCryptoClient } from "../helpers";
-import { Address } from "viem";
-import { nativeTokenAddress } from "../../src/constants";
+import { nativeToken } from "../../src/types";
 
 // Test helpers
 const createAccountState = (
@@ -27,16 +26,17 @@ const createAccountState = (
   nonce,
   balance,
   currentNote: Scalar.fromBigint(currentNote),
-  storageSchemaVersion
+  storageSchemaVersion,
+  token: nativeToken()
 });
 
 const createNoteEvent = (
-  name: "NewAccountNative" | "DepositNative" | "WithdrawNative",
+  name: "NewAccount" | "Deposit" | "Withdraw",
   amount: bigint,
   to: `0x${string}` | undefined,
   block: bigint,
   newNote: bigint,
-  contractVersion: `0x${string}` = "0x000001",
+  contractVersion: `0x${string}` = "0x000100",
   txHash: `0x${string}` = "0xabc"
 ): NoteEvent => ({
   name,
@@ -149,7 +149,7 @@ describe("StateSynchronizer", () => {
     it("should sync single state transition", async () => {
       const initialState = createAccountState();
       const newState = createAccountState(1n, 1n, 100n, 1n);
-      const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
+      const event = createNoteEvent("Deposit", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
       vitest
@@ -167,18 +167,19 @@ describe("StateSynchronizer", () => {
         1n
       ); // Initial nullifier hash -> block 1
 
-      await synchronizer.syncAccountState(nativeTokenAddress);
+      await synchronizer.syncAccountState(nativeToken());
 
       expect(stateManager.updateAccountState).toHaveBeenCalledWith(
-        nativeTokenAddress,
+        nativeToken(),
         newState
       );
       expect(syncCallback).toHaveBeenCalledWith({
-        type: "DepositNative",
+        type: "Deposit",
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
-        block: 1n
+        block: 1n,
+        token: nativeToken()
       });
     });
 
@@ -189,16 +190,8 @@ describe("StateSynchronizer", () => {
         createAccountState(1n, 2n, 50n, 2n)
       ];
       const events = [
-        createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n),
-        createNoteEvent(
-          "WithdrawNative",
-          50n,
-          "0x456",
-          2n,
-          2n,
-          "0x000001",
-          "0xdef"
-        )
+        createNoteEvent("Deposit", 100n, "0x123", 1n, 1n),
+        createNoteEvent("Withdraw", 50n, "0x456", 2n, 2n, "0x000100", "0xdef")
       ];
 
       // Setup mocks
@@ -226,30 +219,32 @@ describe("StateSynchronizer", () => {
         .mockResolvedValueOnce(states[1])
         .mockResolvedValueOnce(states[2]);
 
-      await synchronizer.syncAccountState(nativeTokenAddress);
+      await synchronizer.syncAccountState(nativeToken());
 
       expect(stateManager.updateAccountState).toHaveBeenCalledTimes(2);
       expect(syncCallback).toHaveBeenCalledTimes(2);
       expect(syncCallback).toHaveBeenNthCalledWith(1, {
-        type: "DepositNative",
+        type: "Deposit",
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
-        block: 1n
+        block: 1n,
+        token: nativeToken()
       });
       expect(syncCallback).toHaveBeenNthCalledWith(2, {
-        type: "WithdrawNative",
+        type: "Withdraw",
         amount: 50n,
         to: "0x456",
         txHash: "0xdef",
-        block: 2n
+        block: 2n,
+        token: nativeToken()
       });
     });
 
     it("should throw on unsupported contract version", async () => {
       const state = createAccountState();
       const event = createNoteEvent(
-        "DepositNative",
+        "Deposit",
         100n,
         "0x123",
         1n,
@@ -266,13 +261,13 @@ describe("StateSynchronizer", () => {
       );
 
       await expect(
-        synchronizer.syncAccountState(nativeTokenAddress)
+        synchronizer.syncAccountState(nativeToken())
       ).rejects.toThrow(UnexpectedVersionInEvent);
     });
 
     it("should throw on found, but non-transitioning event", async () => {
       const state = createAccountState();
-      const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
+      const event = createNoteEvent("Deposit", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
       vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
@@ -287,7 +282,7 @@ describe("StateSynchronizer", () => {
       ); // Initial nullifier hash -> block 1
 
       await expect(
-        synchronizer.syncAccountState(nativeTokenAddress)
+        synchronizer.syncAccountState(nativeToken())
       ).rejects.toThrow("State is null, this should not happen");
     });
 
@@ -303,7 +298,7 @@ describe("StateSynchronizer", () => {
       ); // Initial nullifier hash -> block 1
 
       await expect(
-        synchronizer.syncAccountState(nativeTokenAddress)
+        synchronizer.syncAccountState(nativeToken())
       ).rejects.toThrow("Unexpected number of events: 0, expected 1 event");
     });
   });
@@ -316,16 +311,8 @@ describe("StateSynchronizer", () => {
         createAccountState(1n, 2n, 50n, 2n)
       ];
       const events = [
-        createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n),
-        createNoteEvent(
-          "WithdrawNative",
-          50n,
-          "0x456",
-          2n,
-          2n,
-          "0x000001",
-          "0xdef"
-        )
+        createNoteEvent("Deposit", 100n, "0x123", 1n, 1n),
+        createNoteEvent("Withdraw", 50n, "0x456", 2n, 2n, "0x000100", "0xdef")
       ];
 
       // Setup mocks
@@ -355,24 +342,26 @@ describe("StateSynchronizer", () => {
 
       const transactions: ShielderTransaction[] = [];
       for await (const tx of synchronizer.getShielderTransactions(
-        nativeTokenAddress
+        nativeToken()
       )) {
         transactions.push(tx);
       }
       expect(transactions).toHaveLength(2);
       expect(transactions[0]).toEqual({
-        type: "DepositNative",
+        type: "Deposit",
         amount: 100n,
         to: "0x123",
         txHash: "0xabc",
-        block: 1n
+        block: 1n,
+        token: nativeToken()
       });
       expect(transactions[1]).toEqual({
-        type: "WithdrawNative",
+        type: "Withdraw",
         amount: 50n,
         to: "0x456",
         txHash: "0xdef",
-        block: 2n
+        block: 2n,
+        token: nativeToken()
       });
     });
 
@@ -384,7 +373,7 @@ describe("StateSynchronizer", () => {
       contract.setNullifierBlock(1n, null); // No transactions
       const transactions: ShielderTransaction[] = [];
       for await (const tx of synchronizer.getShielderTransactions(
-        nativeTokenAddress
+        nativeToken()
       )) {
         transactions.push(tx);
       }
@@ -393,7 +382,7 @@ describe("StateSynchronizer", () => {
 
     it("should throw on found, but non-transitioning event", async () => {
       const state = createAccountState();
-      const event = createNoteEvent("DepositNative", 100n, "0x123", 1n, 1n);
+      const event = createNoteEvent("Deposit", 100n, "0x123", 1n, 1n);
 
       // Setup mocks
       vitest.spyOn(stateManager, "accountState").mockResolvedValue(state);
@@ -409,7 +398,7 @@ describe("StateSynchronizer", () => {
 
       // Should throw on first iteration
       await expect(
-        synchronizer.getShielderTransactions(nativeTokenAddress).next()
+        synchronizer.getShielderTransactions(nativeToken()).next()
       ).rejects.toThrow("State is null, this should not happen");
     });
   });

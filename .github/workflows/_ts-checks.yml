@@ -5,9 +5,6 @@ on:
   workflow_call:
   workflow_dispatch:
 
-env:
-  PLASMO_PUBLIC_SHIELDER_CONTRACT_ADDRESS: ${{ vars.SHIELDER_CONTRACT_ADDRESS }}
-
 jobs:
   main:
     name: Run lints and tests
@@ -15,15 +12,6 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Display variables
-        run: |
-          echo "PLASMO_PUBLIC_SHIELDER_CONTRACT_ADDRESS: \
-            ${{ env.PLASMO_PUBLIC_SHIELDER_CONTRACT_ADDRESS }}"
-
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Checkout source code
         uses: actions/checkout@v4
 
@@ -60,7 +48,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.2.0
 
       - name: Install dependencies (workspace)
         run: pnpm install-deps
@@ -90,3 +78,75 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: ts/shielder-sdk/coverage/coverage-report.md
+
+  e2e-tests:
+    name: Run E2E tests on local anvil node
+    runs-on: [self-hosted, Linux, X64, large]
+    timeout-minutes: 10
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Download generated contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-contracts
+          path: contracts
+
+      - name: Download compiled contracts from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+          path: artifacts
+
+      - name: Download generated wasm from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-pkg
+          path: crates/shielder_bindings/pkg
+
+      - name: Download generated build cache
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-build-cache
+          path: cache
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.0
+
+      - name: Prepare Solidity environment
+        uses: ./.github/actions/prepare-sol-env
+
+      - name: Install dependencies (workspace)
+        run: pnpm install-deps
+        working-directory: ts
+
+      - name: Build all (workspace)
+        run: pnpm build
+        working-directory: ts
+
+      - name: Run e2e sdk tests
+        run: |
+          NO_FORMATTING=true ./tooling-e2e-tests/ts_sdk_tests.sh

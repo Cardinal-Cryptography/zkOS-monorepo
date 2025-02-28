@@ -1,7 +1,7 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{DepositCallType, MerkleProof},
+    call_data::{DepositCallType, MerkleProof, Token},
     ShielderAction,
 };
 use shielder_contract::{
@@ -29,6 +29,7 @@ pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
             app_state.account.prepare_call::<DepositCallType>(
                 &params,
                 &pk,
+                Token::Native,
                 amount,
                 &MerkleProof {
                     root: merkle_root,

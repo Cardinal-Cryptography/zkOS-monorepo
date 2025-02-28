@@ -6,5 +6,5 @@ import EntryPoint from "@/EntryPoint";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <EntryPoint />
-  </React.StrictMode>,
+  </React.StrictMode>
 );

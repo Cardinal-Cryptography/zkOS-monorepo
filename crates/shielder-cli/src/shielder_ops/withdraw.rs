@@ -5,7 +5,7 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{MerkleProof, WithdrawCallType, WithdrawExtra},
+    call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra},
     ShielderAction,
 };
 use shielder_contract::{
@@ -122,9 +122,16 @@ async fn prepare_relayer_query(
     let (merkle_root, merkle_path) =
         get_current_merkle_path(leaf_index, &app_state.create_shielder_user()).await?;
 
+    let chain_id = app_state
+        .create_simple_provider()
+        .await?
+        .get_chain_id()
+        .await?;
+
     let calldata = app_state.account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
+        Token::Native,
         amount,
         &WithdrawExtra {
             merkle_proof: MerkleProof {
@@ -135,6 +142,7 @@ async fn prepare_relayer_query(
             relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
             relayer_fee,
             contract_version: contract_version(),
+            chain_id: U256::from(chain_id),
         },
     );
 

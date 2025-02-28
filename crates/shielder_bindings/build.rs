@@ -27,7 +27,7 @@ fn gen_params_pk<C: Circuit<Fr> + Default>(circuit_name: &str, full_params: &Par
         params_bytes,
     )
     .expect("Failed to write params.bin");
-    let key_bytes = marshall_pk(k, &pk).expect("Failed to marshall pk");
+    let key_bytes = marshall_pk(k, &pk);
     std::fs::write(format!("artifacts/{}/pk.bin", circuit_name), key_bytes)
         .expect("Failed to write pk.bin");
 }

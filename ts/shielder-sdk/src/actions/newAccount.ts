@@ -15,7 +15,7 @@ import { getTokenAddress } from "@/utils";
 
 export interface NewAccountCalldata {
   calldata: {
-    pubInputs: NewAccountPubInputs;
+    pubInputs: NewAccountPubInputs<Scalar>;
     proof: Proof;
   };
   expectedContractVersion: `0x${string}`;
@@ -52,25 +52,25 @@ export class NewAccountAction extends NoteAction {
 
   async prepareAdvice(
     state: AccountState,
-    amount: bigint,
-    tokenAddress: `0x${string}`
-  ): Promise<NewAccountAdvice> {
+    amount: bigint
+  ): Promise<NewAccountAdvice<Scalar>> {
+    const tokenAddress = getTokenAddress(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
         Number(state.nonce)
       );
-    const anonymityRevokerPubkey = await this.contract.anonymityRevokerPubkey();
+    const [anonymityRevokerPublicKeyX, anonymityRevokerPublicKeyY] =
+      await this.contract.anonymityRevokerPubkey();
     return {
       id: state.id,
       nullifier,
       trapdoor,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
-      anonymityRevokerPubkey: {
-        x: Scalar.fromBigint(anonymityRevokerPubkey.x),
-        y: Scalar.fromBigint(anonymityRevokerPubkey.y)
-      }
+      encryptionSalt: await this.randomSalt(),
+      anonymityRevokerPublicKeyX: Scalar.fromBigint(anonymityRevokerPublicKeyX),
+      anonymityRevokerPublicKeyY: Scalar.fromBigint(anonymityRevokerPublicKeyY)
     };
   }
 
@@ -85,11 +85,10 @@ export class NewAccountAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<NewAccountCalldata> {
-    const tokenAddress = getTokenAddress(state.token);
-
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount, tokenAddress);
+    const advice = await this.prepareAdvice(state, amount);
+
     const proof = await this.cryptoClient.newAccountCircuit
       .prove(advice)
       .catch((e) => {
@@ -131,6 +130,7 @@ export class NewAccountAction extends NoteAction {
       expectedContractVersion,
       amount
     } = calldata;
+
     const encodedCalldata =
       calldata.token.type === "native"
         ? await this.contract.newAccountNativeCalldata(
@@ -139,7 +139,10 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption),
+            scalarToBigint(pubInputs.symKeyEncryption1X),
+            scalarToBigint(pubInputs.symKeyEncryption1Y),
+            scalarToBigint(pubInputs.symKeyEncryption2X),
+            scalarToBigint(pubInputs.symKeyEncryption2Y),
             proof
           )
         : await this.contract.newAccountTokenCalldata(
@@ -149,13 +152,16 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.hNote),
             scalarToBigint(pubInputs.hId),
             amount,
-            scalarToBigint(pubInputs.symKeyEncryption),
+            scalarToBigint(pubInputs.symKeyEncryption1X),
+            scalarToBigint(pubInputs.symKeyEncryption1Y),
+            scalarToBigint(pubInputs.symKeyEncryption2X),
+            scalarToBigint(pubInputs.symKeyEncryption2Y),
             proof
           );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata,
       to: this.contract.getAddress(),
-      value: amount
+      value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
       throw new Error(`Failed to create new account: ${e}`);
     });

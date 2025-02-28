@@ -14,7 +14,10 @@ export class SecretGenerator
     super.init(caller);
   }
 
-  getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets> {
+  getSecrets(
+    id: Scalar,
+    nonce: number
+  ): Promise<ShielderActionSecrets<Scalar>> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
@@ -23,5 +26,16 @@ export class SecretGenerator
       nullifier: new Scalar(result.nullifier),
       trapdoor: new Scalar(result.trapdoor)
     });
+  }
+
+  deriveId(
+    privateKey: `0x${string}`,
+    tokenAddress: `0x${string}`
+  ): Promise<Scalar> {
+    if (!this.wasmModule) {
+      throw new Error("Wasm module not initialized");
+    }
+    const result = this.wasmModule.derive_id(privateKey, tokenAddress);
+    return Promise.resolve(new Scalar(result));
   }
 }

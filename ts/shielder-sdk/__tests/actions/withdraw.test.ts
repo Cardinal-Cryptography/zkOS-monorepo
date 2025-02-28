@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
-  CryptoClient,
   Scalar,
   scalarsEqual,
   scalarToBigint,
@@ -18,64 +17,7 @@ import {
   VersionRejectedByRelayer,
   WithdrawResponse
 } from "../../src/chain/relayer";
-import { encodePacked, hexToBigInt, keccak256 } from "viem";
-import { nativeToken } from "../../src/types";
-
-const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
-
-const expectPubInputsCorrect = async (
-  pubInputs: WithdrawPubInputs,
-  cryptoClient: CryptoClient,
-  prevNullifier: Scalar,
-  state: AccountState,
-  amount: bigint,
-  nonce: bigint,
-  merkleRoot: Scalar,
-  commitment: Scalar
-) => {
-  // hNullifierOld should be hash of nullifier
-  expect(
-    scalarsEqual(
-      pubInputs.hNullifierOld,
-      await cryptoClient.hasher.poseidonHash([prevNullifier])
-    )
-  ).toBe(true);
-
-  // hNoteNew should be hash of [id, newNullifier, newTrapdoor, amount]
-  const { nullifier: newNullifier, trapdoor: newTrapdoor } =
-    await cryptoClient.secretManager.getSecrets(state.id, Number(state.nonce));
-  expect(
-    scalarsEqual(
-      pubInputs.hNoteNew,
-      await hashedNote(
-        state.id,
-        newNullifier,
-        newTrapdoor,
-        Scalar.fromBigint(state.balance - amount)
-      )
-    )
-  ).toBe(true);
-
-  // idHiding should be hash of [id hash, nonce]
-  expect(
-    scalarsEqual(
-      pubInputs.idHiding,
-      await cryptoClient.hasher.poseidonHash([
-        await cryptoClient.hasher.poseidonHash([state.id]),
-        Scalar.fromBigint(nonce)
-      ])
-    )
-  ).toBe(true);
-
-  // merkleRoot should be equal to input merkleRoot
-  expect(scalarsEqual(pubInputs.merkleRoot, merkleRoot)).toBe(true);
-
-  // value should be amount
-  expect(scalarsEqual(pubInputs.value, Scalar.fromBigint(amount))).toBe(true);
-
-  // commitment should be equal to input commitment
-  expect(scalarsEqual(pubInputs.commitment, commitment)).toBe(true);
-};
+import { nativeToken, Token } from "../../src/types";
 
 describe("WithdrawAction", () => {
   let cryptoClient: MockedCryptoClient;
@@ -143,9 +85,15 @@ describe("WithdrawAction", () => {
           tx_hash: "0xtxHash" as `0x${string}`
         })
     } as unknown as IRelayer;
-    action = new WithdrawAction(contract, relayer, cryptoClient, {
-      randomIdHidingNonce: () => Scalar.fromBigint(mockedIdHidingNonce)
-    });
+    action = new WithdrawAction(
+      contract,
+      relayer,
+      cryptoClient,
+      {
+        randomIdHidingNonce: () => Scalar.fromBigint(mockedIdHidingNonce)
+      },
+      1n
+    );
 
     const id = Scalar.fromBigint(123n);
     state = {
@@ -203,6 +151,7 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         address,
         expectedVersion
@@ -233,6 +182,7 @@ describe("WithdrawAction", () => {
             currentNoteIndex: undefined
           },
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -248,6 +198,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -263,6 +214,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -276,13 +228,14 @@ describe("WithdrawAction", () => {
       const totalFee = 1n;
 
       cryptoClient.withdrawCircuit.prove = vitest
-        .fn<(values: WithdrawAdvice) => Promise<Uint8Array>>()
+        .fn<(values: WithdrawAdvice<Scalar>) => Promise<Uint8Array>>()
         .mockRejectedValue("error");
 
       await expect(
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -297,7 +250,10 @@ describe("WithdrawAction", () => {
 
       cryptoClient.withdrawCircuit.verify = vitest
         .fn<
-          (proof: Uint8Array, values: WithdrawPubInputs) => Promise<boolean>
+          (
+            proof: Uint8Array,
+            values: WithdrawPubInputs<Scalar>
+          ) => Promise<boolean>
         >()
         .mockResolvedValue(false);
 
@@ -305,6 +261,7 @@ describe("WithdrawAction", () => {
         action.generateCalldata(
           state,
           amount,
+          mockRelayerAddress,
           totalFee,
           mockAddress,
           expectedVersion
@@ -313,7 +270,7 @@ describe("WithdrawAction", () => {
     });
   });
 
-  describe("sendCalldata", () => {
+  describe("sendCalldataWithRelayer", () => {
     it("should send transaction with correct parameters", async () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
@@ -321,22 +278,26 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         mockAddress,
         expectedVersion
       );
 
-      const txHash = await action.sendCalldata(calldata);
+      const txHash = await action.sendCalldataWithRelayer(calldata);
 
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
+        nativeToken(),
         scalarToBigint(calldata.calldata.pubInputs.idHiding),
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
         calldata.amount,
         calldata.calldata.proof,
-        mockAddress
+        mockAddress,
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment)
       );
 
       expect(txHash).toBe("0xtxHash");
@@ -349,6 +310,7 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         mockAddress,
         expectedVersion
@@ -360,20 +322,23 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
+            token: Token,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array,
-            withdrawAddress: `0x${string}`
+            withdrawalAddress: `0x${string}`,
+            macSalt: bigint,
+            macCommitment: bigint
           ) => Promise<WithdrawResponse>
         >()
         .mockRejectedValue(mockedErr);
 
-      await expect(action.sendCalldata(calldata)).rejects.toThrowError(
-        mockedErr
-      );
+      await expect(
+        action.sendCalldataWithRelayer(calldata)
+      ).rejects.toThrowError(mockedErr);
     });
 
     it("should throw on other errors during send", async () => {
@@ -383,6 +348,7 @@ describe("WithdrawAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
+        mockRelayerAddress,
         totalFee,
         mockAddress,
         expectedVersion
@@ -392,18 +358,21 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
+            token: Token,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array,
-            withdrawAddress: `0x${string}`
+            withdrawalAddress: `0x${string}`,
+            macSalt: bigint,
+            macCommitment: bigint
           ) => Promise<WithdrawResponse>
         >()
         .mockRejectedValue(new Error("mocked contract rejection"));
 
-      await expect(action.sendCalldata(calldata)).rejects.toThrow(
+      await expect(action.sendCalldataWithRelayer(calldata)).rejects.toThrow(
         "Failed to withdraw: Error: mocked contract rejection"
       );
     });

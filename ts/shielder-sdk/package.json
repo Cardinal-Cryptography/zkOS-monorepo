@@ -1,6 +1,6 @@
 {
   "name": "@cardinal-cryptography/shielder-sdk",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0-beta.1",
   "description": "A web package for interacting with Shielder, a part of zkOS privacy engine.",
   "license": "Apache-2.0",
   "keywords": [
@@ -23,16 +23,11 @@
     "coverage": "vitest run --coverage",
     "coverage-report": "vitest run --coverage --coverage.reporter json-summary"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
-  },
   "files": [
     "/dist"
   ],
+  "type": "module",
+  "main": "dist/index.js",
   "devDependencies": {
     "@eslint/js": "^9.14.0",
     "@types/eslint__js": "^8.42.3",

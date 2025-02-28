@@ -1,12 +1,15 @@
 use std::time::Instant;
 
+use alloy_provider::Provider;
 use anyhow::Result;
-use shielder_account::call_data::{MerkleProof, WithdrawCallType, WithdrawExtra};
+use shielder_account::call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     withdraw::WithdrawCircuit,
 };
-use shielder_contract::{alloy_primitives::U256, merkle_path::get_current_merkle_path};
+use shielder_contract::{
+    alloy_primitives::U256, merkle_path::get_current_merkle_path, providers::create_simple_provider,
+};
 use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery};
 use shielder_setup::version::contract_version;
 
@@ -100,10 +103,15 @@ async fn prepare_relay_query(
     let (merkle_root, merkle_path) =
         get_current_merkle_path(U256::from(actor.id), &actor.shielder_user).await?;
     let to = config.master_seed.address();
+    let chain_id = create_simple_provider(&config.node_rpc_url)
+        .await?
+        .get_chain_id()
+        .await?;
 
     let calldata = actor.account.prepare_call::<WithdrawCallType>(
         params,
         pk,
+        Token::Native,
         U256::from(WITHDRAW_AMOUNT),
         &WithdrawExtra {
             merkle_proof: MerkleProof {
@@ -114,6 +122,7 @@ async fn prepare_relay_query(
             relayer_address: config.relayer_address,
             relayer_fee,
             contract_version: contract_version(),
+            chain_id: U256::from(chain_id),
         },
     );
 

@@ -1,9 +1,13 @@
 use alloy_signer_local::PrivateKeySigner;
 use rand::{rngs::StdRng, SeedableRng};
-use shielder_account::{call_data::NewAccountCallType, ShielderAccount};
+use shielder_account::{
+    call_data::{NewAccountCallExtra, NewAccountCallType, Token},
+    ShielderAccount,
+};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    AsymPublicKey,
+    consts::FIELD_BITS,
+    GrumpkinPointAffine,
 };
 use shielder_contract::{
     alloy_primitives::{Address, U256},
@@ -18,7 +22,7 @@ pub struct Actor {
     pub account: ShielderAccount,
 }
 
-const ANONYMITY_REVOKER_PKEY: AsymPublicKey<U256> = AsymPublicKey {
+const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
     x: U256::from_limbs([65, 78, 79, 78]), // ANON
     y: U256::from_limbs([89, 77, 73, 84]), // YMIT
 };
@@ -47,7 +51,18 @@ impl Actor {
         amount: U256,
     ) -> newAccountNativeCall {
         self.account
-            .prepare_call::<NewAccountCallType>(params, pk, amount, &ANONYMITY_REVOKER_PKEY)
+            .prepare_call::<NewAccountCallType>(
+                params,
+                pk,
+                Token::Native,
+                amount,
+                &NewAccountCallExtra {
+                    anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
+                    encryption_salt: [Default::default(); FIELD_BITS],
+                },
+            )
+            .try_into()
+            .unwrap()
     }
 }
 

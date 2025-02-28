@@ -4,6 +4,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/state";
 import { getTokenAddress, noteVersion } from "@/utils";
+import { bytesToHex } from "viem";
 
 export abstract class NoteAction {
   protected cryptoClient: CryptoClient;
@@ -73,6 +74,12 @@ export abstract class NoteAction {
     );
     const root = mappedPath[mappedPath.length - 1];
     return [path, root];
+  }
+
+  async randomSalt(): Promise<Scalar> {
+    const random32Bytes = crypto.getRandomValues(new Uint8Array(32));
+    const random32BytesHex = bytesToHex(random32Bytes);
+    return await this.cryptoClient.converter.hex32ToScalar(random32BytesHex);
   }
 }
 

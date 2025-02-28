@@ -24,9 +24,10 @@ export default tseslint.config(
       "**/dist/",
       "**/dist-vite/",
       "**/src/_generated/",
-      "eslint.config.mjs",
+      "**/*.config.mjs",
       "**/update-imports.mjs",
       "**/vitest.config.ts",
+      "**/vite.config.ts",
       "**/__tests/",
       "**/coverage/"
     ]
