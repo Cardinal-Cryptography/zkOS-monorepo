@@ -7,6 +7,8 @@ use defaults::{
     DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
 };
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
     BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV, FEE_TOKENS_ENV,
@@ -15,8 +17,9 @@ use shielder_relayer::{
     RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOTAL_FEE_ENV,
 };
 
-use crate::config::defaults::{
-    DEFAULT_BALANCE_MONITOR_INTERVAL_SECS, DEFAULT_RELAY_COUNT_FOR_RECHARGE,
+use crate::{
+    config::defaults::{DEFAULT_BALANCE_MONITOR_INTERVAL_SECS, DEFAULT_RELAY_COUNT_FOR_RECHARGE},
+    price_feed::Coin,
 };
 
 mod cli;
@@ -24,6 +27,10 @@ mod defaults;
 mod enums;
 #[cfg(test)]
 mod tests;
+
+const ONE_MINUTE_IN_SECONDS: u64 = 60;
+pub const DEFAULT_PRICE_FEED_VALIDITY: u64 = 10 * ONE_MINUTE_IN_SECONDS;
+pub const DEFAULT_PRICE_FEED_REFRESH_INTERVAL: u64 = ONE_MINUTE_IN_SECONDS;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct NetworkConfig {
@@ -52,13 +59,25 @@ pub struct ChainConfig {
     pub relay_gas: u64,
 }
 
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub enum Pricing {
+    DevMode { price: Decimal },
+    ProdMode { price_feed_coin: Coin },
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct FeeTokenConfig {
+    pub address: Address,
+    pub pricing: Pricing,
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
     pub balance_monitor_interval_secs: u64,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
-    pub fee_tokens: Vec<Address>,
+    pub fee_token_config: Vec<FeeTokenConfig>,
 }
 
 /// Resolved configuration for the Shielder relayer. Order of precedence is:
@@ -73,6 +92,8 @@ pub struct ServerConfig {
     pub network: NetworkConfig,
     pub chain: ChainConfig,
     pub operations: OperationalConfig,
+    pub price_feed_validity: u64,
+    pub price_feed_refresh_interval: u64,
 }
 
 /// Resolves the configuration for the Shielder relayer using the command line arguments,
@@ -97,7 +118,9 @@ fn resolve_config_from_cli_config(
         relay_count_for_recharge,
         total_fee,
         relay_gas,
-        fee_tokens,
+        fee_token_config,
+        price_feed_validity,
+        price_feed_refresh_interval,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -138,15 +161,11 @@ fn resolve_config_from_cli_config(
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
     };
 
-    let fee_tokens = fee_tokens
-        .unwrap_or_else(|| {
-            std::env::var(FEE_TOKENS_ENV)
-                .map(|env| env.split(',').map(|s| s.to_string()).collect())
-                .unwrap_or_default()
-        })
-        .iter()
-        .map(|a| to_address(a))
-        .collect();
+    let fee_token_config = fee_token_config
+        .or_else(|| std::env::var(FEE_TOKENS_ENV).ok())
+        .unwrap_or_else(|| "[]".to_string());
+    let fee_token_config =
+        serde_json::from_str(&fee_token_config).expect("Invalid fee token config");
 
     let operational_config = OperationalConfig {
         balance_monitor_interval_secs: resolve_value(
@@ -161,8 +180,19 @@ fn resolve_config_from_cli_config(
             RELAY_COUNT_FOR_RECHARGE_ENV,
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
-        fee_tokens,
+        fee_token_config,
     };
+
+    let price_feed_validity = resolve_value(
+        price_feed_validity,
+        "PRICE_FEED_VALIDITY_ENV",
+        Some(DEFAULT_PRICE_FEED_VALIDITY),
+    );
+    let price_feed_refresh_interval = resolve_value(
+        price_feed_refresh_interval,
+        "PRICE_FEED_REFRESH_INTERVAL_ENV",
+        Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL),
+    );
 
     ServerConfig {
         logging_format: resolve_value(
@@ -173,6 +203,8 @@ fn resolve_config_from_cli_config(
         network: network_config,
         chain: chain_config,
         operations: operational_config,
+        price_feed_validity,
+        price_feed_refresh_interval,
     }
 }
 

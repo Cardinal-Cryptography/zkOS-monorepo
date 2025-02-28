@@ -143,10 +143,35 @@ pub struct CLIConfig {
 
     #[clap(
         long,
-        help = "Addresses of the ERC20 tokens (comma separated) that are qualified as a fee token.",
-        long_help = "Addresses of the ERC20 tokens (comma separated) that are qualified as a fee token. \
+        help = "Token configuration for ERC20 tokens that are qualified as a fee token.",
+        long_help = "Token configuration for ERC20 tokens that are qualified as a fee token. \
             If not provided, the value from the environment variable `{FEE_TOKEN_ENV}` will be used. \
-            If that is not set, assumed to be empty."
+            If that is not set, assumed to be empty. Parsed as JSON: \
+            \
+            This example configures a token to have a constant price of 12.3 USD: \
+            [{\"address\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\", \"pricing\":{\"DevMode\":{\"price\":\"12.3\"}}}] \
+            \
+            This example configure a token to use the `Usdc` price feed for its pricing: \
+            [{\"address\":\"0x6b175474e89094c44da98b954eedeac495271d0f\",\"pricing\":{\"ProdMode\":{\"price_feed_coin\":\"Usdc\"}}}]
+            "
     )]
-    pub fee_tokens: Option<Vec<String>>,
+    pub fee_token_config: Option<String>,
+
+    #[clap(
+        long,
+        help = "Price feed refresh interval in seconds.",
+        long_help = "Price feed refresh interval in seconds. If not provided, the value from the \
+            environment variable `{PRICE_FEED_REFRESH_INTERVAL_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL:?}`."
+    )]
+    pub price_feed_refresh_interval: Option<u64>,
+
+    #[clap(
+        long,
+        help = "Price feed validity in seconds.",
+        long_help = "Price feed validity in seconds. If not provided, the value from the \
+            environment variable `{PRICE_FEED_VALIDITY_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_PRICE_FEED_VALIDITY:?}`."
+    )]
+    pub price_feed_validity: Option<u64>,
 }
