@@ -3006,7 +3006,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=76ccc97e7#76ccc97e7f9b3caef6638b5fc300efd1dbf12b61"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=c8e715#c8e715904395ecb2b63bcfc57eac5f3f03b1a82d"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -4716,7 +4716,7 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=76ccc97e7#76ccc97e7f9b3caef6638b5fc300efd1dbf12b61"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=c8e715#c8e715904395ecb2b63bcfc57eac5f3f03b1a82d"
 dependencies = [
  "halo2_poseidon",
  "halo2_proofs",
@@ -5597,7 +5597,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.2.0"
-source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=76ccc97e7#76ccc97e7f9b3caef6638b5fc300efd1dbf12b61"
+source = "git+ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits?rev=c8e715#c8e715904395ecb2b63bcfc57eac5f3f03b1a82d"
 dependencies = [
  "halo2_proofs",
  "itertools 0.13.0",
