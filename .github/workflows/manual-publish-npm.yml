@@ -61,10 +61,10 @@ jobs:
           version: 10.2.0
 
       # Build steps
-      - name: Build shielder-wasm
+      - name: Build shielder_bindings (wasm)
         if: github.event.inputs.package == 'shielder-sdk-crypto-wasm'
-        run: make all
-        working-directory: crates/shielder-wasm
+        run: make wasm
+        working-directory: crates/shielder_bindings
 
       - name: Install dependencies (workspace)
         run: pnpm install-deps
