@@ -18,6 +18,7 @@ alloy-rpc-types = { workspace = true }
 alloy-signer = { workspace = true }
 alloy-signer-local = { workspace = true }
 anyhow = { workspace = true, default-features = true }
+assert2 = { workspace = true }
 async-channel = { workspace = true }
 axum = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
@@ -27,6 +28,7 @@ openssl = { workspace = true, features = ["vendored"] }
 reqwest.workspace = true
 rust_decimal = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 shielder-contract = { workspace = true }
 shielder-setup = { workspace = true }
 strum = { workspace = true }
