@@ -1,14 +1,16 @@
 import re
 
-def parse_report(file_path):
+
+def parse_report(file_path, annotation):
     data = {}
     with open(file_path, 'r') as file:
         for line in file:
             match = re.match(r'(\w+):\s*(\d+)', line)
             if match:
                 name, value = match.groups()
-                data[name] = int(value)
+                data[f'{name} {annotation}'] = int(value)
     return data
+
 
 def calculate_differences(main_data, current_data):
     differences = []
@@ -22,6 +24,7 @@ def calculate_differences(main_data, current_data):
         differences.append((name, main_value, current_value, difference))
     return differences
 
+
 def generate_html_report(differences):
     # Generate single-line HTML content without formatting
     html_content = "<table><tr><th>Transaction Name</th><th>Main</th><th>Current</th><th>Difference (%)</th></tr>"
@@ -32,18 +35,25 @@ def generate_html_report(differences):
     html_content += "</table>"
     return html_content
 
-def main():
-    main_report_path = 'main-report.txt'
-    current_report_path = 'current-report.txt'
 
-    main_data = parse_report(main_report_path)
-    current_data = parse_report(current_report_path)
-    differences = calculate_differences(main_data, current_data)
+def main():
+    main_gas_data = parse_report('main-gas.txt', '(gas)')
+    current_gas_data = parse_report('current-gas.txt', '(gas)')
+    main_size_data = parse_report('main-size.txt', '(size)')
+    current_size_data = parse_report('current-size.txt', '(size)')
+
+    differences = calculate_differences(
+        main_gas_data,
+        current_gas_data,
+        main_size_data,
+        current_size_data
+    )
 
     html_report = generate_html_report(differences)
 
     with open('report.html', 'w') as report_file:
         report_file.write(html_report)
+
 
 if __name__ == "__main__":
     main()

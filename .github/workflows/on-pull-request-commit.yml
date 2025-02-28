@@ -56,7 +56,7 @@ jobs:
         with:
           name: wasm-pkg
 
-  measure-gas-usage:
+  measure-gas-usage-and-verifier-code-size:
     name: Measure gas usage
-    uses: ./.github/workflows/_measure-gas.yml
+    uses: _measure-gas-and-contract-size.yml
     secrets: inherit
