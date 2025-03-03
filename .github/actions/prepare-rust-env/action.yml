@@ -1,13 +1,13 @@
 ---
-name: 'Prepare Rust environment'
+name: "Prepare Rust environment"
 description: >
   Installs Rust toolchain, authenticates with SSH (in order to access Github private repos)
 inputs:
   poseidon-gadget-private-key:
-    description: 'SSH private key that corresponds to the deploy key in poseidon2-gadget repository'
+    description: "SSH private key that corresponds to the deploy key in poseidon2-gadget repository"
     required: true
   zkos-circuits-private-key:
-    description: 'SSH private key that corresponds to the deploy key in zkos-circuits repository'
+    description: "SSH private key that corresponds to the deploy key in zkos-circuits repository"
     required: true
 
 runs:
@@ -23,6 +23,10 @@ runs:
       uses: Cardinal-Cryptography/github-actions/install-rust-toolchain@v7
       with:
         channel: nightly
+
+    - name: Install active toolchain
+      shell: bash
+      run: rustup toolchain install
 
     - name: Install sccache
       shell: bash
