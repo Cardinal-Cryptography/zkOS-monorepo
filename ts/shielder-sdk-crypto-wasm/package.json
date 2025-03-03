@@ -18,7 +18,8 @@
   "license": "Apache-2.0",
   "files": [
     "/dist",
-    "/dist-vite"
+    "/dist-vite",
+    "/dist-keys"
   ],
   "exports": {
     ".": {
@@ -40,7 +41,8 @@
       "import": "./dist/crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings_bg.wasm",
       "require": "./dist/crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings_bg.wasm",
       "types": "./dist/crates/shielder_bindings/pkg/pkg-web-multithreaded/shielder_bindings_bg.wasm.d.ts"
-    }
+    },
+    "./keys/*": "./dist-keys/*"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

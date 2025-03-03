@@ -14,3 +14,5 @@ node update-imports.mjs
 # Create Vite-specific build
 ./patches/vite-patch.sh
 
+# Copy Proving keys
+./copy-keys.sh

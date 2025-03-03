@@ -17,12 +17,12 @@ export class WithdrawCircuit
   implements IWithdrawCircuit
 {
   private wasmCircuit: InstanceType<WasmWithdrawCircuit> | undefined;
-  init(caller: Caller) {
+  init(caller: Caller, params_buf: Uint8Array, pk_buf: Uint8Array) {
     super.init(caller);
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
-    this.wasmCircuit = new this.wasmModule.WithdrawCircuit();
+    this.wasmCircuit = new this.wasmModule.WithdrawCircuit(params_buf, pk_buf);
   }
 
   prove(values: WithdrawAdvice<Scalar>): Promise<Proof> {

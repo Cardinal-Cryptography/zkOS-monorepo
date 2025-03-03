@@ -35,6 +35,12 @@ export class WasmClient implements CryptoClient {
   async init(
     caller: Caller,
     threads: number,
+    new_account_params_buf: Uint8Array,
+    new_account_pk_buf: Uint8Array,
+    deposit_params_buf: Uint8Array,
+    deposit_pk_buf: Uint8Array,
+    withdraw_params_buf: Uint8Array,
+    withdraw_pk_buf: Uint8Array,
     wasm_url?: string
   ): Promise<void> {
     const time = Date.now();
@@ -47,9 +53,13 @@ export class WasmClient implements CryptoClient {
     } else {
       throw new Error("Invalid caller");
     }
-    this.newAccountCircuit.init(caller);
-    this.depositCircuit.init(caller);
-    this.withdrawCircuit.init(caller);
+    this.newAccountCircuit.init(
+      caller,
+      new_account_params_buf,
+      new_account_pk_buf
+    );
+    this.depositCircuit.init(caller, deposit_params_buf, deposit_pk_buf);
+    this.withdrawCircuit.init(caller, withdraw_params_buf, withdraw_pk_buf);
     this.hasher.init(caller);
     this.secretManager.init(caller);
     this.noteTreeConfig.init(caller);

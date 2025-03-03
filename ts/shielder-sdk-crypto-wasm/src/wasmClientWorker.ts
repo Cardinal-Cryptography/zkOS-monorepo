@@ -38,12 +38,24 @@ expose(exposed);
  * Pass `wasm_url` only if you need the special setup (such as vite-patched distribution).
  *
  * @param threads - The number of threads to use (1 for single-threaded, >1 for multi-threaded).
+ * @param new_account_params_buf - Uint8Array containing the new account params binary data
+ * @param new_account_pk_buf - Uint8Array containing the new account pk binary data
+ * @param deposit_params_buf - Uint8Array containing the deposit params binary data
+ * @param deposit_pk_buf - Uint8Array containing the deposit pk binary data
+ * @param withdraw_params_buf - Uint8Array containing the withdraw params binary data
+ * @param withdraw_pk_buf - Uint8Array containing the withdraw pk binary data
  * @param wasm_url - Optional URL to the WASM binary.
  * @returns A promise that resolves to a Comlink-wrapped worker implementing CryptoClient.
  * @throws Will throw an error if the worker initialization fails.
  */
 export const initWasmWorker = async (
   threads: number,
+  new_account_params_buf: Uint8Array,
+  new_account_pk_buf: Uint8Array,
+  deposit_params_buf: Uint8Array,
+  deposit_pk_buf: Uint8Array,
+  withdraw_params_buf: Uint8Array,
+  withdraw_pk_buf: Uint8Array,
   wasm_url?: string
 ): Promise<CryptoClient> => {
   // Create a new worker instance
@@ -60,7 +72,17 @@ export const initWasmWorker = async (
   try {
     // Initialize with single or multi-threaded mode
     const caller = threads === 1 ? "web_singlethreaded" : "web_multithreaded";
-    await wrappedWorker.init(caller, threads, wasm_url);
+    await wrappedWorker.init(
+      caller,
+      threads,
+      new_account_params_buf,
+      new_account_pk_buf,
+      deposit_params_buf,
+      deposit_pk_buf,
+      withdraw_params_buf,
+      withdraw_pk_buf,
+      wasm_url
+    );
     return wrappedWorker;
   } catch (error) {
     console.error("Failed to initialize WASM worker:", error);

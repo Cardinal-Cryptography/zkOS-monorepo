@@ -18,12 +18,15 @@ export class NewAccountCircuit
 {
   private wasmCircuit: InstanceType<WasmNewAccountCircuit> | undefined;
 
-  init(caller: Caller) {
+  init(caller: Caller, params_buf: Uint8Array, pk_buf: Uint8Array) {
     super.init(caller);
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
-    this.wasmCircuit = new this.wasmModule.NewAccountCircuit();
+    this.wasmCircuit = new this.wasmModule.NewAccountCircuit(
+      params_buf,
+      pk_buf
+    );
   }
 
   prove(values: NewAccountAdvice<Scalar>): Promise<Proof> {

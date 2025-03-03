@@ -20,7 +20,7 @@ pub mod new_account;
 pub mod withdraw;
 
 pub trait WasmCircuit {
-    fn load_files() -> (Params, ProvingKey, u32);
+    fn load_files(params_buf: &[u8], pk_buf: &[u8]) -> (Params, ProvingKey, u32);
 }
 
 #[derive(Clone, Debug)]
@@ -35,18 +35,11 @@ pub struct Circuit<PK: ProverKnowledge> {
 macro_rules! impl_load_files {
     ($circuit_type:ty, $circuit_name:literal) => {
         impl WasmCircuit for Circuit<$circuit_type> {
-            fn load_files() -> (Params, ProvingKey, u32) {
-                let params = unmarshall_params(include_bytes!(concat!(
-                    "../../artifacts/",
-                    $circuit_name,
-                    "/params.bin"
-                )))
-                .expect("Failed to unmarshall params");
+            fn load_files(params_buf: &[u8], pk_buf: &[u8]) -> (Params, ProvingKey, u32) {
+                let params = unmarshall_params(params_buf).expect("Failed to unmarshall params");
 
-                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge>::Circuit>(
-                    include_bytes!(concat!("../../artifacts/", $circuit_name, "/pk.bin")),
-                )
-                .expect("Failed to unmarshall pk");
+                let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge>::Circuit>(pk_buf)
+                    .expect("Failed to unmarshall pk");
 
                 (params, pk, k)
             }
@@ -93,8 +86,8 @@ where
     }
 
     /// Create a new DepositCircuit with hardcoded keys, which is faster than generating new keys.
-    pub fn new_pronto() -> Self {
-        let (params, pk, k) = Self::load_files();
+    pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
+        let (params, pk, k) = Self::load_files(params_buf, pk_buf);
 
         let vk = pk.get_vk().clone();
 
@@ -147,7 +140,10 @@ mod tests {
     #[test]
     fn deposit_pronto() {
         let mut rng = rand::thread_rng();
-        let circuit = DepositCircuit::new_pronto();
+        let circuit = DepositCircuit::new_pronto(
+            include_bytes!("../../artifacts/deposit/params.bin"),
+            include_bytes!("../../artifacts/deposit/pk.bin"),
+        );
         let values = DepositProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
@@ -156,7 +152,10 @@ mod tests {
     #[test]
     fn new_account_pronto() {
         let mut rng = rand::thread_rng();
-        let circuit = NewAccountCircuit::new_pronto();
+        let circuit = NewAccountCircuit::new_pronto(
+            include_bytes!("../../artifacts/new_account/params.bin"),
+            include_bytes!("../../artifacts/new_account/pk.bin"),
+        );
         let values = NewAccountProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();
@@ -165,7 +164,10 @@ mod tests {
     #[test]
     fn withdraw_pronto() {
         let mut rng = rand::thread_rng();
-        let circuit = WithdrawCircuit::new_pronto();
+        let circuit = WithdrawCircuit::new_pronto(
+            include_bytes!("../../artifacts/withdraw/params.bin"),
+            include_bytes!("../../artifacts/withdraw/pk.bin"),
+        );
         let values = WithdrawProverKnowledge::<Fr>::random_correct_example(&mut rng);
         let proof = circuit.prove(&values, &mut rng);
         circuit.verify(&values, proof).unwrap();

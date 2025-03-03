@@ -17,12 +17,12 @@ export class DepositCircuit
   implements IDepositCircuit
 {
   private wasmCircuit: InstanceType<WasmDepositCircuit> | undefined;
-  init(caller: Caller) {
+  init(caller: Caller, params_buf: Uint8Array, pk_buf: Uint8Array) {
     super.init(caller);
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
-    this.wasmCircuit = new this.wasmModule.DepositCircuit();
+    this.wasmCircuit = new this.wasmModule.DepositCircuit(params_buf, pk_buf);
   }
 
   prove(values: DepositAdvice<Scalar>): Promise<Proof> {

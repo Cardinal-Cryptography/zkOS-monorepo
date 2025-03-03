@@ -24,7 +24,8 @@
       "@/*": ["./web/*"],
       "@tests/*": ["./tests/*"],
       "~*": ["./web/*"]
-    }
+    },
+    "types": ["vite/client", "node"]
   },
   "include": [".plasmo/index.d.ts", "web/**/*", "tests/**/*"]
 }

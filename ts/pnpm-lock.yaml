@@ -199,7 +199,7 @@ importers:
         specifier: ^1.45.0
         version: 1.50.1
       '@types/node':
-        specifier: ^20.14.14
+        specifier: ^20.17.19
         version: 20.17.19
       '@types/react':
         specifier: ^18.3.3

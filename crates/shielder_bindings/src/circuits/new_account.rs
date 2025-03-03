@@ -74,8 +74,8 @@ pub struct NewAccountCircuit(super::NewAccountCircuit);
 impl NewAccountCircuit {
     #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
-    pub fn new_pronto() -> Self {
-        NewAccountCircuit(super::NewAccountCircuit::new_pronto())
+    pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
+        NewAccountCircuit(super::NewAccountCircuit::new_pronto(params_buf, pk_buf))
     }
 
     #[allow(clippy::too_many_arguments)]
