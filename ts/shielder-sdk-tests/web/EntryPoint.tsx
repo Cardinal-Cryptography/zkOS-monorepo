@@ -24,6 +24,7 @@ import depositParamsUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/ke
 import depositPkUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/deposit/pk.bin?url";
 import withdrawParamsUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/withdraw/params.bin?url";
 import withdrawPkUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/withdraw/pk.bin?url";
+import { PublicClient } from "viem";
 
 declare global {
   interface Window {
@@ -41,7 +42,7 @@ declare global {
       createShielderClient: (
         shielderSeedPrivateKey: `0x${string}`,
         chainId: number,
-        rpcHttpEndpoint: string,
+        publicClient: PublicClient,
         contractAddress: `0x${string}`,
         relayerUrl: string,
         storage: InjectedStorageInterface,
