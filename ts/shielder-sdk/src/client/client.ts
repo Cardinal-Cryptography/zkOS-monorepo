@@ -1,5 +1,5 @@
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { Address, createPublicClient, Hash, http, PublicClient } from "viem";
+import { Address, Hash, PublicClient } from "viem";
 import {
   Contract,
   IContract,

@@ -17,6 +17,7 @@ import {
   type ShielderTestFixture,
   setupShielderTest
 } from "./fixtures/shielderTest/setup";
+import type { PublicClient } from "viem";
 
 declare global {
   interface Window {

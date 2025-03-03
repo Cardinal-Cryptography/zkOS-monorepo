@@ -11,7 +11,6 @@ import {
   type SeededAccount
 } from "@tests/chainAccount";
 import { type CallbacksFixture, setupCallbacks } from "./callbacks";
-import type { PublicClient } from "viem";
 
 export interface ShielderClientFixture {
   shielderClient: ShielderClient;
