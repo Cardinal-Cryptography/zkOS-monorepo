@@ -54,7 +54,9 @@ jobs:
     steps:
       - uses: geekyeggo/delete-artifact@v5
         with:
-          name: wasm-pkg
+          name: |
+            wasm-pkg
+            proving-keys-pkg
 
   measure-gas-usage-and-verifier-code-size:
     name: Measure gas usage
