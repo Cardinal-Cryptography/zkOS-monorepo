@@ -7,6 +7,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
+import { CircuitParamsPkBuffer } from "@/types";
 
 type WasmDepositCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").DepositCircuit
@@ -17,12 +18,15 @@ export class DepositCircuit
   implements IDepositCircuit
 {
   private wasmCircuit: InstanceType<WasmDepositCircuit> | undefined;
-  init(caller: Caller, params_buf: Uint8Array, pk_buf: Uint8Array) {
+  init(caller: Caller, buf: CircuitParamsPkBuffer) {
     super.init(caller);
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
-    this.wasmCircuit = new this.wasmModule.DepositCircuit(params_buf, pk_buf);
+    this.wasmCircuit = new this.wasmModule.DepositCircuit(
+      buf.paramsBuf,
+      buf.pkBuf
+    );
   }
 
   prove(values: DepositAdvice<Scalar>): Promise<Proof> {

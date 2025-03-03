@@ -1,6 +1,7 @@
 import { expose, wrap } from "comlink";
 import { WasmClient } from "./wasmClient";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { CircuitParamsPkBuffer } from "./types";
 
 // Create worker instance
 const wasmClientWorker = new WasmClient();
@@ -50,12 +51,9 @@ expose(exposed);
  */
 export const initWasmWorker = async (
   threads: number,
-  new_account_params_buf: Uint8Array,
-  new_account_pk_buf: Uint8Array,
-  deposit_params_buf: Uint8Array,
-  deposit_pk_buf: Uint8Array,
-  withdraw_params_buf: Uint8Array,
-  withdraw_pk_buf: Uint8Array,
+  newAccountBuf: CircuitParamsPkBuffer,
+  depositBuf: CircuitParamsPkBuffer,
+  withdrawBuf: CircuitParamsPkBuffer,
   wasm_url?: string
 ): Promise<CryptoClient> => {
   // Create a new worker instance
@@ -75,12 +73,9 @@ export const initWasmWorker = async (
     await wrappedWorker.init(
       caller,
       threads,
-      new_account_params_buf,
-      new_account_pk_buf,
-      deposit_params_buf,
-      deposit_pk_buf,
-      withdraw_params_buf,
-      withdraw_pk_buf,
+      newAccountBuf,
+      depositBuf,
+      withdrawBuf,
       wasm_url
     );
     return wrappedWorker;

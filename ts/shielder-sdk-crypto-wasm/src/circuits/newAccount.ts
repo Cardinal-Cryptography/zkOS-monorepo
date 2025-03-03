@@ -7,6 +7,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
+import { CircuitParamsPkBuffer } from "@/types";
 
 type WasmNewAccountCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").NewAccountCircuit
@@ -18,14 +19,14 @@ export class NewAccountCircuit
 {
   private wasmCircuit: InstanceType<WasmNewAccountCircuit> | undefined;
 
-  init(caller: Caller, params_buf: Uint8Array, pk_buf: Uint8Array) {
+  init(caller: Caller, buf: CircuitParamsPkBuffer) {
     super.init(caller);
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
     this.wasmCircuit = new this.wasmModule.NewAccountCircuit(
-      params_buf,
-      pk_buf
+      buf.paramsBuf,
+      buf.pkBuf
     );
   }
 

@@ -56,8 +56,8 @@ declare global {
   }
 }
 
-async function fetchArrayBuffer(url: string | URL): Promise<Uint8Array> {
-  return await fetch(url as string | URL).then((r) => r.bytes());
+async function fetchArrayBuffer(url: string): Promise<Uint8Array> {
+  return await fetch(url).then((r) => r.bytes());
 }
 
 function EntryPoint() {
@@ -76,12 +76,18 @@ function EntryPoint() {
       window.wasmCryptoClient = window.wasmCryptoClient || {};
       window.wasmCryptoClient.cryptoClient = initWasmWorker(
         envThreadsNumber(),
-        newAccountParams,
-        newAccountPk,
-        depositParams,
-        depositPk,
-        withdrawParams,
-        withdrawPk
+        {
+          paramsBuf: newAccountParams,
+          pkBuf: newAccountPk
+        },
+        {
+          paramsBuf: depositParams,
+          pkBuf: depositPk
+        },
+        {
+          paramsBuf: withdrawParams,
+          pkBuf: withdrawPk
+        }
       );
       // Expose shielder utilities
       window.shielder = window.shielder || {};
