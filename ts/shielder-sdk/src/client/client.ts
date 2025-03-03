@@ -47,16 +47,13 @@ import { Token } from "@/types";
 export const createShielderClient = (
   shielderSeedPrivateKey: `0x${string}`,
   chainId: number,
-  rpcHttpEndpoint: string,
+  publicClient: PublicClient,
   contractAddress: Address,
   relayerUrl: string,
   storage: InjectedStorageInterface,
   cryptoClient: CryptoClient,
   callbacks: ShielderCallbacks = {}
 ): ShielderClient => {
-  const publicClient = createPublicClient({
-    transport: http(rpcHttpEndpoint)
-  });
   const contract = new Contract(publicClient, contractAddress);
   const relayer = new Relayer(relayerUrl);
 

@@ -34,7 +34,7 @@ declare global {
       createShielderClient: (
         shielderSeedPrivateKey: `0x${string}`,
         chainId: number,
-        rpcHttpEndpoint: string,
+        publicClient: PublicClient,
         contractAddress: `0x${string}`,
         relayerUrl: string,
         storage: InjectedStorageInterface,

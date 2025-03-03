@@ -5,8 +5,13 @@ import type {
   ShielderClient,
   Token
 } from "@cardinal-cryptography/shielder-sdk";
-import { createAccount, type SeededAccount } from "@tests/chainAccount";
+import {
+  createAccount,
+  createPublicClient,
+  type SeededAccount
+} from "@tests/chainAccount";
 import { type CallbacksFixture, setupCallbacks } from "./callbacks";
+import type { PublicClient } from "viem";
 
 export interface ShielderClientFixture {
   shielderClient: ShielderClient;
@@ -51,6 +56,7 @@ export const setupShielderClient = async (
     chainConfig.chainId,
     chainConfig.rpcHttpEndpoint
   );
+  const publicClient = createPublicClient(chainConfig.rpcHttpEndpoint);
   const storage = mockedStorage(shielderKey);
   const cryptoClient = await window.wasmCryptoClient.cryptoClient;
   const sendingTransaction: SendShielderTransaction = async (calldata) => {
@@ -64,7 +70,7 @@ export const setupShielderClient = async (
   const shielderClient = window.shielder.createShielderClient(
     shielderKey,
     chainConfig.chainId,
-    chainConfig.rpcHttpEndpoint,
+    publicClient,
     chainConfig.contractAddress,
     relayerConfig.url,
     storage,
