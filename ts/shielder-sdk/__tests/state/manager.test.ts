@@ -33,6 +33,7 @@ describe("StateManager", () => {
   const testPrivateKey =
     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
   let testId: Scalar;
+  const mockChainId = 2n;
 
   beforeEach(async () => {
     // Create mock storage
@@ -44,9 +45,15 @@ describe("StateManager", () => {
       }
     };
     cryptoClient = new MockedCryptoClient();
-    stateManager = new StateManager(testPrivateKey, storage, cryptoClient);
+    stateManager = new StateManager(
+      testPrivateKey,
+      mockChainId,
+      storage,
+      cryptoClient
+    );
     testId = await cryptoClient.secretManager.deriveId(
       testPrivateKey,
+      mockChainId,
       nativeTokenAddress
     );
   });
@@ -56,6 +63,7 @@ describe("StateManager", () => {
       const state = await stateManager.accountState(nativeToken());
       const expectedId = await cryptoClient.secretManager.deriveId(
         testPrivateKey,
+        mockChainId,
         nativeTokenAddress
       );
 
