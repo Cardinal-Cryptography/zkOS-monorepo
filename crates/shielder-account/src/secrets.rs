@@ -3,7 +3,7 @@ use rand::{rngs::OsRng, Rng};
 use sha3::Digest;
 use shielder_circuits::consts::NONCE_UPPER_LIMIT;
 
-pub enum Label {
+enum Label {
     Nullifier,
     Trapdoor,
     Id,
@@ -28,45 +28,44 @@ const FIELD_MODULUS: U256 = U256::from_limbs([
     0x30644e72e131a029,
 ]);
 
-fn hash(label: Label, payload: &[u8]) -> U256 {
-    let mut hasher = sha3::Keccak256::new();
-    hasher.update(label.as_bytes());
-    hasher.update(payload);
+fn finalize_hash(hasher: sha3::Keccak256) -> U256 {
     U256::from_be_slice(hasher.finalize().as_slice()).reduce_mod(FIELD_MODULUS)
 }
 
 /// Nonce-dependent derivation.
 pub mod nonced {
     use alloy_primitives::U256;
+    use sha3::Digest;
 
-    use super::{hash, Label};
+    use super::{finalize_hash, Label};
 
     /// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
     pub fn derive_nullifier(id: U256, nonce: u32) -> U256 {
-        let mut payload = Vec::new();
-        payload.extend(id.to_be_bytes_vec());
-        payload.extend_from_slice(&nonce.to_be_bytes());
-        hash(Label::Nullifier, &payload)
+        let mut hasher = sha3::Keccak256::new();
+        hasher.update(id.to_be_bytes_vec());
+        hasher.update(Label::Nullifier.as_bytes());
+        hasher.update(&nonce.to_be_bytes());
+        finalize_hash(hasher)
     }
 
     /// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
     pub fn derive_trapdoor(id: U256, nonce: u32) -> U256 {
-        let mut payload = Vec::new();
-        payload.extend(id.to_be_bytes_vec());
-        payload.extend_from_slice(&nonce.to_be_bytes());
-        hash(Label::Trapdoor, &payload)
+        let mut hasher = sha3::Keccak256::new();
+        hasher.update(id.to_be_bytes_vec());
+        hasher.update(Label::Trapdoor.as_bytes());
+        hasher.update(&nonce.to_be_bytes());
+        finalize_hash(hasher)
     }
 }
 
-/// Private-key-dependent derivation of a per-token private ID.
+/// Private-key-dependent derivation of a per-chain & per-token private ID.
 pub fn derive_id(private_key: U256, chain_id: u64, token_address: Address) -> U256 {
-    // Concatenate chain_id bytes and token_address bytes
-    let mut payload = Vec::new();
-    payload.extend(private_key.to_be_bytes_vec());
-    payload.extend_from_slice(&chain_id.to_be_bytes());
-    payload.extend_from_slice(token_address.into_word().as_ref());
-
-    hash(Label::Id, &payload)
+    let mut hasher = sha3::Keccak256::new();
+    hasher.update(private_key.to_be_bytes_vec());
+    hasher.update(Label::Id.as_bytes());
+    hasher.update(&chain_id.to_be_bytes());
+    hasher.update(&token_address.into_word());
+    finalize_hash(hasher)
 }
 
 /// Random generation of a nonce for ID hiding.
@@ -101,11 +100,11 @@ mod tests {
     #[test]
     pub fn derive_nullifier_is_correct() {
         // Calculated using online tools as the Keccak-256 of the concatenation of:
-        //   6e756c6c6966696572 ("nullifier")
         //   000000000000000000000000000000000000000000000000000000000000000f
+        //   6e756c6c6966696572 ("nullifier")
         //   000000ff
         let expected_before_modulo =
-            U256::from_str("0x55c10e943627382fd842cfe473e364f44b5d7bedc21d1eab2656b32e2b3e0e3c")
+            U256::from_str("0x375a07a9503d15a291307e33ad0c297c9768fea4712947172ad09f2df34d8015")
                 .unwrap();
 
         let actual = derive_nullifier(U256::from(15), 0x000000ff);
@@ -116,11 +115,11 @@ mod tests {
     #[test]
     pub fn derive_trapdoor_is_correct() {
         // Calculated using online tools as the Keccak-256 of the concatenation of:
-        //   74726170646f6f72 ("trapdoor")
         //   000000000000000000000000000000000000000000000000000000000000000f
+        //   74726170646f6f72 ("trapdoor")
         //   000000ef
         let expected_before_modulo =
-            U256::from_str("0x1e4afc8f61c8c618e54af25743f3383d855b259e3429480284255e2b9934467a")
+            U256::from_str("0x878855043883a06951384006c159237f0df9a2c6ede19441f7bfaf1b4ff517b1")
                 .unwrap();
 
         let actual = derive_trapdoor(U256::from(15), 0x000000ef);
@@ -131,12 +130,12 @@ mod tests {
     #[test]
     pub fn derive_id_is_correct() {
         // Calculated using online tools as the Keccak-256 of the concatenation of:
-        //   6964 ("id")
         //   000000000000000000000000000000000000000000000000000000000000000f
+        //   6964 ("id")
         //   000000000000001a
         //   000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
         let expected_before_modulo =
-            U256::from_str("0x16ad3931b096594f5a6ceb8f516d4cda85b3d1e85c9f83f18813259befa0853e")
+            U256::from_str("0x131dad09663a807d989e945cb562b30a08f38e762f3433621dcd7098651bc8b6")
                 .unwrap();
 
         let actual = derive_id(
