@@ -44,7 +44,7 @@ pub mod nonced {
         let mut hasher = sha3::Keccak256::new();
         hasher.update(id.to_be_bytes_vec());
         hasher.update(Label::Nullifier.as_bytes());
-        hasher.update(&nonce.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
         finalize_hash(hasher)
     }
 
@@ -53,7 +53,7 @@ pub mod nonced {
         let mut hasher = sha3::Keccak256::new();
         hasher.update(id.to_be_bytes_vec());
         hasher.update(Label::Trapdoor.as_bytes());
-        hasher.update(&nonce.to_be_bytes());
+        hasher.update(nonce.to_be_bytes());
         finalize_hash(hasher)
     }
 }
@@ -63,8 +63,8 @@ pub fn derive_id(private_key: U256, chain_id: u64, token_address: Address) -> U2
     let mut hasher = sha3::Keccak256::new();
     hasher.update(private_key.to_be_bytes_vec());
     hasher.update(Label::Id.as_bytes());
-    hasher.update(&chain_id.to_be_bytes());
-    hasher.update(&token_address.into_word());
+    hasher.update(chain_id.to_be_bytes());
+    hasher.update(token_address.into_word());
     finalize_hash(hasher)
 }
 
