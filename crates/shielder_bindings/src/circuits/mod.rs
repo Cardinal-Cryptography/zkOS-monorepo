@@ -20,7 +20,7 @@ pub mod new_account;
 pub mod withdraw;
 
 pub trait WasmCircuit {
-    fn load_files(params_buf: &[u8], pk_buf: &[u8]) -> (Params, ProvingKey, u32);
+    fn decode_from_bytes(params_buf: &[u8], pk_buf: &[u8]) -> (Params, ProvingKey, u32);
 }
 
 #[derive(Clone, Debug)]
@@ -32,10 +32,10 @@ pub struct Circuit<PK: ProverKnowledge> {
     _phantom: PhantomData<PK>,
 }
 
-macro_rules! impl_load_files {
+macro_rules! impl_decode_bytes {
     ($circuit_type:ty, $circuit_name:literal) => {
         impl WasmCircuit for Circuit<$circuit_type> {
-            fn load_files(params_buf: &[u8], pk_buf: &[u8]) -> (Params, ProvingKey, u32) {
+            fn decode_from_bytes(params_buf: &[u8], pk_buf: &[u8]) -> (Params, ProvingKey, u32) {
                 let params = unmarshall_params(params_buf).expect("Failed to unmarshall params");
 
                 let (k, pk) = unmarshall_pk::<<$circuit_type as ProverKnowledge>::Circuit>(pk_buf)
@@ -47,9 +47,9 @@ macro_rules! impl_load_files {
     };
 }
 
-impl_load_files!(DepositProverKnowledge<Fr>, "deposit");
-impl_load_files!(NewAccountProverKnowledge<Fr>, "new_account");
-impl_load_files!(WithdrawProverKnowledge<Fr>, "withdraw");
+impl_decode_bytes!(DepositProverKnowledge<Fr>, "deposit");
+impl_decode_bytes!(NewAccountProverKnowledge<Fr>, "new_account");
+impl_decode_bytes!(WithdrawProverKnowledge<Fr>, "withdraw");
 
 impl<PK: ProverKnowledge> Circuit<PK>
 where
@@ -87,7 +87,7 @@ where
 
     /// Create a new DepositCircuit with hardcoded keys, which is faster than generating new keys.
     pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
-        let (params, pk, k) = Self::load_files(params_buf, pk_buf);
+        let (params, pk, k) = Self::decode_from_bytes(params_buf, pk_buf);
 
         let vk = pk.get_vk().clone();
 
