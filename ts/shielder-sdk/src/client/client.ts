@@ -111,6 +111,7 @@ export class ShielderClient {
     const internalStorage = createStorage(storage);
     this.stateManager = new StateManager(
       shielderSeedPrivateKey,
+      BigInt(chainId),
       internalStorage,
       cryptoClient
     );
