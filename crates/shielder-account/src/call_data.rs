@@ -13,7 +13,8 @@ use shielder_circuits::{
 };
 use shielder_contract::{
     ShielderContract::{
-        depositNativeCall, newAccountERC20Call, newAccountNativeCall, withdrawNativeCall,
+        depositERC20Call, depositNativeCall, newAccountERC20Call, newAccountNativeCall,
+        withdrawNativeCall,
     },
     WithdrawCommitment,
 };
@@ -197,6 +198,63 @@ impl CallType for NewAccountCallType {
         }
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct DepositCall {
+    pub amount: U256,
+    pub token: Token,
+    pub expected_contract_version: FixedBytes<3>,
+    pub id_hiding: U256,
+    pub old_nullifier_hash: U256,
+    pub new_note: U256,
+    pub merkle_root: U256,
+    pub mac_salt: U256,
+    pub mac_commitment: U256,
+    pub proof: Bytes,
+}
+
+impl TryFrom<DepositCall> for depositNativeCall {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: DepositCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                idHiding: calldata.id_hiding,
+                oldNullifierHash: calldata.old_nullifier_hash,
+                newNote: calldata.new_note,
+                merkleRoot: calldata.merkle_root,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
+                proof: calldata.proof,
+            }),
+            Token::ERC20(_) => Err(CallTypeConversionError),
+        }
+    }
+}
+
+impl TryFrom<DepositCall> for depositERC20Call {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: DepositCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Err(CallTypeConversionError),
+            Token::ERC20(token_address) => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                tokenAddress: token_address,
+                amount: calldata.amount,
+                idHiding: calldata.id_hiding,
+                oldNullifierHash: calldata.old_nullifier_hash,
+                newNote: calldata.new_note,
+                merkleRoot: calldata.merkle_root,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
+                proof: calldata.proof,
+            }),
+        }
+    }
+}
+
 pub struct MerkleProof {
     pub root: U256,
     pub path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
@@ -207,7 +265,7 @@ impl CallType for DepositCallType {
     type Extra = MerkleProof;
     type ProverKnowledge = DepositProverKnowledge<Fr>;
 
-    type Calldata = depositNativeCall;
+    type Calldata = DepositCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -246,14 +304,16 @@ impl CallType for DepositCallType {
         _: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
-        depositNativeCall {
-            expectedContractVersion: contract_version().to_bytes(),
-            idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
-            oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
-            newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
-            merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
-            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
-            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
+        DepositCall {
+            amount: field_to_u256(pk.deposit_value),
+            token: field_to_address(pk.token_address).into(),
+            expected_contract_version: contract_version().to_bytes(),
+            id_hiding: field_to_u256(pk.compute_public_input(IdHiding)),
+            old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
+            new_note: field_to_u256(pk.compute_public_input(HashedNewNote)),
+            merkle_root: field_to_u256(pk.compute_public_input(MerkleRoot)),
+            mac_salt: field_to_u256(pk.compute_public_input(MacSalt)),
+            mac_commitment: field_to_u256(pk.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof.to_vec()),
         }
     }

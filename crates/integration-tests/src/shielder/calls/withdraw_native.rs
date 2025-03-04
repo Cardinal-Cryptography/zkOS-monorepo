@@ -198,15 +198,14 @@ mod tests {
         .unwrap();
 
         let deposit_amount = U256::from(10);
-        let (deposit_calldata, _) =
-            deposit_native::prepare_call(&mut deployment, &mut shielder_account, deposit_amount);
-        deposit_native::invoke_call(
+        let (deposit_calldata, _) = deposit_native::prepare_call(
             &mut deployment,
             &mut shielder_account,
+            TestToken::Native,
             deposit_amount,
-            &deposit_calldata,
-        )
-        .unwrap();
+        );
+        deposit_native::invoke_call(&mut deployment, &mut shielder_account, &deposit_calldata)
+            .unwrap();
 
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
