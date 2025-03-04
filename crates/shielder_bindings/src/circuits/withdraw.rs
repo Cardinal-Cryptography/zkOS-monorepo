@@ -67,8 +67,8 @@ pub struct WithdrawCircuit(super::WithdrawCircuit);
 impl WithdrawCircuit {
     #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
-    pub fn new_pronto() -> Self {
-        WithdrawCircuit(super::WithdrawCircuit::new_pronto())
+    pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
+        WithdrawCircuit(super::WithdrawCircuit::new_pronto(params_buf, pk_buf))
     }
 
     #[allow(clippy::too_many_arguments)]

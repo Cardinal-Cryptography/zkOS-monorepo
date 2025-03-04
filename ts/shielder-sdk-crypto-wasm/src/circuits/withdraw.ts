@@ -7,6 +7,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
 import { WasmClientModuleBase } from "../utils/wasmModuleLoader";
+import { CircuitParamsPkBuffer } from "@/types";
 
 type WasmWithdrawCircuit =
   | typeof import("shielder_bindings/web-singlethreaded").WithdrawCircuit
@@ -17,12 +18,15 @@ export class WithdrawCircuit
   implements IWithdrawCircuit
 {
   private wasmCircuit: InstanceType<WasmWithdrawCircuit> | undefined;
-  init(caller: Caller) {
+  init(caller: Caller, buf: CircuitParamsPkBuffer) {
     super.init(caller);
     if (!this.wasmModule) {
       throw new Error("Wasm module not loaded");
     }
-    this.wasmCircuit = new this.wasmModule.WithdrawCircuit();
+    this.wasmCircuit = new this.wasmModule.WithdrawCircuit(
+      buf.paramsBuf,
+      buf.pkBuf
+    );
   }
 
   prove(values: WithdrawAdvice<Scalar>): Promise<Proof> {
