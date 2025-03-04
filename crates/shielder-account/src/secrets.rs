@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, U256};
+use alloy_primitives::U256;
 use rand::{rngs::OsRng, Rng};
 use sha3::Digest;
 use shielder_circuits::consts::NONCE_UPPER_LIMIT;
@@ -58,13 +58,13 @@ pub mod nonced {
     }
 }
 
-/// Private-key-dependent derivation of a per-chain & per-token private ID.
-pub fn derive_id(private_key: U256, chain_id: u64, token_address: Address) -> U256 {
+/// Private-key-dependent derivation of a per-chain & per-token account private ID.
+pub fn derive_id(private_key: U256, chain_id: u64, account_nonce: u64) -> U256 {
     let mut hasher = sha3::Keccak256::new();
     hasher.update(private_key.to_be_bytes_vec());
     hasher.update(Label::Id.as_bytes());
     hasher.update(chain_id.to_be_bytes());
-    hasher.update(token_address.into_word());
+    hasher.update(account_nonce.to_be_bytes());
     finalize_hash(hasher)
 }
 
@@ -80,7 +80,7 @@ pub fn generate_id_hiding_nonce() -> U256 {
 mod tests {
     use std::str::FromStr;
 
-    use alloy_primitives::{address, U256};
+    use alloy_primitives::U256;
     use halo2curves::{bn256::Fr, ff::PrimeField};
 
     use crate::secrets::{
@@ -109,6 +109,7 @@ mod tests {
 
         let actual = derive_nullifier(U256::from(15), 0x000000ff);
 
+        assert_ne!(expected_before_modulo, actual);
         assert_eq!(expected_before_modulo.reduce_mod(FIELD_MODULUS), actual)
     }
 
@@ -124,6 +125,7 @@ mod tests {
 
         let actual = derive_trapdoor(U256::from(15), 0x000000ef);
 
+        assert_ne!(expected_before_modulo, actual);
         assert_eq!(expected_before_modulo.reduce_mod(FIELD_MODULUS), actual)
     }
 
@@ -133,17 +135,14 @@ mod tests {
         //   000000000000000000000000000000000000000000000000000000000000000f
         //   6964 ("id")
         //   000000000000001a
-        //   000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
+        //   000000000000002d
         let expected_before_modulo =
-            U256::from_str("0x131dad09663a807d989e945cb562b30a08f38e762f3433621dcd7098651bc8b6")
+            U256::from_str("0x66bdc0e6c94e350919ad6fec24c4facf9f8de7dcfa6661fb4f781b0cb15a2ecb")
                 .unwrap();
 
-        let actual = derive_id(
-            U256::from(15),
-            26,
-            address!("ffffffffffffffffffffffffffffffffffffffff"),
-        );
+        let actual = derive_id(U256::from(15), 26, 45);
 
+        assert_ne!(expected_before_modulo, actual);
         assert_eq!(expected_before_modulo.reduce_mod(FIELD_MODULUS), actual)
     }
 }
