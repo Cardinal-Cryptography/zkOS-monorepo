@@ -17,6 +17,7 @@ import {
   type ShielderTestFixture,
   setupShielderTest
 } from "./fixtures/shielderTest/setup";
+import type { PublicClient } from "viem";
 
 import newAccountParamsUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/new_account/params.bin?url";
 import newAccountPkUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/new_account/pk.bin?url";
@@ -41,7 +42,7 @@ declare global {
       createShielderClient: (
         shielderSeedPrivateKey: `0x${string}`,
         chainId: number,
-        rpcHttpEndpoint: string,
+        publicClient: PublicClient,
         contractAddress: `0x${string}`,
         relayerUrl: string,
         storage: InjectedStorageInterface,
