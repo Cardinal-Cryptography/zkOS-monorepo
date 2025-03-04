@@ -4,7 +4,7 @@ use std::{
 };
 
 use rust_decimal::Decimal;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator as _;
 use strum_macros::EnumIter;
 use time::OffsetDateTime;
@@ -12,7 +12,7 @@ use tokio::time::Duration;
 
 const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter, Serialize, Deserialize)]
 pub enum Coin {
     Eth,
     Azero,
@@ -97,10 +97,20 @@ impl Prices {
 
         Ok(())
     }
+
+    #[cfg(test)]
+    pub fn set_price(&self, coin: Coin, price: Decimal) {
+        let mut inner = self.inner.lock().expect("Mutex poisoned");
+        let price = Price {
+            price,
+            time: OffsetDateTime::now_utc(),
+        };
+        inner.insert(coin, price);
+    }
 }
 
 /// Start a price feed that updates the prices in the given `Prices` instance.
-pub async fn start_price_feed(prices: Prices) {
+pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
     loop {
         prices.update().await.unwrap();
         tokio::time::sleep(prices.refresh_interval).await;
