@@ -107,7 +107,7 @@ mod tests {
         TestToken,
     };
 
-    // TODO: move to `mod.rs` once ERC20 is added to withdraw tests.
+    // TODO: move to `../mod.rs` once ERC20 is added to withdraw tests.
     fn get_balance(deployment: &Deployment, token: TestToken, address: &str) -> U256 {
         let address = Address::from_str(address).unwrap();
 
@@ -120,7 +120,7 @@ mod tests {
         }
     }
 
-    // TODO: move to `mod.rs` once ERC20 is added to withdraw tests.
+    // TODO: move to `../mod.rs` once ERC20 is added to withdraw tests.
     fn actor_balance_decreased_by(deployment: &Deployment, token: TestToken, amount: U256) -> bool {
         let initial_balance = match token {
             TestToken::Native => ACTOR_INITIAL_NATIVE_BALANCE,
@@ -129,7 +129,7 @@ mod tests {
         get_balance(deployment, token, ACTOR_ADDRESS) == initial_balance - amount
     }
 
-    // TODO: move to `mod.rs` once ERC20 is added to withdraw tests.
+    // TODO: move to `../mod.rs` once ERC20 is added to withdraw tests.
     fn recipient_balance_increased_by(
         deployment: &Deployment,
         token: TestToken,
