@@ -107,10 +107,13 @@ mod tests {
     };
 
     use crate::{
-        calls::withdraw_native::{invoke_call, prepare_args, prepare_call, PrepareCallArgs},
+        calls::{
+            deposit,
+            withdraw_native::{invoke_call, prepare_args, prepare_call, PrepareCallArgs},
+        },
         shielder::{
             actor_balance_decreased_by,
-            calls::{deposit_native, new_account},
+            calls::new_account,
             deploy::{
                 deployment, Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS, REVERTING_ADDRESS,
             },
@@ -198,14 +201,13 @@ mod tests {
         .unwrap();
 
         let deposit_amount = U256::from(10);
-        let (deposit_calldata, _) = deposit_native::prepare_call(
+        let (deposit_calldata, _) = deposit::prepare_call(
             &mut deployment,
             &mut shielder_account,
             TestToken::Native,
             deposit_amount,
         );
-        deposit_native::invoke_call(&mut deployment, &mut shielder_account, &deposit_calldata)
-            .unwrap();
+        deposit::invoke_call(&mut deployment, &mut shielder_account, &deposit_calldata).unwrap();
 
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,

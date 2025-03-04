@@ -1,5 +1,3 @@
-// TODO: rename this file to `deposit.rs`.
-
 use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
@@ -96,7 +94,7 @@ mod tests {
     };
 
     use crate::{
-        calls::deposit_native::{invoke_call, prepare_call},
+        calls::deposit::{invoke_call, prepare_call},
         deploy::{
             ACTOR_ADDRESS, ACTOR_INITIAL_ERC20_BALANCE, ACTOR_INITIAL_NATIVE_BALANCE,
             RECIPIENT_ADDRESS, RECIPIENT_INITIAL_ERC20_BALANCE, RECIPIENT_INITIAL_NATIVE_BALANCE,

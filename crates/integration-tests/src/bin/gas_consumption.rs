@@ -4,7 +4,7 @@ use std::{env, fs::File, io::Write};
 use alloy_primitives::U256;
 use integration_tests::{
     calls::{
-        deposit_native::{invoke_call as deposit_call, prepare_call as deposit_calldata},
+        deposit::{invoke_call as deposit_call, prepare_call as deposit_calldata},
         new_account::{invoke_call as new_account_call, prepare_call as new_account_calldata},
         withdraw_native::{
             invoke_call as withdraw_native_call, prepare_args,

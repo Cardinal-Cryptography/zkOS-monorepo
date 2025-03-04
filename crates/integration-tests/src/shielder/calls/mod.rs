@@ -1,3 +1,3 @@
-pub mod deposit_native;
+pub mod deposit;
 pub mod new_account;
 pub mod withdraw_native;
