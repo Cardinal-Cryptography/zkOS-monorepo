@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use alloy_primitives::{hex::FromHex, Address, U256};
+use alloy_primitives::U256;
 use shielder_account::secrets::{
     self,
     nonced::{derive_nullifier, derive_trapdoor},
@@ -34,11 +34,11 @@ pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn derive_id(private_key_hex: &str, chain_id: u64, token_address_hex: &str) -> Vec<u8> {
+pub fn derive_id(private_key_hex: &str, chain_id: u64, account_nonce: u64) -> Vec<u8> {
     let id_seed_u256 = secrets::derive_id(
         hex_to_u256(private_key_hex).unwrap(),
         chain_id,
-        Address::from_hex(token_address_hex).unwrap(),
+        account_nonce,
     );
     let id_seed_fr: Fr = u256_to_field(id_seed_u256);
     let on_curve_id = shielder_circuits::generate_user_id(id_seed_fr.to_bytes());
