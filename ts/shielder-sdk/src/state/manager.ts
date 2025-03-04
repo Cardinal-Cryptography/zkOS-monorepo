@@ -14,16 +14,19 @@ import { getTokenAddress } from "@/utils";
 export class StateManager {
   private storage: StorageInterface;
   private privateKey: Hex;
+  private chainId: bigint;
   private idPerToken: Map<`0x${string}`, Scalar> = new Map();
   private idHashPerToken: Map<`0x${string}`, Scalar> = new Map();
   private cryptoClient: CryptoClient;
 
   constructor(
     privateKey: Hex,
+    chainId: bigint,
     storage: StorageInterface,
     cryptoClient: CryptoClient
   ) {
     this.privateKey = privateKey;
+    this.chainId = chainId;
     this.storage = storage;
     this.cryptoClient = cryptoClient;
   }
@@ -90,6 +93,7 @@ export class StateManager {
     if (!id) {
       id = await this.cryptoClient.secretManager.deriveId(
         this.privateKey,
+        this.chainId,
         tokenAddress
       );
       this.idPerToken.set(tokenAddress, id);

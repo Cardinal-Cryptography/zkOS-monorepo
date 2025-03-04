@@ -3,9 +3,21 @@ use rand::{rngs::OsRng, Rng};
 use sha3::Digest;
 use shielder_circuits::consts::NONCE_UPPER_LIMIT;
 
-const NULLIFIER_LABEL: &[u8] = b"nullifier";
-const TRAPDOOR_LABEL: &[u8] = b"trapdoor";
-const ID_LABEL: &[u8] = b"id";
+enum Label {
+    Nullifier,
+    Trapdoor,
+    Id,
+}
+
+impl Label {
+    fn as_bytes(&self) -> &'static [u8] {
+        match self {
+            Label::Nullifier => b"nullifier",
+            Label::Trapdoor => b"trapdoor",
+            Label::Id => b"id",
+        }
+    }
+}
 
 // Copied from `src/bn256/fr.rs` in `halo2curves`. Unfortunately only a string constant is public
 // in `halo2curves`, and we need bytes for performance reasons.
@@ -16,34 +28,44 @@ const FIELD_MODULUS: U256 = U256::from_limbs([
     0x30644e72e131a029,
 ]);
 
-fn hash(id: U256, label: &[u8], payload: &[u8]) -> U256 {
-    let mut hasher = sha3::Keccak256::new();
-    hasher.update(id.to_be_bytes_vec());
-    hasher.update(label);
-    hasher.update(payload);
+fn finalize_hash(hasher: sha3::Keccak256) -> U256 {
     U256::from_be_slice(hasher.finalize().as_slice()).reduce_mod(FIELD_MODULUS)
 }
 
 /// Nonce-dependent derivation.
 pub mod nonced {
     use alloy_primitives::U256;
+    use sha3::Digest;
 
-    use super::{hash, NULLIFIER_LABEL, TRAPDOOR_LABEL};
+    use super::{finalize_hash, Label};
 
     /// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
     pub fn derive_nullifier(id: U256, nonce: u32) -> U256 {
-        hash(id, NULLIFIER_LABEL, &nonce.to_be_bytes())
+        let mut hasher = sha3::Keccak256::new();
+        hasher.update(id.to_be_bytes_vec());
+        hasher.update(Label::Nullifier.as_bytes());
+        hasher.update(nonce.to_be_bytes());
+        finalize_hash(hasher)
     }
 
     /// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
     pub fn derive_trapdoor(id: U256, nonce: u32) -> U256 {
-        hash(id, TRAPDOOR_LABEL, &nonce.to_be_bytes())
+        let mut hasher = sha3::Keccak256::new();
+        hasher.update(id.to_be_bytes_vec());
+        hasher.update(Label::Trapdoor.as_bytes());
+        hasher.update(nonce.to_be_bytes());
+        finalize_hash(hasher)
     }
 }
 
-/// Private-key-dependent derivation of a per-token private ID.
-pub fn derive_id(private_key: U256, token_address: Address) -> U256 {
-    hash(private_key, ID_LABEL, token_address.into_word().as_ref())
+/// Private-key-dependent derivation of a per-chain & per-token private ID.
+pub fn derive_id(private_key: U256, chain_id: u64, token_address: Address) -> U256 {
+    let mut hasher = sha3::Keccak256::new();
+    hasher.update(private_key.to_be_bytes_vec());
+    hasher.update(Label::Id.as_bytes());
+    hasher.update(chain_id.to_be_bytes());
+    hasher.update(token_address.into_word());
+    finalize_hash(hasher)
 }
 
 /// Random generation of a nonce for ID hiding.
@@ -110,15 +132,17 @@ mod tests {
     #[test]
     pub fn derive_id_is_correct() {
         // Calculated using online tools as the Keccak-256 of the concatenation of:
-        //   000000000000000000000000000000000000000000000000000000000000000f
+        //   0000000000000000000000000000000000000000000000000000000000000010
         //   6964 ("id")
+        //   000000000000001a
         //   000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
         let expected_before_modulo =
-            U256::from_str("0x4693e1cf4cbddec0d897bbf2aff897098f5f441732f85cb6442ded2159f3ce68")
+            U256::from_str("0x3c65a829ca81bc03ad42ab3ce088f2c3d29060ac119910879bc7b584e841896d")
                 .unwrap();
 
         let actual = derive_id(
-            U256::from(15),
+            U256::from(16),
+            26,
             address!("ffffffffffffffffffffffffffffffffffffffff"),
         );
 
