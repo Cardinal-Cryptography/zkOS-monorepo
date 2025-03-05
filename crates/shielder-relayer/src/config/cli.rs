@@ -152,7 +152,7 @@ pub struct CLIConfig {
             [{\"token\":\"Native\", \"pricing\":{\"DevMode\":{\"price\":\"12.3\"}}}] \
             \
             This example configure a token to use the `Usdc` price feed for its pricing: \
-            [{\"token\":\"Erc20(0x6b175474e89094c44da98b954eedeac495271d0f)\",\"pricing\":{\"ProdMode\":{\"price_feed_coin\":\"Usdc\"}}}]
+            [{\"token\":{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"},\"pricing\":{\"ProdMode\":{\"price_feed_coin\":\"Usdc\"}}}]
             "
     )]
     pub token_pricing: Option<String>,

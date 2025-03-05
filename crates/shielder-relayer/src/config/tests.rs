@@ -110,7 +110,7 @@ fn config_resolution() {
                     \"pricing\":{\"DevMode\":{\"price\":\"1.23\"}}
                 },
                 {
-                    \"address\":\"0x2222222222222222222222222222222222222222\",
+                    \"token\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
                     \"pricing\":{\"ProdMode\":{\"price_feed_coin\":\"Eth\"}}
                 }
             ]",
