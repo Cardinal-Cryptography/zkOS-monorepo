@@ -42,6 +42,8 @@ fn config_resolution() {
             },
         },
     ];
+    let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL;
+    let price_feed_validity = 15;
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -64,9 +66,9 @@ fn config_resolution() {
             dry_running,                   // from CLI
             relay_count_for_recharge,      // default
             fee_token_config,              // from env
+            price_feed_refresh_interval,   // default
+            price_feed_validity,           // from CLI
         },
-        price_feed_refresh_interval: DEFAULT_PRICE_FEED_REFRESH_INTERVAL,
-        price_feed_validity: DEFAULT_PRICE_FEED_VALIDITY,
     };
 
     // ---- CLI configuration. -----------------------------------------------------------------
@@ -87,7 +89,7 @@ fn config_resolution() {
         relay_gas: None,
         fee_token_config: None,
         price_feed_refresh_interval: None,
-        price_feed_validity: None,
+        price_feed_validity: Some(price_feed_validity),
     };
 
     // ---- Environment variables. -----------------------------------------------------------

@@ -2,7 +2,11 @@ use std::str::FromStr;
 
 use clap::Parser;
 use cli::CLIConfig;
-use defaults::{DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT, DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_PRICE_FEED_REFRESH_INTERVAL, DEFAULT_PRICE_FEED_VALIDITY, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE};
+use defaults::{
+    DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT,
+    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_PRICE_FEED_REFRESH_INTERVAL,
+    DEFAULT_PRICE_FEED_VALIDITY, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
+};
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -71,6 +75,8 @@ pub struct OperationalConfig {
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
     pub fee_token_config: Vec<FeeTokenConfig>,
+    pub price_feed_validity: u64,
+    pub price_feed_refresh_interval: u64,
 }
 
 /// Resolved configuration for the Shielder relayer. Order of precedence is:
@@ -85,8 +91,6 @@ pub struct ServerConfig {
     pub network: NetworkConfig,
     pub chain: ChainConfig,
     pub operations: OperationalConfig,
-    pub price_feed_validity: u64,
-    pub price_feed_refresh_interval: u64,
 }
 
 /// Resolves the configuration for the Shielder relayer using the command line arguments,
@@ -174,18 +178,17 @@ fn resolve_config_from_cli_config(
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
         fee_token_config,
+        price_feed_validity: resolve_value(
+            price_feed_validity,
+            "PRICE_FEED_VALIDITY_ENV",
+            Some(DEFAULT_PRICE_FEED_VALIDITY),
+        ),
+        price_feed_refresh_interval: resolve_value(
+            price_feed_refresh_interval,
+            "PRICE_FEED_REFRESH_INTERVAL_ENV",
+            Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL),
+        ),
     };
-
-    let price_feed_validity = resolve_value(
-        price_feed_validity,
-        "PRICE_FEED_VALIDITY_ENV",
-        Some(DEFAULT_PRICE_FEED_VALIDITY),
-    );
-    let price_feed_refresh_interval = resolve_value(
-        price_feed_refresh_interval,
-        "PRICE_FEED_REFRESH_INTERVAL_ENV",
-        Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL),
-    );
 
     ServerConfig {
         logging_format: resolve_value(
@@ -196,8 +199,6 @@ fn resolve_config_from_cli_config(
         network: network_config,
         chain: chain_config,
         operations: operational_config,
-        price_feed_validity,
-        price_feed_refresh_interval,
     }
 }
 

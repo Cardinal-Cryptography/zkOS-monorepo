@@ -64,8 +64,8 @@ async fn main() -> Result<()> {
 
     let signers = get_signer_info(&server_config.chain)?;
     let prices = Prices::new(
-        Duration::from_secs(server_config.price_feed_validity),
-        Duration::from_secs(server_config.price_feed_refresh_interval),
+        Duration::from_secs(server_config.operations.price_feed_validity),
+        Duration::from_secs(server_config.operations.price_feed_refresh_interval),
     );
 
     tokio::try_join!(
