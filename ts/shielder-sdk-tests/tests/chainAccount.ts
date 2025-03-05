@@ -1,6 +1,7 @@
 import {
   createNonceManager,
   createWalletClient,
+  createPublicClient as createPublicClientViem,
   defineChain,
   http,
   publicActions,
@@ -139,3 +140,9 @@ export const createAccount = (
 };
 
 export type SeededAccount = ReturnType<typeof createAccount>;
+
+export const createPublicClient = (rpcHttpEndpoint: string): PublicClient => {
+  return createPublicClientViem({
+    transport: http(rpcHttpEndpoint)
+  });
+};

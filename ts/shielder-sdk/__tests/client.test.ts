@@ -137,7 +137,7 @@ describe("ShielderClient", () => {
       client = createShielderClient(
         mockShielderSeedPrivateKey,
         mockChainId,
-        mockRpcHttpEndpoint,
+        {} as PublicClient,
         mockContractAddress,
         mockRelayerUrl,
         mockStorageInterface,
@@ -147,7 +147,6 @@ describe("ShielderClient", () => {
 
     it("should create ShielderClient with correct parameters", () => {
       expect(client).toBeInstanceOf(ShielderClient);
-      expect(createPublicClient).toHaveBeenCalledOnce();
       expect(Contract).toHaveBeenCalledWith(
         expect.anything(),
         mockContractAddress
@@ -172,7 +171,7 @@ describe("ShielderClient", () => {
       client = createShielderClient(
         mockShielderSeedPrivateKey,
         mockChainId,
-        mockRpcHttpEndpoint,
+        {} as PublicClient,
         mockContractAddress,
         mockRelayerUrl,
         mockStorageInterface,
