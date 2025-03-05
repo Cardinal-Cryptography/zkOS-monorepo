@@ -22,11 +22,11 @@ use crate::{
     AppState,
 };
 
+#[cfg(test)]
+mod fee_checking_tests;
 mod monitoring;
 mod request_trace;
 mod taskmaster;
-#[cfg(test)]
-mod fee_checking_tests;
 
 const TASK_QUEUE_SIZE: usize = 1024;
 const OPTIMISTIC_DRY_RUN_THRESHOLD: u32 = 32;
