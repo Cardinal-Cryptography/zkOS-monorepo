@@ -48,6 +48,65 @@ describe("AccountRegistry", () => {
     );
   });
 
+  describe("createEmptyAccountState", () => {
+    it("should create empty account state with next index", async () => {
+      // Mock the token and account index
+      const token = nativeToken();
+      const nextAccountIndex = 5;
+
+      // Mock the expected empty account state
+      const expectedEmptyState: AccountStateMerkleIndexed = {
+        id: Scalar.fromBigint(789n),
+        token,
+        nonce: 0n,
+        balance: 0n,
+        currentNote: Scalar.fromBigint(0n),
+        currentNoteIndex: 0n
+      };
+
+      // Setup the mocks
+      vi.mocked(storageManager.getNextAccountIndex).mockResolvedValue(
+        nextAccountIndex
+      );
+      vi.mocked(accountFactory.createEmptyAccountState).mockResolvedValue(
+        expectedEmptyState
+      );
+
+      // Call the method
+      const result = await accountRegistry.createEmptyAccountState(token);
+
+      // Verify the result
+      expect(result).toBe(expectedEmptyState);
+
+      // Verify the mocks were called correctly
+      expect(storageManager.getNextAccountIndex).toHaveBeenCalled();
+      expect(accountFactory.createEmptyAccountState).toHaveBeenCalledWith(
+        token,
+        nextAccountIndex
+      );
+    });
+
+    it("should handle errors when getNextAccountIndex fails", async () => {
+      // Mock the token
+      const token = nativeToken();
+
+      // Setup the mocks to throw an error
+      const mockError = new Error("Failed to get next account index");
+      vi.mocked(storageManager.getNextAccountIndex).mockRejectedValue(
+        mockError
+      );
+
+      // Call the method and expect it to throw
+      await expect(
+        accountRegistry.createEmptyAccountState(token)
+      ).rejects.toThrow(mockError);
+
+      // Verify the mocks were called correctly
+      expect(storageManager.getNextAccountIndex).toHaveBeenCalled();
+      expect(accountFactory.createEmptyAccountState).not.toHaveBeenCalled();
+    });
+  });
+
   describe("getAccountState", () => {
     it("should return existing account state when found", async () => {
       // Mock the token and account index
@@ -102,48 +161,59 @@ describe("AccountRegistry", () => {
       expect(accountFactory.createEmptyAccountState).not.toHaveBeenCalled();
     });
 
-    it("should create new empty account state when not found", async () => {
+    it("should return null when not found", async () => {
       // Mock the token and account index
       const token = erc20Token(testErc20Address);
-      const nextAccountIndex = 1;
-
-      // Mock the expected empty account state
-      const expectedEmptyState: AccountStateMerkleIndexed = {
-        id: Scalar.fromBigint(789n),
-        token,
-        nonce: 0n,
-        balance: 0n,
-        currentNote: Scalar.fromBigint(0n),
-        currentNoteIndex: 0n
-      };
 
       // Setup the mocks
       vi.mocked(storageManager.findAccountByTokenAddress).mockResolvedValue(
         null
       );
-      vi.mocked(storageManager.getNextAccountIndex).mockResolvedValue(
-        nextAccountIndex
-      );
-      vi.mocked(accountFactory.createEmptyAccountState).mockResolvedValue(
-        expectedEmptyState
-      );
-
       // Call the method
       const result = await accountRegistry.getAccountState(token);
 
       // Verify the result
-      expect(result).toBe(expectedEmptyState);
+      expect(result).toBe(null);
+    });
+
+    it("should handle errors when account is found but toAccountState fails", async () => {
+      // Mock the token and account index
+      const token = nativeToken();
+      const accountIndex = 0;
+
+      // Mock the account object that would be returned from storage
+      const mockAccountObject: AccountObject = {
+        idHash: 123n,
+        nonce: 1n,
+        balance: 100n,
+        currentNote: 456n,
+        currentNoteIndex: 2n,
+        tokenAddress: nativeTokenAddress
+      };
+
+      // Setup the mocks
+      vi.mocked(storageManager.findAccountByTokenAddress).mockResolvedValue({
+        accountIndex,
+        accountObject: mockAccountObject
+      });
+
+      const mockError = new Error("Failed to convert to account state");
+      vi.mocked(accountStateSerde.toAccountState).mockRejectedValue(mockError);
+
+      // Call the method and expect it to throw
+      await expect(accountRegistry.getAccountState(token)).rejects.toThrow(
+        mockError
+      );
 
       // Verify the mocks were called correctly
       expect(storageManager.findAccountByTokenAddress).toHaveBeenCalledWith(
-        testErc20Address
+        nativeTokenAddress
       );
-      expect(storageManager.getNextAccountIndex).toHaveBeenCalled();
-      expect(accountFactory.createEmptyAccountState).toHaveBeenCalledWith(
-        token,
-        nextAccountIndex
+      expect(accountStateSerde.toAccountState).toHaveBeenCalledWith(
+        mockAccountObject,
+        accountIndex,
+        token
       );
-      expect(accountStateSerde.toAccountState).not.toHaveBeenCalled();
     });
   });
 

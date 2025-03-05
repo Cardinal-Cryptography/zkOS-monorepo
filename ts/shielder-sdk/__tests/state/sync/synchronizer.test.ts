@@ -93,6 +93,68 @@ describe("StateSynchronizer", () => {
   let syncSingleAccountSpy: any;
 
   describe("syncSingleAccount", () => {
+    it("should create empty account state when account not found", async () => {
+      // Mock state transitions
+      const emptyState: AccountStateMerkleIndexed = {
+        id: Scalar.fromBigint(1n),
+        token: nativeToken(),
+        nonce: 0n,
+        balance: 0n,
+        currentNote: Scalar.fromBigint(0n),
+        currentNoteIndex: 0n
+      };
+
+      const newState: AccountStateMerkleIndexed = {
+        ...emptyState,
+        nonce: 1n,
+        balance: 50n,
+        currentNote: Scalar.fromBigint(100n),
+        currentNoteIndex: 1n
+      };
+
+      // Mock transaction
+      const transaction: ShielderTransaction = {
+        type: "Deposit",
+        amount: 50n,
+        txHash: "0x1",
+        block: 1n,
+        token: nativeToken()
+      };
+
+      // Setup mock behavior
+      mockGetAccountState.mockResolvedValue(null);
+      mockAccountRegistry.createEmptyAccountState = vi
+        .fn()
+        .mockResolvedValue(emptyState);
+      mockFindStateTransition
+        .mockResolvedValueOnce({ newState, transaction })
+        .mockResolvedValueOnce(null);
+
+      // Call the method
+      await stateSynchronizer.syncSingleAccount(nativeToken());
+
+      // Verify singleTokenMutex was used
+      expect(mockSingleTokenMutex.runExclusive).toHaveBeenCalledTimes(1);
+
+      // Verify AccountRegistry was called correctly
+      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockAccountRegistry.createEmptyAccountState).toHaveBeenCalledWith(
+        nativeToken()
+      );
+      expect(mockUpdateAccountState).toHaveBeenCalledWith(
+        nativeToken(),
+        newState
+      );
+
+      // Verify StateTransitionFinder was called correctly
+      expect(mockFindStateTransition).toHaveBeenCalledTimes(2);
+      expect(mockFindStateTransition).toHaveBeenNthCalledWith(1, emptyState);
+      expect(mockFindStateTransition).toHaveBeenNthCalledWith(2, newState);
+
+      // Verify callback was called
+      expect(mockSyncCallback).toHaveBeenCalledWith(transaction);
+    });
+
     it("should sync single state transition", async () => {
       // Mock state transitions
       const newState: AccountStateMerkleIndexed = {

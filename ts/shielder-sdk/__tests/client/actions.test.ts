@@ -55,7 +55,8 @@ describe("ShielderActions", () => {
 
     // Setup mocks
     mockAccountRegistry = {
-      getAccountState: vitest.fn()
+      getAccountState: vitest.fn(),
+      createEmptyAccountState: vitest.fn()
     } as unknown as Mocked<AccountRegistry>;
 
     mockStateSynchronizer = {
@@ -149,10 +150,32 @@ describe("ShielderActions", () => {
   });
 
   describe("shield", () => {
+    it("should throw error when account not found and createEmptyAccountState fails", async () => {
+      // Setup mock for new account
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+      const mockError = new Error("Failed to create empty account state");
+      mockAccountRegistry.createEmptyAccountState.mockRejectedValue(mockError);
+
+      await expect(
+        actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
+      ).rejects.toThrow(mockError);
+
+      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
+        mockToken
+      );
+      expect(mockAccountRegistry.createEmptyAccountState).toHaveBeenCalledWith(
+        mockToken
+      );
+      expect(mockNewAccountAction.generateCalldata).not.toHaveBeenCalled();
+    });
+
     it("should create a new account when nonce is 0", async () => {
       // Setup mock for new account
       mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
+        mockAccountState
+      );
 
       const mockCalldata: NewAccountCalldata = {
         calldata: {
@@ -283,7 +306,10 @@ describe("ShielderActions", () => {
       const mockError = new Error("Failed to generate calldata");
       mockNewAccountAction.generateCalldata.mockRejectedValue(mockError);
       mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
+        mockAccountState
+      );
 
       await expect(
         actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
@@ -325,7 +351,10 @@ describe("ShielderActions", () => {
       mockNewAccountAction.generateCalldata.mockResolvedValue(mockCalldata);
       mockNewAccountAction.sendCalldata.mockRejectedValue(mockError);
       mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
+        mockAccountState
+      );
 
       await expect(
         actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
@@ -397,7 +426,10 @@ describe("ShielderActions", () => {
       const mockError = new OutdatedSdkError("Outdated SDK version");
       mockNewAccountAction.generateCalldata.mockRejectedValue(mockError);
       mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
+        mockAccountState
+      );
 
       await expect(
         actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
@@ -412,6 +444,41 @@ describe("ShielderActions", () => {
   });
 
   describe("withdraw", () => {
+    it("should throw error when account not found", async () => {
+      // Setup mock for account not found
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+
+      await expect(
+        actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress)
+      ).rejects.toThrow("Account not found");
+
+      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
+        mockToken
+      );
+      expect(mockRelayer.address).not.toHaveBeenCalled();
+      expect(mockWithdrawAction.generateCalldata).not.toHaveBeenCalled();
+    });
+
+    it("should throw error when withdrawManual is called with account not found", async () => {
+      // Setup mock for account not found
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+
+      await expect(
+        actions.withdrawManual(
+          mockToken,
+          mockAmount,
+          mockAddress,
+          mockSendTransaction,
+          mockFrom
+        )
+      ).rejects.toThrow("Account not found");
+
+      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
+        mockToken
+      );
+      expect(mockWithdrawAction.generateCalldata).not.toHaveBeenCalled();
+    });
+
     it("should withdraw funds using relayer", async () => {
       const mockCalldata: WithdrawCalldata = {
         calldata: {
