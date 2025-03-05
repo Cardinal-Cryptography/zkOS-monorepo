@@ -55,9 +55,9 @@ impl Prices {
     /// Note that you should realistically set `validity` to at least 5 or 10 minutes - it seems
     /// the API we are using (DIA) updates about 2 or 3 minutes or so.
     pub fn new(validity: Duration, refresh_interval: Duration) -> Self {
-        let inner = Default::default();
         let validity =
             time::Duration::new(validity.as_secs() as i64, validity.subsec_nanos() as i32);
+        let inner = Default::default();
 
         Self {
             validity,
@@ -100,12 +100,14 @@ impl Prices {
 
     #[cfg(test)]
     pub fn set_price(&self, coin: Coin, price: Decimal) {
-        let mut inner = self.inner.lock().expect("Mutex poisoned");
         let price = Price {
             price,
             time: OffsetDateTime::now_utc(),
         };
-        inner.insert(coin, price);
+        self.inner
+            .lock()
+            .expect("Mutex poisoned")
+            .insert(coin, price);
     }
 }
 
