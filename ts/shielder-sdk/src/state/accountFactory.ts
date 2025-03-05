@@ -2,7 +2,6 @@ import { Token } from "@/types";
 import { IdManager } from "./idManager";
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountStateMerkleIndexed } from "./types";
-import { getAddressByToken } from "@/utils";
 
 /**
  * Creates new account states and objects
@@ -14,10 +13,10 @@ export class AccountFactory {
    * Creates an empty AccountState for a given token and account index
    */
   async createEmptyAccountState(
-    token: Token
+    token: Token,
+    accountIndex: number
   ): Promise<AccountStateMerkleIndexed> {
-    const tokenAddress = getAddressByToken(token);
-    const id = await this.idManager.getId(tokenAddress);
+    const id = await this.idManager.getId(accountIndex);
 
     return {
       id,

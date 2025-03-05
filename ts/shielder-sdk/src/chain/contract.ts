@@ -48,6 +48,11 @@ export type NoteEvent = {
   block: bigint;
 };
 
+export type NewAccountEvent = {
+  idHash: bigint;
+  tokenAddress: Address;
+};
+
 const getShielderContract = (
   account: PublicClient,
   contractAddress: Address
@@ -146,6 +151,7 @@ export type IContract = {
   ) => Promise<`0x${string}`>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
   getNoteEventsFromBlock: (block: bigint) => Promise<NoteEvent[]>;
+  getNewAccountEventsFromBlock: (block: bigint) => Promise<NewAccountEvent[]>;
 };
 
 export class Contract implements IContract {
@@ -524,5 +530,22 @@ export class Contract implements IContract {
       } as NoteEvent;
     });
     return mergedIndices;
+  };
+
+  getNewAccountEventsFromBlock = async (
+    block: bigint
+  ): Promise<NewAccountEvent[]> => {
+    const fromBlock = block;
+    const toBlock = block;
+    const newAccountEvents = await this.contract.getEvents.NewAccount({
+      fromBlock,
+      toBlock
+    });
+    return newAccountEvents.map((event) => {
+      return {
+        idHash: event.args.idHash!,
+        tokenAddress: event.args.tokenAddress!
+      };
+    });
   };
 }

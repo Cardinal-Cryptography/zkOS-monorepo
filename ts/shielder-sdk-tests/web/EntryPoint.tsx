@@ -2,12 +2,11 @@ import { useEffect } from "react";
 import {
   nativeToken,
   createShielderClient,
-  type InjectedStorageInterface,
   type NativeToken,
-  type ShielderCallbacks,
   type ShielderClient,
   type ERC20Token,
-  erc20Token
+  erc20Token,
+  type ShielderClientConfig
 } from "@cardinal-cryptography/shielder-sdk";
 import type { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
@@ -17,7 +16,6 @@ import {
   type ShielderTestFixture,
   setupShielderTest
 } from "./fixtures/shielderTest/setup";
-import type { PublicClient } from "viem";
 
 import newAccountParamsUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/new_account/params.bin?url";
 import newAccountPkUrl from "@cardinal-cryptography/shielder-sdk-crypto-wasm/keys/new_account/pk.bin?url";
@@ -39,16 +37,7 @@ declare global {
     };
 
     shielder: {
-      createShielderClient: (
-        shielderSeedPrivateKey: `0x${string}`,
-        chainId: number,
-        publicClient: PublicClient,
-        contractAddress: `0x${string}`,
-        relayerUrl: string,
-        storage: InjectedStorageInterface,
-        cryptoClient: CryptoClient,
-        callbacks?: ShielderCallbacks
-      ) => ShielderClient;
+      createShielderClient: (config: ShielderClientConfig) => ShielderClient;
       nativeToken: () => NativeToken;
       erc20Token: (address: `0x${string}`) => ERC20Token;
     };
