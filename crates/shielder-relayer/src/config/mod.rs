@@ -2,10 +2,7 @@ use std::str::FromStr;
 
 use clap::Parser;
 use cli::CLIConfig;
-use defaults::{
-    DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT,
-    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
-};
+use defaults::{DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT, DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_PRICE_FEED_REFRESH_INTERVAL, DEFAULT_PRICE_FEED_VALIDITY, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE};
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -27,10 +24,6 @@ mod defaults;
 mod enums;
 #[cfg(test)]
 mod tests;
-
-const ONE_MINUTE_IN_SECONDS: u64 = 60;
-pub const DEFAULT_PRICE_FEED_VALIDITY: u64 = 10 * ONE_MINUTE_IN_SECONDS;
-pub const DEFAULT_PRICE_FEED_REFRESH_INTERVAL: u64 = ONE_MINUTE_IN_SECONDS;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct NetworkConfig {
