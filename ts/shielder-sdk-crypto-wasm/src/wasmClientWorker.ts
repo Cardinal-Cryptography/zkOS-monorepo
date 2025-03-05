@@ -1,6 +1,7 @@
 import { expose, wrap } from "comlink";
 import { WasmClient } from "./wasmClient";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { CircuitParamsPkBuffer } from "./types";
 
 // Create worker instance
 const wasmClientWorker = new WasmClient();
@@ -38,12 +39,21 @@ expose(exposed);
  * Pass `wasm_url` only if you need the special setup (such as vite-patched distribution).
  *
  * @param threads - The number of threads to use (1 for single-threaded, >1 for multi-threaded).
+ * @param new_account_params_buf - Uint8Array containing the new account params binary data
+ * @param new_account_pk_buf - Uint8Array containing the new account pk binary data
+ * @param deposit_params_buf - Uint8Array containing the deposit params binary data
+ * @param deposit_pk_buf - Uint8Array containing the deposit pk binary data
+ * @param withdraw_params_buf - Uint8Array containing the withdraw params binary data
+ * @param withdraw_pk_buf - Uint8Array containing the withdraw pk binary data
  * @param wasm_url - Optional URL to the WASM binary.
  * @returns A promise that resolves to a Comlink-wrapped worker implementing CryptoClient.
  * @throws Will throw an error if the worker initialization fails.
  */
 export const initWasmWorker = async (
   threads: number,
+  newAccountBuf: CircuitParamsPkBuffer,
+  depositBuf: CircuitParamsPkBuffer,
+  withdrawBuf: CircuitParamsPkBuffer,
   wasm_url?: string
 ): Promise<CryptoClient> => {
   // Create a new worker instance
@@ -60,7 +70,14 @@ export const initWasmWorker = async (
   try {
     // Initialize with single or multi-threaded mode
     const caller = threads === 1 ? "web_singlethreaded" : "web_multithreaded";
-    await wrappedWorker.init(caller, threads, wasm_url);
+    await wrappedWorker.init(
+      caller,
+      threads,
+      newAccountBuf,
+      depositBuf,
+      withdrawBuf,
+      wasm_url
+    );
     return wrappedWorker;
   } catch (error) {
     console.error("Failed to initialize WASM worker:", error);

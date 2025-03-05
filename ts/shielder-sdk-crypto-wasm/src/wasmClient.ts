@@ -8,6 +8,7 @@ import { SecretGenerator } from "@/secretGenerator";
 import { NoteTreeConfig } from "@/noteTreeConfig";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Converter } from "@/conversion";
+import { CircuitParamsPkBuffer } from "./types";
 
 export type Caller = "web_singlethreaded" | "web_multithreaded";
 
@@ -35,6 +36,9 @@ export class WasmClient implements CryptoClient {
   async init(
     caller: Caller,
     threads: number,
+    newAccountBuf: CircuitParamsPkBuffer,
+    depositBuf: CircuitParamsPkBuffer,
+    withdrawBuf: CircuitParamsPkBuffer,
     wasm_url?: string
   ): Promise<void> {
     const time = Date.now();
@@ -47,9 +51,9 @@ export class WasmClient implements CryptoClient {
     } else {
       throw new Error("Invalid caller");
     }
-    this.newAccountCircuit.init(caller);
-    this.depositCircuit.init(caller);
-    this.withdrawCircuit.init(caller);
+    this.newAccountCircuit.init(caller, newAccountBuf);
+    this.depositCircuit.init(caller, depositBuf);
+    this.withdrawCircuit.init(caller, withdrawBuf);
     this.hasher.init(caller);
     this.secretManager.init(caller);
     this.noteTreeConfig.init(caller);

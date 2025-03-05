@@ -43,6 +43,7 @@ export interface SecretManager {
   getSecrets(id: Scalar, nonce: number): Promise<ShielderActionSecrets<Scalar>>;
   deriveId(
     privateKey: `0x${string}`,
+    chainId: bigint,
     tokenAddress: `0x${string}`
   ): Promise<Scalar>;
 }

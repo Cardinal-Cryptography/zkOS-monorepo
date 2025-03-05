@@ -54,9 +54,11 @@ jobs:
     steps:
       - uses: geekyeggo/delete-artifact@v5
         with:
-          name: wasm-pkg
+          name: |
+            wasm-pkg
+            proving-keys-pkg
 
-  measure-gas-usage:
+  measure-gas-usage-and-verifier-code-size:
     name: Measure gas usage
-    uses: ./.github/workflows/_measure-gas.yml
+    uses: ./.github/workflows/_measure-gas-and-contract-size.yml
     secrets: inherit
