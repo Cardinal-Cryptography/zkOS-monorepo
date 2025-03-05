@@ -41,7 +41,7 @@ fn erc20_fee_too_low() {
     app_state.total_fee = U256::from(100);
     app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
     app_state.prices.set_price(Coin::Azero, Decimal::new(4, 0));
-    app_state.fee_token_config = vec![FeeTokenConfig {
+    app_state.token_pricing = vec![TokenPricingConfig {
         address: coin_address,
         pricing: Pricing::ProdMode {
             price_feed_coin: Coin::Azero,
@@ -64,7 +64,7 @@ fn erc20_fee_ok() {
     app_state.total_fee = U256::from(100);
     app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
     app_state.prices.set_price(Coin::Azero, Decimal::new(4, 0));
-    app_state.fee_token_config = vec![FeeTokenConfig {
+    app_state.token_pricing = vec![TokenPricingConfig {
         address: coin_address,
         pricing: Pricing::ProdMode {
             price_feed_coin: Coin::Azero,
@@ -101,7 +101,7 @@ fn erc20_fee_dev_mode() {
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
     app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
-    app_state.fee_token_config = vec![FeeTokenConfig {
+    app_state.token_pricing = vec![TokenPricingConfig {
         address: coin_address,
         pricing: Pricing::DevMode {
             price: Decimal::new(4, 0),
@@ -122,7 +122,7 @@ fn erc20_fee_prod_mode_price_feed_error() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
-    app_state.fee_token_config = vec![FeeTokenConfig {
+    app_state.token_pricing = vec![TokenPricingConfig {
         address: coin_address,
         pricing: Pricing::ProdMode {
             price_feed_coin: Coin::Azero,
@@ -148,7 +148,7 @@ fn app_state() -> AppState {
         node_rpc_url: "http://localhost:8545".to_string(),
         balances: Default::default(),
         fee_destination: address!("1111111111111111111111111111111111111111"),
-        fee_token_config: vec![],
+        token_pricing: vec![],
         signer_addresses: vec![],
         relay_gas: 0,
     }

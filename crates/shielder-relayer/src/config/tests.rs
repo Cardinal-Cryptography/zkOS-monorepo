@@ -29,13 +29,13 @@ fn config_resolution() {
     let total_fee = DEFAULT_TOTAL_FEE.to_string();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let fee_token_config = vec![
-        FeeTokenConfig {
+        TokenPricingConfig {
             address: address!("1111111111111111111111111111111111111111"),
             pricing: Pricing::DevMode {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
-        FeeTokenConfig {
+        TokenPricingConfig {
             address: address!("2222222222222222222222222222222222222222"),
             pricing: Pricing::ProdMode {
                 price_feed_coin: Coin::Eth,

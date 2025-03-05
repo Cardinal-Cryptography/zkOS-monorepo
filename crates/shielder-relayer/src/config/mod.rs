@@ -63,7 +63,7 @@ pub enum Pricing {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct FeeTokenConfig {
+pub struct TokenPricingConfig {
     pub address: Address,
     pub pricing: Pricing,
 }
@@ -74,7 +74,7 @@ pub struct OperationalConfig {
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
-    pub fee_token_config: Vec<FeeTokenConfig>,
+    pub fee_token_config: Vec<TokenPricingConfig>,
     pub price_feed_validity: u64,
     pub price_feed_refresh_interval: u64,
 }
