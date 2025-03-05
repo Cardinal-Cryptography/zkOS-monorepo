@@ -112,7 +112,7 @@ impl Prices {
 /// Start a price feed that updates the prices in the given `Prices` instance.
 pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
     loop {
-        prices.update().await.unwrap();
+        prices.update().await?;
         tokio::time::sleep(prices.refresh_interval).await;
     }
 }
