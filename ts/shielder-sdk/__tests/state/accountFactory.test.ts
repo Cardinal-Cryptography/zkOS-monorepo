@@ -27,13 +27,17 @@ describe("AccountFactory", () => {
   describe("createEmptyAccountState", () => {
     it("should create an empty account state for native token", async () => {
       const token = nativeToken();
-      const state = await accountFactory.createEmptyAccountState(token);
+      const accountIndex = 0;
+      const state = await accountFactory.createEmptyAccountState(
+        token,
+        accountIndex
+      );
 
       // Verify the token
       expect(state.token).toEqual(token);
 
       // Verify the ID
-      const expectedId = await idManager.getId(nativeTokenAddress);
+      const expectedId = await idManager.getId(accountIndex);
       expect(scalarsEqual(state.id, expectedId)).toBe(true);
 
       // Verify other properties
@@ -45,13 +49,17 @@ describe("AccountFactory", () => {
 
     it("should create an empty account state for ERC20 token", async () => {
       const token = erc20Token(testErc20Address);
-      const state = await accountFactory.createEmptyAccountState(token);
+      const accountIndex = 0;
+      const state = await accountFactory.createEmptyAccountState(
+        token,
+        accountIndex
+      );
 
       // Verify the token
       expect(state.token).toEqual(token);
 
       // Verify the ID
-      const expectedId = await idManager.getId(testErc20Address);
+      const expectedId = await idManager.getId(accountIndex);
       expect(scalarsEqual(state.id, expectedId)).toBe(true);
 
       // Verify other properties
@@ -67,10 +75,11 @@ describe("AccountFactory", () => {
 
       // Create an empty account state
       const token = nativeToken();
-      await accountFactory.createEmptyAccountState(token);
+      const accountIndex = 0;
+      await accountFactory.createEmptyAccountState(token, accountIndex);
 
-      // Verify that getId was called with the correct token address
-      expect(getIdSpy).toHaveBeenCalledWith(nativeTokenAddress);
+      // Verify that getId was called with the correct account index
+      expect(getIdSpy).toHaveBeenCalledWith(accountIndex);
     });
   });
 });

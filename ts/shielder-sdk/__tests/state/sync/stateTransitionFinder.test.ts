@@ -3,10 +3,7 @@ import { StateTransitionFinder } from "../../../src/state/sync/stateTransitionFi
 import { IContract, NoteEvent } from "../../../src/chain/contract";
 import { StateEventsFilter } from "../../../src/state/events";
 import { MockedCryptoClient } from "../../helpers";
-import {
-  AccountStateMerkleIndexed,
-  ShielderTransaction
-} from "../../../src/state/types";
+import { AccountStateMerkleIndexed } from "../../../src/state/types";
 import { nativeToken } from "../../../src/utils";
 import {
   Scalar,
