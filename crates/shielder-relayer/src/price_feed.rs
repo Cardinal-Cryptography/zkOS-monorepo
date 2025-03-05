@@ -81,13 +81,6 @@ impl Prices {
         })
     }
 
-    /// Get the relative price of two coins or `None` if the price of one of them is not available or outdated.
-    pub fn relative_price(&self, coin1: Coin, coin2: Coin) -> Option<Decimal> {
-        let price1 = self.price(coin1)?;
-        let price2 = self.price(coin2)?;
-        Some(price1 / price2)
-    }
-
     async fn update(&self) -> Result<(), Error> {
         for coin in Coin::iter() {
             let price = fetch_price(coin).await?;

@@ -15,12 +15,9 @@ use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
-    config::{
-        Pricing::{self},
-        TokenPricingConfig,
-    },
+    config::Pricing,
     metrics::WITHDRAW_FAILURE,
-    price_feed::{Coin, Prices},
+    price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
     AppState,
 };
@@ -140,45 +137,79 @@ fn check_fee(
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    let token_config = &app_state.token_pricing;
-    match &query.fee_token {
-        FeeToken::ERC20(erc20) => match token_config.iter().find(|x| x.token == *erc20) {
-            None => {
-                request_trace.record_incorrect_token_fee(erc20);
-                return Err(bad_request(&format!(
-                    "Fee token {erc20} is not allowed. Only native and {token_config:?} tokens are supported."
-            )));
-            }
-            Some(TokenPricingConfig { pricing, .. }) => {
-                let price =
-                    price_relative_to_native(&app_state.prices, pricing).ok_or_else(|| {
-                        temporary_failure("Verification failed temporarily, try again later.")
-                    })?;
-                let coin_fee = mul_price(query.fee_amount, price)?;
-
-                if add_fee_error_margin(coin_fee) < app_state.total_fee {
-                    return Err(bad_request("Insufficient fee."));
-                }
-            }
-        },
+    match query.fee_token {
         FeeToken::Native => {
             // todo: discuss if we want to prevent users from spending too much
             if query.fee_amount < app_state.total_fee {
+                request_trace.record_insufficient_fee(query.fee_amount);
                 return Err(bad_request("Insufficient fee."));
             }
         }
+        FeeToken::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
     }
-
     Ok(())
 }
 
-fn price_relative_to_native(prices: &Prices, pricing: &Pricing) -> Option<Decimal> {
-    match pricing {
-        Pricing::ProdMode { price_feed_coin } => {
-            prices.relative_price(Coin::Azero, *price_feed_coin)
+fn check_erc20_fee(
+    app_state: &AppState,
+    fee_token_address: Address,
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    let fee_token_pricing = app_state
+        .token_pricing
+        .iter()
+        .find(|x| x.token == FeeToken::ERC20(fee_token_address))
+        .map(|p| &p.pricing);
+
+    let native_pricing = app_state
+        .token_pricing
+        .iter()
+        .find(|x| x.token == FeeToken::Native)
+        .map(|p| &p.pricing);
+
+    match (fee_token_pricing, native_pricing) {
+        (None, _) => {
+            request_trace.record_incorrect_token_fee(fee_token_address);
+            Err(bad_request(&format!(
+                "Fee token {fee_token_address} is not allowed."
+            )))
         }
-        Pricing::DevMode { price } => prices.price(Coin::Azero).map(|native| price / native),
+        (Some(_), None) => {
+            error!("MISSING NATIVE TOKEN PRICING!");
+            Err(server_error("Server is missing native token pricing."))
+        }
+        (Some(fee_token_pricing), Some(native_pricing)) => {
+            let ratio =
+                price_relative_to_native(&app_state.prices, fee_token_pricing, native_pricing)
+                    .ok_or_else(|| {
+                        temporary_failure("Verification failed temporarily, try again later.")
+                    })?;
+
+            let expected_fee = mul_price(query.fee_amount, ratio)?;
+
+            if add_fee_error_margin(expected_fee) < app_state.total_fee {
+                request_trace.record_insufficient_fee(query.fee_amount);
+                return Err(bad_request("Insufficient fee."));
+            }
+            Ok(())
+        }
     }
+}
+
+fn price_relative_to_native(
+    prices: &Prices,
+    fee_token_pricing: &Pricing,
+    native_pricing: &Pricing,
+) -> Option<Decimal> {
+    let resolve_price = |pricing: &Pricing| match pricing {
+        Pricing::DevMode { price } => Some(*price),
+        Pricing::ProdMode { price_feed_coin } => prices.price(*price_feed_coin),
+    };
+    let fee_token_price = resolve_price(fee_token_pricing)?;
+    let native_price = resolve_price(native_pricing)?;
+
+    Some(fee_token_price / native_price)
 }
 
 fn mul_price(a: U256, b: Decimal) -> Result<U256, Response> {

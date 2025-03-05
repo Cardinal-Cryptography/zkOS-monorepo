@@ -73,10 +73,16 @@ impl RequestTrace {
         self.finish("❌ VERSION FAILURE");
     }
 
-    pub fn record_incorrect_token_fee(&mut self, requested_token: &Address) {
+    pub fn record_incorrect_token_fee(&mut self, requested_token: Address) {
         metrics::counter!(WITHDRAW_FAILURE).increment(1);
         error!("Requested token fee is not supported: {requested_token}");
         self.finish("❌ FEE TOKEN FAILURE");
+    }
+
+    pub fn record_insufficient_fee(&mut self, fee_amount: U256) {
+        metrics::counter!(WITHDRAW_FAILURE).increment(1);
+        error!("Fee too low: {fee_amount}");
+        self.finish("❌ FEE AMOUNT FAILURE");
     }
 
     pub fn record_failure(&mut self, err: ShielderContractError) {
