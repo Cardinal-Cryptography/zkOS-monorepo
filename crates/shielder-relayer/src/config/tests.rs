@@ -30,13 +30,13 @@ fn config_resolution() {
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let fee_token_config = vec![
         TokenPricingConfig {
-            token: address!("1111111111111111111111111111111111111111"),
+            token: FeeToken::Native,
             pricing: Pricing::DevMode {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
         TokenPricingConfig {
-            token: address!("2222222222222222222222222222222222222222"),
+            token: FeeToken::ERC20(address!("2222222222222222222222222222222222222222")),
             pricing: Pricing::ProdMode {
                 price_feed_coin: Coin::Eth,
             },
@@ -103,10 +103,10 @@ fn config_resolution() {
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
         std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
         std::env::set_var(
-            FEE_TOKENS_ENV,
+            TOKEN_PRICING_ENV,
             "[
                 {
-                    \"address\":\"0x1111111111111111111111111111111111111111\",
+                    \"token\":\"Native\",
                     \"pricing\":{\"DevMode\":{\"price\":\"1.23\"}}
                 },
                 {
