@@ -67,7 +67,7 @@ impl QuoteFeeResponse {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct RelayQuery {
     pub expected_contract_version: FixedBytes<3>,
     pub id_hiding: U256,
@@ -83,8 +83,9 @@ pub struct RelayQuery {
     pub mac_commitment: U256,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub enum FeeToken {
+    #[default]
     Native,
     ERC20(Address),
 }

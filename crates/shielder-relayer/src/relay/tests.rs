@@ -1,7 +1,6 @@
 use alloy_primitives::address;
-use alloy_provider::RootProvider;
 use assert2::assert;
-use shielder_contract::ShielderUser;
+use shielder_contract::{NoProvider, ShielderUser};
 use tokio::{sync::mpsc::channel, time::Duration};
 
 use super::*;
@@ -11,7 +10,7 @@ use crate::{config::DryRunning, price_feed::Prices, relay::taskmaster::Taskmaste
 fn test_native_fee_too_low() {
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(80);
     query.fee_token = FeeToken::Native;
     let mut request_trace = RequestTrace::new(&query);
@@ -25,7 +24,7 @@ fn test_native_fee_too_low() {
 fn test_native_fee_ok() {
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(100);
     query.fee_token = FeeToken::Native;
     let mut request_trace = RequestTrace::new(&query);
@@ -48,7 +47,7 @@ fn test_erc20_fee_too_low() {
             price_feed_coin: Coin::Azero,
         },
     }];
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(160);
     query.fee_token = FeeToken::ERC20(coin_address);
     let mut request_trace = RequestTrace::new(&query);
@@ -71,7 +70,7 @@ fn test_erc20_fee_ok() {
             price_feed_coin: Coin::Azero,
         },
     }];
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(190);
     query.fee_token = FeeToken::ERC20(coin_address);
     let mut request_trace = RequestTrace::new(&query);
@@ -86,7 +85,7 @@ fn test_erc20_fee_not_allowed() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(100);
     query.fee_token = FeeToken::ERC20(coin_address);
     let mut request_trace = RequestTrace::new(&query);
@@ -108,7 +107,7 @@ fn test_erc20_fee_dev_mode() {
             price: Decimal::new(4, 0),
         },
     }];
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(200);
     query.fee_token = FeeToken::ERC20(coin_address);
     let mut request_trace = RequestTrace::new(&query);
@@ -129,7 +128,7 @@ fn test_erc20_fee_prod_mode_price_feed_error() {
             price_feed_coin: Coin::Azero,
         },
     }];
-    let mut query = relay_query();
+    let mut query = RelayQuery::default();
     query.fee_amount = U256::from(200);
     query.fee_token = FeeToken::ERC20(coin_address);
     let mut request_trace = RequestTrace::new(&query);
@@ -141,7 +140,7 @@ fn test_erc20_fee_prod_mode_price_feed_error() {
 
 fn app_state() -> AppState {
     let (send, _) = channel::<Address>(10);
-    let users: Vec<ShielderUser<RootProvider<_, _>>> = vec![];
+    let users: Vec<ShielderUser<NoProvider>> = vec![];
     AppState {
         total_fee: U256::from(100),
         prices: Prices::new(Duration::from_secs(10), Duration::from_secs(1)),
@@ -152,22 +151,5 @@ fn app_state() -> AppState {
         fee_token_config: vec![],
         signer_addresses: vec![],
         relay_gas: 0,
-    }
-}
-
-fn relay_query() -> RelayQuery {
-    RelayQuery {
-        expected_contract_version: Default::default(),
-        id_hiding: U256::from(0),
-        amount: U256::from(0),
-        withdraw_address: Default::default(),
-        merkle_root: U256::from(0),
-        nullifier_hash: U256::from(0),
-        new_note: U256::from(0),
-        proof: Default::default(),
-        fee_token: FeeToken::Native,
-        fee_amount: U256::from(0),
-        mac_salt: U256::from(0),
-        mac_commitment: U256::from(0),
     }
 }
