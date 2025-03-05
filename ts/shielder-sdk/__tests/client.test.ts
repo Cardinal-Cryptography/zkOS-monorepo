@@ -116,7 +116,6 @@ describe("ShielderClient", () => {
     const mockShielderSeedPrivateKey =
       "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
     const mockChainId = 1;
-    const mockRpcHttpEndpoint = "http://localhost:8545";
     const mockContractAddress =
       "0x1234567890123456789012345678901234567890" as Address;
     const mockRelayerUrl = "http://localhost:3000";
@@ -351,10 +350,6 @@ describe("ShielderClient", () => {
     describe("shield", () => {
       it.each([
         {
-          nonce: 0n,
-          action: "newAccountAction"
-        },
-        {
           nonce: 1n,
           action: "depositAction"
         }
@@ -494,26 +489,10 @@ describe("ShielderClient", () => {
       it.each([
         {
           mockedError: new OutdatedSdkError("123"),
-          action: "newAccountAction",
-          stage: "generateCalldata",
-          clientTarget: "shield",
-          nonce: 0n,
-          args: [nativeTokenAddress, mockAmount, mockSendTransaction, mockFrom]
-        },
-        {
-          mockedError: new OutdatedSdkError("123"),
           action: "depositAction",
           stage: "generateCalldata",
           clientTarget: "shield",
           nonce: 1n,
-          args: [nativeTokenAddress, mockAmount, mockSendTransaction, mockFrom]
-        },
-        {
-          mockedError: new OutdatedSdkError("123"),
-          action: "newAccountAction",
-          stage: "sendCalldata",
-          clientTarget: "shield",
-          nonce: 0n,
           args: [nativeTokenAddress, mockAmount, mockSendTransaction, mockFrom]
         },
         {

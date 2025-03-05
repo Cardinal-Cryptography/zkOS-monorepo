@@ -1,4 +1,4 @@
-import { Calldata } from "@/actions";
+import { Calldata } from "@/actions/types";
 import { ShielderTransaction } from "@/state/types";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";

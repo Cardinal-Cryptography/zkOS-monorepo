@@ -3,7 +3,7 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountStateMerkleIndexed } from "./types";
+import { AccountState, AccountStateMerkleIndexed } from "./types";
 import { storageSchemaVersion } from "@/constants";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
@@ -18,7 +18,7 @@ export class StateManager {
     private accountFactory: AccountFactory
   ) {}
 
-  async accountState(token: Token): Promise<AccountStateMerkleIndexed> {
+  async accountState(token: Token): Promise<AccountStateMerkleIndexed | null> {
     const tokenAddress = getAddressByToken(token);
     const res = await this.storage.getItem(tokenAddress);
     const id = await this.idManager.getId(tokenAddress);
@@ -35,6 +35,10 @@ export class StateManager {
         currentNoteIndex: BigInt(obj.currentNoteIndex)
       };
     }
+    return null;
+  }
+
+  async createEmptyAccountState(token: Token): Promise<AccountState> {
     return await this.accountFactory.createEmptyAccountState(token);
   }
 

@@ -22,7 +22,7 @@ import { StateManager } from "@/state/manager";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
 import { HistoryFetcher } from "@/state/sync/historyFetcher";
 import { StateEventsFilter } from "@/state/events";
-import { ShielderTransaction } from "@/state/types";
+import { AccountStateMerkleIndexed, ShielderTransaction } from "@/state/types";
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
@@ -227,9 +227,9 @@ export class ShielderClient {
   ) {
     const state = await this.stateManager.accountState(token);
     const txHash =
-      state.nonce == 0n
+      state == null
         ? await this.newAccount(token, amount, sendShielderTransaction, from)
-        : await this.deposit(token, amount, sendShielderTransaction, from);
+        : await this.deposit(state, amount, sendShielderTransaction, from);
     if (this.publicClient) {
       const txReceipt = await this.publicClient.waitForTransactionReceipt({
         hash: txHash
@@ -260,6 +260,9 @@ export class ShielderClient {
     withdrawalAddress: Address
   ) {
     const state = await this.stateManager.accountState(token);
+    if (!state) {
+      throw new Error("Account does not exist");
+    }
     const relayerAddress = await this.relayer.address();
     const txHash = await this.handleCalldata(
       () =>
@@ -308,6 +311,9 @@ export class ShielderClient {
     from: `0x${string}`
   ) {
     const state = await this.stateManager.accountState(token);
+    if (!state) {
+      throw new Error("Account does not exist");
+    }
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
@@ -344,7 +350,7 @@ export class ShielderClient {
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(token);
+    const state = await this.stateManager.createEmptyAccountState(token);
     const txHash = await this.handleCalldata(
       () =>
         this.newAccountAction.generateCalldata(state, amount, contractVersion),
@@ -360,12 +366,11 @@ export class ShielderClient {
   }
 
   private async deposit(
-    token: Token,
+    state: AccountStateMerkleIndexed,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(token);
     const txHash = await this.handleCalldata(
       () => this.depositAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>

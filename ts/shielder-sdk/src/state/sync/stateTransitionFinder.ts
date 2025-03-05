@@ -20,7 +20,7 @@ export class StateTransitionFinder {
     private stateEventsFilter: StateEventsFilter
   ) {}
 
-  async findStateTransition(state: AccountStateMerkleIndexed): Promise<{
+  async findStateTransition(state: AccountState): Promise<{
     newState: AccountStateMerkleIndexed;
     transaction: ShielderTransaction;
   } | null> {

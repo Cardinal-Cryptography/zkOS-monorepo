@@ -1,7 +1,11 @@
 import { Mutex } from "async-mutex";
 import { Token } from "@/types";
 import { StateTransitionFinder } from "./stateTransitionFinder";
-import { ShielderTransaction } from "../types";
+import {
+  AccountState,
+  AccountStateMerkleIndexed,
+  ShielderTransaction
+} from "../types";
 import { StateManager } from "../manager";
 
 export class StateSynchronizer {
@@ -21,14 +25,17 @@ export class StateSynchronizer {
    */
   async syncSingleAccount(token: Token) {
     await this.singleTokenMutex.runExclusive(async () => {
-      let state = await this.stateManager.accountState(token);
+      let state: AccountState =
+        (await this.stateManager.accountState(token)) ??
+        (await this.stateManager.createEmptyAccountState(token));
       while (true) {
         const stateTransition =
           await this.stateTransitionFinder.findStateTransition(state);
         if (!stateTransition) break;
         if (this.syncCallback) this.syncCallback(stateTransition.transaction);
-        state = stateTransition.newState;
-        await this.stateManager.updateAccountState(token, state);
+        const newState: AccountStateMerkleIndexed = stateTransition.newState;
+        state = newState;
+        await this.stateManager.updateAccountState(token, newState);
       }
     });
   }

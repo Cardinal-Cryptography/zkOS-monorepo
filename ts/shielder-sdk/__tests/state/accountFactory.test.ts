@@ -39,7 +39,6 @@ describe("AccountFactory", () => {
       // Verify other properties
       expect(state.nonce).toBe(0n);
       expect(state.balance).toBe(0n);
-      expect(state.currentNoteIndex).toBe(0n);
       expect(scalarsEqual(state.currentNote, Scalar.fromBigint(0n))).toBe(true);
     });
 
@@ -57,7 +56,6 @@ describe("AccountFactory", () => {
       // Verify other properties
       expect(state.nonce).toBe(0n);
       expect(state.balance).toBe(0n);
-      expect(state.currentNoteIndex).toBe(0n);
       expect(scalarsEqual(state.currentNote, Scalar.fromBigint(0n))).toBe(true);
     });
 
