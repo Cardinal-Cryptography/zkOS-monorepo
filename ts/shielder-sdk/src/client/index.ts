@@ -1,17 +1,8 @@
-import {
-  OutdatedSdkError,
+export {
   QuotedFees,
   SendShielderTransaction,
   ShielderCallbacks,
   ShielderOperation
 } from "./types";
-import { ShielderClient, createShielderClient } from "./client";
-export {
-  ShielderClient,
-  createShielderClient,
-  SendShielderTransaction,
-  OutdatedSdkError,
-  ShielderCallbacks,
-  ShielderOperation,
-  QuotedFees
-};
+export { createShielderClient, type ShielderClientConfig } from "./factories";
+export { ShielderClient } from "./client";

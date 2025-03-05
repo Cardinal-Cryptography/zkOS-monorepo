@@ -34,7 +34,7 @@ pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn derive_id(private_key_hex: &str, chain_id: u64, account_nonce: u64) -> Vec<u8> {
+pub fn derive_id(private_key_hex: &str, chain_id: u64, account_nonce: u32) -> Vec<u8> {
     let id_seed_u256 = secrets::derive_id(
         hex_to_u256(private_key_hex).unwrap(),
         chain_id,

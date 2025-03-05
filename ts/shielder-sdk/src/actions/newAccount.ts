@@ -11,7 +11,7 @@ import { SendShielderTransaction } from "@/client";
 import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { Token } from "@/types";
-import { getTokenAddress } from "@/utils";
+import { getAddressByToken } from "@/utils";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -25,7 +25,7 @@ export interface NewAccountCalldata {
 }
 
 export class NewAccountAction extends NoteAction {
-  contract: IContract;
+  private contract: IContract;
 
   constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
@@ -54,7 +54,7 @@ export class NewAccountAction extends NoteAction {
     state: AccountState,
     amount: bigint
   ): Promise<NewAccountAdvice<Scalar>> {
-    const tokenAddress = getTokenAddress(state.token);
+    const tokenAddress = getAddressByToken(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,

@@ -59,7 +59,7 @@ pub mod nonced {
 }
 
 /// Private-key-dependent derivation of a per-chain & per-token account private ID.
-pub fn derive_id(private_key: U256, chain_id: u64, account_nonce: u64) -> U256 {
+pub fn derive_id(private_key: U256, chain_id: u64, account_nonce: u32) -> U256 {
     let mut hasher = sha3::Keccak256::new();
     hasher.update(private_key.to_be_bytes_vec());
     hasher.update(Label::Id.as_bytes());
@@ -135,9 +135,9 @@ mod tests {
         //   0000000000000000000000000000000000000000000000000000000000000010
         //   6964 ("id")
         //   000000000000001a
-        //   000000000000002d
+        //   0000002d
         let expected_before_modulo =
-            U256::from_str("0x397f5138f427856b5d7c7b526cac7154aa0d4e3f2760111c6751ac0f4de590ae")
+            U256::from_str("0xf4b3b097dfb3da737872bdf8b59a3b3723345dc147a0b8229608db69cfef6499")
                 .unwrap();
 
         let actual = derive_id(U256::from(16), 26, 45);

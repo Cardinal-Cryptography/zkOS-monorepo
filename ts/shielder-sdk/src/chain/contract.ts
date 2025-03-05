@@ -1,4 +1,3 @@
-import { CustomError } from "ts-custom-error";
 import {
   Address,
   bytesToHex,
@@ -12,12 +11,7 @@ import { BaseError, ContractFunctionRevertedError } from "viem";
 
 import { abi } from "../_generated/abi";
 import { shieldActionGasLimit } from "@/constants";
-
-export class VersionRejectedByContract extends CustomError {
-  public constructor() {
-    super("Version rejected by contract");
-  }
-}
+import { OutdatedSdkError } from "@/errors";
 
 export async function handleWrongContractVersionError<T>(
   func: () => Promise<T>
@@ -34,7 +28,7 @@ export async function handleWrongContractVersionError<T>(
       if (revertError instanceof ContractFunctionRevertedError) {
         const errorName = revertError.data?.errorName ?? "";
         if (errorName === "WrongContractVersion") {
-          throw new VersionRejectedByContract();
+          throw new OutdatedSdkError("Version rejected by contract");
         }
       }
     }
@@ -52,6 +46,11 @@ export type NoteEvent = {
   to?: Address;
   relayerFee?: bigint;
   block: bigint;
+};
+
+export type NewAccountEvent = {
+  idHash: bigint;
+  tokenAddress: Address;
 };
 
 const getShielderContract = (
@@ -152,6 +151,7 @@ export type IContract = {
   ) => Promise<`0x${string}`>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
   getNoteEventsFromBlock: (block: bigint) => Promise<NoteEvent[]>;
+  getNewAccountEventsFromBlock: (block: bigint) => Promise<NewAccountEvent[]>;
 };
 
 export class Contract implements IContract {
@@ -530,5 +530,22 @@ export class Contract implements IContract {
       } as NoteEvent;
     });
     return mergedIndices;
+  };
+
+  getNewAccountEventsFromBlock = async (
+    block: bigint
+  ): Promise<NewAccountEvent[]> => {
+    const fromBlock = block;
+    const toBlock = block;
+    const newAccountEvents = await this.contract.getEvents.NewAccount({
+      fromBlock,
+      toBlock
+    });
+    return newAccountEvents.map((event) => {
+      return {
+        idHash: event.args.idHash!,
+        tokenAddress: event.args.tokenAddress!
+      };
+    });
   };
 }

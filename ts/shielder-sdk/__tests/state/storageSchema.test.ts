@@ -1,5 +1,6 @@
 import { it, expect, vitest, describe, beforeEach, Mocked } from "vitest";
-import accountObjectSchema, {
+import {
+  AccountObject,
   createStorage,
   type InjectedStorageInterface
 } from "../../src/state/storageSchema";

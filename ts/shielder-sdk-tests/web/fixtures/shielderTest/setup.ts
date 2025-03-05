@@ -110,10 +110,7 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
   };
 
   const recoverShielder = async (actor: AccountNames) => {
-    for (const tokenKey of usedTokens) {
-      const token = keyToToken(tokenKey);
-      await shielderClients[actor].shielderClient.syncShielderToken(token);
-    }
+    await shielderClients[actor].shielderClient.syncShielderTokens();
   };
   const validateShielderBalance = async (actor: AccountNames) => {
     for (const tokenKey of usedTokens) {

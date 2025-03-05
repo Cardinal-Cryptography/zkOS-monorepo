@@ -2,17 +2,13 @@ export {
   ShielderClient,
   createShielderClient,
   SendShielderTransaction,
-  OutdatedSdkError,
   ShielderCallbacks,
   QuotedFees,
-  ShielderOperation
+  ShielderOperation,
+  type ShielderClientConfig
 } from "@/client";
-export {
-  type AccountState,
-  type ShielderTransaction,
-  accountObjectSchema,
-  InjectedStorageInterface
-} from "@/state";
+export { OutdatedSdkError } from "@/errors";
+export { type AccountState, type ShielderTransaction } from "@/state";
 export {
   type ERC20Token,
   type NativeToken,
@@ -20,4 +16,6 @@ export {
   nativeToken,
   erc20Token
 } from "@/types";
+export { type StorageObject, type InjectedStorageInterface } from "@/storage";
+
 export { shieldActionGasLimit } from "@/constants";

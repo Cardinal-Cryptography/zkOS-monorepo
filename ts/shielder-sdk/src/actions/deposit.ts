@@ -1,4 +1,4 @@
-import { IContract, VersionRejectedByContract } from "@/chain/contract";
+import { IContract } from "@/chain/contract";
 import {
   CryptoClient,
   DepositAdvice,
@@ -10,9 +10,10 @@ import {
 import { SendShielderTransaction } from "@/client";
 import { Calldata } from "@/actions";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
-import { AccountState } from "@/state";
+import { AccountState, AccountStateMerkleIndexed } from "@/state";
 import { Token } from "@/types";
-import { getTokenAddress } from "@/utils";
+import { getAddressByToken } from "@/utils";
+import { OutdatedSdkError } from "@/errors";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -57,18 +58,15 @@ export class DepositAction extends NoteAction {
   }
 
   async prepareAdvice(
-    state: AccountState,
+    state: AccountStateMerkleIndexed,
     amount: bigint
   ): Promise<DepositAdvice<Scalar>> {
-    if (state.currentNoteIndex === undefined) {
-      throw new Error("currentNoteIndex must be set");
-    }
     const lastNodeIndex = state.currentNoteIndex;
     const [merklePath] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
     );
 
-    const tokenAddress = getTokenAddress(state.token);
+    const tokenAddress = getAddressByToken(state.token);
 
     const nonce = this.nonceGenerator.randomIdHidingNonce();
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
@@ -103,7 +101,7 @@ export class DepositAction extends NoteAction {
    * @returns calldata for deposit action
    */
   async generateCalldata(
-    state: AccountState,
+    state: AccountStateMerkleIndexed,
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
@@ -183,7 +181,7 @@ export class DepositAction extends NoteAction {
       to: this.contract.getAddress(),
       value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
-      if (e instanceof VersionRejectedByContract) {
+      if (e instanceof OutdatedSdkError) {
         throw e;
       }
       throw new Error(`Failed to deposit: ${e}`);

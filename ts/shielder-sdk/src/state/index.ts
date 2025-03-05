@@ -1,20 +1,7 @@
-import { StateManager } from "./manager";
-import { StateSynchronizer, UnexpectedVersionInEvent } from "./sync";
-import { StateEventsFilter } from "./events";
-import accountObjectSchema, {
-  InjectedStorageInterface,
-  createStorage
-} from "./storageSchema";
-import { ShielderTransaction, AccountState } from "./types";
-
+export { StateEventsFilter } from "./events";
 export {
-  accountObjectSchema,
-  createStorage,
-  AccountState,
-  InjectedStorageInterface,
   ShielderTransaction,
-  StateManager,
-  StateSynchronizer,
-  StateEventsFilter,
-  UnexpectedVersionInEvent
-};
+  AccountState,
+  AccountStateMerkleIndexed
+} from "./types";
+export { AccountRegistry } from "./accountRegistry";
