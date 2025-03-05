@@ -7,7 +7,7 @@ use super::*;
 use crate::{config::DryRunning, price_feed::Prices, relay::taskmaster::Taskmaster};
 
 #[test]
-fn test_native_fee_too_low() {
+fn native_fee_too_low() {
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
     let mut query = RelayQuery::default();
@@ -21,7 +21,7 @@ fn test_native_fee_too_low() {
 }
 
 #[test]
-fn test_native_fee_ok() {
+fn native_fee_ok() {
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
     let mut query = RelayQuery::default();
@@ -35,7 +35,7 @@ fn test_native_fee_ok() {
 }
 
 #[test]
-fn test_erc20_fee_too_low() {
+fn erc20_fee_too_low() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
@@ -58,7 +58,7 @@ fn test_erc20_fee_too_low() {
 }
 
 #[test]
-fn test_erc20_fee_ok() {
+fn erc20_fee_ok() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
@@ -81,7 +81,7 @@ fn test_erc20_fee_ok() {
 }
 
 #[test]
-fn test_erc20_fee_not_allowed() {
+fn erc20_fee_not_allowed() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
@@ -96,7 +96,7 @@ fn test_erc20_fee_not_allowed() {
 }
 
 #[test]
-fn test_erc20_fee_dev_mode() {
+fn erc20_fee_dev_mode() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
@@ -118,7 +118,7 @@ fn test_erc20_fee_dev_mode() {
 }
 
 #[test]
-fn test_erc20_fee_prod_mode_price_feed_error() {
+fn erc20_fee_prod_mode_price_feed_error() {
     let coin_address = address!("1111111111111111111111111111111111111111");
     let mut app_state = app_state();
     app_state.total_fee = U256::from(100);
