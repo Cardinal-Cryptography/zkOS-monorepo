@@ -6,12 +6,7 @@ export {
   QuotedFees,
   ShielderOperation
 } from "@/client";
-export {
-  type AccountState,
-  type ShielderTransaction,
-  accountObjectSchema,
-  InjectedStorageInterface
-} from "@/state";
+export { type AccountState, type ShielderTransaction } from "@/state";
 export {
   type ERC20Token,
   type NativeToken,
@@ -21,3 +16,4 @@ export {
 } from "@/types";
 export { OutdatedSdkError } from "@/errors";
 export { shieldActionGasLimit } from "@/constants";
+export { accountObjectSchema, InjectedStorageInterface } from "@/storage";

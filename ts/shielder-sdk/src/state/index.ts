@@ -1,19 +1,5 @@
-import { StateManager } from "./manager";
-import { StateSynchronizer } from "./sync";
-import { StateEventsFilter } from "./events";
-import accountObjectSchema, {
-  InjectedStorageInterface,
-  createStorage
-} from "./storageSchema";
-import { ShielderTransaction, AccountState } from "./types";
-
-export {
-  accountObjectSchema,
-  createStorage,
-  AccountState,
-  InjectedStorageInterface,
-  ShielderTransaction,
-  StateManager,
-  StateSynchronizer,
-  StateEventsFilter
-};
+export { StateManager } from "./manager";
+export { StateSynchronizer } from "./sync/synchronizer";
+export { HistoryFetcher } from "./sync/historyFetcher";
+export { StateEventsFilter } from "./events";
+export { ShielderTransaction, AccountState } from "./types";

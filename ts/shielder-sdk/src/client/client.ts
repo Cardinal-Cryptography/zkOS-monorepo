@@ -12,8 +12,7 @@ import {
 import { contractVersion } from "@/constants";
 import { idHidingNonce } from "@/utils";
 import {
-  createStorage,
-  InjectedStorageInterface,
+  HistoryFetcher,
   ShielderTransaction,
   StateEventsFilter,
   StateManager,
@@ -26,6 +25,10 @@ import {
   ShielderOperation
 } from "./types";
 import { Token } from "@/types";
+import { createStorage, InjectedStorageInterface } from "@/storage";
+import { StateTransitionFinder } from "@/state/sync/stateTransitionFinder";
+import { AccountFactory } from "@/state/accountFactory";
+import { IdManager } from "@/state/idManager";
 
 /**
  * Factory method to create ShielderClient with the original configuration
@@ -69,6 +72,7 @@ export const createShielderClient = (
 export class ShielderClient {
   private stateManager: StateManager;
   private stateSynchronizer: StateSynchronizer;
+  private historyFetcher: HistoryFetcher;
   private newAccountAction: NewAccountAction;
   private depositAction: DepositAction;
   private withdrawAction: WithdrawAction;
@@ -100,11 +104,17 @@ export class ShielderClient {
     callbacks: ShielderCallbacks = {}
   ) {
     const internalStorage = createStorage(storage);
-    this.stateManager = new StateManager(
+    const idManager = new IdManager(
       shielderSeedPrivateKey,
       BigInt(chainId),
-      internalStorage,
       cryptoClient
+    );
+    const accountFactory = new AccountFactory(idManager);
+
+    this.stateManager = new StateManager(
+      internalStorage,
+      idManager,
+      accountFactory
     );
     this.newAccountAction = new NewAccountAction(contract, cryptoClient);
     this.depositAction = new DepositAction(
@@ -124,12 +134,19 @@ export class ShielderClient {
       this.depositAction,
       this.withdrawAction
     );
-    this.stateSynchronizer = new StateSynchronizer(
-      this.stateManager,
+    const stateTransitionFinder = new StateTransitionFinder(
       contract,
       cryptoClient,
-      stateEventsFilter,
+      stateEventsFilter
+    );
+    this.stateSynchronizer = new StateSynchronizer(
+      this.stateManager,
+      stateTransitionFinder,
       callbacks.onNewTransaction
+    );
+    this.historyFetcher = new HistoryFetcher(
+      stateTransitionFinder,
+      accountFactory
     );
     this.relayer = relayer;
     this.callbacks = callbacks;
@@ -161,7 +178,7 @@ export class ShielderClient {
    */
   async syncShielderToken(token: Token) {
     try {
-      return await this.stateSynchronizer.syncAccountState(token);
+      return await this.stateSynchronizer.syncSingleAccount(token);
     } catch (error) {
       this.callbacks.onError?.(error, "syncing", "sync");
       throw error;
@@ -189,7 +206,7 @@ export class ShielderClient {
   async *scanChainForTokenShielderTransactions(
     token: Token
   ): AsyncGenerator<ShielderTransaction, void, unknown> {
-    yield* this.stateSynchronizer.getShielderTransactions(token);
+    yield* this.historyFetcher.getTransactionHistorySingleToken(token);
   }
 
   /**

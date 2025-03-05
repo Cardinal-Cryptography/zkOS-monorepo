@@ -1,7 +1,7 @@
 import { it, expect, describe, beforeEach } from "vitest";
 import { StateManager } from "../../src/state/manager";
 import { MockedCryptoClient } from "../helpers";
-import { StorageInterface } from "../../src/state/storageSchema";
+import { StorageInterface } from "../../src/storage/storageSchema";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
 import { storageSchemaVersion } from "../../src/constants";
 import {

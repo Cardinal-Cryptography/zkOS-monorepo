@@ -7,10 +7,7 @@ import { IContract, NoteEvent } from "../../src/chain/contract";
 import { StateEventsFilter } from "../../src/state/events";
 import { StateManager } from "../../src/state/manager";
 import { AccountState, ShielderTransaction } from "../../src/state/types";
-import {
-  StateSynchronizer,
-  UnexpectedVersionInEvent
-} from "../../src/state/sync";
+import { StateSynchronizer } from "../../src/state/sync/synchronizer";
 import { MockedCryptoClient } from "../helpers";
 import { nativeToken } from "../../src/types";
 
