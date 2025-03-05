@@ -30,8 +30,9 @@ fn app_state() -> AppState {
 }
 
 mod native_fee {
-    use super::*;
     use assert2::assert;
+
+    use super::*;
 
     #[test]
     fn too_low_fee_fails() {
@@ -83,8 +84,9 @@ mod native_fee {
 }
 
 mod erc20_fee {
-    use super::*;
     use assert2::assert;
+
+    use super::*;
 
     const ERC20_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
 
@@ -107,7 +109,7 @@ mod erc20_fee {
     }
 
     #[test]
-    fn when_either_pricing_is_not_set_fails() {
+    fn either_pricing_is_not_set_fails() {
         let mut app_state = AppState {
             token_pricing: vec![],
             ..app_state()
@@ -133,49 +135,73 @@ mod erc20_fee {
         app_state.token_pricing = vec![native_pricing()];
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
     }
+
+    /// Return default `AppState` with pricing set:
+    ///   - prod mode for both ETH and AZERO
+    ///   - ETH price is $1.5
+    ///   - AZERO price is $3
+    fn app_state_with_pricing() -> AppState {
+        let app_state = AppState {
+            token_pricing: vec![native_pricing(), erc20_pricing()],
+            ..app_state()
+        };
+        app_state.prices.set_price(Coin::Eth, Decimal::new(15, 1));
+        app_state.prices.set_price(Coin::Azero, Decimal::new(3, 0));
+        app_state
+    }
+
+    #[test]
+    fn exact_fee_passes() {
+        let query = RelayQuery {
+            fee_amount: U256::from(200), // total fee is AZERO 100, which is worth $300
+            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            ..RelayQuery::default()
+        };
+        let mut request_trace = RequestTrace::new(&query);
+
+        let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
+        assert!(let Ok(_) = result);
+    }
+
+    #[test]
+    fn too_low_fee_fails() {
+        let query = RelayQuery {
+            fee_amount: U256::from(20), // total fee is AZERO 100, which is worth $300
+            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            ..RelayQuery::default()
+        };
+        let mut request_trace = RequestTrace::new(&query);
+
+        let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
+        assert!(let Err(_) = result);
+    }
+
+    #[test]
+    fn low_fee_but_within_margin_passes() {
+        let query = RelayQuery {
+            fee_amount: U256::from(199), // total fee is AZERO 100, which is worth $300
+            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            ..RelayQuery::default()
+        };
+        let mut request_trace = RequestTrace::new(&query);
+
+        let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
+        assert!(let Ok(_) = result);
+    }
+
+    #[test]
+    fn way_too_high_fee_passes() {
+        let query = RelayQuery {
+            fee_amount: U256::from(200000),
+            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            ..RelayQuery::default()
+        };
+        let mut request_trace = RequestTrace::new(&query);
+
+        let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
+        assert!(let Ok(_) = result);
+    }
 }
-
-// #[test]
-// fn erc20_fee_too_low() {
-//     let mut app_state = app_state();
-//     app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
-//     app_state.prices.set_price(Coin::Azero, Decimal::new(4, 0));
-//     app_state.token_pricing = vec![TokenPricingConfig {
-//         token: coin_address,
-//         pricing: Pricing::ProdMode {
-//             price_feed_coin: Coin::Azero,
-//         },
-//     }];
-//     let mut query = RelayQuery::default();
-//     query.fee_amount = U256::from(160);
-//     query.fee_token = FeeToken::ERC20(coin_address);
-//     let mut request_trace = RequestTrace::new(&query);
-//
-//     let result = check_fee(&app_state, &query, &mut request_trace);
-//
-//     assert!(let Err(_) = result);
-// }
-
-// #[test]
-// fn erc20_fee_ok() {
-//     let mut app_state = app_state();
-//     app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
-//     app_state.prices.set_price(Coin::Azero, Decimal::new(4, 0));
-//     app_state.token_pricing = vec![TokenPricingConfig {
-//         token: coin_address,
-//         pricing: Pricing::ProdMode {
-//             price_feed_coin: Coin::Azero,
-//         },
-//     }];
-//     let mut query = RelayQuery::default();
-//     query.fee_amount = U256::from(190);
-//     query.fee_token = FeeToken::ERC20(coin_address);
-//     let mut request_trace = RequestTrace::new(&query);
-//
-//     let result = check_fee(&app_state, &query, &mut request_trace);
-//
-//     assert!(let Ok(_) = result);
-// }
 
 // #[test]
 // fn erc20_fee_not_allowed() {
