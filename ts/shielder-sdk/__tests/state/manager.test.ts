@@ -64,6 +64,12 @@ describe("StateManager", () => {
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
       const state = await stateManager.accountState(nativeToken());
+
+      expect(state).toEqual(null);
+    });
+
+    it("creates correct empty state", async () => {
+      const state = await stateManager.createEmptyAccountState(nativeToken());
       const expectedState =
         await accountFactory.createEmptyAccountState(nativeToken());
 
@@ -85,7 +91,8 @@ describe("StateManager", () => {
       const token = nativeToken();
 
       const state = await stateManager.accountState(token);
-      expectStatesEqual(state, {
+      expect(state).not.toBeNull();
+      expectStatesEqual(state!, {
         id: testId,
         nonce: 1n,
         balance: 100n,
@@ -125,7 +132,8 @@ describe("StateManager", () => {
       await stateManager.updateAccountState(nativeToken(), newState);
 
       const storedState = await stateManager.accountState(nativeToken());
-      expectStatesEqual(storedState, newState);
+      expect(storedState).not.toBeNull();
+      expectStatesEqual(storedState!, newState);
     });
 
     it("throws error when account id doesn't match", async () => {
@@ -142,6 +150,21 @@ describe("StateManager", () => {
       await expect(
         stateManager.updateAccountState(nativeToken(), newState)
       ).rejects.toThrow("New account id does not match the configured.");
+    });
+  });
+
+  describe("emptyAccountState", () => {
+    it("returns correct empty state", async () => {
+      const emptyState =
+        await stateManager.createEmptyAccountState(nativeToken());
+
+      expect(emptyState).toEqual({
+        id: testId,
+        nonce: 0n,
+        balance: 0n,
+        currentNote: Scalar.fromBigint(0n),
+        token: nativeToken()
+      });
     });
   });
 });

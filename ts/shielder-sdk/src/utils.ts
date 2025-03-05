@@ -35,10 +35,20 @@ export function erc20Token(address: `0x${string}`): ERC20Token {
   return { type: "erc20", address };
 }
 
+/**
+ * Returns the address of a given token
+ * @param token - The token object (either native or ERC20)
+ * @returns The hexadecimal address of the token
+ */
 export function getAddressByToken(token: Token): `0x${string}` {
   return token.type === "native" ? nativeTokenAddress : token.address;
 }
 
+/**
+ * Creates a Token object from a given address
+ * @param tokenAddress - The hexadecimal address of the token
+ * @returns A Token object (either native or ERC20 depending on the address)
+ */
 export function getTokenByAddress(tokenAddress: `0x${string}`): Token {
   return tokenAddress === nativeTokenAddress
     ? nativeToken()
