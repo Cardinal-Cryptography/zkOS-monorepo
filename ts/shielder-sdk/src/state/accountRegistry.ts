@@ -2,7 +2,7 @@ import type { Token } from "@/types";
 import { AccountStateSerde } from "./accountStateSerde";
 import { AccountFactory } from "./accountFactory";
 import { StorageManager } from "../storage/storageManager";
-import { AccountStateMerkleIndexed } from "./types";
+import { AccountState, AccountStateMerkleIndexed } from "./types";
 import { getAddressByToken, getTokenByAddress } from "@/utils";
 
 export class AccountRegistry {
@@ -15,7 +15,9 @@ export class AccountRegistry {
   /**
    * Gets the account state for a token
    */
-  async getAccountState(token: Token): Promise<AccountStateMerkleIndexed> {
+  async getAccountState(
+    token: Token
+  ): Promise<AccountStateMerkleIndexed | null> {
     const tokenAddress = getAddressByToken(token);
     const indexedAccount =
       await this.storageManager.findAccountByTokenAddress(tokenAddress);
@@ -30,8 +32,10 @@ export class AccountRegistry {
         token
       );
     }
+    return null;
+  }
 
-    // Create new empty account state
+  async createEmptyAccountState(token: Token): Promise<AccountState> {
     const nextIndex = await this.storageManager.getNextAccountIndex();
     return this.accountFactory.createEmptyAccountState(token, nextIndex);
   }

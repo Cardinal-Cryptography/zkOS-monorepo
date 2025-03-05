@@ -14,6 +14,7 @@ import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
 import { contractVersion } from "@/constants";
 import { Calldata } from "@/actions/types";
+import { AccountStateMerkleIndexed } from "@/state/types";
 
 export class ShielderActions {
   constructor(
@@ -59,9 +60,9 @@ export class ShielderActions {
   ) {
     const state = await this.accountRegistry.getAccountState(token);
     const txHash =
-      state.nonce == 0n
+      state === null
         ? await this.newAccount(token, amount, sendShielderTransaction, from)
-        : await this.deposit(token, amount, sendShielderTransaction, from);
+        : await this.deposit(state, amount, sendShielderTransaction, from);
 
     await this.waitAndSync(token, txHash);
 
@@ -86,6 +87,9 @@ export class ShielderActions {
     withdrawalAddress: `0x${string}`
   ) {
     const state = await this.accountRegistry.getAccountState(token);
+    if (!state) {
+      throw new Error("Account not found");
+    }
     const relayerAddress = await this.relayer.address();
     const txHash = await this.handleCalldata(
       () =>
@@ -128,6 +132,9 @@ export class ShielderActions {
     from: `0x${string}`
   ) {
     const state = await this.accountRegistry.getAccountState(token);
+    if (!state) {
+      throw new Error("Account not found");
+    }
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
@@ -158,7 +165,7 @@ export class ShielderActions {
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.accountRegistry.getAccountState(token);
+    const state = await this.accountRegistry.createEmptyAccountState(token);
     const txHash = await this.handleCalldata(
       () =>
         this.newAccountAction.generateCalldata(state, amount, contractVersion),
@@ -174,12 +181,11 @@ export class ShielderActions {
   }
 
   private async deposit(
-    token: Token,
+    state: AccountStateMerkleIndexed,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.accountRegistry.getAccountState(token);
     const txHash = await this.handleCalldata(
       () => this.depositAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>

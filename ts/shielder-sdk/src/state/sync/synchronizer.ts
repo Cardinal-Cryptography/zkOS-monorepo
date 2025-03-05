@@ -3,7 +3,11 @@ import { AccountRegistry } from "../accountRegistry";
 import { TokenAccountFinder } from "./tokenAccountFinder";
 import { Token } from "@/types";
 import { StateTransitionFinder } from "./stateTransitionFinder";
-import { ShielderTransaction } from "../types";
+import {
+  AccountState,
+  AccountStateMerkleIndexed,
+  ShielderTransaction
+} from "../types";
 
 export class StateSynchronizer {
   constructor(
@@ -47,14 +51,17 @@ export class StateSynchronizer {
    */
   async syncSingleAccount(token: Token) {
     await this.singleTokenMutex.runExclusive(async () => {
-      let state = await this.accountRegistry.getAccountState(token);
+      let state: AccountState =
+        (await this.accountRegistry.getAccountState(token)) ??
+        (await this.accountRegistry.createEmptyAccountState(token));
       while (true) {
         const stateTransition =
           await this.stateTransitionFinder.findStateTransition(state);
         if (!stateTransition) break;
         if (this.syncCallback) this.syncCallback(stateTransition.transaction);
-        state = stateTransition.newState;
-        await this.accountRegistry.updateAccountState(token, state);
+        const newState: AccountStateMerkleIndexed = stateTransition.newState;
+        state = newState;
+        await this.accountRegistry.updateAccountState(token, newState);
       }
     });
   }
