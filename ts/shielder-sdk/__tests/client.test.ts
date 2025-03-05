@@ -13,17 +13,16 @@ import { Address, createPublicClient, Hash, http, PublicClient } from "viem";
 import { MockedCryptoClient } from "./helpers";
 import {
   ShielderClient,
-  OutdatedSdkError,
   ShielderCallbacks,
   createShielderClient
 } from "../src/client";
-import { Contract, VersionRejectedByContract } from "../src/chain/contract";
-import { Relayer, VersionRejectedByRelayer } from "../src/chain/relayer";
-import { UnexpectedVersionInEvent } from "../src/state";
+import { Contract } from "../src/chain/contract";
+import { Relayer } from "../src/chain/relayer";
 import { idHidingNonce } from "../src/utils";
 import { InjectedStorageInterface } from "../src/state/storageSchema";
 import { AccountState, ShielderTransaction } from "../src/state/types";
 import { contractVersion, nativeTokenAddress } from "../src/constants";
+import { OutdatedSdkError } from "../src/errors";
 
 vitest.mock("../src/chain/contract");
 vitest.mock("../src/chain/relayer");
@@ -236,15 +235,13 @@ describe("ShielderClient", () => {
     it.each([
       {
         mockedError: new Error("123"),
-        expectedError: new Error("123"),
         name: "general error"
       },
       {
-        mockedError: new UnexpectedVersionInEvent("123"),
-        expectedError: new OutdatedSdkError(),
+        mockedError: new OutdatedSdkError("123"),
         name: "version not supported error"
       }
-    ])("error handling: $name", async ({ mockedError, expectedError }) => {
+    ])("error handling: $name", async ({ mockedError }) => {
       vitest
         .spyOn(client["stateSynchronizer"], "syncAccountState")
         .mockRejectedValue(mockedError);
@@ -253,10 +250,10 @@ describe("ShielderClient", () => {
 
       await expect(
         client.syncShielderToken(nativeTokenAddress)
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(mockedError);
 
       expect(callbacks.onError).toHaveBeenCalledWith(
-        expectedError,
+        mockedError,
         "syncing",
         "sync"
       );
@@ -270,7 +267,6 @@ describe("ShielderClient", () => {
         nonce: 1n,
         balance: 1000n,
         currentNote: {} as any,
-        storageSchemaVersion: 1,
         token: nativeToken()
       };
 
@@ -314,41 +310,6 @@ describe("ShielderClient", () => {
       }
 
       expect(transactions).toEqual(mockTransactions);
-    });
-
-    it.each([
-      {
-        mockedError: new Error("123"),
-        expectedError: new Error("123"),
-        name: "general error"
-      },
-      {
-        mockedError: new UnexpectedVersionInEvent("123"),
-        expectedError: new OutdatedSdkError(),
-        name: "version not supported error"
-      }
-    ])("error handling: $name", async ({ mockedError, expectedError }) => {
-      vitest
-        .spyOn(client["stateSynchronizer"], "getShielderTransactions")
-        .mockImplementation(async function* () {
-          throw mockedError;
-        });
-      vitest.spyOn(callbacks, "onError");
-
-      await expect(async () => {
-        for await (const _ of client.scanChainForTokenShielderTransactions(
-          nativeTokenAddress
-        )) {
-          // Should throw before yielding any transactions
-          assert(false, "Should not reach this point");
-        }
-      }).rejects.toThrow(expectedError);
-
-      expect(callbacks.onError).toHaveBeenCalledWith(
-        expectedError,
-        "syncing",
-        "sync"
-      );
     });
   });
 
@@ -493,40 +454,35 @@ describe("ShielderClient", () => {
     describe("version error handling", () => {
       it.each([
         {
-          mockedError: new VersionRejectedByContract(),
-          expectedError: new OutdatedSdkError(),
+          mockedError: new OutdatedSdkError("123"),
           action: "newAccountAction",
           stage: "generateCalldata",
           clientTarget: "shield",
           nonce: 0n
         },
         {
-          mockedError: new VersionRejectedByContract(),
-          expectedError: new OutdatedSdkError(),
+          mockedError: new OutdatedSdkError("123"),
           action: "depositAction",
           stage: "generateCalldata",
           clientTarget: "shield",
           nonce: 1n
         },
         {
-          mockedError: new VersionRejectedByContract(),
-          expectedError: new OutdatedSdkError(),
+          mockedError: new OutdatedSdkError("123"),
           action: "newAccountAction",
           stage: "sendCalldata",
           clientTarget: "shield",
           nonce: 0n
         },
         {
-          mockedError: new VersionRejectedByContract(),
-          expectedError: new OutdatedSdkError(),
+          mockedError: new OutdatedSdkError("123"),
           action: "depositAction",
           stage: "sendCalldata",
           clientTarget: "shield",
           nonce: 1n
         },
         {
-          mockedError: new VersionRejectedByRelayer("123"),
-          expectedError: new OutdatedSdkError(),
+          mockedError: new OutdatedSdkError("123"),
           action: "withdrawAction",
           stage: "sendCalldataWithRelayer",
           clientTarget: "withdraw",
@@ -534,14 +490,7 @@ describe("ShielderClient", () => {
         }
       ])(
         "should throw OutdatedSdkError when version is not supported",
-        async ({
-          mockedError,
-          expectedError,
-          action,
-          stage,
-          clientTarget,
-          nonce
-        }) => {
+        async ({ mockedError, action, stage, clientTarget, nonce }) => {
           // Mock state
           mockState = { nonce } as AccountState;
 
@@ -551,7 +500,7 @@ describe("ShielderClient", () => {
 
           await expect(
             client[clientTarget](mockAmount, mockSendTransaction, mockFrom)
-          ).rejects.toThrow(expectedError);
+          ).rejects.toThrow(mockedError);
 
           if (stage === "sendCalldata" || stage === "sendCalldataWithRelayer") {
             expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(
@@ -561,7 +510,7 @@ describe("ShielderClient", () => {
           }
 
           expect(callbacks.onError).toHaveBeenCalledWith(
-            expectedError,
+            mockedError,
             stage === "generateCalldata" ? "generation" : "sending",
             clientTarget
           );

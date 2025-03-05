@@ -46,25 +46,6 @@ describe("storageSchema", () => {
     });
   });
 
-  it("should validate state without optional currentNoteIndex", () => {
-    const validState = {
-      nonce: "1",
-      balance: "1000",
-      idHash: "12345",
-      currentNote: "67890",
-      storageSchemaVersion: 2
-    };
-
-    const result = accountObjectSchema.parse(validState);
-    expect(result).toEqual({
-      nonce: 1n,
-      balance: 1000n,
-      idHash: 12345n,
-      currentNote: 67890n,
-      storageSchemaVersion: 2
-    });
-  });
-
   it.each([
     {
       invalidState: {
@@ -130,6 +111,7 @@ describe("createStorage", () => {
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
+      currentNoteIndex: "2",
       storageSchemaVersion: 2
     };
     mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(validState));
@@ -141,6 +123,7 @@ describe("createStorage", () => {
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
+      currentNoteIndex: 2n,
       storageSchemaVersion: 2
     });
   });
@@ -168,6 +151,7 @@ describe("createStorage", () => {
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
+      currentNoteIndex: 2n,
       storageSchemaVersion: 2
     };
 
@@ -180,6 +164,7 @@ describe("createStorage", () => {
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
+        currentNoteIndex: "2",
         storageSchemaVersion: 2
       })
     );

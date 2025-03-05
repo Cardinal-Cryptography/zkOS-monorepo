@@ -10,16 +10,17 @@ import {
 import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { DepositAction } from "../../src/actions/deposit";
-import { AccountState } from "../../src/state";
-import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
+import { IContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 import { nativeToken } from "../../src/types";
+import { OutdatedSdkError } from "../../src/errors";
+import { AccountStateMerkleIndexed } from "../../src/state/types";
 
 describe("DepositAction", () => {
   let cryptoClient: MockedCryptoClient;
   let contract: IContract;
   let action: DepositAction;
-  let state: AccountState;
+  let state: AccountStateMerkleIndexed;
   const stateNonce = 1n;
   const prevNullifier = Scalar.fromBigint(2n);
   const prevTrapdoor = Scalar.fromBigint(3n);
@@ -73,7 +74,6 @@ describe("DepositAction", () => {
         Scalar.fromBigint(5n)
       ),
       currentNoteIndex: 100n,
-      storageSchemaVersion: 0,
       token: nativeToken()
     };
   });
@@ -129,21 +129,6 @@ describe("DepositAction", () => {
 
       // Expected contract version should be equal to input expected version
       expect(calldata.expectedContractVersion).toBe(expectedVersion);
-    });
-
-    it("should throw on undefined currentNoteIndex", async () => {
-      const amount = 100n;
-      const expectedVersion = "0xversion" as `0x${string}`;
-      await expect(
-        action.generateCalldata(
-          {
-            ...state,
-            currentNoteIndex: undefined
-          },
-          amount,
-          expectedVersion
-        )
-      ).rejects.toThrow("currentNoteIndex must be set");
     });
 
     it("should throw on incorrect merkle path length", async () => {
@@ -243,7 +228,7 @@ describe("DepositAction", () => {
         expectedVersion
       );
 
-      const mockedErr = new VersionRejectedByContract();
+      const mockedErr = new OutdatedSdkError("123");
 
       contract.depositNativeCalldata = vitest
         .fn<
@@ -280,7 +265,7 @@ describe("DepositAction", () => {
         expectedVersion
       );
 
-      const mockedErr = new VersionRejectedByContract();
+      const mockedErr = new OutdatedSdkError("123");
 
       const mockSendTransaction = vitest
         .fn<SendShielderTransaction>()

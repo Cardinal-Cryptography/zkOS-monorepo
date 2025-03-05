@@ -1,6 +1,6 @@
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { contractVersion, nativeTokenAddress } from "@/constants";
-import { Token } from "./types";
+import { erc20Token, nativeToken, Token } from "./types";
 
 export function flatUint8(arr: Uint8Array[]) {
   return new Uint8Array(
@@ -27,6 +27,12 @@ export function isVersionSupported(version: `0x${string}`) {
   return version === contractVersion;
 }
 
-export function getTokenAddress(token: Token): `0x${string}` {
+export function getAddressByToken(token: Token): `0x${string}` {
   return token.type === "native" ? nativeTokenAddress : token.address;
+}
+
+export function getTokenByAddress(tokenAddress: `0x${string}`): Token {
+  return tokenAddress === nativeTokenAddress
+    ? nativeToken()
+    : erc20Token(tokenAddress);
 }
