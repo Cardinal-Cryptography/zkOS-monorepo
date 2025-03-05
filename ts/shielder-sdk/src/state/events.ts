@@ -1,10 +1,9 @@
-import { AccountState } from "@/state";
 import { DepositAction } from "@/actions/deposit";
 import { NewAccountAction } from "@/actions/newAccount";
 import { WithdrawAction } from "@/actions/withdraw";
 import { NoteEvent } from "@/chain/contract";
 import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountStateMerkleIndexed } from "./types";
+import { AccountState, AccountStateMerkleIndexed } from "./types";
 
 export class StateEventsFilter {
   newAccountAction: NewAccountAction;

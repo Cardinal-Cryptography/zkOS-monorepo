@@ -1,5 +1,7 @@
 import { it, expect, describe, beforeEach } from "vitest";
 import { StateManager } from "../../src/state/manager";
+import { IdManager } from "../../src/state/idManager";
+import { AccountFactory } from "../../src/state/accountFactory";
 import { MockedCryptoClient } from "../helpers";
 import { StorageInterface } from "../../src/storage/storageSchema";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
@@ -9,7 +11,8 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { nativeToken } from "../../src/types";
+import { nativeTokenAddress } from "../../src/constants";
+import { nativeToken } from "../../src/utils";
 
 const expectStatesEqual = (
   state1: AccountStateMerkleIndexed,
@@ -26,7 +29,8 @@ describe("StateManager", () => {
   let stateManager: StateManager;
   let storage: StorageInterface;
   let cryptoClient: MockedCryptoClient;
-  const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+  let idManager: IdManager;
+  let accountFactory: AccountFactory;
   const testPrivateKey =
     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
   let testId: Scalar;
@@ -42,12 +46,14 @@ describe("StateManager", () => {
       }
     };
     cryptoClient = new MockedCryptoClient();
-    stateManager = new StateManager(
-      testPrivateKey,
-      mockChainId,
-      storage,
-      cryptoClient
-    );
+
+    // Create IdManager and AccountFactory
+    idManager = new IdManager(testPrivateKey, mockChainId, cryptoClient);
+    accountFactory = new AccountFactory(idManager);
+
+    // Create StateManager with the dependencies
+    stateManager = new StateManager(storage, idManager, accountFactory);
+
     testId = await cryptoClient.secretManager.deriveId(
       testPrivateKey,
       mockChainId,
@@ -58,20 +64,10 @@ describe("StateManager", () => {
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
       const state = await stateManager.accountState(nativeToken());
-      const expectedId = await cryptoClient.secretManager.deriveId(
-        testPrivateKey,
-        mockChainId,
-        nativeTokenAddress
-      );
+      const expectedState =
+        await accountFactory.createEmptyAccountState(nativeToken());
 
-      expect(state).toEqual({
-        id: expectedId,
-        nonce: 0n,
-        balance: 0n,
-        currentNote: Scalar.fromBigint(0n),
-        currentNoteIndex: 0n,
-        token: nativeToken()
-      });
+      expect(state).toEqual(expectedState);
     });
 
     it("returns existing state when id hash matches", async () => {
@@ -110,7 +106,7 @@ describe("StateManager", () => {
       });
 
       await expect(stateManager.accountState(nativeToken())).rejects.toThrow(
-        "Id hash in storage does not matched the configured."
+        "ID hash does not match the expected value"
       );
     });
   });
@@ -146,21 +142,6 @@ describe("StateManager", () => {
       await expect(
         stateManager.updateAccountState(nativeToken(), newState)
       ).rejects.toThrow("New account id does not match the configured.");
-    });
-  });
-
-  describe("emptyAccountState", () => {
-    it("returns correct empty state", async () => {
-      const emptyState = await stateManager.emptyAccountState(nativeToken());
-
-      expect(emptyState).toEqual({
-        id: testId,
-        nonce: 0n,
-        balance: 0n,
-        currentNote: Scalar.fromBigint(0n),
-        currentNoteIndex: 0n,
-        token: nativeToken()
-      });
     });
   });
 });

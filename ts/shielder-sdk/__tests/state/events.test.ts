@@ -1,12 +1,6 @@
 import { it, expect, describe, beforeEach } from "vitest";
 import { MockedCryptoClient } from "../helpers";
-import { StateEventsFilter } from "../../src/state";
-import {
-  NewAccountAction,
-  DepositAction,
-  WithdrawAction,
-  INonceGenerator
-} from "../../src/actions/";
+import { StateEventsFilter } from "../../src/state/events";
 import { IContract, NoteEvent } from "../../src/chain/contract";
 import { IRelayer } from "../../src/chain/relayer";
 import {
@@ -14,8 +8,12 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { nativeToken } from "../../src/types";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
+import { nativeToken } from "../../src/utils";
+import { NewAccountAction } from "../../src/actions/newAccount";
+import { DepositAction } from "../../src/actions/deposit";
+import { WithdrawAction } from "../../src/actions/withdraw";
+import { INonceGenerator } from "../../src/actions/utils";
 
 const expectStatesEqual = (
   state1: AccountStateMerkleIndexed,

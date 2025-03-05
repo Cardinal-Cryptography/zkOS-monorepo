@@ -12,9 +12,10 @@ import { MockedCryptoClient, hashedNote } from "../helpers";
 import { WithdrawAction } from "../../src/actions/withdraw";
 import { IContract } from "../../src/chain/contract";
 import { IRelayer, WithdrawResponse } from "../../src/chain/relayer";
-import { nativeToken, Token } from "../../src/types";
+import { nativeToken } from "../../src/utils";
 import { OutdatedSdkError } from "../../src/errors";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
+import { Token } from "../../src/types";
 
 describe("WithdrawAction", () => {
   let cryptoClient: MockedCryptoClient;

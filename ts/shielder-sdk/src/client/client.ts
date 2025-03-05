@@ -2,22 +2,8 @@ import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, Hash, PublicClient } from "viem";
 import { Contract, IContract } from "@/chain/contract";
 import { IRelayer, Relayer } from "@/chain/relayer";
-import {
-  NewAccountAction,
-  DepositAction,
-  WithdrawAction,
-  INonceGenerator,
-  Calldata
-} from "@/actions";
 import { contractVersion } from "@/constants";
 import { idHidingNonce } from "@/utils";
-import {
-  HistoryFetcher,
-  ShielderTransaction,
-  StateEventsFilter,
-  StateManager,
-  StateSynchronizer
-} from "@/state";
 import {
   QuotedFees,
   SendShielderTransaction,
@@ -25,10 +11,23 @@ import {
   ShielderOperation
 } from "./types";
 import { Token } from "@/types";
-import { createStorage, InjectedStorageInterface } from "@/storage";
 import { StateTransitionFinder } from "@/state/sync/stateTransitionFinder";
 import { AccountFactory } from "@/state/accountFactory";
 import { IdManager } from "@/state/idManager";
+import {
+  createStorage,
+  InjectedStorageInterface
+} from "@/storage/storageSchema";
+import { StateManager } from "@/state/manager";
+import { StateSynchronizer } from "@/state/sync/synchronizer";
+import { HistoryFetcher } from "@/state/sync/historyFetcher";
+import { StateEventsFilter } from "@/state/events";
+import { ShielderTransaction } from "@/state/types";
+import { NewAccountAction } from "@/actions/newAccount";
+import { DepositAction } from "@/actions/deposit";
+import { WithdrawAction } from "@/actions/withdraw";
+import { INonceGenerator } from "@/actions/utils";
+import { Calldata } from "@/actions/types";
 
 /**
  * Factory method to create ShielderClient with the original configuration
@@ -404,5 +403,3 @@ export class ShielderClient {
     }
   }
 }
-
-export { SendShielderTransaction, ShielderCallbacks };
