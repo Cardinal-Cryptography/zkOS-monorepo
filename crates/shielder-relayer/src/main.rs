@@ -147,7 +147,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
             config.operations.dry_running,
             report_for_recharge,
         ),
-        token_pricing: config.operations.fee_token_config.clone(),
+        token_pricing: config.operations.token_pricing.clone(),
         prices,
     };
 

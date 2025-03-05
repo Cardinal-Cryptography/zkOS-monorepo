@@ -30,13 +30,13 @@ fn config_resolution() {
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let fee_token_config = vec![
         TokenPricingConfig {
-            address: address!("1111111111111111111111111111111111111111"),
+            token: address!("1111111111111111111111111111111111111111"),
             pricing: Pricing::DevMode {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
         TokenPricingConfig {
-            address: address!("2222222222222222222222222222222222222222"),
+            token: address!("2222222222222222222222222222222222222222"),
             pricing: Pricing::ProdMode {
                 price_feed_coin: Coin::Eth,
             },
@@ -61,13 +61,13 @@ fn config_resolution() {
             relay_gas,                                        // from env
         },
         operations: OperationalConfig {
-            balance_monitor_interval_secs, // from env
-            nonce_policy,                  // default
-            dry_running,                   // from CLI
-            relay_count_for_recharge,      // default
-            fee_token_config,              // from env
-            price_feed_refresh_interval,   // default
-            price_feed_validity,           // from CLI
+            balance_monitor_interval_secs,   // from env
+            nonce_policy,                    // default
+            dry_running,                     // from CLI
+            relay_count_for_recharge,        // default
+            token_pricing: fee_token_config, // from env
+            price_feed_refresh_interval,     // default
+            price_feed_validity,             // from CLI
         },
     };
 
@@ -87,7 +87,7 @@ fn config_resolution() {
         relay_count_for_recharge: None,
         total_fee: Some(total_fee),
         relay_gas: None,
-        fee_token_config: None,
+        token_pricing: None,
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
     };

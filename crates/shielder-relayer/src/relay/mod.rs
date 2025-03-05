@@ -16,8 +16,8 @@ use tracing::{debug, error};
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
     config::{
-        TokenPricingConfig,
         Pricing::{self},
+        TokenPricingConfig,
     },
     metrics::WITHDRAW_FAILURE,
     price_feed::{Coin, Prices},
@@ -142,7 +142,7 @@ fn check_fee(
 ) -> Result<(), Response> {
     let token_config = &app_state.token_pricing;
     match &query.fee_token {
-        FeeToken::ERC20(erc20) => match token_config.iter().find(|x| x.address == *erc20) {
+        FeeToken::ERC20(erc20) => match token_config.iter().find(|x| x.token == *erc20) {
             None => {
                 request_trace.record_incorrect_token_fee(erc20);
                 return Err(bad_request(&format!(
@@ -174,7 +174,9 @@ fn check_fee(
 
 fn price_relative_to_native(prices: &Prices, pricing: &Pricing) -> Option<Decimal> {
     match pricing {
-        Pricing::ProdMode { price_feed_coin } => prices.relative_price(Coin::Azero, *price_feed_coin),
+        Pricing::ProdMode { price_feed_coin } => {
+            prices.relative_price(Coin::Azero, *price_feed_coin)
+        }
         Pricing::DevMode { price } => prices.price(Coin::Azero).map(|native| price / native),
     }
 }
