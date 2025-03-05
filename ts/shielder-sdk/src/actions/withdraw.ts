@@ -227,6 +227,7 @@ export class WithdrawAction extends NoteAction {
       .withdraw(
         expectedContractVersion,
         calldata.token,
+        calldata.totalFee,
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),

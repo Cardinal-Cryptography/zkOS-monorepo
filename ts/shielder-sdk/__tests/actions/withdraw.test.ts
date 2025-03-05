@@ -289,6 +289,7 @@ describe("WithdrawAction", () => {
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
         nativeToken(),
+        calldata.totalFee,
         scalarToBigint(calldata.calldata.pubInputs.idHiding),
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
@@ -323,6 +324,7 @@ describe("WithdrawAction", () => {
           (
             expectedContractVersion: `0x${string}`,
             token: Token,
+            feeAmount: bigint,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
@@ -359,6 +361,7 @@ describe("WithdrawAction", () => {
           (
             expectedContractVersion: `0x${string}`,
             token: Token,
+            feeAmount: bigint,
             idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
