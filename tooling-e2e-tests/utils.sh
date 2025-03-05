@@ -86,10 +86,31 @@ deploy_erc20_token() {
 }
 
 deploy_erc20_tokens() {
-  TOKEN_CONTRACT_ADDRESSES=$(deploy_erc20_token "TestToken1" "TT1")","$(deploy_erc20_token "TestToken2" "TT2")
+  TT1=$(deploy_erc20_token "TestToken1" "TT1")
+  TT2=$(deploy_erc20_token "TestToken2" "TT2")
+
+  TOKEN_CONTRACT_ADDRESSES=$TT1","$TT2
   export TOKEN_CONTRACT_ADDRESSES
-  # set FEE_TOKENS for relayer
-  export FEE_TOKENS=${TOKEN_CONTRACT_ADDRESSES}
+
+  # set pricing for relayer
+  TOKEN_PRICING=$(cat <<EOF
+  [
+    {
+      "token":"Native",
+      "pricing":{"DevMode":{"price":"1"}}
+    },
+    {
+      "token":{"ERC20":${TT1}},
+      "pricing":{"DevMode":{"price":"1"}}
+    },
+    {
+      "token":{"ERC20":${TT2}},
+      "pricing":{"DevMode":{"price":"1"}}
+    }
+  ]
+EOF
+  )
+  export TOKEN_PRICING
 
   log_progress "✅ Tokens deployed"
 }

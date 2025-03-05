@@ -73,7 +73,7 @@ impl TestContext {
                 new_note: U256::ZERO,
                 proof: Bytes::new(),
                 fee_token: FeeToken::Native,
-                fee_amount: U256::ZERO,
+                fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
                 mac_salt: U256::ZERO,
                 mac_commitment: U256::ZERO,
             })
