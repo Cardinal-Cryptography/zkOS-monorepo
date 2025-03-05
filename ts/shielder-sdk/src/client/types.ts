@@ -1,14 +1,7 @@
 import { Calldata } from "@/actions";
 import { ShielderTransaction } from "@/state";
-import { CustomError } from "ts-custom-error";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
-
-export class OutdatedSdkError extends CustomError {
-  public constructor() {
-    super("Contract version not supported by SDK");
-  }
-}
 
 export interface ShielderCallbacks {
   /**

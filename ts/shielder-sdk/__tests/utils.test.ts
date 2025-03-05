@@ -2,6 +2,7 @@ import { test, expect } from "vitest";
 import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 import {
   flatUint8,
+  getAddressByToken,
   idHidingNonce,
   isVersionSupported,
   noteVersion
@@ -39,4 +40,16 @@ test("note version", () => {
 test("isVersionSupported", () => {
   expect(isVersionSupported("0x000100")).toBe(true);
   expect(isVersionSupported("0x000002")).toBe(false);
+});
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+
+test("getAddressByToken", () => {
+  expect(getAddressByToken({ type: "native" })).toBe(nativeTokenAddress);
+  expect(getAddressByToken({ type: "erc20", address: "0x123" })).toBe("0x123");
+});
+
+test("getTokenByAddress", () => {
+  expect(getAddressByToken({ type: "native" })).toBe(nativeTokenAddress);
+  expect(getAddressByToken({ type: "erc20", address: "0x123" })).toBe("0x123");
 });
