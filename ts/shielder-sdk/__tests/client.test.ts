@@ -11,10 +11,11 @@ import {
 
 import { Address, Hash, PublicClient } from "viem";
 import { MockedCryptoClient } from "./helpers";
+import { ShielderCallbacks } from "../src/client/types";
 import { ShielderClient, createShielderClient } from "../src/client/client";
 import { Contract } from "../src/chain/contract";
 import { Relayer } from "../src/chain/relayer";
-import { idHidingNonce } from "../src/utils";
+import { idHidingNonce, nativeToken } from "../src/utils";
 import { InjectedStorageInterface } from "../src/storage/storageSchema";
 import { AccountState, ShielderTransaction } from "../src/state/types";
 import { contractVersion, nativeTokenAddress } from "../src/constants";
@@ -32,10 +33,6 @@ vitest.mock("viem", async () => {
     })
   };
 });
-
-import { StateSynchronizer } from "../src/state/sync/synchronizer";
-import { nativeToken } from "../src/utils";
-import { ShielderCallbacks } from "../src/client/types";
 
 describe("ShielderClient", () => {
   let client: ShielderClient;
@@ -492,8 +489,7 @@ describe("ShielderClient", () => {
           action: "depositAction",
           stage: "generateCalldata",
           clientTarget: "shield",
-          nonce: 1n,
-          args: [nativeTokenAddress, mockAmount, mockSendTransaction, mockFrom]
+          nonce: 1n
         },
         {
           mockedError: new OutdatedSdkError("123"),
@@ -508,41 +504,11 @@ describe("ShielderClient", () => {
           action: "withdrawAction",
           stage: "sendCalldataWithRelayer",
           clientTarget: "withdraw",
-          nonce: 1n,
-          args: [nativeTokenAddress, mockAmount, mockTotalFee, mockAddress]
-        },
-        {
-          mockedError: new OutdatedSdkError("123"),
-          action: "withdrawAction",
-          stage: "generateCalldata",
-          clientTarget: "withdrawManual",
-          nonce: 1n,
-          args: [
-            nativeTokenAddress,
-            mockAmount,
-            mockAddress,
-            mockSendTransaction,
-            mockFrom
-          ]
-        },
-        {
-          mockedError: new OutdatedSdkError("123"),
-          action: "withdrawAction",
-          stage: "sendCalldata",
-          clientTarget: "withdrawManual",
-          expectedOperation: "withdraw", // The operation name passed to callbacks is "withdraw" for both withdraw methods
-          nonce: 1n,
-          args: [
-            nativeTokenAddress,
-            mockAmount,
-            mockAddress,
-            mockSendTransaction,
-            mockFrom
-          ]
+          nonce: 1n
         }
       ])(
-        "should throw OutdatedSdkError when version is not supported for $clientTarget with $stage",
-        async ({ mockedError, action, stage, clientTarget, nonce, args }) => {
+        "should throw OutdatedSdkError when version is not supported",
+        async ({ mockedError, action, stage, clientTarget, nonce }) => {
           // Mock state
           mockState = { nonce } as AccountState;
 
@@ -550,9 +516,9 @@ describe("ShielderClient", () => {
 
           vitest.spyOn(callbacks, "onError");
 
-          await expect(client[clientTarget](...args)).rejects.toThrow(
-            mockedError
-          );
+          await expect(
+            client[clientTarget](mockAmount, mockSendTransaction, mockFrom)
+          ).rejects.toThrow(mockedError);
 
           if (stage === "sendCalldata" || stage === "sendCalldataWithRelayer") {
             expect(callbacks.onCalldataGenerated).toHaveBeenCalledWith(

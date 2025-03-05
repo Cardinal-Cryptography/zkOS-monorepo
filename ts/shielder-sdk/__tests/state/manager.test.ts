@@ -152,4 +152,19 @@ describe("StateManager", () => {
       ).rejects.toThrow("New account id does not match the configured.");
     });
   });
+
+  describe("emptyAccountState", () => {
+    it("returns correct empty state", async () => {
+      const emptyState =
+        await stateManager.createEmptyAccountState(nativeToken());
+
+      expect(emptyState).toEqual({
+        id: testId,
+        nonce: 0n,
+        balance: 0n,
+        currentNote: Scalar.fromBigint(0n),
+        token: nativeToken()
+      });
+    });
+  });
 });
