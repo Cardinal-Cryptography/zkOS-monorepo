@@ -100,11 +100,11 @@ deploy_erc20_tokens() {
       "pricing":{"DevMode":{"price":"1"}}
     },
     {
-      "token":{"ERC20":${TT1}},
+      "token":{"ERC20":"${TT1}"},
       "pricing":{"DevMode":{"price":"1"}}
     },
     {
-      "token":{"ERC20":${TT2}},
+      "token":{"ERC20":"${TT2}"},
       "pricing":{"DevMode":{"price":"1"}}
     }
   ]
