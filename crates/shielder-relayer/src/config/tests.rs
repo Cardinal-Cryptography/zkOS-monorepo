@@ -42,7 +42,7 @@ fn config_resolution() {
             },
         },
     ];
-    let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL;
+    let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
     let price_feed_validity = 15;
 
     let expected_config = ServerConfig {

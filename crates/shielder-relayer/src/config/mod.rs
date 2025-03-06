@@ -4,8 +4,8 @@ use clap::Parser;
 use cli::CLIConfig;
 use defaults::{
     DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT,
-    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_PRICE_FEED_REFRESH_INTERVAL,
-    DEFAULT_PRICE_FEED_VALIDITY, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
+    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS,
+    DEFAULT_PRICE_FEED_VALIDITY_SECS, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
 };
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
 use rust_decimal::Decimal;
@@ -181,12 +181,12 @@ fn resolve_config_from_cli_config(
         price_feed_validity: resolve_value(
             price_feed_validity,
             PRICE_FEED_VALIDITY_ENV,
-            Some(DEFAULT_PRICE_FEED_VALIDITY),
+            Some(DEFAULT_PRICE_FEED_VALIDITY_SECS),
         ),
         price_feed_refresh_interval: resolve_value(
             price_feed_refresh_interval,
             PRICE_FEED_REFRESH_INTERVAL_ENV,
-            Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL),
+            Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS),
         ),
     };
 

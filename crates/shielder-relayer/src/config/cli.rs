@@ -162,7 +162,7 @@ pub struct CLIConfig {
         help = "Price feed refresh interval in seconds.",
         long_help = "Price feed refresh interval in seconds. If not provided, the value from the \
             environment variable `{PRICE_FEED_REFRESH_INTERVAL_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL:?}`."
+            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS:?}`."
     )]
     pub price_feed_refresh_interval: Option<u64>,
 
@@ -171,7 +171,7 @@ pub struct CLIConfig {
         help = "Price feed validity in seconds.",
         long_help = "Price feed validity in seconds. If not provided, the value from the \
             environment variable `{PRICE_FEED_VALIDITY_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_PRICE_FEED_VALIDITY:?}`."
+            the default value is `{DEFAULT_PRICE_FEED_VALIDITY_SECS:?}`."
     )]
     pub price_feed_validity: Option<u64>,
 }
