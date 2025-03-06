@@ -93,7 +93,7 @@ mod erc20_fee {
     fn erc20_pricing() -> TokenPricingConfig {
         TokenPricingConfig {
             token: FeeToken::ERC20(ERC20_ADDRESS),
-            pricing: Pricing::ProdMode {
+            pricing: Pricing::Feed {
                 price_feed_coin: Coin::Eth,
             },
         }
@@ -102,7 +102,7 @@ mod erc20_fee {
     fn native_pricing() -> TokenPricingConfig {
         TokenPricingConfig {
             token: FeeToken::Native,
-            pricing: Pricing::ProdMode {
+            pricing: Pricing::Feed {
                 price_feed_coin: Coin::Azero,
             },
         }

@@ -37,7 +37,7 @@ fn config_resolution() {
         },
         TokenPricingConfig {
             token: FeeToken::ERC20(address!("2222222222222222222222222222222222222222")),
-            pricing: Pricing::ProdMode {
+            pricing: Pricing::Feed {
                 price_feed_coin: Coin::Eth,
             },
         },
@@ -111,7 +111,7 @@ fn config_resolution() {
                 },
                 {
                     \"token\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
-                    \"pricing\":{\"ProdMode\":{\"price_feed_coin\":\"Eth\"}}
+                    \"pricing\":{\"Feed\":{\"price_feed_coin\":\"Eth\"}}
                 }
             ]",
         );
