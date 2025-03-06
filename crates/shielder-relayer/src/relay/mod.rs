@@ -203,7 +203,7 @@ fn price_relative_to_native(
     native_pricing: &Pricing,
 ) -> Option<Decimal> {
     let resolve_price = |pricing: &Pricing| match pricing {
-        Pricing::DevMode { price } => Some(*price),
+        Pricing::Fixed { price } => Some(*price),
         Pricing::ProdMode { price_feed_coin } => prices.price(*price_feed_coin),
     };
     let fee_token_price = resolve_price(fee_token_pricing)?;

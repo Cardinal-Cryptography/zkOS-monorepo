@@ -31,7 +31,7 @@ fn config_resolution() {
     let fee_token_config = vec![
         TokenPricingConfig {
             token: FeeToken::Native,
-            pricing: Pricing::DevMode {
+            pricing: Pricing::Fixed {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
@@ -107,7 +107,7 @@ fn config_resolution() {
             "[
                 {
                     \"token\":\"Native\",
-                    \"pricing\":{\"DevMode\":{\"price\":\"1.23\"}}
+                    \"pricing\":{\"Fixed\":{\"price\":\"1.23\"}}
                 },
                 {
                     \"token\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},

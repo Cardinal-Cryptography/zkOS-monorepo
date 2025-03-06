@@ -97,15 +97,15 @@ deploy_erc20_tokens() {
   [
     {
       "token":"Native",
-      "pricing":{"DevMode":{"price":"1"}}
+      "pricing":{"Fixed":{"price":"1"}}
     },
     {
       "token":{"ERC20":"${TT1}"},
-      "pricing":{"DevMode":{"price":"1"}}
+      "pricing":{"Fixed":{"price":"1"}}
     },
     {
       "token":{"ERC20":"${TT2}"},
-      "pricing":{"DevMode":{"price":"1"}}
+      "pricing":{"Fixed":{"price":"1"}}
     }
   ]
 EOF
