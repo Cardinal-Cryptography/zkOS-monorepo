@@ -4,19 +4,24 @@ use clap::Parser;
 use cli::CLIConfig;
 use defaults::{
     DEFAULT_DRY_RUNNING, DEFAULT_HOST, DEFAULT_LOGGING_FORMAT, DEFAULT_METRICS_PORT,
-    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
+    DEFAULT_NONCE_POLICY, DEFAULT_PORT, DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS,
+    DEFAULT_PRICE_FEED_VALIDITY_SECS, DEFAULT_RELAY_GAS, DEFAULT_TOTAL_FEE,
 };
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV, FEE_TOKENS_ENV,
-    LOGGING_FORMAT_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV, RELAYER_HOST_ENV,
-    RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV,
-    RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOTAL_FEE_ENV,
+    FeeToken, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
+    LOGGING_FORMAT_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV, PRICE_FEED_REFRESH_INTERVAL_ENV,
+    PRICE_FEED_VALIDITY_ENV, RELAYER_HOST_ENV, RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV,
+    RELAYER_SIGNING_KEYS_ENV, RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV,
+    SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_PRICING_ENV, TOTAL_FEE_ENV,
 };
 
-use crate::config::defaults::{
-    DEFAULT_BALANCE_MONITOR_INTERVAL_SECS, DEFAULT_RELAY_COUNT_FOR_RECHARGE,
+use crate::{
+    config::defaults::{DEFAULT_BALANCE_MONITOR_INTERVAL_SECS, DEFAULT_RELAY_COUNT_FOR_RECHARGE},
+    price_feed::Coin,
 };
 
 mod cli;
@@ -52,13 +57,27 @@ pub struct ChainConfig {
     pub relay_gas: u64,
 }
 
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub enum Pricing {
+    Fixed { price: Decimal },
+    Feed { price_feed_coin: Coin },
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct TokenPricingConfig {
+    pub token: FeeToken,
+    pub pricing: Pricing,
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
     pub balance_monitor_interval_secs: u64,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
-    pub fee_tokens: Vec<Address>,
+    pub token_pricing: Vec<TokenPricingConfig>,
+    pub price_feed_validity: u64,
+    pub price_feed_refresh_interval: u64,
 }
 
 /// Resolved configuration for the Shielder relayer. Order of precedence is:
@@ -97,7 +116,9 @@ fn resolve_config_from_cli_config(
         relay_count_for_recharge,
         total_fee,
         relay_gas,
-        fee_tokens,
+        token_pricing,
+        price_feed_validity,
+        price_feed_refresh_interval,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -138,15 +159,10 @@ fn resolve_config_from_cli_config(
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
     };
 
-    let fee_tokens = fee_tokens
-        .unwrap_or_else(|| {
-            std::env::var(FEE_TOKENS_ENV)
-                .map(|env| env.split(',').map(|s| s.to_string()).collect())
-                .unwrap_or_default()
-        })
-        .iter()
-        .map(|a| to_address(a))
-        .collect();
+    let token_pricing = token_pricing
+        .or_else(|| std::env::var(TOKEN_PRICING_ENV).ok())
+        .unwrap_or_else(|| "[]".to_string());
+    let token_pricing = serde_json::from_str(&token_pricing).expect("Invalid token pricing");
 
     let operational_config = OperationalConfig {
         balance_monitor_interval_secs: resolve_value(
@@ -161,7 +177,17 @@ fn resolve_config_from_cli_config(
             RELAY_COUNT_FOR_RECHARGE_ENV,
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
-        fee_tokens,
+        token_pricing,
+        price_feed_validity: resolve_value(
+            price_feed_validity,
+            PRICE_FEED_VALIDITY_ENV,
+            Some(DEFAULT_PRICE_FEED_VALIDITY_SECS),
+        ),
+        price_feed_refresh_interval: resolve_value(
+            price_feed_refresh_interval,
+            PRICE_FEED_REFRESH_INTERVAL_ENV,
+            Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS),
+        ),
     };
 
     ServerConfig {

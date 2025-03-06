@@ -11,7 +11,8 @@ import { SendShielderTransaction } from "@/client";
 import { NoteAction } from "@/actions/utils";
 import { AccountState } from "@/state";
 import { Token } from "@/types";
-import { getTokenAddress } from "@/utils";
+import { getAddressByToken } from "@/utils";
+import { OutdatedSdkError } from "@/errors";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -54,7 +55,7 @@ export class NewAccountAction extends NoteAction {
     state: AccountState,
     amount: bigint
   ): Promise<NewAccountAdvice<Scalar>> {
-    const tokenAddress = getTokenAddress(state.token);
+    const tokenAddress = getAddressByToken(state.token);
     const { nullifier, trapdoor } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -163,6 +164,9 @@ export class NewAccountAction extends NoteAction {
       to: this.contract.getAddress(),
       value: calldata.token.type === "native" ? amount : 0n
     }).catch((e) => {
+      if (e instanceof OutdatedSdkError) {
+        throw e;
+      }
       throw new Error(`Failed to create new account: ${e}`);
     });
     return txHash;

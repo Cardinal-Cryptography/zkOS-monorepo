@@ -1,4 +1,5 @@
 use alloy_primitives::address;
+use assert2::assert;
 use shielder_relayer::{RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV};
 
 use super::*;
@@ -27,7 +28,22 @@ fn config_resolution() {
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
     let total_fee = DEFAULT_TOTAL_FEE.to_string();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
-    let fee_tokens = vec![address!("1111111111111111111111111111111111111111")];
+    let fee_token_config = vec![
+        TokenPricingConfig {
+            token: FeeToken::Native,
+            pricing: Pricing::Fixed {
+                price: Decimal::from_str("1.23").unwrap(),
+            },
+        },
+        TokenPricingConfig {
+            token: FeeToken::ERC20(address!("2222222222222222222222222222222222222222")),
+            pricing: Pricing::Feed {
+                price_feed_coin: Coin::Eth,
+            },
+        },
+    ];
+    let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
+    let price_feed_validity = 15;
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -45,11 +61,13 @@ fn config_resolution() {
             relay_gas,                                        // from env
         },
         operations: OperationalConfig {
-            balance_monitor_interval_secs, // from env
-            nonce_policy,                  // default
-            dry_running,                   // from CLI
-            relay_count_for_recharge,      // default
-            fee_tokens,                    // from env
+            balance_monitor_interval_secs,   // from env
+            nonce_policy,                    // default
+            dry_running,                     // from CLI
+            relay_count_for_recharge,        // default
+            token_pricing: fee_token_config, // from env
+            price_feed_refresh_interval,     // default
+            price_feed_validity,             // from CLI
         },
     };
 
@@ -69,7 +87,9 @@ fn config_resolution() {
         relay_count_for_recharge: None,
         total_fee: Some(total_fee),
         relay_gas: None,
-        fee_tokens: None,
+        token_pricing: None,
+        price_feed_refresh_interval: None,
+        price_feed_validity: Some(price_feed_validity),
     };
 
     // ---- Environment variables. -----------------------------------------------------------
@@ -82,10 +102,22 @@ fn config_resolution() {
         std::env::set_var(FEE_DESTINATION_KEY_ENV, fee_destination_key);
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
         std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
-        std::env::set_var(FEE_TOKENS_ENV, "1111111111111111111111111111111111111111");
+        std::env::set_var(
+            TOKEN_PRICING_ENV,
+            "[
+                {
+                    \"token\":\"Native\",
+                    \"pricing\":{\"Fixed\":{\"price\":\"1.23\"}}
+                },
+                {
+                    \"token\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
+                    \"pricing\":{\"Feed\":{\"price_feed_coin\":\"Eth\"}}
+                }
+            ]",
+        );
     }
 
     // ---- Test. ------------------------------------------------------------------------------
     let resolved_config = resolve_config_from_cli_config(cli_config);
-    assert_eq!(resolved_config, expected_config);
+    assert!(resolved_config == expected_config);
 }

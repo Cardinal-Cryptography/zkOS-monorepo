@@ -1,4 +1,4 @@
-use std::{env, io, str::FromStr, sync::Arc};
+use std::{env, io, str::FromStr, sync::Arc, time::Duration};
 
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
@@ -10,6 +10,8 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use config::TokenPricingConfig;
+use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     providers::create_provider_with_nonce_caching_signer,
@@ -45,7 +47,8 @@ pub struct AppState {
     pub signer_addresses: Vec<Address>,
     pub taskmaster: Taskmaster,
     pub balances: Balances,
-    pub fee_tokens: Vec<Address>,
+    pub prices: Prices,
+    pub token_pricing: Vec<TokenPricingConfig>,
 }
 
 struct Signers {
@@ -60,6 +63,10 @@ async fn main() -> Result<()> {
     init_logging(server_config.logging_format)?;
 
     let signers = get_signer_info(&server_config.chain)?;
+    let prices = Prices::new(
+        Duration::from_secs(server_config.operations.price_feed_validity),
+        Duration::from_secs(server_config.operations.price_feed_refresh_interval),
+    );
 
     tokio::try_join!(
         balance_monitor(
@@ -68,7 +75,8 @@ async fn main() -> Result<()> {
             signers.balances.clone(),
         ),
         start_metrics_server(&server_config, signers.balances.clone()),
-        start_main_server(&server_config, signers),
+        start_main_server(&server_config, signers, prices.clone()),
+        start_price_feed(prices)
     )?;
 
     Ok(())
@@ -106,7 +114,7 @@ async fn start_metrics_server(config: &ServerConfig, balances: Balances) -> Resu
     Ok(axum::serve(listener, app).await?)
 }
 
-async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()> {
+async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Prices) -> Result<()> {
     let address = config.network.main_address();
     let listener = tokio::net::TcpListener::bind(address.clone()).await?;
     info!("Listening on {address}");
@@ -139,7 +147,8 @@ async fn start_main_server(config: &ServerConfig, signers: Signers) -> Result<()
             config.operations.dry_running,
             report_for_recharge,
         ),
-        fee_tokens: config.operations.fee_tokens.clone(),
+        token_pricing: config.operations.token_pricing.clone(),
+        prices,
     };
 
     let app = Router::new()

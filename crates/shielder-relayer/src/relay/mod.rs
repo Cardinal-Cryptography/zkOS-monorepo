@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use rust_decimal::Decimal;
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
@@ -14,17 +15,23 @@ use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
+    config::Pricing,
     metrics::WITHDRAW_FAILURE,
+    price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
     AppState,
 };
 
+#[cfg(test)]
+mod fee_checking_tests;
 mod monitoring;
 mod request_trace;
 mod taskmaster;
 
 const TASK_QUEUE_SIZE: usize = 1024;
 const OPTIMISTIC_DRY_RUN_THRESHOLD: u32 = 32;
+const RELATIVE_PRICE_DIGITS: u32 = 20;
+const FEE_MARGIN_PERCENT: u32 = 10;
 
 pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) -> impl IntoResponse {
     debug!("Relay request received: {query:?}");
@@ -33,7 +40,7 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
     if let Err(response) = check_expected_version(&query, &mut request_trace) {
         return response;
     }
-    if let Err(response) = check_fee_token(&app_state.fee_tokens, &query, &mut request_trace) {
+    if let Err(response) = check_fee(&app_state, &query, &mut request_trace) {
         return response;
     }
 
@@ -74,6 +81,22 @@ fn bad_request(msg: &str) -> Response {
     (StatusCode::BAD_REQUEST, SimpleServiceResponse::from(msg)).into_response()
 }
 
+fn temporary_failure(msg: &str) -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        SimpleServiceResponse::from(msg),
+    )
+        .into_response()
+}
+
+fn internal_server_error(msg: &str) -> Response {
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        SimpleServiceResponse::from(msg),
+    )
+        .into_response()
+}
+
 fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawNativeCall {
     withdrawNativeCall {
         expectedContractVersion: q.expected_contract_version,
@@ -109,18 +132,99 @@ fn check_expected_version(
     Ok(())
 }
 
-fn check_fee_token(
-    permissible_tokens: &[Address],
+fn check_fee(
+    app_state: &AppState,
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    match &query.fee_token {
-        FeeToken::ERC20(erc20) if !permissible_tokens.contains(erc20) => {
-            request_trace.record_incorrect_token_fee(erc20);
+    match query.fee_token {
+        FeeToken::Native => {
+            // todo: discuss if we want to prevent users from spending too much
+            if query.fee_amount < app_state.total_fee {
+                request_trace.record_insufficient_fee(query.fee_amount);
+                return Err(bad_request("Insufficient fee."));
+            }
+        }
+        FeeToken::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
+    }
+    Ok(())
+}
+
+fn check_erc20_fee(
+    app_state: &AppState,
+    fee_token_address: Address,
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    let fee_token_pricing = app_state
+        .token_pricing
+        .iter()
+        .find(|x| x.token == FeeToken::ERC20(fee_token_address))
+        .map(|p| &p.pricing);
+
+    let native_pricing = app_state
+        .token_pricing
+        .iter()
+        .find(|x| x.token == FeeToken::Native)
+        .map(|p| &p.pricing);
+
+    match (fee_token_pricing, native_pricing) {
+        (None, _) => {
+            request_trace.record_incorrect_token_fee(fee_token_address);
             Err(bad_request(&format!(
-                "Fee token {erc20} is not allowed. Only native and {permissible_tokens:?} tokens are supported."
+                "Fee token {fee_token_address} is not allowed."
             )))
         }
-        _ => Ok(()),
+        (Some(_), None) => {
+            error!("MISSING NATIVE TOKEN PRICING!");
+            Err(server_error("Server is missing native token pricing."))
+        }
+        (Some(fee_token_pricing), Some(native_pricing)) => {
+            let ratio =
+                price_relative_to_native(&app_state.prices, fee_token_pricing, native_pricing)
+                    .ok_or_else(|| {
+                        temporary_failure("Verification failed temporarily, try again later.")
+                    })?;
+
+            let expected_fee = mul_price(query.fee_amount, ratio)?;
+
+            if add_fee_error_margin(expected_fee) < app_state.total_fee {
+                request_trace.record_insufficient_fee(query.fee_amount);
+                return Err(bad_request("Insufficient fee."));
+            }
+            Ok(())
+        }
     }
+}
+
+fn price_relative_to_native(
+    prices: &Prices,
+    fee_token_pricing: &Pricing,
+    native_pricing: &Pricing,
+) -> Option<Decimal> {
+    let resolve_price = |pricing: &Pricing| match pricing {
+        Pricing::Fixed { price } => Some(*price),
+        Pricing::Feed { price_feed_coin } => prices.price(*price_feed_coin),
+    };
+    let fee_token_price = resolve_price(fee_token_pricing)?;
+    let native_price = resolve_price(native_pricing)?;
+
+    Some(fee_token_price / native_price)
+}
+
+fn mul_price(a: U256, b: Decimal) -> Result<U256, Response> {
+    let b = b
+        .round_sf(RELATIVE_PRICE_DIGITS)
+        .ok_or_else(|| internal_server_error("Pricing error"))?;
+    let mantissa: U256 = b
+        .mantissa()
+        .try_into()
+        .map_err(|_| internal_server_error("Pricing error"))?;
+    let scale = U256::pow(U256::from(10), U256::from(b.scale()));
+
+    Ok(a * mantissa / scale)
+}
+
+fn add_fee_error_margin(fee: U256) -> U256 {
+    fee * U256::from(100 + FEE_MARGIN_PERCENT) / U256::from(100)
 }

@@ -1,11 +1,7 @@
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { Address, createPublicClient, Hash, http, PublicClient } from "viem";
-import {
-  Contract,
-  IContract,
-  VersionRejectedByContract
-} from "@/chain/contract";
-import { IRelayer, Relayer, VersionRejectedByRelayer } from "@/chain/relayer";
+import { Address, Hash, PublicClient } from "viem";
+import { Contract, IContract } from "@/chain/contract";
+import { IRelayer, Relayer } from "@/chain/relayer";
 import {
   NewAccountAction,
   DepositAction,
@@ -21,11 +17,9 @@ import {
   ShielderTransaction,
   StateEventsFilter,
   StateManager,
-  StateSynchronizer,
-  UnexpectedVersionInEvent
+  StateSynchronizer
 } from "@/state";
 import {
-  OutdatedSdkError,
   QuotedFees,
   SendShielderTransaction,
   ShielderCallbacks,
@@ -47,16 +41,13 @@ import { Token } from "@/types";
 export const createShielderClient = (
   shielderSeedPrivateKey: `0x${string}`,
   chainId: number,
-  rpcHttpEndpoint: string,
+  publicClient: PublicClient,
   contractAddress: Address,
   relayerUrl: string,
   storage: InjectedStorageInterface,
   cryptoClient: CryptoClient,
   callbacks: ShielderCallbacks = {}
 ): ShielderClient => {
-  const publicClient = createPublicClient({
-    transport: http(rpcHttpEndpoint)
-  });
   const contract = new Contract(publicClient, contractAddress);
   const relayer = new Relayer(relayerUrl);
 
@@ -170,25 +161,11 @@ export class ShielderClient {
    */
   async syncShielderToken(token: Token) {
     try {
-      return await this.handleVersionErrors(() => {
-        return this.stateSynchronizer.syncAccountState(token);
-      });
+      return await this.stateSynchronizer.syncAccountState(token);
     } catch (error) {
       this.callbacks.onError?.(error, "syncing", "sync");
       throw error;
     }
-  }
-
-  /**
-   * Syncs the whole shielder state with the blockchain.
-   * Emits callbacks for the newly synced transaction.
-   * Might have side effects, as it mutates the shielder state.
-   * For the fresh storage and existing account being imported, it goes through the whole
-   * shielder transactions history and updates the state, so it might be slow.
-   * @throws {OutdatedSdkError} if cannot sync state due to unsupported contract version
-   */
-  async syncShielderAllTokens() {
-    return Promise.reject(new Error("Not implemented"));
   }
 
   /**
@@ -212,29 +189,7 @@ export class ShielderClient {
   async *scanChainForTokenShielderTransactions(
     token: Token
   ): AsyncGenerator<ShielderTransaction, void, unknown> {
-    try {
-      for await (const transaction of this.stateSynchronizer.getShielderTransactions(
-        token
-      )) {
-        yield transaction;
-      }
-    } catch (error) {
-      // Rethrow to produce `OutdatedSdkError` if needed.
-      try {
-        throw this.wrapVersionErrors(error);
-      } catch (error) {
-        this.callbacks.onError?.(error, "syncing", "sync");
-        throw error;
-      }
-    }
-  }
-
-  /**
-   * Get the whole shielder transactions history for all tokens.
-   */
-  // eslint-disable-next-line require-yield
-  async *scanChainForAllShielderTransactions() {
-    return Promise.reject(new Error("Not implemented"));
+    yield* this.stateSynchronizer.getShielderTransactions(token);
   }
 
   /**
@@ -415,7 +370,7 @@ export class ShielderClient {
   ): Promise<Hash> {
     let calldata: T;
     try {
-      calldata = await this.handleVersionErrors(generateCalldata);
+      calldata = await generateCalldata();
     } catch (error) {
       this.callbacks.onError?.(error, "generation", operation);
       throw error;
@@ -423,9 +378,7 @@ export class ShielderClient {
     this.callbacks.onCalldataGenerated?.(calldata, operation);
 
     try {
-      const txHash = await this.handleVersionErrors(() => {
-        return sendCalldata(calldata);
-      });
+      const txHash = await sendCalldata(calldata);
       this.callbacks.onCalldataSent?.(txHash, operation);
       return txHash;
     } catch (error) {
@@ -433,25 +386,6 @@ export class ShielderClient {
       throw error;
     }
   }
-
-  private wrapVersionErrors(err: unknown) {
-    if (
-      err instanceof VersionRejectedByContract ||
-      err instanceof VersionRejectedByRelayer ||
-      err instanceof UnexpectedVersionInEvent
-    ) {
-      return new OutdatedSdkError();
-    }
-    return err;
-  }
-
-  private async handleVersionErrors<T>(func: () => Promise<T>): Promise<T> {
-    try {
-      return await func();
-    } catch (err) {
-      throw this.wrapVersionErrors(err);
-    }
-  }
 }
 
-export { SendShielderTransaction, OutdatedSdkError, ShielderCallbacks };
+export { SendShielderTransaction, ShielderCallbacks };

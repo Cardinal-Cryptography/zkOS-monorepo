@@ -11,9 +11,10 @@ import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { NewAccountAction } from "../../src/actions/newAccount";
 import { AccountState } from "../../src/state";
-import { IContract, VersionRejectedByContract } from "../../src/chain/contract";
+import { IContract } from "../../src/chain/contract";
 import { SendShielderTransaction } from "../../src/client";
 import { nativeToken } from "../../src/types";
+import { OutdatedSdkError } from "../../src/errors";
 
 const ANONYMITY_REVOKER_PUBKEY = [123n, 456n];
 
@@ -58,7 +59,6 @@ describe("NewAccountAction", () => {
       nonce: mockedStateNonce,
       balance: 0n,
       currentNote: Scalar.fromBigint(0n),
-      storageSchemaVersion: 0,
       token: nativeToken()
     };
   });
@@ -197,7 +197,7 @@ describe("NewAccountAction", () => {
         expectedVersion
       );
 
-      const mockedErr = new VersionRejectedByContract();
+      const mockedErr = new OutdatedSdkError("123");
 
       contract.newAccountNativeCalldata = vitest
         .fn<

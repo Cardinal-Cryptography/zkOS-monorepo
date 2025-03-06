@@ -2,7 +2,6 @@ export {
   ShielderClient,
   createShielderClient,
   SendShielderTransaction,
-  OutdatedSdkError,
   ShielderCallbacks,
   QuotedFees,
   ShielderOperation
@@ -20,4 +19,5 @@ export {
   nativeToken,
   erc20Token
 } from "@/types";
+export { OutdatedSdkError } from "@/errors";
 export { shieldActionGasLimit } from "@/constants";

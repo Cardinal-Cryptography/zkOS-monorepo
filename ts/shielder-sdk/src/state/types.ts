@@ -23,14 +23,13 @@ export type AccountState = {
    * Hash of the last note.
    */
   currentNote: Scalar;
+};
+
+export type AccountStateMerkleIndexed = AccountState & {
   /**
    * Merkle tree index of the last note.
    */
-  currentNoteIndex?: bigint;
-  /**
-   * Version of the storage schema.
-   */
-  storageSchemaVersion: number;
+  currentNoteIndex: bigint;
 };
 
 export type ShielderTransaction = {

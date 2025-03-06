@@ -1,6 +1,6 @@
 import { feeAddressPath, feePath, relayPath } from "@/constants";
+import { OutdatedSdkError } from "@/errors";
 import { Token } from "@/types";
-import { CustomError } from "ts-custom-error";
 import { Address } from "viem";
 import { z } from "zod";
 
@@ -18,12 +18,6 @@ const quoteFeesResponseSchema = z.object({
 
 export type QuoteFeesResponse = z.infer<typeof quoteFeesResponseSchema>;
 
-export class VersionRejectedByRelayer extends CustomError {
-  public constructor(message: string) {
-    super(`Version rejected by relayer: ${message}`);
-  }
-}
-
 export class GenericWithdrawError extends Error {
   constructor(message: string) {
     super(`Failed to withdraw: ${message}`);
@@ -37,6 +31,7 @@ export type IRelayer = {
   withdraw: (
     expectedContractVersion: `0x${string}`,
     token: Token,
+    feeAmount: bigint,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
@@ -60,6 +55,7 @@ export class Relayer implements IRelayer {
   withdraw = async (
     expectedContractVersion: `0x${string}`,
     token: Token,
+    feeAmount: bigint,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
@@ -94,6 +90,7 @@ export class Relayer implements IRelayer {
                 : {
                     ERC20: token.address
                   },
+            fee_amount: feeAmount,
             proof: Array.from(proof)
           },
           (_, value: unknown) =>
@@ -108,7 +105,9 @@ export class Relayer implements IRelayer {
       const responseText = await response.text();
 
       if (responseText.startsWith('"Version mismatch:')) {
-        throw new VersionRejectedByRelayer(responseText);
+        throw new OutdatedSdkError(
+          `Version rejected by relayer: ${responseText}`
+        );
       }
 
       throw new GenericWithdrawError(`${responseText}`);
