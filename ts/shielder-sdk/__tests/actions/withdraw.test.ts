@@ -10,21 +10,18 @@ import {
 import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { WithdrawAction } from "../../src/actions/withdraw";
-import { AccountState } from "../../src/state";
 import { IContract } from "../../src/chain/contract";
-import {
-  IRelayer,
-  VersionRejectedByRelayer,
-  WithdrawResponse
-} from "../../src/chain/relayer";
+import { IRelayer, WithdrawResponse } from "../../src/chain/relayer";
 import { nativeToken, Token } from "../../src/types";
+import { OutdatedSdkError } from "../../src/errors";
+import { AccountStateMerkleIndexed } from "../../src/state/types";
 
 describe("WithdrawAction", () => {
   let cryptoClient: MockedCryptoClient;
   let contract: IContract;
   let relayer: IRelayer;
   let action: WithdrawAction;
-  let state: AccountState;
+  let state: AccountStateMerkleIndexed;
   const stateNonce = 1n;
   const prevNullifier = Scalar.fromBigint(2n);
   const prevTrapdoor = Scalar.fromBigint(3n);
@@ -107,7 +104,6 @@ describe("WithdrawAction", () => {
         Scalar.fromBigint(5n)
       ),
       currentNoteIndex: 100n,
-      storageSchemaVersion: 0,
       token: nativeToken()
     };
   });
@@ -169,25 +165,6 @@ describe("WithdrawAction", () => {
 
       // Expected contract version should be equal to input expected version
       expect(calldata.expectedContractVersion).toBe(expectedVersion);
-    });
-
-    it("should throw on undefined currentNoteIndex", async () => {
-      const amount = 2n;
-      const expectedVersion = "0xversio" as `0x${string}`;
-      const totalFee = 1n;
-      await expect(
-        action.generateCalldata(
-          {
-            ...state,
-            currentNoteIndex: undefined
-          },
-          amount,
-          mockRelayerAddress,
-          totalFee,
-          mockAddress,
-          expectedVersion
-        )
-      ).rejects.toThrow("currentNoteIndex must be set");
     });
 
     it("should throw on balance less than amount", async () => {
@@ -317,7 +294,7 @@ describe("WithdrawAction", () => {
         expectedVersion
       );
 
-      const mockedErr = new VersionRejectedByRelayer("rejected version");
+      const mockedErr = new OutdatedSdkError("123");
 
       relayer.withdraw = vitest
         .fn<

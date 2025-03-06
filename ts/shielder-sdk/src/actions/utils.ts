@@ -3,7 +3,7 @@ import {
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/state";
-import { getTokenAddress, noteVersion } from "@/utils";
+import { getAddressByToken, noteVersion } from "@/utils";
 import { bytesToHex } from "viem";
 
 export abstract class NoteAction {
@@ -16,7 +16,7 @@ export abstract class NoteAction {
     amount: bigint,
     balanceChange: (currentBalance: bigint, amount: bigint) => bigint
   ): Promise<AccountState | null> {
-    const tokenAddress = getTokenAddress(stateOld.token);
+    const tokenAddress = getAddressByToken(stateOld.token);
     const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
       await this.cryptoClient.secretManager.getSecrets(
         stateOld.id,
@@ -46,7 +46,6 @@ export abstract class NoteAction {
       nonce: stateOld.nonce + 1n,
       balance: balanceNew,
       currentNote: noteNew,
-      storageSchemaVersion: stateOld.storageSchemaVersion,
       token: stateOld.token
     };
   }

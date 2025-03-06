@@ -1,5 +1,5 @@
 import { StateManager } from "./manager";
-import { StateSynchronizer, UnexpectedVersionInEvent } from "./sync";
+import { StateSynchronizer } from "./sync";
 import { StateEventsFilter } from "./events";
 import accountObjectSchema, {
   InjectedStorageInterface,
@@ -15,6 +15,5 @@ export {
   ShielderTransaction,
   StateManager,
   StateSynchronizer,
-  StateEventsFilter,
-  UnexpectedVersionInEvent
+  StateEventsFilter
 };

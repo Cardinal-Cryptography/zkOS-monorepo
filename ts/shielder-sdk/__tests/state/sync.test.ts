@@ -6,13 +6,15 @@ import {
 import { IContract, NoteEvent } from "../../src/chain/contract";
 import { StateEventsFilter } from "../../src/state/events";
 import { StateManager } from "../../src/state/manager";
-import { AccountState, ShielderTransaction } from "../../src/state/types";
 import {
-  StateSynchronizer,
-  UnexpectedVersionInEvent
-} from "../../src/state/sync";
+  AccountState,
+  AccountStateMerkleIndexed,
+  ShielderTransaction
+} from "../../src/state/types";
+import { StateSynchronizer } from "../../src/state/sync";
 import { MockedCryptoClient } from "../helpers";
 import { nativeToken } from "../../src/types";
+import { OutdatedSdkError } from "../../src/errors";
 
 // Test helpers
 const createAccountState = (
@@ -20,13 +22,13 @@ const createAccountState = (
   nonce: bigint = 0n,
   balance: bigint = 0n,
   currentNote: bigint = 0n,
-  storageSchemaVersion: number = 1
-): AccountState => ({
+  currentNoteIndex: bigint = 0n
+): AccountStateMerkleIndexed => ({
   id: Scalar.fromBigint(id),
   nonce,
   balance,
+  currentNoteIndex,
   currentNote: Scalar.fromBigint(currentNote),
-  storageSchemaVersion,
   token: nativeToken()
 });
 
@@ -100,6 +102,7 @@ describe("StateSynchronizer", () => {
     const contract = new MockContract();
     const stateManager = new StateManager(
       "0x123" as `0x${string}`,
+      1n,
       {} as any,
       cryptoClient
     ) as Mocked<StateManager>;
@@ -262,7 +265,7 @@ describe("StateSynchronizer", () => {
 
       await expect(
         synchronizer.syncAccountState(nativeToken())
-      ).rejects.toThrow(UnexpectedVersionInEvent);
+      ).rejects.toThrow(OutdatedSdkError);
     });
 
     it("should throw on found, but non-transitioning event", async () => {

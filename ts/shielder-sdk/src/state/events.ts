@@ -4,6 +4,7 @@ import { NewAccountAction } from "@/actions/newAccount";
 import { WithdrawAction } from "@/actions/withdraw";
 import { NoteEvent } from "@/chain/contract";
 import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { AccountStateMerkleIndexed } from "./types";
 
 export class StateEventsFilter {
   newAccountAction: NewAccountAction;
@@ -22,7 +23,7 @@ export class StateEventsFilter {
   newStateByEvent = async (
     state: AccountState,
     noteEvent: NoteEvent
-  ): Promise<AccountState | null> => {
+  ): Promise<AccountStateMerkleIndexed | null> => {
     const getNewState = async () => {
       switch (noteEvent.name) {
         case "NewAccount":

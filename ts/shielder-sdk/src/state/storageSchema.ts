@@ -18,7 +18,7 @@ const accountObjectSchema = z.object({
   balance: validateBigInt,
   idHash: validateBigInt,
   currentNote: validateBigInt,
-  currentNoteIndex: z.union([validateBigInt, z.undefined()]).optional(),
+  currentNoteIndex: validateBigInt,
   storageSchemaVersion: z.number()
 });
 

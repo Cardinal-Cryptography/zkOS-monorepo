@@ -6,10 +6,10 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { StorageInterface } from "./storageSchema";
 import { Hex } from "viem";
-import { AccountState } from "./types";
+import { AccountStateMerkleIndexed } from "./types";
 import { storageSchemaVersion } from "@/constants";
 import { Token } from "@/types";
-import { getTokenAddress } from "@/utils";
+import { getAddressByToken } from "@/utils";
 
 export class StateManager {
   private storage: StorageInterface;
@@ -31,8 +31,8 @@ export class StateManager {
     this.cryptoClient = cryptoClient;
   }
 
-  async accountState(token: Token): Promise<AccountState> {
-    const tokenAddress = getTokenAddress(token);
+  async accountState(token: Token): Promise<AccountStateMerkleIndexed> {
+    const tokenAddress = getAddressByToken(token);
     const res = await this.storage.getItem(tokenAddress);
     const id = await this.getId(tokenAddress);
 
@@ -43,34 +43,25 @@ export class StateManager {
         throw new Error("Id hash in storage does not matched the configured.");
       }
       const obj = res;
-      if (obj.currentNoteIndex === undefined) {
-        throw new Error("currentNoteIndex must be set.");
-      }
       return {
         id,
         token,
         nonce: BigInt(obj.nonce),
         balance: BigInt(obj.balance),
         currentNote: Scalar.fromBigint(BigInt(obj.currentNote)),
-        currentNoteIndex: BigInt(obj.currentNoteIndex),
-        storageSchemaVersion: obj.storageSchemaVersion
+        currentNoteIndex: BigInt(obj.currentNoteIndex)
       };
     }
     return await this.emptyAccountState(token);
   }
 
-  async updateAccountState(token: Token, accountState: AccountState) {
-    const tokenAddress = getTokenAddress(token);
-    if (accountState.currentNoteIndex == undefined) {
-      throw new Error("currentNoteIndex must be set.");
-    }
+  async updateAccountState(
+    token: Token,
+    accountState: AccountStateMerkleIndexed
+  ) {
+    const tokenAddress = getAddressByToken(token);
     if (!scalarsEqual(accountState.id, await this.getId(tokenAddress))) {
       throw new Error("New account id does not match the configured.");
-    }
-    if (accountState.storageSchemaVersion != storageSchemaVersion) {
-      throw new Error(
-        `Storage schema version mismatch: ${accountState.storageSchemaVersion} != ${storageSchemaVersion}`
-      );
     }
     await this.storage.setItem(tokenAddress, {
       idHash: scalarToBigint(
@@ -80,12 +71,12 @@ export class StateManager {
       balance: accountState.balance,
       currentNote: scalarToBigint(accountState.currentNote),
       currentNoteIndex: accountState.currentNoteIndex,
-      storageSchemaVersion: accountState.storageSchemaVersion
+      storageSchemaVersion: storageSchemaVersion
     });
   }
 
-  async emptyAccountState(token: Token): Promise<AccountState> {
-    return emptyAccountState(token, await this.getId(getTokenAddress(token)));
+  async emptyAccountState(token: Token): Promise<AccountStateMerkleIndexed> {
+    return emptyAccountState(token, await this.getId(getAddressByToken(token)));
   }
 
   private async getId(tokenAddress: `0x${string}`): Promise<Scalar> {
@@ -113,14 +104,17 @@ export class StateManager {
   }
 }
 
-const emptyAccountState = (token: Token, id: Scalar): AccountState => {
+const emptyAccountState = (
+  token: Token,
+  id: Scalar
+): AccountStateMerkleIndexed => {
   return {
     /// Since the private key is an arbitrary 32byte number, this is a non-reversible mapping
     id,
     token,
     nonce: 0n,
     balance: 0n,
-    currentNote: Scalar.fromBigint(0n),
-    storageSchemaVersion
+    currentNoteIndex: 0n,
+    currentNote: Scalar.fromBigint(0n)
   };
 };

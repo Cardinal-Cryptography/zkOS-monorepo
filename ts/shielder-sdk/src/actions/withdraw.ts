@@ -1,4 +1,4 @@
-import { IContract, VersionRejectedByContract } from "@/chain/contract";
+import { IContract } from "@/chain/contract";
 import {
   CryptoClient,
   Proof,
@@ -9,11 +9,13 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState } from "@/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
-import { IRelayer, VersionRejectedByRelayer } from "@/chain/relayer";
+import { IRelayer } from "@/chain/relayer";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
-import { getTokenAddress } from "@/utils";
+import { getAddressByToken } from "@/utils";
 import { SendShielderTransaction } from "@/client";
+import { OutdatedSdkError } from "@/errors";
+import { AccountStateMerkleIndexed } from "@/state/types";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
@@ -94,22 +96,19 @@ export class WithdrawAction extends NoteAction {
   }
 
   async prepareAdvice(
-    state: AccountState,
+    state: AccountStateMerkleIndexed,
     amount: bigint,
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
     relayerAddress: `0x${string}`,
     totalFee: bigint
   ): Promise<WithdrawAdvice<Scalar>> {
-    if (state.currentNoteIndex === undefined) {
-      throw new Error("currentNoteIndex must be set");
-    }
     const lastNodeIndex = state.currentNoteIndex;
     const [merklePath] = await this.merklePathAndRoot(
       await this.contract.getMerklePath(lastNodeIndex)
     );
 
-    const tokenAddress = getTokenAddress(state.token);
+    const tokenAddress = getAddressByToken(state.token);
 
     const idHidingNonce = this.nonceGenerator.randomIdHidingNonce();
 
@@ -158,7 +157,7 @@ export class WithdrawAction extends NoteAction {
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
-    state: AccountState,
+    state: AccountStateMerkleIndexed,
     amount: bigint,
     relayerAddress: Address,
     totalFee: bigint,
@@ -239,7 +238,7 @@ export class WithdrawAction extends NoteAction {
         scalarToBigint(pubInputs.macCommitment)
       )
       .catch((e) => {
-        if (e instanceof VersionRejectedByRelayer) {
+        if (e instanceof OutdatedSdkError) {
           throw e;
         }
         throw new Error(`Failed to withdraw: ${e}`);
@@ -296,7 +295,7 @@ export class WithdrawAction extends NoteAction {
       to: this.contract.getAddress(),
       value: 0n
     }).catch((e) => {
-      if (e instanceof VersionRejectedByContract) {
+      if (e instanceof OutdatedSdkError) {
         throw e;
       }
       throw new Error(`Failed to withdraw: ${e}`);

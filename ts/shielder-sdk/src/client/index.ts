@@ -1,5 +1,4 @@
 import {
-  OutdatedSdkError,
   QuotedFees,
   SendShielderTransaction,
   ShielderCallbacks,
@@ -10,7 +9,6 @@ export {
   ShielderClient,
   createShielderClient,
   SendShielderTransaction,
-  OutdatedSdkError,
   ShielderCallbacks,
   ShielderOperation,
   QuotedFees

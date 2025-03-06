@@ -1,4 +1,3 @@
-import { CustomError } from "ts-custom-error";
 import { IContract, NoteEvent } from "@/chain/contract";
 import {
   CryptoClient,
@@ -10,12 +9,7 @@ import { isVersionSupported } from "@/utils";
 import { StateManager } from "./manager";
 import { AccountState, ShielderTransaction } from "./types";
 import { Token } from "@/types";
-
-export class UnexpectedVersionInEvent extends CustomError {
-  public constructor(message: string) {
-    super(`Unexpected version in event: ${message}`);
-  }
-}
+import { OutdatedSdkError } from "@/errors";
 
 export class StateSynchronizer {
   private contract: IContract;
@@ -120,7 +114,6 @@ export class StateSynchronizer {
    * Finds the next state transition event for the given state, emitted in shielder contract.
    * @param state - account state
    * @returns the next state transition event
-   * @throws UnexpectedVersionInEvent
    */
   private async findStateTransitionEvent(state: AccountState) {
     const nullifier = await this.getNullifier(state);
@@ -139,7 +132,9 @@ export class StateSynchronizer {
     const event = await this.getNoteEventForBlock(state, block);
 
     if (!isVersionSupported(event.contractVersion)) {
-      throw new UnexpectedVersionInEvent(`${event.contractVersion}`);
+      throw new OutdatedSdkError(
+        `Unexpected version in event: ${event.contractVersion}`
+      );
     }
 
     return event;

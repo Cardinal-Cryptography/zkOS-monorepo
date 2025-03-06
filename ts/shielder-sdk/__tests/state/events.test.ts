@@ -1,6 +1,6 @@
 import { it, expect, describe, beforeEach } from "vitest";
 import { MockedCryptoClient } from "../helpers";
-import { AccountState, StateEventsFilter } from "../../src/state";
+import { StateEventsFilter } from "../../src/state";
 import {
   NewAccountAction,
   DepositAction,
@@ -15,13 +15,16 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { nativeToken } from "../../src/types";
+import { AccountStateMerkleIndexed } from "../../src/state/types";
 
-const expectStatesEqual = (state1: AccountState, state2: AccountState) => {
+const expectStatesEqual = (
+  state1: AccountStateMerkleIndexed,
+  state2: AccountStateMerkleIndexed
+) => {
   expect(scalarsEqual(state1.id, state2.id)).toBe(true);
   expect(state1.nonce).toBe(state2.nonce);
   expect(state1.balance).toBe(state2.balance);
   expect(scalarsEqual(state1.currentNote, state2.currentNote)).toBe(true);
-  expect(state1.storageSchemaVersion).toBe(state2.storageSchemaVersion);
 };
 
 describe("StateEventsFilter", () => {
@@ -34,7 +37,7 @@ describe("StateEventsFilter", () => {
   let withdrawAction: WithdrawAction;
   let nonceGenerator: INonceGenerator;
 
-  let initialState: AccountState;
+  let initialState: AccountStateMerkleIndexed;
 
   beforeEach(() => {
     cryptoClient = new MockedCryptoClient();
@@ -64,7 +67,6 @@ describe("StateEventsFilter", () => {
       currentNoteIndex: 1n,
       nonce: 0n,
       balance: 100n,
-      storageSchemaVersion: 1,
       token: nativeToken()
     };
   });
@@ -168,7 +170,7 @@ describe("StateEventsFilter", () => {
       if (!expectedNewState) {
         throw new Error("expectedNewState is null");
       }
-      expect(newState?.currentNoteIndex).toBe(4n);
+      expect(newState.currentNoteIndex).toBe(4n);
       expectStatesEqual(newState, expectedNewState);
     });
 
