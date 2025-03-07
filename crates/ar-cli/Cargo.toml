@@ -11,7 +11,7 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-clap = { workspace = true, features = ["derive"] }
+clap = { workspace = true, features = ["derive", "string"] }
 thiserror = { workspace = true }
 shielder-circuits = { workspace = true }
 rand = { workspace = true }

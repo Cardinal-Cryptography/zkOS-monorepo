@@ -17,7 +17,7 @@ fn main() -> Result<(), CliError> {
     let cli = Cli::parse();
 
     match cli.command {
-        cli::Command::Generate { .. } => generate::run()?,
+        cli::Command::Generate { dir } => generate::run(dir)?,
         cli::Command::Revoke { .. } => todo!(),
     }
 
