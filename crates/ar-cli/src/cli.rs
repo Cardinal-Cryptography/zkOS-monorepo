@@ -13,8 +13,8 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     Generate {
-        #[arg(long)]
-        path: String,
+        // #[arg(long)]
+        // path: String,
     },
 
     Revoke {

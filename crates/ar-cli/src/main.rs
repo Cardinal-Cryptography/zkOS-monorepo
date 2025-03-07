@@ -8,7 +8,7 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        cli::Command::Generate { path } => generate::run(),
-        cli::Command::Revoke { id } => todo!(),
+        cli::Command::Generate { .. } => generate::run(),
+        cli::Command::Revoke { .. } => todo!(),
     }
 }
