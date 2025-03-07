@@ -19,16 +19,16 @@ pub enum GeneratorError {
 pub fn run(dir: PathBuf) -> Result<(), GeneratorError> {
     let mut rng = OsRng;
     let (private_key_bits, public_key) = generate_keys(&mut rng);
-    let public_key_affine: GrumpkinPointAffine<Fr> = public_key.into();
+    let GrumpkinPointAffine { x, y }: GrumpkinPointAffine<Fr> = public_key.into();
 
     let private_key = le_bits_to_field_element(&private_key_bits);
 
-    let mut file = File::create(format!(
+    let mut private_key_file = File::create(format!(
         "{}/{}",
         dir.display().to_string(),
         "/private_key.bin"
     ))?;
-    file.write_all(&private_key.to_bytes())?;
+    private_key_file.write_all(&private_key.to_bytes())?;
 
     Ok(())
 }
