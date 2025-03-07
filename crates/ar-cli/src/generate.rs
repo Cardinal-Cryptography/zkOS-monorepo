@@ -7,8 +7,8 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 #[error(transparent)]
 #[non_exhaustive]
-enum GeneratorError {
-    #[error("IO write error")]
+pub enum GeneratorError {
+    #[error("Error writing to stdout")]
     Write(#[from] std::io::Error),
 }
 
