@@ -20,4 +20,3 @@ export {
   erc20Token
 } from "@/types";
 export { OutdatedSdkError } from "@/errors";
-export { shieldActionGasLimit } from "@/constants";

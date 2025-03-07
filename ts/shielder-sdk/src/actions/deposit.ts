@@ -178,9 +178,10 @@ export class DepositAction extends NoteAction {
             proof
           );
     const txHash = await sendShielderTransaction({
-      data: encodedCalldata,
+      data: encodedCalldata.calldata,
       to: this.contract.getAddress(),
-      value: calldata.token.type === "native" ? amount : 0n
+      value: calldata.token.type === "native" ? amount : 0n,
+      gas: encodedCalldata.gas
     }).catch((e) => {
       if (e instanceof OutdatedSdkError) {
         throw e;
