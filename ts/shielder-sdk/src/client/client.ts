@@ -11,7 +11,7 @@ import {
   ShielderOperation
 } from "./types";
 import { Token } from "@/types";
-import { StateTransitionFinder } from "@/state/sync/stateTransitionFinder";
+import { ChainStateTransition } from "@/state/sync/chainStateTransition";
 import { AccountFactory } from "@/state/accountFactory";
 import { IdManager } from "@/state/idManager";
 import {
@@ -21,7 +21,7 @@ import {
 import { StateManager } from "@/state/manager";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
 import { HistoryFetcher } from "@/state/sync/historyFetcher";
-import { StateEventsFilter } from "@/state/events";
+import { LocalStateTransition } from "@/state/localStateTransition";
 import { AccountStateMerkleIndexed, ShielderTransaction } from "@/state/types";
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
@@ -128,23 +128,23 @@ export class ShielderClient {
       nonceGenerator,
       BigInt(chainId)
     );
-    const stateEventsFilter = new StateEventsFilter(
+    const localStateTransition = new LocalStateTransition(
       this.newAccountAction,
       this.depositAction,
       this.withdrawAction
     );
-    const stateTransitionFinder = new StateTransitionFinder(
+    const chainStateTransition = new ChainStateTransition(
       contract,
       cryptoClient,
-      stateEventsFilter
+      localStateTransition
     );
     this.stateSynchronizer = new StateSynchronizer(
       this.stateManager,
-      stateTransitionFinder,
+      chainStateTransition,
       callbacks.onNewTransaction
     );
     this.historyFetcher = new HistoryFetcher(
-      stateTransitionFinder,
+      chainStateTransition,
       accountFactory
     );
     this.relayer = relayer;

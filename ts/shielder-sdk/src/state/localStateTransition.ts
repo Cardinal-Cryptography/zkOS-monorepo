@@ -2,10 +2,9 @@ import { DepositAction } from "@/actions/deposit";
 import { NewAccountAction } from "@/actions/newAccount";
 import { WithdrawAction } from "@/actions/withdraw";
 import { NoteEvent } from "@/chain/contract";
-import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountState, AccountStateMerkleIndexed } from "./types";
 
-export class StateEventsFilter {
+export class LocalStateTransition {
   newAccountAction: NewAccountAction;
   depositAction: DepositAction;
   withdrawAction: WithdrawAction;
@@ -44,19 +43,5 @@ export class StateEventsFilter {
       ...newState,
       currentNoteIndex: noteEvent.newNoteIndex
     };
-  };
-
-  stateChangingEvents = async (
-    state: AccountState,
-    noteEvents: NoteEvent[]
-  ): Promise<NoteEvent[]> => {
-    const filteredEvents: NoteEvent[] = [];
-    for (const event of noteEvents) {
-      const newState = await this.newStateByEvent(state, event);
-      if (newState && scalarToBigint(newState.currentNote) == event.newNote) {
-        filteredEvents.push(event);
-      }
-    }
-    return filteredEvents;
   };
 }

@@ -1,10 +1,10 @@
 import { Token } from "@/types";
-import { StateTransitionFinder } from "./stateTransitionFinder";
+import { ChainStateTransition } from "./chainStateTransition";
 import { AccountFactory } from "../accountFactory";
 
 export class HistoryFetcher {
   constructor(
-    private stateTransitionFinder: StateTransitionFinder,
+    private chainStateTransition: ChainStateTransition,
     private accountFactory: AccountFactory
   ) {}
   /**
@@ -15,7 +15,7 @@ export class HistoryFetcher {
     let state = await this.accountFactory.createEmptyAccountState(token);
     while (true) {
       const stateTransition =
-        await this.stateTransitionFinder.findStateTransition(state);
+        await this.chainStateTransition.findStateTransition(state);
       if (!stateTransition) break;
       state = stateTransition.newState;
       yield stateTransition.transaction;

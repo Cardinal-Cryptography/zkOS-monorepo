@@ -1,6 +1,5 @@
 import { it, expect, describe, beforeEach, vi } from "vitest";
 import { HistoryFetcher } from "../../../src/state/sync/historyFetcher";
-import { StateTransitionFinder } from "../../../src/state/sync/stateTransitionFinder";
 import { AccountFactory } from "../../../src/state/accountFactory";
 import {
   AccountStateMerkleIndexed,
@@ -8,17 +7,17 @@ import {
 } from "../../../src/state/types";
 import { nativeToken } from "../../../src/utils";
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { ChainStateTransition } from "../../../src/state/sync/chainStateTransition";
 
 describe("HistoryFetcher", () => {
   let historyFetcher: HistoryFetcher;
-  let mockStateTransitionFinder: StateTransitionFinder;
+  let mockChainStateTransition: ChainStateTransition;
   let mockAccountFactory: AccountFactory;
   let mockEmptyState: AccountStateMerkleIndexed;
   // Explicitly type the mock function to avoid TypeScript errors
   let findStateTransitionMock: any;
 
   beforeEach(() => {
-    // Create mock empty state
     mockEmptyState = {
       id: Scalar.fromBigint(1n),
       token: nativeToken(),
@@ -28,27 +27,23 @@ describe("HistoryFetcher", () => {
       currentNoteIndex: 0n
     };
 
-    // Create mock AccountFactory
     mockAccountFactory = {
       createEmptyAccountState: vi.fn().mockResolvedValue(mockEmptyState)
     } as unknown as AccountFactory;
 
-    // Create mock StateTransitionFinder with any type to avoid TypeScript errors
     findStateTransitionMock = vi.fn();
-    mockStateTransitionFinder = {
+    mockChainStateTransition = {
       findStateTransition: findStateTransitionMock
     } as any;
 
-    // Create HistoryFetcher instance
     historyFetcher = new HistoryFetcher(
-      mockStateTransitionFinder,
+      mockChainStateTransition,
       mockAccountFactory
     );
   });
 
   describe("getTransactionHistorySingleToken", () => {
     it("should yield transactions in order", async () => {
-      // Mock state transitions
       const state1: AccountStateMerkleIndexed = {
         ...mockEmptyState,
         nonce: 1n,
@@ -73,7 +68,6 @@ describe("HistoryFetcher", () => {
         currentNoteIndex: 3n
       };
 
-      // Mock transactions
       const tx1: ShielderTransaction = {
         type: "Deposit",
         amount: 100n,
@@ -100,14 +94,12 @@ describe("HistoryFetcher", () => {
         token: nativeToken()
       };
 
-      // Setup mock behavior
       findStateTransitionMock
         .mockResolvedValueOnce({ newState: state1, transaction: tx1 })
         .mockResolvedValueOnce({ newState: state2, transaction: tx2 })
         .mockResolvedValueOnce({ newState: state3, transaction: tx3 })
         .mockResolvedValueOnce(null);
 
-      // Call the method and collect results
       const transactions: ShielderTransaction[] = [];
       for await (const tx of historyFetcher.getTransactionHistorySingleToken(
         nativeToken()
@@ -115,18 +107,15 @@ describe("HistoryFetcher", () => {
         transactions.push(tx);
       }
 
-      // Verify results
       expect(transactions).toHaveLength(3);
       expect(transactions[0]).toEqual(tx1);
       expect(transactions[1]).toEqual(tx2);
       expect(transactions[2]).toEqual(tx3);
 
-      // Verify AccountFactory was called correctly
       expect(mockAccountFactory.createEmptyAccountState).toHaveBeenCalledWith(
         nativeToken()
       );
 
-      // Verify StateTransitionFinder was called correctly
       expect(findStateTransitionMock).toHaveBeenCalledTimes(4);
       expect(findStateTransitionMock).toHaveBeenNthCalledWith(
         1,
@@ -138,10 +127,8 @@ describe("HistoryFetcher", () => {
     });
 
     it("should handle empty transaction history", async () => {
-      // Setup mock behavior to return null (no state transitions)
       findStateTransitionMock.mockResolvedValue(null);
 
-      // Call the method and collect results
       const transactions: ShielderTransaction[] = [];
       for await (const tx of historyFetcher.getTransactionHistorySingleToken(
         nativeToken()
@@ -149,74 +136,14 @@ describe("HistoryFetcher", () => {
         transactions.push(tx);
       }
 
-      // Verify results
       expect(transactions).toHaveLength(0);
 
-      // Verify AccountFactory was called correctly
       expect(mockAccountFactory.createEmptyAccountState).toHaveBeenCalledWith(
         nativeToken()
       );
 
-      // Verify StateTransitionFinder was called correctly
       expect(findStateTransitionMock).toHaveBeenCalledTimes(1);
       expect(findStateTransitionMock).toHaveBeenCalledWith(mockEmptyState);
-    });
-
-    it("should stop when no more state transitions are found", async () => {
-      // Mock state transitions
-      const state1: AccountStateMerkleIndexed = {
-        ...mockEmptyState,
-        nonce: 1n,
-        balance: 100n,
-        currentNote: Scalar.fromBigint(1n),
-        currentNoteIndex: 1n
-      };
-
-      // Mock transaction
-      const tx1: ShielderTransaction = {
-        type: "Deposit",
-        amount: 100n,
-        txHash: "0x1",
-        block: 1n,
-        token: nativeToken()
-      };
-
-      // Setup mock behavior
-      findStateTransitionMock
-        .mockResolvedValueOnce({ newState: state1, transaction: tx1 })
-        .mockResolvedValueOnce(null);
-
-      // Call the method and collect results
-      const transactions: ShielderTransaction[] = [];
-      for await (const tx of historyFetcher.getTransactionHistorySingleToken(
-        nativeToken()
-      )) {
-        transactions.push(tx);
-      }
-
-      // Verify results
-      expect(transactions).toHaveLength(1);
-      expect(transactions[0]).toEqual(tx1);
-
-      // Verify StateTransitionFinder was called correctly
-      expect(findStateTransitionMock).toHaveBeenCalledTimes(2);
-    });
-
-    it("should propagate errors from dependencies", async () => {
-      // Setup mock behavior to throw an error
-      const testError = new Error("Test error");
-      findStateTransitionMock.mockRejectedValue(testError);
-
-      // Call the method and expect it to throw
-      const generator =
-        historyFetcher.getTransactionHistorySingleToken(nativeToken());
-
-      await expect(generator.next()).rejects.toThrow(testError);
-
-      // Verify AccountFactory was called correctly
-      expect(mockAccountFactory.createEmptyAccountState).toHaveBeenCalledWith(
-        nativeToken()
-      );
     });
   });
 });

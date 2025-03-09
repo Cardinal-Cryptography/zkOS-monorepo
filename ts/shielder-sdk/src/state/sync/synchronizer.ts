@@ -1,6 +1,6 @@
 import { Mutex } from "async-mutex";
 import { Token } from "@/types";
-import { StateTransitionFinder } from "./stateTransitionFinder";
+import { ChainStateTransition } from "./chainStateTransition";
 import {
   AccountState,
   AccountStateMerkleIndexed,
@@ -11,7 +11,7 @@ import { StateManager } from "../manager";
 export class StateSynchronizer {
   constructor(
     private stateManager: StateManager,
-    private stateTransitionFinder: StateTransitionFinder,
+    private chainStateTransition: ChainStateTransition,
     private syncCallback?: (
       shielderTransaction: ShielderTransaction
     ) => unknown,
@@ -30,7 +30,7 @@ export class StateSynchronizer {
         (await this.stateManager.createEmptyAccountState(token));
       while (true) {
         const stateTransition =
-          await this.stateTransitionFinder.findStateTransition(state);
+          await this.chainStateTransition.findStateTransition(state);
         if (!stateTransition) break;
         if (this.syncCallback) this.syncCallback(stateTransition.transaction);
         const newState: AccountStateMerkleIndexed = stateTransition.newState;
