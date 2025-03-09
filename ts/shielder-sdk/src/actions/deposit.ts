@@ -7,14 +7,13 @@ import {
   Scalar,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { SendShielderTransaction } from "@/client";
-import { Calldata } from "@/actions";
+import { Calldata } from "./types";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
-import { AccountState } from "@/state";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
-import { AccountStateMerkleIndexed } from "@/state/types";
+import { AccountState, AccountStateMerkleIndexed } from "@/state/types";
+import { SendShielderTransaction } from "@/client/types";
 
 export interface DepositCalldata extends Calldata {
   calldata: {

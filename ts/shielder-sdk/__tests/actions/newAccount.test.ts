@@ -10,10 +10,10 @@ import {
 import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { NewAccountAction } from "../../src/actions/newAccount";
-import { AccountState } from "../../src/state";
+import { AccountState } from "../../src/state/types";
 import { IContract } from "../../src/chain/contract";
-import { SendShielderTransaction } from "../../src/client";
-import { nativeToken } from "../../src/types";
+import { SendShielderTransaction } from "../../src/client/types";
+import { nativeToken } from "../../src/utils";
 import { OutdatedSdkError } from "../../src/errors";
 
 const ANONYMITY_REVOKER_PUBKEY = [123n, 456n];

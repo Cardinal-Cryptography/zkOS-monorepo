@@ -1,7 +1,9 @@
 import { it, expect, describe, beforeEach } from "vitest";
 import { StateManager } from "../../src/state/manager";
+import { IdManager } from "../../src/state/idManager";
+import { AccountFactory } from "../../src/state/accountFactory";
 import { MockedCryptoClient } from "../helpers";
-import { StorageInterface } from "../../src/state/storageSchema";
+import { StorageInterface } from "../../src/storage/storageSchema";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
 import { storageSchemaVersion } from "../../src/constants";
 import {
@@ -9,7 +11,9 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { nativeToken } from "../../src/types";
+import { nativeToken } from "../../src/utils";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectStatesEqual = (
   state1: AccountStateMerkleIndexed,
@@ -26,7 +30,8 @@ describe("StateManager", () => {
   let stateManager: StateManager;
   let storage: StorageInterface;
   let cryptoClient: MockedCryptoClient;
-  const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+  let idManager: IdManager;
+  let accountFactory: AccountFactory;
   const testPrivateKey =
     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
   let testId: Scalar;
@@ -42,12 +47,14 @@ describe("StateManager", () => {
       }
     };
     cryptoClient = new MockedCryptoClient();
-    stateManager = new StateManager(
-      testPrivateKey,
-      mockChainId,
-      storage,
-      cryptoClient
-    );
+
+    // Create IdManager and AccountFactory
+    idManager = new IdManager(testPrivateKey, mockChainId, cryptoClient);
+    accountFactory = new AccountFactory(idManager);
+
+    // Create StateManager with the dependencies
+    stateManager = new StateManager(storage, idManager, accountFactory);
+
     testId = await cryptoClient.secretManager.deriveId(
       testPrivateKey,
       mockChainId,
@@ -58,20 +65,16 @@ describe("StateManager", () => {
   describe("accountState", () => {
     it("returns empty state when no state exists", async () => {
       const state = await stateManager.accountState(nativeToken());
-      const expectedId = await cryptoClient.secretManager.deriveId(
-        testPrivateKey,
-        mockChainId,
-        nativeTokenAddress
-      );
 
-      expect(state).toEqual({
-        id: expectedId,
-        nonce: 0n,
-        balance: 0n,
-        currentNote: Scalar.fromBigint(0n),
-        currentNoteIndex: 0n,
-        token: nativeToken()
-      });
+      expect(state).toEqual(null);
+    });
+
+    it("creates correct empty state", async () => {
+      const state = await stateManager.createEmptyAccountState(nativeToken());
+      const expectedState =
+        await accountFactory.createEmptyAccountState(nativeToken());
+
+      expect(state).toEqual(expectedState);
     });
 
     it("returns existing state when id hash matches", async () => {
@@ -89,7 +92,8 @@ describe("StateManager", () => {
       const token = nativeToken();
 
       const state = await stateManager.accountState(token);
-      expectStatesEqual(state, {
+      expect(state).not.toBeNull();
+      expectStatesEqual(state!, {
         id: testId,
         nonce: 1n,
         balance: 100n,
@@ -110,7 +114,7 @@ describe("StateManager", () => {
       });
 
       await expect(stateManager.accountState(nativeToken())).rejects.toThrow(
-        "Id hash in storage does not matched the configured."
+        "ID hash does not match the expected value"
       );
     });
   });
@@ -129,7 +133,8 @@ describe("StateManager", () => {
       await stateManager.updateAccountState(nativeToken(), newState);
 
       const storedState = await stateManager.accountState(nativeToken());
-      expectStatesEqual(storedState, newState);
+      expect(storedState).not.toBeNull();
+      expectStatesEqual(storedState!, newState);
     });
 
     it("throws error when account id doesn't match", async () => {
@@ -151,14 +156,14 @@ describe("StateManager", () => {
 
   describe("emptyAccountState", () => {
     it("returns correct empty state", async () => {
-      const emptyState = await stateManager.emptyAccountState(nativeToken());
+      const emptyState =
+        await stateManager.createEmptyAccountState(nativeToken());
 
       expect(emptyState).toEqual({
         id: testId,
         nonce: 0n,
         balance: 0n,
         currentNote: Scalar.fromBigint(0n),
-        currentNoteIndex: 0n,
         token: nativeToken()
       });
     });

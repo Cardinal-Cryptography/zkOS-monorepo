@@ -65,5 +65,9 @@ const createStorage = (
   return { getItem, setItem };
 };
 
-export default accountObjectSchema;
-export { StorageInterface, InjectedStorageInterface, createStorage };
+export {
+  accountObjectSchema,
+  StorageInterface,
+  InjectedStorageInterface,
+  createStorage
+};

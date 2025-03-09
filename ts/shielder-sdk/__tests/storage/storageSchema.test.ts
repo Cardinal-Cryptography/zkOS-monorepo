@@ -1,8 +1,9 @@
 import { it, expect, vitest, describe, beforeEach, Mocked } from "vitest";
-import accountObjectSchema, {
+import {
+  accountObjectSchema,
   createStorage,
   type InjectedStorageInterface
-} from "../../src/state/storageSchema";
+} from "../../src/storage/storageSchema";
 import { nativeTokenAddress } from "../../src/constants";
 
 describe("validateBigInt", () => {

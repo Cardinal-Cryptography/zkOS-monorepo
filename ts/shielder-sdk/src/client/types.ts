@@ -1,5 +1,5 @@
-import { Calldata } from "@/actions";
-import { ShielderTransaction } from "@/state";
+import { Calldata } from "@/actions/types";
+import { ShielderTransaction } from "@/state/types";
 
 export type ShielderOperation = "shield" | "withdraw" | "sync";
 

@@ -12,7 +12,7 @@ export const validateShielderBalance =
     token: Token
   ) =>
   async () => {
-    const shieldedBalance = await shielderClient.shieldedBalance(token);
+    const shieldedBalance = (await shielderClient.shieldedBalance(token)) ?? 0n;
     const expectedBalance = registrar.recordedBalance(token);
     if (shieldedBalance !== expectedBalance) {
       throw new Error(
