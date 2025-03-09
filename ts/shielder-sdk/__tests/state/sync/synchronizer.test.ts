@@ -1,6 +1,7 @@
 import { it, expect, describe, beforeEach, vi } from "vitest";
 import { StateSynchronizer } from "../../../src/state/sync/synchronizer";
-import { StateManager } from "../../../src/state/manager";
+import { AccountRegistry } from "../../../src/state/accountRegistry";
+import { TokenAccountFinder } from "../../../src/state/sync/tokenAccountFinder";
 import {
   AccountState,
   AccountStateMerkleIndexed,
@@ -12,14 +13,17 @@ import { ChainStateTransition } from "../../../src/state/sync/chainStateTransiti
 
 describe("StateSynchronizer", () => {
   let stateSynchronizer: StateSynchronizer;
-  let mockStateManager: StateManager;
+  let mockAccountRegistry: AccountRegistry;
+  let mockTokenAccountFinder: TokenAccountFinder;
   let mockChainStateTransition: ChainStateTransition;
   let mockSyncCallback: (transaction: ShielderTransaction) => unknown;
   let mockState: AccountStateMerkleIndexed;
   // Explicitly type mock functions to avoid TypeScript errors
-  let mockAccountState: any;
+  let mockGetAccountState: any;
   let mockUpdateAccountState: any;
+  let mockGetTokenByAccountIndex: any;
   let mockFindStateTransition: any;
+  let mockFindTokenByAccountIndex: any;
 
   beforeEach(() => {
     mockState = {
@@ -31,11 +35,18 @@ describe("StateSynchronizer", () => {
       currentNoteIndex: 1n
     };
 
-    mockAccountState = vi.fn().mockResolvedValue(mockState);
+    mockGetAccountState = vi.fn().mockResolvedValue(mockState);
     mockUpdateAccountState = vi.fn().mockResolvedValue(undefined);
-    mockStateManager = {
-      accountState: mockAccountState,
-      updateAccountState: mockUpdateAccountState
+    mockGetTokenByAccountIndex = vi.fn().mockResolvedValue(null);
+    mockAccountRegistry = {
+      getAccountState: mockGetAccountState,
+      updateAccountState: mockUpdateAccountState,
+      getTokenByAccountIndex: mockGetTokenByAccountIndex
+    } as any;
+
+    mockFindTokenByAccountIndex = vi.fn().mockResolvedValue(null);
+    mockTokenAccountFinder = {
+      findTokenByAccountIndex: mockFindTokenByAccountIndex
     } as any;
 
     mockFindStateTransition = vi.fn();
@@ -46,38 +57,68 @@ describe("StateSynchronizer", () => {
     mockSyncCallback = vi.fn();
 
     stateSynchronizer = new StateSynchronizer(
-      mockStateManager,
+      mockAccountRegistry,
       mockChainStateTransition,
+      mockTokenAccountFinder,
       mockSyncCallback
     );
   });
 
-  describe("createEmptyAccountState", () => {
-    it("should create empty account state when account doesn't exist", async () => {
-      mockAccountState.mockResolvedValue(null);
+  let syncSingleAccountSpy: any;
 
-      const emptyState: AccountState = {
-        id: Scalar.fromBigint(2n),
+  describe("syncSingleAccount", () => {
+    it("should create empty account state when account not found", async () => {
+      const emptyState: AccountStateMerkleIndexed = {
+        id: Scalar.fromBigint(1n),
         token: nativeToken(),
         nonce: 0n,
         balance: 0n,
-        currentNote: Scalar.fromBigint(0n)
+        currentNote: Scalar.fromBigint(0n),
+        currentNoteIndex: 0n
       };
 
-      const mockCreateEmptyAccountState = vi.fn().mockResolvedValue(emptyState);
-      mockStateManager.createEmptyAccountState = mockCreateEmptyAccountState;
+      const newState: AccountStateMerkleIndexed = {
+        ...emptyState,
+        nonce: 1n,
+        balance: 50n,
+        currentNote: Scalar.fromBigint(100n),
+        currentNoteIndex: 1n
+      };
 
-      mockFindStateTransition.mockResolvedValue(null);
+      const transaction: ShielderTransaction = {
+        type: "Deposit",
+        amount: 50n,
+        txHash: "0x1",
+        block: 1n,
+        token: nativeToken()
+      };
+
+      mockGetAccountState.mockResolvedValue(null);
+      mockAccountRegistry.createEmptyAccountState = vi
+        .fn()
+        .mockResolvedValue(emptyState);
+      mockFindStateTransition
+        .mockResolvedValueOnce({ newState, transaction })
+        .mockResolvedValueOnce(null);
 
       await stateSynchronizer.syncSingleAccount(nativeToken());
 
-      expect(mockCreateEmptyAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockAccountRegistry.createEmptyAccountState).toHaveBeenCalledWith(
+        nativeToken()
+      );
+      expect(mockUpdateAccountState).toHaveBeenCalledWith(
+        nativeToken(),
+        newState
+      );
 
-      expect(mockFindStateTransition).toHaveBeenCalledWith(emptyState);
+      expect(mockFindStateTransition).toHaveBeenCalledTimes(2);
+      expect(mockFindStateTransition).toHaveBeenNthCalledWith(1, emptyState);
+      expect(mockFindStateTransition).toHaveBeenNthCalledWith(2, newState);
+
+      expect(mockSyncCallback).toHaveBeenCalledWith(transaction);
     });
-  });
 
-  describe("syncSingleAccount", () => {
     it("should sync single state transition", async () => {
       const newState: AccountStateMerkleIndexed = {
         ...mockState,
@@ -101,7 +142,7 @@ describe("StateSynchronizer", () => {
 
       await stateSynchronizer.syncSingleAccount(nativeToken());
 
-      expect(mockAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
       expect(mockUpdateAccountState).toHaveBeenCalledWith(
         nativeToken(),
         newState
@@ -156,7 +197,7 @@ describe("StateSynchronizer", () => {
 
       await stateSynchronizer.syncSingleAccount(nativeToken());
 
-      expect(mockAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
       expect(mockUpdateAccountState).toHaveBeenCalledTimes(2);
       expect(mockUpdateAccountState).toHaveBeenNthCalledWith(
         1,
@@ -177,6 +218,46 @@ describe("StateSynchronizer", () => {
       expect(mockSyncCallback).toHaveBeenCalledTimes(2);
       expect(mockSyncCallback).toHaveBeenNthCalledWith(1, tx1);
       expect(mockSyncCallback).toHaveBeenNthCalledWith(2, tx2);
+    });
+  });
+
+  describe("syncAllAccounts", () => {
+    beforeEach(() => {
+      syncSingleAccountSpy = vi.spyOn(stateSynchronizer, "syncSingleAccount");
+      syncSingleAccountSpy.mockResolvedValue(undefined);
+    });
+
+    it("should sync multiple accounts from registry and finder", async () => {
+      const token1 = nativeToken();
+      const token2 = { type: "erc20", address: "0x1234" as `0x${string}` };
+      const token3 = { type: "erc20", address: "0x5678" as `0x${string}` };
+
+      mockGetTokenByAccountIndex
+        .mockResolvedValueOnce(token1) // Account index 0 from registry
+        .mockResolvedValueOnce(token2) // Account index 1 not in registry
+        .mockResolvedValueOnce(null) // Account index 2 from registry
+        .mockResolvedValueOnce(null); // Account index 3 not in registry
+
+      mockFindTokenByAccountIndex
+        .mockResolvedValueOnce(token3) // Account index 2 (already in registry)
+        .mockResolvedValueOnce(null); // Account index 3 not found
+
+      await stateSynchronizer.syncAllAccounts();
+
+      expect(mockGetTokenByAccountIndex).toHaveBeenCalledTimes(4);
+      expect(mockGetTokenByAccountIndex).toHaveBeenNthCalledWith(1, 0);
+      expect(mockGetTokenByAccountIndex).toHaveBeenNthCalledWith(2, 1);
+      expect(mockGetTokenByAccountIndex).toHaveBeenNthCalledWith(3, 2);
+      expect(mockGetTokenByAccountIndex).toHaveBeenNthCalledWith(4, 3);
+
+      expect(mockFindTokenByAccountIndex).toHaveBeenCalledTimes(2);
+      expect(mockFindTokenByAccountIndex).toHaveBeenNthCalledWith(1, 2);
+      expect(mockFindTokenByAccountIndex).toHaveBeenNthCalledWith(2, 3);
+
+      expect(syncSingleAccountSpy).toHaveBeenCalledTimes(3);
+      expect(syncSingleAccountSpy).toHaveBeenNthCalledWith(1, token1);
+      expect(syncSingleAccountSpy).toHaveBeenNthCalledWith(2, token2);
+      expect(syncSingleAccountSpy).toHaveBeenNthCalledWith(3, token3);
     });
   });
 });
