@@ -7,7 +7,8 @@ import {
   scalarsEqual
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { nativeToken, erc20Token } from "../../src/utils";
-import { nativeTokenAddress } from "../../src/constants";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 describe("AccountFactory", () => {
   let accountFactory: AccountFactory;

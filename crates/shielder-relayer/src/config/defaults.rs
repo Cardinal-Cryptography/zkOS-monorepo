@@ -10,3 +10,7 @@ pub const DEFAULT_DRY_RUNNING: DryRunning = DryRunning::Always;
 pub const DEFAULT_RELAY_COUNT_FOR_RECHARGE: u32 = 20;
 pub const DEFAULT_TOTAL_FEE: &str = "100_000_000_000_000_000"; // 0.1 TZERO
 pub const DEFAULT_RELAY_GAS: u64 = 2_000_000; // an estimated amount of gas for a 'withdraw_native' call
+
+const ONE_MINUTE_IN_SECONDS: u64 = 60;
+pub const DEFAULT_PRICE_FEED_VALIDITY_SECS: u64 = 10 * ONE_MINUTE_IN_SECONDS;
+pub const DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS: u64 = ONE_MINUTE_IN_SECONDS;

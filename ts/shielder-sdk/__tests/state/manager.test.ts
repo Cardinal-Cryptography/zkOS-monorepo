@@ -11,8 +11,9 @@ import {
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { nativeTokenAddress } from "../../src/constants";
 import { nativeToken } from "../../src/utils";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 const expectStatesEqual = (
   state1: AccountStateMerkleIndexed,

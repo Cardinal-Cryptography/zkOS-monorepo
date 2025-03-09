@@ -143,10 +143,35 @@ pub struct CLIConfig {
 
     #[clap(
         long,
-        help = "Addresses of the ERC20 tokens (comma separated) that are qualified as a fee token.",
-        long_help = "Addresses of the ERC20 tokens (comma separated) that are qualified as a fee token. \
-            If not provided, the value from the environment variable `{FEE_TOKEN_ENV}` will be used. \
-            If that is not set, assumed to be empty."
+        help = "Token pricing configuration for tokens that are qualified as a fee token.",
+        long_help = "Token pricing configuration for tokens that are qualified as a fee token. \
+            If not provided, the value from the environment variable `{TOKEN_PRICING_ENV}` will be used. \
+            If that is not set, assumed to be empty. Parsed as JSON: \
+            \
+            This example configures a token to have a constant price of 12.3 USD: \
+            [{\"token\":\"Native\", \"pricing\":{\"Fixed\":{\"price\":\"12.3\"}}}] \
+            \
+            This example configure a token to use the `Usdc` price feed for its pricing: \
+            [{\"token\":{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"},\"pricing\":{\"Feed\":{\"price_feed_coin\":\"Usdc\"}}}]
+            "
     )]
-    pub fee_tokens: Option<Vec<String>>,
+    pub token_pricing: Option<String>,
+
+    #[clap(
+        long,
+        help = "Price feed refresh interval in seconds.",
+        long_help = "Price feed refresh interval in seconds. If not provided, the value from the \
+            environment variable `{PRICE_FEED_REFRESH_INTERVAL_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS:?}`."
+    )]
+    pub price_feed_refresh_interval: Option<u64>,
+
+    #[clap(
+        long,
+        help = "Price feed validity in seconds.",
+        long_help = "Price feed validity in seconds. If not provided, the value from the \
+            environment variable `{PRICE_FEED_VALIDITY_ENV}` will be used. If that is not set,\
+            the default value is `{DEFAULT_PRICE_FEED_VALIDITY_SECS:?}`."
+    )]
+    pub price_feed_validity: Option<u64>,
 }

@@ -2,11 +2,11 @@ import { it, expect, describe, beforeEach, vi } from "vitest";
 import { IdManager } from "../../src/state/idManager";
 import { MockedCryptoClient } from "../helpers";
 import {
-  Scalar,
   scalarsEqual,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { nativeTokenAddress } from "../../src/constants";
+
+const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 
 describe("IdManager", () => {
   let idManager: IdManager;
