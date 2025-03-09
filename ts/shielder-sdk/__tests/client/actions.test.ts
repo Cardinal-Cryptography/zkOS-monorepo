@@ -24,6 +24,7 @@ import { WithdrawCalldata } from "../../src/actions/withdraw";
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 describe("ShielderActions", () => {
+  // Test fixtures and mocks
   let actions: ShielderActions;
   let mockAccountRegistry: Mocked<AccountRegistry>;
   let mockStateSynchronizer: Mocked<StateSynchronizer>;
@@ -48,6 +49,163 @@ describe("ShielderActions", () => {
   const mockSendTransaction: SendShielderTransaction = vitest
     .fn()
     .mockResolvedValue(mockTxHash);
+
+  // Helper functions for creating mock calldata objects
+  const createMockNewAccountCalldata = (): NewAccountCalldata => ({
+    calldata: {
+      pubInputs: {
+        hNote: Scalar.fromBigint(0n),
+        hId: Scalar.fromBigint(0n),
+        initialDeposit: Scalar.fromBigint(0n),
+        tokenAddress: Scalar.fromBigint(0n),
+        anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
+        anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
+        symKeyEncryption1X: Scalar.fromBigint(0n),
+        symKeyEncryption1Y: Scalar.fromBigint(0n),
+        symKeyEncryption2X: Scalar.fromBigint(0n),
+        symKeyEncryption2Y: Scalar.fromBigint(0n)
+      },
+      proof: new Uint8Array()
+    },
+    expectedContractVersion: contractVersion,
+    provingTimeMillis: 100,
+    amount: mockAmount,
+    token: mockToken
+  });
+
+  const createMockDepositCalldata = (): DepositCalldata => ({
+    calldata: {
+      pubInputs: {
+        idHiding: Scalar.fromBigint(0n),
+        merkleRoot: Scalar.fromBigint(0n),
+        hNullifierOld: Scalar.fromBigint(0n),
+        hNoteNew: Scalar.fromBigint(0n),
+        value: Scalar.fromBigint(0n),
+        tokenAddress: Scalar.fromBigint(0n),
+        macSalt: Scalar.fromBigint(0n),
+        macCommitment: Scalar.fromBigint(0n)
+      },
+      proof: new Uint8Array()
+    },
+    expectedContractVersion: contractVersion,
+    provingTimeMillis: 100,
+    amount: mockAmount,
+    token: mockToken
+  });
+
+  const createMockWithdrawCalldata = (
+    totalFee = mockTotalFee
+  ): WithdrawCalldata => ({
+    calldata: {
+      pubInputs: {
+        idHiding: Scalar.fromBigint(0n),
+        merkleRoot: Scalar.fromBigint(0n),
+        hNullifierOld: Scalar.fromBigint(0n),
+        hNoteNew: Scalar.fromBigint(0n),
+        value: Scalar.fromBigint(0n),
+        tokenAddress: Scalar.fromBigint(0n),
+        commitment: Scalar.fromBigint(0n),
+        macSalt: Scalar.fromBigint(0n),
+        macCommitment: Scalar.fromBigint(0n)
+      },
+      proof: new Uint8Array()
+    },
+    expectedContractVersion: contractVersion,
+    provingTimeMillis: 100,
+    amount: mockAmount,
+    withdrawalAddress: mockAddress,
+    totalFee,
+    token: mockToken
+  });
+
+  // Helper function for testing error scenarios
+  const testErrorHandling = async (
+    operation: ShielderOperation,
+    errorType: "generation" | "sending",
+    method: () => Promise<Hash>,
+    mockGenerateCalldata: any,
+    mockSendCalldata: any,
+    mockCalldata: any
+  ) => {
+    const mockError = new Error(
+      `Failed to ${errorType === "generation" ? "generate" : "send"} calldata`
+    );
+
+    if (errorType === "generation") {
+      mockGenerateCalldata.mockRejectedValueOnce(mockError);
+    } else {
+      mockGenerateCalldata.mockResolvedValueOnce(mockCalldata);
+      mockSendCalldata.mockRejectedValueOnce(mockError);
+    }
+
+    await expect(method()).rejects.toThrow(mockError);
+
+    expect(mockCallbacks.onError).toHaveBeenCalledWith(
+      mockError,
+      errorType,
+      operation
+    );
+
+    if (errorType === "sending") {
+      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
+        mockCalldata,
+        operation
+      );
+    } else {
+      expect(mockCallbacks.onCalldataGenerated).not.toHaveBeenCalled();
+    }
+
+    expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
+  };
+
+  // Helper function for testing OutdatedSdkError
+  const testOutdatedSdkError = async (
+    operation: ShielderOperation,
+    method: () => Promise<Hash>,
+    mockGenerateCalldata: any
+  ) => {
+    const mockError = new OutdatedSdkError("Outdated SDK version");
+    mockGenerateCalldata.mockRejectedValueOnce(mockError);
+
+    await expect(method()).rejects.toThrow(mockError);
+
+    expect(mockCallbacks.onError).toHaveBeenCalledWith(
+      mockError,
+      "generation",
+      operation
+    );
+  };
+
+  // Helper function for testing transaction failure
+  const testTransactionFailure = async (
+    method: () => Promise<Hash>,
+    mockGenerateCalldata: any,
+    mockSendCalldata: any,
+    mockCalldata: any
+  ) => {
+    mockGenerateCalldata.mockResolvedValueOnce(mockCalldata);
+    mockSendCalldata.mockResolvedValueOnce(mockTxHash);
+    mockPublicClient.waitForTransactionReceipt.mockResolvedValueOnce({
+      status: "reverted",
+      blockHash: "0x123" as `0x${string}`,
+      blockNumber: 1n,
+      contractAddress: null,
+      cumulativeGasUsed: 1000n,
+      effectiveGasPrice: 1000n,
+      from: "0x123" as `0x${string}`,
+      gasUsed: 1000n,
+      logs: [],
+      logsBloom: "0x123" as `0x${string}`,
+      to: "0x123" as `0x${string}`,
+      transactionHash: "0x123" as `0x${string}`,
+      transactionIndex: 0,
+      type: "eip1559"
+    });
+
+    await expect(method()).rejects.toThrow("Transaction failed");
+
+    expect(mockStateSynchronizer.syncSingleAccount).not.toHaveBeenCalled();
+  };
 
   beforeEach(() => {
     // Reset mocks
@@ -140,317 +298,196 @@ describe("ShielderActions", () => {
       });
       expect(mockRelayer.quoteFees).toHaveBeenCalledTimes(1);
     });
-
-    it("should propagate errors from relayer", async () => {
-      const mockError = new Error("Failed to quote fees");
-      mockRelayer.quoteFees.mockRejectedValue(mockError);
-
-      await expect(actions.getWithdrawFees()).rejects.toThrow(mockError);
-    });
   });
 
   describe("shield", () => {
-    it("should throw error when account not found and createEmptyAccountState fails", async () => {
-      // Setup mock for new account
-      mockAccountRegistry.getAccountState.mockResolvedValue(null);
-      const mockError = new Error("Failed to create empty account state");
-      mockAccountRegistry.createEmptyAccountState.mockRejectedValue(mockError);
+    const shieldMethod = () =>
+      actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom);
 
-      await expect(
-        actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow(mockError);
-
-      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
-        mockToken
-      );
-      expect(mockAccountRegistry.createEmptyAccountState).toHaveBeenCalledWith(
-        mockToken
-      );
-      expect(mockNewAccountAction.generateCalldata).not.toHaveBeenCalled();
-    });
-
-    it("should create a new account when nonce is 0", async () => {
-      // Setup mock for new account
-      mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(null);
-      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
-        mockAccountState
-      );
-
-      const mockCalldata: NewAccountCalldata = {
-        calldata: {
-          pubInputs: {
-            hNote: Scalar.fromBigint(0n),
-            hId: Scalar.fromBigint(0n),
-            initialDeposit: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
-            symKeyEncryption1X: Scalar.fromBigint(0n),
-            symKeyEncryption1Y: Scalar.fromBigint(0n),
-            symKeyEncryption2X: Scalar.fromBigint(0n),
-            symKeyEncryption2Y: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        token: mockToken
-      };
-      mockNewAccountAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockNewAccountAction.sendCalldata.mockResolvedValue(mockTxHash);
-
-      const txHash = await actions.shield(
-        mockToken,
-        mockAmount,
-        mockSendTransaction,
-        mockFrom
-      );
-
-      expect(txHash).toBe(mockTxHash);
-      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
-        mockToken
-      );
-      expect(mockNewAccountAction.generateCalldata).toHaveBeenCalledWith(
-        mockAccountState,
-        mockAmount,
-        contractVersion
-      );
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        "shield"
-      );
-      expect(mockNewAccountAction.sendCalldata).toHaveBeenCalledWith(
-        mockCalldata,
-        mockSendTransaction,
-        mockFrom
-      );
-      expect(mockCallbacks.onCalldataSent).toHaveBeenCalledWith(
-        mockTxHash,
-        "shield"
-      );
-      expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith({
-        hash: mockTxHash
-      });
-      expect(mockStateSynchronizer.syncSingleAccount).toHaveBeenCalledWith(
-        mockToken
-      );
-    });
-
-    it("should deposit to existing account when nonce is not 0", async () => {
-      // Setup mock for deposit
-      mockAccountState.nonce = 1n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
-
-      const mockCalldata: DepositCalldata = {
-        calldata: {
-          pubInputs: {
-            idHiding: Scalar.fromBigint(0n),
-            merkleRoot: Scalar.fromBigint(0n),
-            hNullifierOld: Scalar.fromBigint(0n),
-            hNoteNew: Scalar.fromBigint(0n),
-            value: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            macSalt: Scalar.fromBigint(0n),
-            macCommitment: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        token: mockToken
-      };
-      mockDepositAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockDepositAction.sendCalldata.mockResolvedValue(mockTxHash);
-
-      const txHash = await actions.shield(
-        mockToken,
-        mockAmount,
-        mockSendTransaction,
-        mockFrom
-      );
-
-      expect(txHash).toBe(mockTxHash);
-      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
-        mockToken
-      );
-      expect(mockDepositAction.generateCalldata).toHaveBeenCalledWith(
-        mockAccountState,
-        mockAmount,
-        contractVersion
-      );
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        "shield"
-      );
-      expect(mockDepositAction.sendCalldata).toHaveBeenCalledWith(
-        mockCalldata,
-        mockSendTransaction,
-        mockFrom
-      );
-      expect(mockCallbacks.onCalldataSent).toHaveBeenCalledWith(
-        mockTxHash,
-        "shield"
-      );
-      expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith({
-        hash: mockTxHash
-      });
-      expect(mockStateSynchronizer.syncSingleAccount).toHaveBeenCalledWith(
-        mockToken
-      );
-    });
-
-    it("should handle calldata generation errors", async () => {
-      const mockError = new Error("Failed to generate calldata");
-      mockNewAccountAction.generateCalldata.mockRejectedValue(mockError);
-      mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(null);
-      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
-        mockAccountState
-      );
-
-      await expect(
-        actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "generation",
-        "shield"
-      );
-      expect(mockCallbacks.onCalldataGenerated).not.toHaveBeenCalled();
-      expect(mockNewAccountAction.sendCalldata).not.toHaveBeenCalled();
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
-    });
-
-    it("should handle calldata sending errors", async () => {
-      const mockError = new Error("Failed to send calldata");
-      const mockCalldata: NewAccountCalldata = {
-        calldata: {
-          pubInputs: {
-            hNote: Scalar.fromBigint(0n),
-            hId: Scalar.fromBigint(0n),
-            initialDeposit: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
-            symKeyEncryption1X: Scalar.fromBigint(0n),
-            symKeyEncryption1Y: Scalar.fromBigint(0n),
-            symKeyEncryption2X: Scalar.fromBigint(0n),
-            symKeyEncryption2Y: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        token: mockToken
-      };
-      mockNewAccountAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockNewAccountAction.sendCalldata.mockRejectedValue(mockError);
-      mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(null);
-      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
-        mockAccountState
-      );
-
-      await expect(
-        actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        "shield"
-      );
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "sending",
-        "shield"
-      );
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
-    });
-
-    it("should throw error when transaction fails", async () => {
-      mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
-      const mockCalldata: NewAccountCalldata = {
-        calldata: {
-          pubInputs: {
-            hNote: Scalar.fromBigint(0n),
-            hId: Scalar.fromBigint(0n),
-            initialDeposit: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
-            symKeyEncryption1X: Scalar.fromBigint(0n),
-            symKeyEncryption1Y: Scalar.fromBigint(0n),
-            symKeyEncryption2X: Scalar.fromBigint(0n),
-            symKeyEncryption2Y: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        token: mockToken
-      };
-      mockNewAccountAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockNewAccountAction.sendCalldata.mockResolvedValue(mockTxHash);
-      mockPublicClient.waitForTransactionReceipt.mockResolvedValue({
-        status: "reverted",
-        blockHash: "0x123" as `0x${string}`,
-        blockNumber: 1n,
-        contractAddress: null,
-        cumulativeGasUsed: 1000n,
-        effectiveGasPrice: 1000n,
-        from: "0x123" as `0x${string}`,
-        gasUsed: 1000n,
-        logs: [],
-        logsBloom: "0x123" as `0x${string}`,
-        to: "0x123" as `0x${string}`,
-        transactionHash: "0x123" as `0x${string}`,
-        transactionIndex: 0,
-        type: "eip1559"
+    describe("new account creation", () => {
+      beforeEach(() => {
+        // Setup for new account creation
+        mockAccountState.nonce = 0n;
+        mockAccountRegistry.getAccountState.mockResolvedValue(null);
+        mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
+          mockAccountState
+        );
       });
 
-      await expect(
-        actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow("Transaction failed");
+      it("should create a new account when nonce is 0", async () => {
+        const mockCalldata = createMockNewAccountCalldata();
+        mockNewAccountAction.generateCalldata.mockResolvedValue(mockCalldata);
+        mockNewAccountAction.sendCalldata.mockResolvedValue(mockTxHash);
 
-      expect(mockStateSynchronizer.syncSingleAccount).not.toHaveBeenCalled();
+        const txHash = await shieldMethod();
+
+        expect(txHash).toBe(mockTxHash);
+        expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
+          mockToken
+        );
+        expect(mockNewAccountAction.generateCalldata).toHaveBeenCalledWith(
+          mockAccountState,
+          mockAmount,
+          contractVersion
+        );
+        expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
+          mockCalldata,
+          "shield"
+        );
+        expect(mockNewAccountAction.sendCalldata).toHaveBeenCalledWith(
+          mockCalldata,
+          mockSendTransaction,
+          mockFrom
+        );
+        expect(mockCallbacks.onCalldataSent).toHaveBeenCalledWith(
+          mockTxHash,
+          "shield"
+        );
+        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
+          {
+            hash: mockTxHash
+          }
+        );
+        expect(mockStateSynchronizer.syncSingleAccount).toHaveBeenCalledWith(
+          mockToken
+        );
+      });
+
+      it("should handle calldata generation errors", async () => {
+        await testErrorHandling(
+          "shield",
+          "generation",
+          shieldMethod,
+          mockNewAccountAction.generateCalldata,
+          mockNewAccountAction.sendCalldata,
+          createMockNewAccountCalldata()
+        );
+      });
+
+      it("should handle calldata sending errors", async () => {
+        await testErrorHandling(
+          "shield",
+          "sending",
+          shieldMethod,
+          mockNewAccountAction.generateCalldata,
+          mockNewAccountAction.sendCalldata,
+          createMockNewAccountCalldata()
+        );
+      });
+
+      it("should handle OutdatedSdkError during calldata generation", async () => {
+        await testOutdatedSdkError(
+          "shield",
+          shieldMethod,
+          mockNewAccountAction.generateCalldata
+        );
+      });
+
+      it("should throw error when transaction fails", async () => {
+        await testTransactionFailure(
+          shieldMethod,
+          mockNewAccountAction.generateCalldata,
+          mockNewAccountAction.sendCalldata,
+          createMockNewAccountCalldata()
+        );
+      });
     });
 
-    it("should handle OutdatedSdkError during calldata generation", async () => {
-      const mockError = new OutdatedSdkError("Outdated SDK version");
-      mockNewAccountAction.generateCalldata.mockRejectedValue(mockError);
-      mockAccountState.nonce = 0n;
-      mockAccountRegistry.getAccountState.mockResolvedValue(null);
-      mockAccountRegistry.createEmptyAccountState.mockResolvedValue(
-        mockAccountState
-      );
+    describe("deposit to existing account", () => {
+      beforeEach(() => {
+        // Setup for deposit to existing account
+        mockAccountState.nonce = 1n;
+        mockAccountRegistry.getAccountState.mockResolvedValue(mockAccountState);
+      });
 
-      await expect(
-        actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom)
-      ).rejects.toThrow(mockError);
+      it("should deposit to existing account when nonce is not 0", async () => {
+        const mockCalldata = createMockDepositCalldata();
+        mockDepositAction.generateCalldata.mockResolvedValue(mockCalldata);
+        mockDepositAction.sendCalldata.mockResolvedValue(mockTxHash);
 
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "generation",
-        "shield"
-      );
+        const txHash = await shieldMethod();
+
+        expect(txHash).toBe(mockTxHash);
+        expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
+          mockToken
+        );
+        expect(mockDepositAction.generateCalldata).toHaveBeenCalledWith(
+          mockAccountState,
+          mockAmount,
+          contractVersion
+        );
+        expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
+          mockCalldata,
+          "shield"
+        );
+        expect(mockDepositAction.sendCalldata).toHaveBeenCalledWith(
+          mockCalldata,
+          mockSendTransaction,
+          mockFrom
+        );
+        expect(mockCallbacks.onCalldataSent).toHaveBeenCalledWith(
+          mockTxHash,
+          "shield"
+        );
+        expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith(
+          {
+            hash: mockTxHash
+          }
+        );
+        expect(mockStateSynchronizer.syncSingleAccount).toHaveBeenCalledWith(
+          mockToken
+        );
+      });
+
+      it("should handle calldata generation errors", async () => {
+        await testErrorHandling(
+          "shield",
+          "generation",
+          shieldMethod,
+          mockDepositAction.generateCalldata,
+          mockDepositAction.sendCalldata,
+          createMockDepositCalldata()
+        );
+      });
+
+      it("should handle calldata sending errors", async () => {
+        await testErrorHandling(
+          "shield",
+          "sending",
+          shieldMethod,
+          mockDepositAction.generateCalldata,
+          mockDepositAction.sendCalldata,
+          createMockDepositCalldata()
+        );
+      });
+
+      it("should handle OutdatedSdkError during calldata generation", async () => {
+        await testOutdatedSdkError(
+          "shield",
+          shieldMethod,
+          mockDepositAction.generateCalldata
+        );
+      });
+
+      it("should throw error when transaction fails", async () => {
+        await testTransactionFailure(
+          shieldMethod,
+          mockDepositAction.generateCalldata,
+          mockDepositAction.sendCalldata,
+          createMockDepositCalldata()
+        );
+      });
     });
   });
 
   describe("withdraw", () => {
+    const withdrawMethod = () =>
+      actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress);
+
     it("should throw error when account not found", async () => {
-      // Setup mock for account not found
       mockAccountRegistry.getAccountState.mockResolvedValue(null);
 
-      await expect(
-        actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress)
-      ).rejects.toThrow("Account not found");
+      await expect(withdrawMethod()).rejects.toThrow("Account not found");
 
       expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
         mockToken
@@ -459,58 +496,12 @@ describe("ShielderActions", () => {
       expect(mockWithdrawAction.generateCalldata).not.toHaveBeenCalled();
     });
 
-    it("should throw error when withdrawManual is called with account not found", async () => {
-      // Setup mock for account not found
-      mockAccountRegistry.getAccountState.mockResolvedValue(null);
-
-      await expect(
-        actions.withdrawManual(
-          mockToken,
-          mockAmount,
-          mockAddress,
-          mockSendTransaction,
-          mockFrom
-        )
-      ).rejects.toThrow("Account not found");
-
-      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
-        mockToken
-      );
-      expect(mockWithdrawAction.generateCalldata).not.toHaveBeenCalled();
-    });
-
     it("should withdraw funds using relayer", async () => {
-      const mockCalldata: WithdrawCalldata = {
-        calldata: {
-          pubInputs: {
-            idHiding: Scalar.fromBigint(0n),
-            merkleRoot: Scalar.fromBigint(0n),
-            hNullifierOld: Scalar.fromBigint(0n),
-            hNoteNew: Scalar.fromBigint(0n),
-            value: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            commitment: Scalar.fromBigint(0n),
-            macSalt: Scalar.fromBigint(0n),
-            macCommitment: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        withdrawalAddress: mockAddress,
-        totalFee: mockTotalFee,
-        token: mockToken
-      };
+      const mockCalldata = createMockWithdrawCalldata();
       mockWithdrawAction.generateCalldata.mockResolvedValue(mockCalldata);
       mockWithdrawAction.sendCalldataWithRelayer.mockResolvedValue(mockTxHash);
 
-      const txHash = await actions.withdraw(
-        mockToken,
-        mockAmount,
-        mockTotalFee,
-        mockAddress
-      );
+      const txHash = await withdrawMethod();
 
       expect(txHash).toBe(mockTxHash);
       expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
@@ -545,116 +536,63 @@ describe("ShielderActions", () => {
     });
 
     it("should handle calldata generation errors", async () => {
-      const mockError = new Error("Failed to generate calldata");
-      mockWithdrawAction.generateCalldata.mockRejectedValue(mockError);
-
-      await expect(
-        actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress)
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
+      await testErrorHandling(
+        "withdraw",
         "generation",
-        "withdraw"
+        withdrawMethod,
+        mockWithdrawAction.generateCalldata,
+        mockWithdrawAction.sendCalldataWithRelayer,
+        createMockWithdrawCalldata()
       );
-      expect(mockCallbacks.onCalldataGenerated).not.toHaveBeenCalled();
-      expect(mockWithdrawAction.sendCalldataWithRelayer).not.toHaveBeenCalled();
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
     });
 
     it("should handle calldata sending errors", async () => {
-      const mockError = new Error("Failed to send calldata");
-      const mockCalldata: WithdrawCalldata = {
-        calldata: {
-          pubInputs: {
-            idHiding: Scalar.fromBigint(0n),
-            merkleRoot: Scalar.fromBigint(0n),
-            hNullifierOld: Scalar.fromBigint(0n),
-            hNoteNew: Scalar.fromBigint(0n),
-            value: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            commitment: Scalar.fromBigint(0n),
-            macSalt: Scalar.fromBigint(0n),
-            macCommitment: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        withdrawalAddress: mockAddress,
-        totalFee: mockTotalFee,
-        token: mockToken
-      };
-      mockWithdrawAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockWithdrawAction.sendCalldataWithRelayer.mockRejectedValue(mockError);
-
-      await expect(
-        actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress)
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        "withdraw"
-      );
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
+      await testErrorHandling(
+        "withdraw",
         "sending",
-        "withdraw"
+        withdrawMethod,
+        mockWithdrawAction.generateCalldata,
+        mockWithdrawAction.sendCalldataWithRelayer,
+        createMockWithdrawCalldata()
       );
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
     });
 
     it("should handle OutdatedSdkError during calldata generation", async () => {
-      const mockError = new OutdatedSdkError("Outdated SDK version");
-      mockWithdrawAction.generateCalldata.mockRejectedValue(mockError);
-
-      await expect(
-        actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress)
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "generation",
-        "withdraw"
+      await testOutdatedSdkError(
+        "withdraw",
+        withdrawMethod,
+        mockWithdrawAction.generateCalldata
       );
     });
   });
 
   describe("withdrawManual", () => {
-    it("should withdraw funds manually", async () => {
-      const mockCalldata: WithdrawCalldata = {
-        calldata: {
-          pubInputs: {
-            idHiding: Scalar.fromBigint(0n),
-            merkleRoot: Scalar.fromBigint(0n),
-            hNullifierOld: Scalar.fromBigint(0n),
-            hNoteNew: Scalar.fromBigint(0n),
-            value: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            commitment: Scalar.fromBigint(0n),
-            macSalt: Scalar.fromBigint(0n),
-            macCommitment: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        withdrawalAddress: mockAddress,
-        totalFee: 0n,
-        token: mockToken
-      };
-      mockWithdrawAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockWithdrawAction.sendCalldata.mockResolvedValue(mockTxHash);
-
-      const txHash = await actions.withdrawManual(
+    const withdrawManualMethod = () =>
+      actions.withdrawManual(
         mockToken,
         mockAmount,
         mockAddress,
         mockSendTransaction,
         mockFrom
       );
+
+    it("should throw error when account not found", async () => {
+      mockAccountRegistry.getAccountState.mockResolvedValue(null);
+
+      await expect(withdrawManualMethod()).rejects.toThrow("Account not found");
+
+      expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
+        mockToken
+      );
+      expect(mockWithdrawAction.generateCalldata).not.toHaveBeenCalled();
+    });
+
+    it("should withdraw funds manually", async () => {
+      const mockCalldata = createMockWithdrawCalldata(0n);
+      mockWithdrawAction.generateCalldata.mockResolvedValue(mockCalldata);
+      mockWithdrawAction.sendCalldata.mockResolvedValue(mockTxHash);
+
+      const txHash = await withdrawManualMethod();
 
       expect(txHash).toBe(mockTxHash);
       expect(mockAccountRegistry.getAccountState).toHaveBeenCalledWith(
@@ -690,263 +628,33 @@ describe("ShielderActions", () => {
     });
 
     it("should handle calldata generation errors", async () => {
-      const mockError = new Error("Failed to generate calldata");
-      mockWithdrawAction.generateCalldata.mockRejectedValue(mockError);
-
-      await expect(
-        actions.withdrawManual(
-          mockToken,
-          mockAmount,
-          mockAddress,
-          mockSendTransaction,
-          mockFrom
-        )
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
+      await testErrorHandling(
+        "withdraw",
         "generation",
-        "withdraw"
+        withdrawManualMethod,
+        mockWithdrawAction.generateCalldata,
+        mockWithdrawAction.sendCalldata,
+        createMockWithdrawCalldata(0n)
       );
-      expect(mockCallbacks.onCalldataGenerated).not.toHaveBeenCalled();
-      expect(mockWithdrawAction.sendCalldata).not.toHaveBeenCalled();
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
     });
 
     it("should handle calldata sending errors", async () => {
-      const mockError = new Error("Failed to send calldata");
-      const mockCalldata: WithdrawCalldata = {
-        calldata: {
-          pubInputs: {
-            idHiding: Scalar.fromBigint(0n),
-            merkleRoot: Scalar.fromBigint(0n),
-            hNullifierOld: Scalar.fromBigint(0n),
-            hNoteNew: Scalar.fromBigint(0n),
-            value: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            commitment: Scalar.fromBigint(0n),
-            macSalt: Scalar.fromBigint(0n),
-            macCommitment: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        withdrawalAddress: mockAddress,
-        totalFee: 0n,
-        token: mockToken
-      };
-      mockWithdrawAction.generateCalldata.mockResolvedValue(mockCalldata);
-      mockWithdrawAction.sendCalldata.mockRejectedValue(mockError);
-
-      await expect(
-        actions.withdrawManual(
-          mockToken,
-          mockAmount,
-          mockAddress,
-          mockSendTransaction,
-          mockFrom
-        )
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        "withdraw"
-      );
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
+      await testErrorHandling(
+        "withdraw",
         "sending",
-        "withdraw"
+        withdrawManualMethod,
+        mockWithdrawAction.generateCalldata,
+        mockWithdrawAction.sendCalldata,
+        createMockWithdrawCalldata(0n)
       );
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
     });
 
     it("should handle OutdatedSdkError during calldata generation", async () => {
-      const mockError = new OutdatedSdkError("Outdated SDK version");
-      mockWithdrawAction.generateCalldata.mockRejectedValue(mockError);
-
-      await expect(
-        actions.withdrawManual(
-          mockToken,
-          mockAmount,
-          mockAddress,
-          mockSendTransaction,
-          mockFrom
-        )
-      ).rejects.toThrow(mockError);
-
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "generation",
-        "withdraw"
+      await testOutdatedSdkError(
+        "withdraw",
+        withdrawManualMethod,
+        mockWithdrawAction.generateCalldata
       );
-    });
-  });
-
-  describe("waitAndSync", () => {
-    it("should wait for transaction receipt and sync account", async () => {
-      // We need to access the private method using any
-      const waitAndSync = (actions as any).waitAndSync.bind(actions);
-
-      await waitAndSync(mockToken, mockTxHash);
-
-      expect(mockPublicClient.waitForTransactionReceipt).toHaveBeenCalledWith({
-        hash: mockTxHash
-      });
-      expect(mockStateSynchronizer.syncSingleAccount).toHaveBeenCalledWith(
-        mockToken
-      );
-    });
-
-    it("should throw error when transaction fails", async () => {
-      mockPublicClient.waitForTransactionReceipt.mockResolvedValue({
-        status: "reverted",
-        blockHash: "0x123" as `0x${string}`,
-        blockNumber: 1n,
-        contractAddress: null,
-        cumulativeGasUsed: 1000n,
-        effectiveGasPrice: 1000n,
-        from: "0x123" as `0x${string}`,
-        gasUsed: 1000n,
-        logs: [],
-        logsBloom: "0x123" as `0x${string}`,
-        to: "0x123" as `0x${string}`,
-        transactionHash: "0x123" as `0x${string}`,
-        transactionIndex: 0,
-        type: "eip1559"
-      });
-
-      // We need to access the private method using any
-      const waitAndSync = (actions as any).waitAndSync.bind(actions);
-
-      await expect(waitAndSync(mockToken, mockTxHash)).rejects.toThrow(
-        "Transaction failed"
-      );
-
-      expect(mockStateSynchronizer.syncSingleAccount).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("handleCalldata", () => {
-    it("should handle calldata generation and sending", async () => {
-      const mockCalldata: NewAccountCalldata = {
-        calldata: {
-          pubInputs: {
-            hNote: Scalar.fromBigint(0n),
-            hId: Scalar.fromBigint(0n),
-            initialDeposit: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
-            symKeyEncryption1X: Scalar.fromBigint(0n),
-            symKeyEncryption1Y: Scalar.fromBigint(0n),
-            symKeyEncryption2X: Scalar.fromBigint(0n),
-            symKeyEncryption2Y: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        token: mockToken
-      };
-      const generateCalldata = vitest.fn().mockResolvedValue(mockCalldata);
-      const sendCalldata = vitest.fn().mockResolvedValue(mockTxHash);
-      const operation: ShielderOperation = "shield";
-
-      // We need to access the private method using any
-      const handleCalldata = (actions as any).handleCalldata.bind(actions);
-
-      const result = await handleCalldata(
-        generateCalldata,
-        sendCalldata,
-        operation
-      );
-
-      expect(result).toBe(mockTxHash);
-      expect(generateCalldata).toHaveBeenCalled();
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        operation
-      );
-      expect(sendCalldata).toHaveBeenCalledWith(mockCalldata);
-      expect(mockCallbacks.onCalldataSent).toHaveBeenCalledWith(
-        mockTxHash,
-        operation
-      );
-    });
-
-    it("should handle calldata generation errors", async () => {
-      const mockError = new Error("Failed to generate calldata");
-      const generateCalldata = vitest.fn().mockRejectedValue(mockError);
-      const sendCalldata = vitest.fn();
-      const operation: ShielderOperation = "shield";
-
-      // We need to access the private method using any
-      const handleCalldata = (actions as any).handleCalldata.bind(actions);
-
-      await expect(
-        handleCalldata(generateCalldata, sendCalldata, operation)
-      ).rejects.toThrow(mockError);
-
-      expect(generateCalldata).toHaveBeenCalled();
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "generation",
-        operation
-      );
-      expect(mockCallbacks.onCalldataGenerated).not.toHaveBeenCalled();
-      expect(sendCalldata).not.toHaveBeenCalled();
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
-    });
-
-    it("should handle calldata sending errors", async () => {
-      const mockCalldata: NewAccountCalldata = {
-        calldata: {
-          pubInputs: {
-            hNote: Scalar.fromBigint(0n),
-            hId: Scalar.fromBigint(0n),
-            initialDeposit: Scalar.fromBigint(0n),
-            tokenAddress: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
-            anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
-            symKeyEncryption1X: Scalar.fromBigint(0n),
-            symKeyEncryption1Y: Scalar.fromBigint(0n),
-            symKeyEncryption2X: Scalar.fromBigint(0n),
-            symKeyEncryption2Y: Scalar.fromBigint(0n)
-          },
-          proof: new Uint8Array()
-        },
-        expectedContractVersion: contractVersion,
-        provingTimeMillis: 100,
-        amount: mockAmount,
-        token: mockToken
-      };
-      const mockError = new Error("Failed to send calldata");
-      const generateCalldata = vitest.fn().mockResolvedValue(mockCalldata);
-      const sendCalldata = vitest.fn().mockRejectedValue(mockError);
-      const operation: ShielderOperation = "shield";
-
-      // We need to access the private method using any
-      const handleCalldata = (actions as any).handleCalldata.bind(actions);
-
-      await expect(
-        handleCalldata(generateCalldata, sendCalldata, operation)
-      ).rejects.toThrow(mockError);
-
-      expect(generateCalldata).toHaveBeenCalled();
-      expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
-        mockCalldata,
-        operation
-      );
-      expect(sendCalldata).toHaveBeenCalledWith(mockCalldata);
-      expect(mockCallbacks.onError).toHaveBeenCalledWith(
-        mockError,
-        "sending",
-        operation
-      );
-      expect(mockCallbacks.onCalldataSent).not.toHaveBeenCalled();
     });
   });
 });

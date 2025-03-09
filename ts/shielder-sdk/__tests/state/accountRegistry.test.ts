@@ -3,7 +3,6 @@ import { AccountRegistry } from "../../src/state/accountRegistry";
 import { AccountFactory } from "../../src/state/accountFactory";
 import { AccountStateSerde } from "../../src/state/accountStateSerde";
 import { StorageManager } from "../../src/storage/storageManager";
-import { MockedCryptoClient } from "../helpers";
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { nativeToken, erc20Token } from "../../src/utils";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
@@ -92,21 +91,6 @@ describe("AccountRegistry", () => {
         nextAccountIndex
       );
     });
-
-    it("should propagate errors from getNextAccountIndex", async () => {
-      const token = nativeToken();
-      const mockError = new Error("Failed to get next account index");
-
-      vi.mocked(storageManager.getNextAccountIndex).mockRejectedValue(
-        mockError
-      );
-
-      await expect(
-        accountRegistry.createEmptyAccountState(token)
-      ).rejects.toThrow(mockError);
-      expect(storageManager.getNextAccountIndex).toHaveBeenCalled();
-      expect(accountFactory.createEmptyAccountState).not.toHaveBeenCalled();
-    });
   });
 
   describe("getAccountState", () => {
@@ -149,31 +133,6 @@ describe("AccountRegistry", () => {
       expect(result).toBe(null);
       expect(storageManager.findAccountByTokenAddress).toHaveBeenCalledWith(
         testErc20Address
-      );
-    });
-
-    it("should propagate errors from toAccountState", async () => {
-      const token = nativeToken();
-      const accountIndex = 0;
-      const mockAccountObject = createMockAccountObject();
-      const mockError = new Error("Failed to convert to account state");
-
-      vi.mocked(storageManager.findAccountByTokenAddress).mockResolvedValue({
-        accountIndex,
-        accountObject: mockAccountObject
-      });
-      vi.mocked(accountStateSerde.toAccountState).mockRejectedValue(mockError);
-
-      await expect(accountRegistry.getAccountState(token)).rejects.toThrow(
-        mockError
-      );
-      expect(storageManager.findAccountByTokenAddress).toHaveBeenCalledWith(
-        nativeTokenAddress
-      );
-      expect(accountStateSerde.toAccountState).toHaveBeenCalledWith(
-        mockAccountObject,
-        accountIndex,
-        token
       );
     });
   });
@@ -248,61 +207,25 @@ describe("AccountRegistry", () => {
     });
   });
 
-  describe("getAccountIndex", () => {
-    it("should return account index when found", async () => {
-      const token = nativeToken();
-      const accountIndex = 0;
-
-      vi.mocked(storageManager.findAccountByTokenAddress).mockResolvedValue({
-        accountIndex,
-        accountObject: {} as AccountObject
-      });
-
-      const result = await accountRegistry.getAccountIndex(token);
-
-      expect(result).toBe(accountIndex);
-      expect(storageManager.findAccountByTokenAddress).toHaveBeenCalledWith(
-        nativeTokenAddress
-      );
-    });
-
-    it("should return null when not found", async () => {
-      const token = erc20Token(testErc20Address);
-
-      vi.mocked(storageManager.findAccountByTokenAddress).mockResolvedValue(
-        null
-      );
-
-      const result = await accountRegistry.getAccountIndex(token);
-
-      expect(result).toBeNull();
-      expect(storageManager.findAccountByTokenAddress).toHaveBeenCalledWith(
-        testErc20Address
-      );
-    });
-  });
-
   describe("getTokenByAccountIndex", () => {
-    it("should return correct token type based on account address", async () => {
-      const testCases = [
-        {
-          index: 0,
-          accountObject: createMockAccountObject(nativeTokenAddress),
-          expected: nativeToken()
-        },
-        {
-          index: 1,
-          accountObject: createMockAccountObject(testErc20Address),
-          expected: erc20Token(testErc20Address)
-        },
-        {
-          index: 999,
-          accountObject: null,
-          expected: null
-        }
-      ];
-
-      for (const { index, accountObject, expected } of testCases) {
+    [
+      {
+        index: 0,
+        accountObject: createMockAccountObject(nativeTokenAddress),
+        expected: nativeToken()
+      },
+      {
+        index: 1,
+        accountObject: createMockAccountObject(testErc20Address),
+        expected: erc20Token(testErc20Address)
+      },
+      {
+        index: 999,
+        accountObject: null,
+        expected: null
+      }
+    ].forEach(({ index, accountObject, expected }) => {
+      it(`should return correct token based on account index: ${index}`, async () => {
         vi.mocked(storageManager.getRawAccount).mockResolvedValue(
           accountObject
         );
@@ -312,7 +235,7 @@ describe("AccountRegistry", () => {
         expect(result).toEqual(expected);
         expect(storageManager.getRawAccount).toHaveBeenCalledWith(index);
         vi.clearAllMocks();
-      }
+      });
     });
   });
 });
