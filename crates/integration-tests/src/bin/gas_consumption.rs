@@ -4,9 +4,7 @@ use std::{env, fs::File, io::Write};
 use alloy_primitives::U256;
 use integration_tests::{
     calls::{
-        deposit_native::{
-            invoke_call as deposit_native_call, prepare_call as deposit_native_calldata,
-        },
+        deposit::{invoke_call as deposit_call, prepare_call as deposit_calldata},
         new_account::{invoke_call as new_account_call, prepare_call as new_account_calldata},
         withdraw_native::{
             invoke_call as withdraw_native_call, prepare_args,
@@ -16,13 +14,16 @@ use integration_tests::{
     deploy::{deployment, Deployment},
     deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,
 };
-use shielder_account::{call_data::NewAccountCall, ShielderAccount};
-use shielder_contract::ShielderContract::{depositNativeCall, withdrawNativeCall};
+use shielder_account::{
+    call_data::{DepositCall, NewAccountCall},
+    ShielderAccount,
+};
+use shielder_contract::ShielderContract::withdrawNativeCall;
 
 #[derive(Debug)]
 enum Calldata {
     NewAccount(NewAccountCall),
-    Deposit(depositNativeCall),
+    Deposit(DepositCall),
     Withdraw(withdrawNativeCall),
 }
 
@@ -62,7 +63,13 @@ fn main() {
     content.extend(&mut format!("{}: {gas_used}\n", &calldata).as_bytes().iter());
 
     let calldata = Calldata::Deposit(
-        deposit_native_calldata(&mut deployment, &mut shielder_account, amount).0,
+        deposit_calldata(
+            &mut deployment,
+            &mut shielder_account,
+            TestToken::Native,
+            amount,
+        )
+        .0,
     );
 
     let gas_used = measure_gas(&calldata, &mut deployment, &mut shielder_account);
@@ -98,7 +105,7 @@ fn measure_gas(
                 .gas_used
         }
         Calldata::Deposit(calldata) => {
-            deposit_native_call(deployment, shielder_account, U256::from(10), calldata)
+            deposit_call(deployment, shielder_account, calldata)
                 .unwrap()
                 .1
                 .gas_used

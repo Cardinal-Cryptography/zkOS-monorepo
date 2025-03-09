@@ -31,6 +31,7 @@ export type IRelayer = {
   withdraw: (
     expectedContractVersion: `0x${string}`,
     token: Token,
+    feeAmount: bigint,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
@@ -54,6 +55,7 @@ export class Relayer implements IRelayer {
   withdraw = async (
     expectedContractVersion: `0x${string}`,
     token: Token,
+    feeAmount: bigint,
     idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
@@ -88,6 +90,7 @@ export class Relayer implements IRelayer {
                 : {
                     ERC20: token.address
                   },
+            fee_amount: feeAmount,
             proof: Array.from(proof)
           },
           (_, value: unknown) =>

@@ -4,13 +4,13 @@ import {
   SendShielderTransaction,
   ShielderCallbacks
 } from "./types";
+import { Token } from "@/types";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
 import { HistoryFetcher } from "@/state/sync/historyFetcher";
 import { ShielderTransaction } from "@/state/types";
 import { AccountRegistry } from "@/state/accountRegistry";
 import { ShielderActions } from "./actions";
 import { ShielderComponents } from "./factories";
-import { Token } from "@/types";
 
 export class ShielderClient {
   private accountRegistry: AccountRegistry;

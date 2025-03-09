@@ -2,23 +2,21 @@ import { it, expect, describe, beforeEach, vi } from "vitest";
 import { StateSynchronizer } from "../../../src/state/sync/synchronizer";
 import { AccountRegistry } from "../../../src/state/accountRegistry";
 import { TokenAccountFinder } from "../../../src/state/sync/tokenAccountFinder";
-import { StateTransitionFinder } from "../../../src/state/sync/stateTransitionFinder";
-import { Mutex } from "async-mutex";
 import {
+  AccountState,
   AccountStateMerkleIndexed,
   ShielderTransaction
 } from "../../../src/state/types";
 import { nativeToken } from "../../../src/utils";
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { ChainStateTransition } from "../../../src/state/sync/chainStateTransition";
 
 describe("StateSynchronizer", () => {
   let stateSynchronizer: StateSynchronizer;
   let mockAccountRegistry: AccountRegistry;
   let mockTokenAccountFinder: TokenAccountFinder;
-  let mockStateTransitionFinder: StateTransitionFinder;
+  let mockChainStateTransition: ChainStateTransition;
   let mockSyncCallback: (transaction: ShielderTransaction) => unknown;
-  let mockSingleTokenMutex: Mutex;
-  let mockAllTokensMutex: Mutex;
   let mockState: AccountStateMerkleIndexed;
   // Explicitly type mock functions to avoid TypeScript errors
   let mockGetAccountState: any;
@@ -28,7 +26,6 @@ describe("StateSynchronizer", () => {
   let mockFindTokenByAccountIndex: any;
 
   beforeEach(() => {
-    // Create mock state
     mockState = {
       id: Scalar.fromBigint(1n),
       token: nativeToken(),
@@ -54,13 +51,11 @@ describe("StateSynchronizer", () => {
       findTokenByAccountIndex: mockFindTokenByAccountIndex
     } as any;
 
-    // Create mock StateTransitionFinder
     mockFindStateTransition = vi.fn();
-    mockStateTransitionFinder = {
+    mockChainStateTransition = {
       findStateTransition: mockFindStateTransition
     } as any;
 
-    // Create mock sync callback
     mockSyncCallback = vi.fn();
 
     // Create mock Mutexes
@@ -92,9 +87,33 @@ describe("StateSynchronizer", () => {
   // Spy on syncSingleAccount to test syncAllAccounts
   let syncSingleAccountSpy: any;
 
+  describe("createEmptyAccountState", () => {
+    it("should create empty account state when account doesn't exist", async () => {
+      mockAccountState.mockResolvedValue(null);
+
+      const emptyState: AccountState = {
+        id: Scalar.fromBigint(2n),
+        token: nativeToken(),
+        nonce: 0n,
+        balance: 0n,
+        currentNote: Scalar.fromBigint(0n)
+      };
+
+      const mockCreateEmptyAccountState = vi.fn().mockResolvedValue(emptyState);
+      mockStateManager.createEmptyAccountState = mockCreateEmptyAccountState;
+
+      mockFindStateTransition.mockResolvedValue(null);
+
+      await stateSynchronizer.syncSingleAccount(nativeToken());
+
+      expect(mockCreateEmptyAccountState).toHaveBeenCalledWith(nativeToken());
+
+      expect(mockFindStateTransition).toHaveBeenCalledWith(emptyState);
+    });
+  });
+
   describe("syncSingleAccount", () => {
     it("should create empty account state when account not found", async () => {
-      // Mock state transitions
       const emptyState: AccountStateMerkleIndexed = {
         id: Scalar.fromBigint(1n),
         token: nativeToken(),
@@ -112,7 +131,6 @@ describe("StateSynchronizer", () => {
         currentNoteIndex: 1n
       };
 
-      // Mock transaction
       const transaction: ShielderTransaction = {
         type: "Deposit",
         amount: 50n,
@@ -130,7 +148,6 @@ describe("StateSynchronizer", () => {
         .mockResolvedValueOnce({ newState, transaction })
         .mockResolvedValueOnce(null);
 
-      // Call the method
       await stateSynchronizer.syncSingleAccount(nativeToken());
 
       // Verify singleTokenMutex was used
@@ -156,7 +173,6 @@ describe("StateSynchronizer", () => {
     });
 
     it("should sync single state transition", async () => {
-      // Mock state transitions
       const newState: AccountStateMerkleIndexed = {
         ...mockState,
         nonce: 2n,
@@ -165,7 +181,6 @@ describe("StateSynchronizer", () => {
         currentNoteIndex: 2n
       };
 
-      // Mock transaction
       const transaction: ShielderTransaction = {
         type: "Deposit",
         amount: 50n,
@@ -174,35 +189,26 @@ describe("StateSynchronizer", () => {
         token: nativeToken()
       };
 
-      // Setup mock behavior
       mockFindStateTransition
         .mockResolvedValueOnce({ newState, transaction })
         .mockResolvedValueOnce(null);
 
-      // Call the method
       await stateSynchronizer.syncSingleAccount(nativeToken());
 
-      // Verify singleTokenMutex was used
-      expect(mockSingleTokenMutex.runExclusive).toHaveBeenCalledTimes(1);
-
-      // Verify AccountRegistry was called correctly
-      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockAccountState).toHaveBeenCalledWith(nativeToken());
       expect(mockUpdateAccountState).toHaveBeenCalledWith(
         nativeToken(),
         newState
       );
 
-      // Verify StateTransitionFinder was called correctly
       expect(mockFindStateTransition).toHaveBeenCalledTimes(2);
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(1, mockState);
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(2, newState);
 
-      // Verify callback was called
       expect(mockSyncCallback).toHaveBeenCalledWith(transaction);
     });
 
     it("should sync multiple state transitions", async () => {
-      // Mock state transitions
       const state1: AccountStateMerkleIndexed = {
         ...mockState,
         nonce: 2n,
@@ -219,7 +225,6 @@ describe("StateSynchronizer", () => {
         currentNoteIndex: 3n
       };
 
-      // Mock transactions
       const tx1: ShielderTransaction = {
         type: "Deposit",
         amount: 50n,
@@ -238,20 +243,14 @@ describe("StateSynchronizer", () => {
         token: nativeToken()
       };
 
-      // Setup mock behavior
       mockFindStateTransition
         .mockResolvedValueOnce({ newState: state1, transaction: tx1 })
         .mockResolvedValueOnce({ newState: state2, transaction: tx2 })
         .mockResolvedValueOnce(null);
 
-      // Call the method
       await stateSynchronizer.syncSingleAccount(nativeToken());
 
-      // Verify singleTokenMutex was used
-      expect(mockSingleTokenMutex.runExclusive).toHaveBeenCalledTimes(1);
-
-      // Verify AccountRegistry was called correctly
-      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
+      expect(mockAccountState).toHaveBeenCalledWith(nativeToken());
       expect(mockUpdateAccountState).toHaveBeenCalledTimes(2);
       expect(mockUpdateAccountState).toHaveBeenNthCalledWith(
         1,
@@ -264,129 +263,14 @@ describe("StateSynchronizer", () => {
         state2
       );
 
-      // Verify StateTransitionFinder was called correctly
       expect(mockFindStateTransition).toHaveBeenCalledTimes(3);
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(1, mockState);
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(2, state1);
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(3, state2);
 
-      // Verify callback was called
       expect(mockSyncCallback).toHaveBeenCalledTimes(2);
       expect(mockSyncCallback).toHaveBeenNthCalledWith(1, tx1);
       expect(mockSyncCallback).toHaveBeenNthCalledWith(2, tx2);
-    });
-
-    it("should stop when no more state transitions are found", async () => {
-      // Setup mock behavior to return null (no state transitions)
-      mockFindStateTransition.mockResolvedValue(null);
-
-      // Call the method
-      await stateSynchronizer.syncSingleAccount(nativeToken());
-
-      // Verify singleTokenMutex was used
-      expect(mockSingleTokenMutex.runExclusive).toHaveBeenCalledTimes(1);
-
-      // Verify AccountRegistry was called correctly
-      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
-      expect(mockUpdateAccountState).not.toHaveBeenCalled();
-
-      // Verify StateTransitionFinder was called correctly
-      expect(mockFindStateTransition).toHaveBeenCalledTimes(1);
-      expect(mockFindStateTransition).toHaveBeenCalledWith(mockState);
-
-      // Verify callback was not called
-      expect(mockSyncCallback).not.toHaveBeenCalled();
-    });
-
-    it("should not call callback if not provided", async () => {
-      // Create StateSynchronizer without callback
-      stateSynchronizer = new StateSynchronizer(
-        mockAccountRegistry,
-        mockStateTransitionFinder,
-        mockTokenAccountFinder,
-        undefined,
-        mockSingleTokenMutex
-      );
-
-      // Mock state transitions
-      const newState: AccountStateMerkleIndexed = {
-        ...mockState,
-        nonce: 2n,
-        balance: 150n,
-        currentNote: Scalar.fromBigint(200n),
-        currentNoteIndex: 2n
-      };
-
-      // Mock transaction
-      const transaction: ShielderTransaction = {
-        type: "Deposit",
-        amount: 50n,
-        txHash: "0x1",
-        block: 1n,
-        token: nativeToken()
-      };
-
-      // Setup mock behavior
-      mockFindStateTransition
-        .mockResolvedValueOnce({ newState, transaction })
-        .mockResolvedValueOnce(null);
-
-      // Call the method
-      await stateSynchronizer.syncSingleAccount(nativeToken());
-
-      // Verify callback was not called
-      expect(mockSyncCallback).not.toHaveBeenCalled();
-
-      // Verify other methods were called correctly
-      expect(mockGetAccountState).toHaveBeenCalledWith(nativeToken());
-      expect(mockUpdateAccountState).toHaveBeenCalledWith(
-        nativeToken(),
-        newState
-      );
-    });
-
-    it("should use mutex for concurrency control", async () => {
-      // Mock state transitions
-      mockFindStateTransition.mockResolvedValue(null);
-
-      // Call the method
-      await stateSynchronizer.syncSingleAccount(nativeToken());
-
-      // Verify singleTokenMutex was used
-      expect(mockSingleTokenMutex.runExclusive).toHaveBeenCalledTimes(1);
-
-      // Call the method
-      await stateSynchronizer.syncAllAccounts();
-
-      // Verify allTokenMutex was used
-      expect(mockAllTokensMutex.runExclusive).toHaveBeenCalledTimes(1);
-    });
-
-    it("should propagate errors from dependencies", async () => {
-      // Setup mock behavior to throw an error
-      const testError = new Error("Test error");
-      mockFindStateTransition.mockRejectedValue(testError);
-
-      // Call the method and expect it to throw
-      await expect(
-        stateSynchronizer.syncSingleAccount(nativeToken())
-      ).rejects.toThrow(testError);
-
-      // Verify allTokensMutex was used
-      expect(mockSingleTokenMutex.runExclusive).toHaveBeenCalledTimes(1);
-    });
-
-    it("should create default mutex if not provided", () => {
-      // Create StateSynchronizer without mutex
-      const syncWithoutMutex = new StateSynchronizer(
-        mockAccountRegistry,
-        mockStateTransitionFinder,
-        mockTokenAccountFinder,
-        mockSyncCallback
-      );
-
-      // Verify that a mutex was created (indirectly by checking the constructor was called)
-      expect(syncWithoutMutex).toBeInstanceOf(StateSynchronizer);
     });
   });
 

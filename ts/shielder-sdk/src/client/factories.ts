@@ -12,8 +12,6 @@ import { idHidingNonce } from "@/utils";
 import { IdManager } from "@/state/idManager";
 import { AccountFactory } from "@/state/accountFactory";
 import { AccountRegistry } from "@/state/accountRegistry";
-import { StateEventsFilter } from "@/state/events";
-import { StateTransitionFinder } from "@/state/sync/stateTransitionFinder";
 import { TokenAccountFinder } from "@/state/sync/tokenAccountFinder";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
 import { HistoryFetcher } from "@/state/sync/historyFetcher";
@@ -25,6 +23,8 @@ import {
   InjectedStorageInterface,
   StorageInterface
 } from "@/storage/storageSchema";
+import { LocalStateTransition } from "@/state/localStateTransition";
+import { ChainStateTransition } from "@/state/sync/chainStateTransition";
 
 // Base config with common properties
 type BaseShielderConfig = {
@@ -92,11 +92,11 @@ type ActionComponents = {
   newAccountAction: NewAccountAction;
   depositAction: DepositAction;
   withdrawAction: WithdrawAction;
-  stateEventsFilter: StateEventsFilter;
+  localStateTransition: LocalStateTransition;
 };
 
 type SyncComponents = {
-  stateTransitionFinder: StateTransitionFinder;
+  chainStateTransition: ChainStateTransition;
   tokenAccountFinder: TokenAccountFinder;
   stateSynchronizer: StateSynchronizer;
   historyFetcher: HistoryFetcher;
@@ -185,7 +185,7 @@ function createActionComponents(config: ShielderComponentsConfig) {
     config.nonceGenerator,
     config.chainId
   );
-  const stateEventsFilter = new StateEventsFilter(
+  const localStateTransition = new LocalStateTransition(
     newAccountAction,
     depositAction,
     withdrawAction
@@ -195,7 +195,7 @@ function createActionComponents(config: ShielderComponentsConfig) {
     newAccountAction,
     depositAction,
     withdrawAction,
-    stateEventsFilter
+    localStateTransition
   };
 }
 
@@ -205,10 +205,10 @@ function createSyncComponents(
     StorageComponents &
     ActionComponents
 ): SyncComponents {
-  const stateTransitionFinder = new StateTransitionFinder(
+  const chainStateTransition = new ChainStateTransition(
     config.contract,
     config.cryptoClient,
-    config.stateEventsFilter
+    config.localStateTransition
   );
   const tokenAccountFinder = new TokenAccountFinder(
     config.contract,
@@ -217,18 +217,18 @@ function createSyncComponents(
   );
   const stateSynchronizer = new StateSynchronizer(
     config.accountRegistry,
-    stateTransitionFinder,
+    chainStateTransition,
     tokenAccountFinder,
     config.callbacks?.onNewTransaction
   );
   const historyFetcher = new HistoryFetcher(
     tokenAccountFinder,
     config.accountFactory,
-    stateTransitionFinder
+    chainStateTransition
   );
 
   return {
-    stateTransitionFinder,
+    chainStateTransition,
     tokenAccountFinder,
     stateSynchronizer,
     historyFetcher

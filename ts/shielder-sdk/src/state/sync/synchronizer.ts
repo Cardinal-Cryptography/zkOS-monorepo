@@ -2,7 +2,7 @@ import { Mutex } from "async-mutex";
 import { AccountRegistry } from "../accountRegistry";
 import { TokenAccountFinder } from "./tokenAccountFinder";
 import { Token } from "@/types";
-import { StateTransitionFinder } from "./stateTransitionFinder";
+import { ChainStateTransition } from "./chainStateTransition";
 import {
   AccountState,
   AccountStateMerkleIndexed,
@@ -12,7 +12,7 @@ import {
 export class StateSynchronizer {
   constructor(
     private accountRegistry: AccountRegistry,
-    private stateTransitionFinder: StateTransitionFinder,
+    private chainStateTransition: ChainStateTransition,
     private tokenAccountFinder: TokenAccountFinder,
     private syncCallback?: (
       shielderTransaction: ShielderTransaction
@@ -56,7 +56,7 @@ export class StateSynchronizer {
         (await this.accountRegistry.createEmptyAccountState(token));
       while (true) {
         const stateTransition =
-          await this.stateTransitionFinder.findStateTransition(state);
+          await this.chainStateTransition.findStateTransition(state);
         if (!stateTransition) break;
         if (this.syncCallback) this.syncCallback(stateTransition.transaction);
         const newState: AccountStateMerkleIndexed = stateTransition.newState;

@@ -4,7 +4,7 @@ use std::{
 };
 
 use rust_decimal::Decimal;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator as _;
 use strum_macros::EnumIter;
 use time::OffsetDateTime;
@@ -12,7 +12,7 @@ use tokio::time::Duration;
 
 const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter, Serialize, Deserialize)]
 pub enum Coin {
     Eth,
     Azero,
@@ -55,9 +55,9 @@ impl Prices {
     /// Note that you should realistically set `validity` to at least 5 or 10 minutes - it seems
     /// the API we are using (DIA) updates about 2 or 3 minutes or so.
     pub fn new(validity: Duration, refresh_interval: Duration) -> Self {
-        let inner = Default::default();
         let validity =
             time::Duration::new(validity.as_secs() as i64, validity.subsec_nanos() as i32);
+        let inner = Default::default();
 
         Self {
             validity,
@@ -81,13 +81,6 @@ impl Prices {
         })
     }
 
-    /// Get the relative price of two coins or `None` if the price of one of them is not available or outdated.
-    pub fn relative_price(&self, coin1: Coin, coin2: Coin) -> Option<Decimal> {
-        let price1 = self.price(coin1)?;
-        let price2 = self.price(coin2)?;
-        Some(price1 / price2)
-    }
-
     async fn update(&self) -> Result<(), Error> {
         for coin in Coin::iter() {
             let price = fetch_price(coin).await?;
@@ -97,12 +90,24 @@ impl Prices {
 
         Ok(())
     }
+
+    #[cfg(test)]
+    pub fn set_price(&self, coin: Coin, price: Decimal) {
+        let price = Price {
+            price,
+            time: OffsetDateTime::now_utc(),
+        };
+        self.inner
+            .lock()
+            .expect("Mutex poisoned")
+            .insert(coin, price);
+    }
 }
 
 /// Start a price feed that updates the prices in the given `Prices` instance.
-pub async fn start_price_feed(prices: Prices) {
+pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
     loop {
-        prices.update().await.unwrap();
+        prices.update().await?;
         tokio::time::sleep(prices.refresh_interval).await;
     }
 }
