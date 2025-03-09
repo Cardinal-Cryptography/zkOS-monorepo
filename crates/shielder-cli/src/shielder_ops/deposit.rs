@@ -26,16 +26,20 @@ pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
     let (merkle_root, merkle_path) = get_current_merkle_path(leaf_index, &shielder_user).await?;
     let (tx_hash, block_hash) = shielder_user
         .deposit_native::<Call>(
-            app_state.account.prepare_call::<DepositCallType>(
-                &params,
-                &pk,
-                Token::Native,
-                amount,
-                &MerkleProof {
-                    root: merkle_root,
-                    path: merkle_path,
-                },
-            ),
+            app_state
+                .account
+                .prepare_call::<DepositCallType>(
+                    &params,
+                    &pk,
+                    Token::Native,
+                    amount,
+                    &MerkleProof {
+                        root: merkle_root,
+                        path: merkle_path,
+                    },
+                )
+                .try_into()
+                .unwrap(),
             amount,
         )
         .await?;

@@ -63,8 +63,14 @@ fi
 if [[ -n "${RELAY_GAS:-}" ]]; then
   ARGS+=(-e RELAY_GAS="${RELAY_GAS}")
 fi
-if [[ -n "${FEE_TOKENS:-}" ]]; then
-  ARGS+=(-e FEE_TOKENS="${FEE_TOKENS}")
+if [[ -n "${PRICE_FEED_VALIDITY:-}" ]]; then
+  ARGS+=(-e PRICE_FEED_VALIDITY="${PRICE_FEED_VALIDITY}")
+fi
+if [[ -n "${PRICE_FEED_REFRESH_INTERVAL:-}" ]]; then
+  ARGS+=(-e PRICE_FEED_REFRESH_INTERVAL="${PRICE_FEED_REFRESH_INTERVAL}")
+fi
+if [[ -n "${TOKEN_PRICING:-}" ]]; then
+  ARGS+=(-e TOKEN_PRICING="${TOKEN_PRICING}")
 fi
 
 docker run --rm -d "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
