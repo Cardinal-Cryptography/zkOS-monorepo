@@ -6,8 +6,6 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 
-const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
-
 describe("IdManager", () => {
   let idManager: IdManager;
   let cryptoClient: MockedCryptoClient;
