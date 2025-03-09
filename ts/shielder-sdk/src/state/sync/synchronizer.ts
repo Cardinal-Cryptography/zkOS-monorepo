@@ -1,4 +1,6 @@
 import { Mutex } from "async-mutex";
+import { AccountRegistry } from "../accountRegistry";
+import { TokenAccountFinder } from "./tokenAccountFinder";
 import { Token } from "@/types";
 import { ChainStateTransition } from "./chainStateTransition";
 import {
@@ -6,17 +8,41 @@ import {
   AccountStateMerkleIndexed,
   ShielderTransaction
 } from "../types";
-import { StateManager } from "../manager";
 
 export class StateSynchronizer {
   constructor(
-    private stateManager: StateManager,
+    private accountRegistry: AccountRegistry,
     private chainStateTransition: ChainStateTransition,
+    private tokenAccountFinder: TokenAccountFinder,
     private syncCallback?: (
       shielderTransaction: ShielderTransaction
     ) => unknown,
-    private singleTokenMutex: Mutex = new Mutex()
+    private singleTokenMutex: Mutex = new Mutex(),
+    private allTokensMutex: Mutex = new Mutex()
   ) {}
+
+  /**
+   * Syncs the shielder state with the blockchain.
+   * Emits the synced shielder transactions to the callback.
+   * Locks to prevent concurrent storage changes.
+   */
+  async syncAllAccounts() {
+    await this.allTokensMutex.runExclusive(async () => {
+      let accountIndex = 0;
+      while (true) {
+        let token =
+          await this.accountRegistry.getTokenByAccountIndex(accountIndex);
+        if (!token) {
+          // try to find a token that has not been indexed yet
+          token =
+            await this.tokenAccountFinder.findTokenByAccountIndex(accountIndex);
+        }
+        if (!token) break; // no more tokens to sync
+        await this.syncSingleAccount(token);
+        accountIndex++;
+      }
+    });
+  }
 
   /**
    * Syncs the shielder state with the blockchain.
@@ -26,8 +52,8 @@ export class StateSynchronizer {
   async syncSingleAccount(token: Token) {
     await this.singleTokenMutex.runExclusive(async () => {
       let state: AccountState =
-        (await this.stateManager.accountState(token)) ??
-        (await this.stateManager.createEmptyAccountState(token));
+        (await this.accountRegistry.getAccountState(token)) ??
+        (await this.accountRegistry.createEmptyAccountState(token));
       while (true) {
         const stateTransition =
           await this.chainStateTransition.findStateTransition(state);
@@ -35,7 +61,7 @@ export class StateSynchronizer {
         if (this.syncCallback) this.syncCallback(stateTransition.transaction);
         const newState: AccountStateMerkleIndexed = stateTransition.newState;
         state = newState;
-        await this.stateManager.updateAccountState(token, newState);
+        await this.accountRegistry.updateAccountState(token, newState);
       }
     });
   }

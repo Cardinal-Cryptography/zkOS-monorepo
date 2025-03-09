@@ -66,16 +66,16 @@ export const setupShielderClient = async (
     return tx;
   };
   const callbacks = setupCallbacks();
-  const shielderClient = window.shielder.createShielderClient(
-    shielderKey,
-    chainConfig.chainId,
+  const shielderClient = window.shielder.createShielderClient({
+    shielderSeedPrivateKey: shielderKey,
+    chainId: BigInt(chainConfig.chainId),
     publicClient,
-    chainConfig.contractAddress,
-    relayerConfig.url,
+    contractAddress: chainConfig.contractAddress,
+    relayerUrl: relayerConfig.url,
     storage,
     cryptoClient,
-    callbacks.callbacks
-  );
+    callbacks: callbacks.callbacks
+  });
 
   return {
     shielderClient,
