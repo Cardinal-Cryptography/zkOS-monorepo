@@ -5,6 +5,9 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
+use std::str::FromStr;
+use strum_macros::EnumIter;
+use clap::ValueEnum;
 
 pub const LOGGING_FORMAT_ENV: &str = "LOGGING_FORMAT";
 pub const RELAYER_HOST_ENV: &str = "RELAYER_HOST";
@@ -23,6 +26,7 @@ pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 pub const PRICE_FEED_VALIDITY_ENV: &str = "PRICE_FEED_VALIDITY";
 pub const PRICE_FEED_REFRESH_INTERVAL_ENV: &str = "PRICE_FEED_REFRESH_INTERVAL";
 pub const TOKEN_PRICING_ENV: &str = "TOKEN_PRICING";
+pub const NATIVE_TOKEN_ENV: &str = "NATIVE_TOKEN";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -95,4 +99,28 @@ pub enum FeeToken {
 pub fn server_error(msg: &str) -> Response {
     let code = StatusCode::INTERNAL_SERVER_ERROR;
     (code, SimpleServiceResponse::from(msg)).into_response()
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter, Serialize, Deserialize, ValueEnum)]
+pub enum Coin {
+    Eth,
+    Azero,
+    Btc,
+    Usdt,
+    Usdc,
+}
+
+impl FromStr for Coin {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "azero" => Ok(Coin::Azero),
+            "eth" => Ok(Coin::Eth),
+            "btc" => Ok(Coin::Btc),
+            "usdt" => Ok(Coin::Usdt),
+            "usdc" => Ok(Coin::Usdc),
+            _ => Err(()),
+        }
+    }
 }

@@ -4,8 +4,8 @@ use tokio::{sync::mpsc::channel, time::Duration};
 
 use super::*;
 use crate::{
-    config::{DryRunning, TokenPricingConfig},
-    price_feed::{Coin, Prices},
+    config::{ DryRunning, TokenPricingConfig},
+    price_feed::Prices,
     relay::taskmaster::Taskmaster,
 };
 
@@ -85,7 +85,7 @@ mod native_fee {
 
 mod erc20_fee {
     use assert2::assert;
-
+    use shielder_relayer::Coin;
     use super::*;
 
     const ERC20_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
