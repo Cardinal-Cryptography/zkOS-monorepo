@@ -1,15 +1,6 @@
 use std::{env, ffi::OsString, path::PathBuf};
 
-use clap::{Args, Parser, Subcommand};
-// use thiserror::Error;
-
-// #[derive(Debug, Error)]
-// #[error(transparent)]
-// #[non_exhaustive]
-// pub enum CliError {
-//     #[error("Error reading default dir")]
-//     DefaultDirError(#[from] std::io::Error),
-// }
+use clap::{builder::ValueParser, Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(name = "ar-cli", version)]
@@ -26,6 +17,9 @@ pub enum Command {
     Generate {
         #[arg(long, default_value=get_default_dir())]
         dir: PathBuf,
+
+        #[arg(long, value_parser = ValueParser::new(parse_hex_as_seed))]
+        seed: [u8; 32],
     },
 
     Revoke {
@@ -38,6 +32,12 @@ pub enum Command {
 struct GlobalOpts {
     #[arg(long, default_value = "info")]
     pub rust_log: log::Level,
+}
+
+fn parse_hex_as_seed(input: &str) -> Result<[u8; 32], &'static str> {
+    let mut decoded = [0u8; 32];
+    hex::decode_to_slice(input, &mut decoded).map_err(|err| err.to_string());
+    Ok(decoded)
 }
 
 fn get_default_dir() -> OsString {
