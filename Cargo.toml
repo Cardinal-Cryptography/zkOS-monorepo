@@ -54,8 +54,8 @@ sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
 # https://github.com/Cardinal-Cryptography/zkOS-circuits/tree/c8e715904395ecb2b63bcfc57eac5f3f03b1a82d
 # shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "c8e715" }
-# shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", branch = "expose-keys-generator" }
-shielder-circuits = { path = "/home/filip/CloudStation/aleph/zkOS-circuits/crates/shielder-circuits" }
+shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", branch = "expose-keys-generator" }
+#shielder-circuits = { path = "/home/filip/CloudStation/aleph/zkOS-circuits/crates/shielder-circuits" }
 strum = { version = "0.27.1" }
 strum_macros = { version = "0.27.1" }
 testcontainers = { version = "0.19.0" }
