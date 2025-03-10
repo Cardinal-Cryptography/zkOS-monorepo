@@ -78,18 +78,6 @@ export class AccountRegistry {
     }
   }
 
-  async getAccountIndex(token: Token): Promise<number | null> {
-    const tokenAddress = getAddressByToken(token);
-    const indexedAccount =
-      await this.storageManager.findAccountByTokenAddress(tokenAddress);
-
-    if (indexedAccount !== null) {
-      return indexedAccount.accountIndex;
-    }
-
-    return null;
-  }
-
   async getTokenByAccountIndex(accountIndex: number): Promise<Token | null> {
     const accountObject = await this.storageManager.getRawAccount(accountIndex);
 
