@@ -13,9 +13,6 @@ enum CliError {
     Generator(#[from] generate::GeneratorError),
 }
 
-// TODO:
-// - logs
-// - seed passing (optional)
 fn main() -> Result<(), CliError> {
     let cli = Cli::parse();
 
