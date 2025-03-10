@@ -11,8 +11,8 @@ import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { DepositAction } from "../../src/actions/deposit";
 import { IContract } from "../../src/chain/contract";
-import { SendShielderTransaction } from "../../src/client";
-import { nativeToken } from "../../src/types";
+import { SendShielderTransaction } from "../../src/client/types";
+import { nativeToken } from "../../src/utils";
 import { OutdatedSdkError } from "../../src/errors";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
 

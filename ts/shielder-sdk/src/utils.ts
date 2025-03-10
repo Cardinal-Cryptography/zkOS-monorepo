@@ -1,6 +1,6 @@
 import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { contractVersion, nativeTokenAddress } from "@/constants";
-import { erc20Token, nativeToken, Token } from "./types";
+import { ERC20Token, NativeToken, Token } from "./types";
 
 export function flatUint8(arr: Uint8Array[]) {
   return new Uint8Array(
@@ -25,6 +25,14 @@ export function noteVersion() {
 
 export function isVersionSupported(version: `0x${string}`) {
   return version === contractVersion;
+}
+
+export function nativeToken(): NativeToken {
+  return { type: "native" };
+}
+
+export function erc20Token(address: `0x${string}`): ERC20Token {
+  return { type: "erc20", address };
 }
 
 /**
