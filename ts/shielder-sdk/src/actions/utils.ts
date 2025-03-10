@@ -2,9 +2,9 @@ import {
   CryptoClient,
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountState } from "@/state";
 import { getAddressByToken, noteVersion } from "@/utils";
 import { bytesToHex } from "viem";
+import { AccountState } from "@/state/types";
 
 export abstract class NoteAction {
   protected cryptoClient: CryptoClient;
