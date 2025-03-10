@@ -5,10 +5,10 @@ use std::{
 
 use rust_decimal::Decimal;
 use serde::Deserialize;
+use shielder_relayer::Coin;
 use strum::IntoEnumIterator;
 use time::OffsetDateTime;
 use tokio::time::Duration;
-use shielder_relayer::Coin;
 
 const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
 

@@ -1,6 +1,9 @@
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
-use shielder_relayer::{Coin, FEE_DESTINATION_KEY_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV};
+use shielder_relayer::{
+    Coin, FEE_DESTINATION_KEY_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV,
+    RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV,
+};
 use testcontainers::{core::WaitFor, Image};
 
 /// Wrapper around `shielder-relayer` Docker image.

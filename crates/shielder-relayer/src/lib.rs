@@ -1,13 +1,14 @@
+use std::str::FromStr;
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
-use std::str::FromStr;
 use strum_macros::EnumIter;
-use clap::ValueEnum;
 
 pub const LOGGING_FORMAT_ENV: &str = "LOGGING_FORMAT";
 pub const RELAYER_HOST_ENV: &str = "RELAYER_HOST";
