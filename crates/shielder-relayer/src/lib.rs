@@ -101,6 +101,8 @@ pub fn server_error(msg: &str) -> Response {
     (code, SimpleServiceResponse::from(msg)).into_response()
 }
 
+/// A list of all supported coins across all chains. Every relayer instance will work with some
+/// subset of these coins.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter, Serialize, Deserialize, ValueEnum)]
 pub enum Coin {
     Eth,
