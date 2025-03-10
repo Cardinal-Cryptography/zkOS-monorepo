@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, U256};
+use alloy_primitives::U256;
 use rand::{rngs::OsRng, Rng};
 use sha3::Digest;
 use shielder_circuits::consts::NONCE_UPPER_LIMIT;
@@ -59,12 +59,12 @@ pub mod nonced {
 }
 
 /// Private-key-dependent derivation of a per-chain & per-token private ID.
-pub fn derive_id(private_key: U256, chain_id: u64, token_address: Address) -> U256 {
+pub fn derive_id(private_key: U256, chain_id: u64, account_nonce: u32) -> U256 {
     let mut hasher = sha3::Keccak256::new();
     hasher.update(private_key.to_be_bytes_vec());
     hasher.update(Label::Id.as_bytes());
     hasher.update(chain_id.to_be_bytes());
-    hasher.update(token_address.into_word());
+    hasher.update(account_nonce.to_be_bytes());
     finalize_hash(hasher)
 }
 
@@ -80,7 +80,7 @@ pub fn generate_id_hiding_nonce() -> U256 {
 mod tests {
     use std::str::FromStr;
 
-    use alloy_primitives::{address, U256};
+    use alloy_primitives::U256;
     use halo2curves::{bn256::Fr, ff::PrimeField};
 
     use crate::secrets::{
@@ -135,16 +135,12 @@ mod tests {
         //   0000000000000000000000000000000000000000000000000000000000000010
         //   6964 ("id")
         //   000000000000001a
-        //   000000000000000000000000ffffffffffffffffffffffffffffffffffffffff
+        //   0000002d
         let expected_before_modulo =
-            U256::from_str("0x3c65a829ca81bc03ad42ab3ce088f2c3d29060ac119910879bc7b584e841896d")
+            U256::from_str("0xf4b3b097dfb3da737872bdf8b59a3b3723345dc147a0b8229608db69cfef6499")
                 .unwrap();
 
-        let actual = derive_id(
-            U256::from(16),
-            26,
-            address!("ffffffffffffffffffffffffffffffffffffffff"),
-        );
+        let actual = derive_id(U256::from(16), 26, 45);
 
         assert_ne!(expected_before_modulo, actual);
         assert_eq!(expected_before_modulo.reduce_mod(FIELD_MODULUS), actual)
