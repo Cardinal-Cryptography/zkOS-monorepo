@@ -44,6 +44,7 @@ fn config_resolution() {
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
     let price_feed_validity = 15;
+    let native_token = Coin::Btc;
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -59,6 +60,7 @@ fn config_resolution() {
             signing_keys: vec![key1.clone(), key2.clone()],   // from env
             total_fee: U256::from_str(&total_fee).unwrap(),   // from CLI
             relay_gas,                                        // from env
+            native_token,                                     // from env
         },
         operations: OperationalConfig {
             balance_monitor_interval_secs,   // from env
@@ -90,6 +92,7 @@ fn config_resolution() {
         token_pricing: None,
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
+        native_token: None,
     };
 
     // ---- Environment variables. -----------------------------------------------------------
@@ -115,6 +118,7 @@ fn config_resolution() {
                 }
             ]",
         );
+        std::env::set_var(NATIVE_TOKEN_ENV, format!("{native_token:?}"));
     }
 
     // ---- Test. ------------------------------------------------------------------------------

@@ -4,22 +4,13 @@ use std::{
 };
 
 use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
-use strum::IntoEnumIterator as _;
-use strum_macros::EnumIter;
+use serde::Deserialize;
+use shielder_relayer::Coin;
+use strum::IntoEnumIterator;
 use time::OffsetDateTime;
 use tokio::time::Duration;
 
 const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter, Serialize, Deserialize)]
-pub enum Coin {
-    Eth,
-    Azero,
-    Btc,
-    Usdt,
-    Usdc,
-}
 
 /// A collection of prices for various coins.
 ///

@@ -17,6 +17,7 @@ use shielder_contract::{
     providers::create_provider_with_nonce_caching_signer,
     ConnectionPolicy, ShielderUser,
 };
+use shielder_relayer::Coin;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -49,6 +50,7 @@ pub struct AppState {
     pub balances: Balances,
     pub prices: Prices,
     pub token_pricing: Vec<TokenPricingConfig>,
+    pub native_token: Coin,
 }
 
 struct Signers {
@@ -149,6 +151,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         ),
         token_pricing: config.operations.token_pricing.clone(),
         prices,
+        native_token: config.chain.native_token,
     };
 
     let app = Router::new()
