@@ -36,7 +36,9 @@ struct GlobalOpts {
 
 fn parse_hex_as_seed(input: &str) -> Result<[u8; 32], &'static str> {
     let mut decoded = [0u8; 32];
-    hex::decode_to_slice(input, &mut decoded).map_err(|err| err.to_string());
+    if let Err(_why) = hex::decode_to_slice(input, &mut decoded) {
+        return Err("Error when parsing seed value");
+    }
     Ok(decoded)
 }
 
