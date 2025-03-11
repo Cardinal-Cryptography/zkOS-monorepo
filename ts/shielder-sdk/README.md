@@ -1,6 +1,6 @@
 # `shielder-sdk`
 
-A TypeScript package for interacting with Shielder, a part of zkOS privacy engine. This SDK enables users to perform private transactions and manage accounts within the Shielder protocol.
+A TypeScript package for interacting with the Shielder Network. The SDK enables developers to integrate private EVM transactions into their applications.
 
 ## Key Features
 
@@ -11,19 +11,26 @@ A TypeScript package for interacting with Shielder, a part of zkOS privacy engin
 
 ## Usage
 
-The main entry point is the `createShielderClient` function, which provides methods for interacting with the Shielder protocol.
+The main entry point is the `createShielderClient` function, which creates `ShielderClient` instance with methods for shielding, withdrawing, and retrieving the account state
 
 ### Basic Example
 
 ```typescript
-import { createShielderClient } from "@cardinal-cryptography/shielder-sdk";
+import { createShielderClient, nativeToken } from "@cardinal-cryptography/shielder-sdk";
 import { CryptoClient } from "shielder-sdk-crypto";
+import { createPublicClient, http } from "viem";
+
+// Create a viem public client
+const publicClient = createPublicClient({
+  chain: { id: 12345 },
+  transport: http("https://rpc.url")
+});
 
 // Initialize the client
 const shielderClient = createShielderClient(
   "0xprivatekey", // 32-byte hex format private key
   12345, // blockchain chain ID
-  "https://rpc.url", // blockchain RPC endpoint
+  publicClient, // viem public client
   "0xcontractaddr", // Shielder contract address
   "https://relayer.url", // URL of the relayer service
   storage, // Storage interface for managing state
@@ -31,12 +38,27 @@ const shielderClient = createShielderClient(
   { ... } // Optional callbacks for monitoring operations
 );
 
-// Shield tokens
+// Shield native tokens
 await shielderClient.shield(
+  nativeToken(), // Token to shield (native token)
   1000n, // Amount to shield (in wei)
   sendShielderTransaction, // Function to send transaction
   "0x..." // From address
 );
+```
+
+### Token Types
+
+The SDK supports both native tokens and ERC20 tokens:
+
+```typescript
+import { nativeToken, erc20Token } from "@cardinal-cryptography/shielder-sdk";
+
+// Create a native token reference
+const native = nativeToken();
+
+// Create an ERC20 token reference
+const usdc = erc20Token("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
 ```
 
 ### CryptoClient
@@ -52,7 +74,17 @@ Currently available implementations:
 #### Shielding Tokens
 
 ```typescript
+// Shield native tokens
 const txHash = await shielderClient.shield(
+  nativeToken(), // Token to shield
+  amount, // Amount in wei
+  sendShielderTransaction, // Transaction sender function
+  fromAddress // Sender's address
+);
+
+// Shield ERC20 tokens
+const txHash = await shielderClient.shield(
+  erc20Token("0xTokenAddress"), // Token to shield
   amount, // Amount in wei
   sendShielderTransaction, // Transaction sender function
   fromAddress // Sender's address
@@ -65,22 +97,43 @@ const txHash = await shielderClient.shield(
 // Get current withdraw fees
 const fees = await shielderClient.getWithdrawFees();
 
-// Withdraw tokens
+// Withdraw native tokens
 const txHash = await shielderClient.withdraw(
+  nativeToken(), // Token to withdraw
   amount, // Amount in wei
   fees.totalFee, // Total fee for the operation
   toAddress // Recipient's address
 );
 ```
 
+#### Manual Withdrawal (Bypassing Relayer)
+
+```typescript
+// Withdraw tokens directly (non-anonymous)
+const txHash = await shielderClient.withdrawManual(
+  nativeToken(), // Token to withdraw
+  amount, // Amount in wei
+  toAddress, // Recipient's address
+  sendShielderTransaction, // Transaction sender function
+  fromAddress // Sender's address
+);
+```
+
 #### Syncing State
 
 ```typescript
-// Sync the local state with blockchain
-await shielderClient.syncShielder();
+// Sync the local state with blockchain for a specific token
+await shielderClient.syncShielderToken(nativeToken());
 
-// Get current account state
-const state = await shielderClient.accountState();
+// Get current account state for a specific token
+const state = await shielderClient.accountState(nativeToken());
+
+// Scan chain for all transactions for a specific token
+for await (const tx of shielderClient.scanChainForTokenShielderTransactions(
+  nativeToken()
+)) {
+  console.log("Transaction:", tx);
+}
 ```
 
 ### Callbacks
@@ -97,7 +150,7 @@ const callbacks = {
   onCalldataSent: (txHash, operation) => {
     console.log(`Transaction ${txHash} sent for ${operation}`);
   },
-  // Called when new transactions are found
+  // Called when new transactions are synchronized
   onNewTransaction: (tx) => {
     console.log("New transaction:", tx);
   },
@@ -107,3 +160,7 @@ const callbacks = {
   }
 };
 ```
+
+## Implementation details
+
+**TODO**
