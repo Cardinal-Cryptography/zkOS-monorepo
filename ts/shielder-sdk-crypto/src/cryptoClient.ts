@@ -44,7 +44,7 @@ export interface SecretManager {
   deriveId(
     privateKey: `0x${string}`,
     chainId: bigint,
-    tokenAddress: `0x${string}`
+    accountNonce: number
   ): Promise<Scalar>;
 }
 

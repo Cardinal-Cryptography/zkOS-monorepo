@@ -4,7 +4,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { LocalStateTransition } from "@/state/localStateTransition";
-import { isVersionSupported } from "@/utils";
+import { getAddressByToken, isVersionSupported } from "@/utils";
 import {
   AccountState,
   AccountStateMerkleIndexed,
@@ -42,6 +42,8 @@ export class ChainStateTransition {
   private async getNewStateByBlock(state: AccountState, block: bigint) {
     const noteEvents = await this.contract.getNoteEventsFromBlock(block);
 
+    const tokenAddress = getAddressByToken(state.token);
+
     const newStatesWithTxes: {
       newState: AccountStateMerkleIndexed;
       transaction: ShielderTransaction;
@@ -50,6 +52,11 @@ export class ChainStateTransition {
       if (!isVersionSupported(event.contractVersion)) {
         throw new OutdatedSdkError(
           `Unexpected version in event: ${event.contractVersion}`
+        );
+      }
+      if (event.tokenAddress != tokenAddress) {
+        throw new Error(
+          `Unexpected token address in event: ${event.tokenAddress}`
         );
       }
       const newState = await this.localStateTransition.newStateByEvent(

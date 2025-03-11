@@ -15,3 +15,5 @@ export const feeAddressPath = "/fee_address";
 export const shieldActionGasLimit = 3_000_000n;
 export const storageSchemaVersion = 2;
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+
+export const firstAccountIndex = 0;
