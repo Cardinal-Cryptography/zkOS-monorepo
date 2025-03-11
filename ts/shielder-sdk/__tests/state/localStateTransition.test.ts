@@ -20,7 +20,8 @@ const createNoteEvent = (
   newNoteIndex,
   contractVersion: "0x000001",
   txHash: "0x123",
-  block: 1n
+  block: 1n,
+  tokenAddress: "0x0000000000000000000000000000000000000000"
 });
 
 // Utility function to create a mock state
