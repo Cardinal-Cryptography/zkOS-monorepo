@@ -163,6 +163,8 @@ contract Shielder is
         uint256 symKeyEncryptionC1Y,
         uint256 symKeyEncryptionC2X,
         uint256 symKeyEncryptionC2Y,
+        uint256 macSalt,
+        uint256 macCommitment,
         bytes calldata proof
     ) external payable whenNotPaused {
         uint256 amount = msg.value;
@@ -181,6 +183,8 @@ contract Shielder is
             symKeyEncryptionC1Y,
             symKeyEncryptionC2X,
             symKeyEncryptionC2Y,
+            macSalt,
+            macCommitment,
             proof
         );
 
@@ -209,6 +213,8 @@ contract Shielder is
         uint256 symKeyEncryptionC1Y,
         uint256 symKeyEncryptionC2X,
         uint256 symKeyEncryptionC2Y,
+        uint256 macSalt,
+        uint256 macCommitment,
         bytes calldata proof
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
@@ -229,6 +235,8 @@ contract Shielder is
             symKeyEncryptionC1Y,
             symKeyEncryptionC2X,
             symKeyEncryptionC2Y,
+            macSalt,
+            macCommitment,
             proof
         );
 
@@ -254,6 +262,8 @@ contract Shielder is
         uint256 symKeyEncryptionC1Y,
         uint256 symKeyEncryptionC2X,
         uint256 symKeyEncryptionC2Y,
+        uint256 macSalt,
+        uint256 macCommitment,
         bytes calldata proof
     )
         private
@@ -270,7 +280,7 @@ contract Shielder is
 
         if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](10);
+        uint256[] memory publicInputs = new uint256[](12);
         publicInputs[0] = newNote;
         publicInputs[1] = idHash;
         publicInputs[2] = amount;
@@ -284,6 +294,9 @@ contract Shielder is
         publicInputs[7] = symKeyEncryptionC1Y;
         publicInputs[8] = symKeyEncryptionC2X;
         publicInputs[9] = symKeyEncryptionC2Y;
+
+        publicInputs[10] = macSalt;
+        publicInputs[11] = macCommitment;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 

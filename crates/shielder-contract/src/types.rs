@@ -88,6 +88,8 @@ sol! {
             uint256 symKeyEncryptionC1Y,
             uint256 symKeyEncryptionC2X,
             uint256 symKeyEncryptionC2Y,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
         ) external payable whenNotPaused;
         function newAccountERC20(
@@ -104,7 +106,6 @@ sol! {
         ) external whenNotPaused;
         function depositNative(
             bytes3 expectedContractVersion,
-            uint256 idHiding,
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
@@ -116,7 +117,6 @@ sol! {
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
-            uint256 idHiding,
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
@@ -126,7 +126,6 @@ sol! {
         ) external whenNotPaused;
         function withdrawNative(
             bytes3 expectedContractVersion,
-            uint256 idHiding,
             uint256 amount,
             address withdrawalAddress,
             uint256 merkleRoot,
@@ -140,7 +139,6 @@ sol! {
         ) external whenNotPaused;
         function withdrawERC20(
             bytes3 expectedContractVersion,
-            uint256 idHiding,
             address tokenAddress,
             uint256 amount,
             address withdrawalAddress,
