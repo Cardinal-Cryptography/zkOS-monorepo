@@ -73,7 +73,6 @@ impl WithdrawCircuit {
     pub fn prove(
         &self,
         id: Vec<u8>,
-        nonce: Vec<u8>,
         nullifier_old: Vec<u8>,
         trapdoor_old: Vec<u8>,
         account_balance_old: Vec<u8>,
