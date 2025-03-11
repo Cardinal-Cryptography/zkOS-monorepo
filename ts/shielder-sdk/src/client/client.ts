@@ -2,23 +2,8 @@ import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, Hash, PublicClient } from "viem";
 import { Contract, IContract } from "@/chain/contract";
 import { IRelayer, Relayer } from "@/chain/relayer";
-import {
-  NewAccountAction,
-  DepositAction,
-  WithdrawAction,
-  INonceGenerator,
-  Calldata
-} from "@/actions";
 import { contractVersion } from "@/constants";
 import { idHidingNonce } from "@/utils";
-import {
-  createStorage,
-  InjectedStorageInterface,
-  ShielderTransaction,
-  StateEventsFilter,
-  StateManager,
-  StateSynchronizer
-} from "@/state";
 import {
   QuotedFees,
   SendShielderTransaction,
@@ -26,6 +11,23 @@ import {
   ShielderOperation
 } from "./types";
 import { Token } from "@/types";
+import { ChainStateTransition } from "@/state/sync/chainStateTransition";
+import { AccountFactory } from "@/state/accountFactory";
+import { IdManager } from "@/state/idManager";
+import {
+  createStorage,
+  InjectedStorageInterface
+} from "@/storage/storageSchema";
+import { StateManager } from "@/state/manager";
+import { StateSynchronizer } from "@/state/sync/synchronizer";
+import { HistoryFetcher } from "@/state/sync/historyFetcher";
+import { LocalStateTransition } from "@/state/localStateTransition";
+import { AccountStateMerkleIndexed, ShielderTransaction } from "@/state/types";
+import { NewAccountAction } from "@/actions/newAccount";
+import { DepositAction } from "@/actions/deposit";
+import { WithdrawAction } from "@/actions/withdraw";
+import { INonceGenerator } from "@/actions/utils";
+import { Calldata } from "@/actions/types";
 
 /**
  * Factory method to create ShielderClient with the original configuration
@@ -69,6 +71,7 @@ export const createShielderClient = (
 export class ShielderClient {
   private stateManager: StateManager;
   private stateSynchronizer: StateSynchronizer;
+  private historyFetcher: HistoryFetcher;
   private newAccountAction: NewAccountAction;
   private depositAction: DepositAction;
   private withdrawAction: WithdrawAction;
@@ -100,11 +103,17 @@ export class ShielderClient {
     callbacks: ShielderCallbacks = {}
   ) {
     const internalStorage = createStorage(storage);
-    this.stateManager = new StateManager(
+    const idManager = new IdManager(
       shielderSeedPrivateKey,
       BigInt(chainId),
-      internalStorage,
       cryptoClient
+    );
+    const accountFactory = new AccountFactory(idManager);
+
+    this.stateManager = new StateManager(
+      internalStorage,
+      idManager,
+      accountFactory
     );
     this.newAccountAction = new NewAccountAction(contract, cryptoClient);
     this.depositAction = new DepositAction(
@@ -119,17 +128,24 @@ export class ShielderClient {
       nonceGenerator,
       BigInt(chainId)
     );
-    const stateEventsFilter = new StateEventsFilter(
+    const localStateTransition = new LocalStateTransition(
       this.newAccountAction,
       this.depositAction,
       this.withdrawAction
     );
-    this.stateSynchronizer = new StateSynchronizer(
-      this.stateManager,
+    const chainStateTransition = new ChainStateTransition(
       contract,
       cryptoClient,
-      stateEventsFilter,
+      localStateTransition
+    );
+    this.stateSynchronizer = new StateSynchronizer(
+      this.stateManager,
+      chainStateTransition,
       callbacks.onNewTransaction
+    );
+    this.historyFetcher = new HistoryFetcher(
+      chainStateTransition,
+      accountFactory
     );
     this.relayer = relayer;
     this.callbacks = callbacks;
@@ -161,7 +177,7 @@ export class ShielderClient {
    */
   async syncShielderToken(token: Token) {
     try {
-      return await this.stateSynchronizer.syncAccountState(token);
+      return await this.stateSynchronizer.syncSingleAccount(token);
     } catch (error) {
       this.callbacks.onError?.(error, "syncing", "sync");
       throw error;
@@ -189,7 +205,7 @@ export class ShielderClient {
   async *scanChainForTokenShielderTransactions(
     token: Token
   ): AsyncGenerator<ShielderTransaction, void, unknown> {
-    yield* this.stateSynchronizer.getShielderTransactions(token);
+    yield* this.historyFetcher.getTransactionHistorySingleToken(token);
   }
 
   /**
@@ -211,9 +227,9 @@ export class ShielderClient {
   ) {
     const state = await this.stateManager.accountState(token);
     const txHash =
-      state.nonce == 0n
+      state == null
         ? await this.newAccount(token, amount, sendShielderTransaction, from)
-        : await this.deposit(token, amount, sendShielderTransaction, from);
+        : await this.deposit(state, amount, sendShielderTransaction, from);
     if (this.publicClient) {
       const txReceipt = await this.publicClient.waitForTransactionReceipt({
         hash: txHash
@@ -244,6 +260,9 @@ export class ShielderClient {
     withdrawalAddress: Address
   ) {
     const state = await this.stateManager.accountState(token);
+    if (!state) {
+      throw new Error("Account does not exist");
+    }
     const relayerAddress = await this.relayer.address();
     const txHash = await this.handleCalldata(
       () =>
@@ -292,6 +311,9 @@ export class ShielderClient {
     from: `0x${string}`
   ) {
     const state = await this.stateManager.accountState(token);
+    if (!state) {
+      throw new Error("Account does not exist");
+    }
     const txHash = await this.handleCalldata(
       () =>
         this.withdrawAction.generateCalldata(
@@ -328,7 +350,7 @@ export class ShielderClient {
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(token);
+    const state = await this.stateManager.createEmptyAccountState(token);
     const txHash = await this.handleCalldata(
       () =>
         this.newAccountAction.generateCalldata(state, amount, contractVersion),
@@ -344,12 +366,11 @@ export class ShielderClient {
   }
 
   private async deposit(
-    token: Token,
+    state: AccountStateMerkleIndexed,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
     from: `0x${string}`
   ) {
-    const state = await this.stateManager.accountState(token);
     const txHash = await this.handleCalldata(
       () => this.depositAction.generateCalldata(state, amount, contractVersion),
       (calldata) =>
@@ -387,5 +408,3 @@ export class ShielderClient {
     }
   }
 }
-
-export { SendShielderTransaction, ShielderCallbacks };

@@ -34,7 +34,7 @@ export interface ShielderClientFixture {
     amount: bigint,
     to: `0x${string}`
   ) => Promise<`0x${string}`>;
-  shieldedBalance: (token: Token) => Promise<bigint>;
+  shieldedBalance: (token: Token) => Promise<bigint | null>;
 }
 
 export const setupShielderClient = async (
@@ -119,7 +119,9 @@ export const setupShielderClient = async (
       );
     },
     shieldedBalance: async (token) => {
-      return shielderClient.accountState(token).then((state) => state.balance);
+      return shielderClient
+        .accountState(token)
+        .then((state) => (state ? state.balance : null));
     }
   };
 };

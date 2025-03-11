@@ -7,15 +7,14 @@ import {
   WithdrawAdvice,
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { AccountState } from "@/state";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer } from "@/chain/relayer";
 import { INonceGenerator, NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
-import { SendShielderTransaction } from "@/client";
 import { OutdatedSdkError } from "@/errors";
-import { AccountStateMerkleIndexed } from "@/state/types";
+import { AccountState, AccountStateMerkleIndexed } from "@/state/types";
+import { SendShielderTransaction } from "@/client/types";
 
 export interface WithdrawCalldata {
   expectedContractVersion: `0x${string}`;
@@ -226,6 +225,7 @@ export class WithdrawAction extends NoteAction {
       .withdraw(
         expectedContractVersion,
         calldata.token,
+        calldata.totalFee,
         scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),

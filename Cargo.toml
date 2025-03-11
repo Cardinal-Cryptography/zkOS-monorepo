@@ -21,9 +21,11 @@ alloy-rpc-types-eth = { version = "0.9.1" }
 alloy-signer = { version = "0.9.1" }
 alloy-signer-local = { version = "0.9.1" }
 alloy-sol-types = { version = "0.8.15" }
+alloy-eip7702 = { version = "0.5.1" } 
 alloy-transport = { version = "0.9.1" }
 anyhow = { version = "1.0.86", default-features = false }
 askama = { version = "0.12.0", default-features = false }
+assert2 = { version = "0.3.15" }
 async-channel = { version = "2.3.1" }
 axum = { version = "0.7.7" }
 byteorder = { version = "1.4.3" }
@@ -42,8 +44,8 @@ openssl = { version = "0.10.59" }
 rand = { version = "0.8.5" }
 rayon = { version = "1.8" }
 reqwest = { version = "0.12.5" }
-revm = { version = "18.0.0", default-features = false }
-revm-primitives = { version = "14.0.0", default-features = false }
+revm = { version = "19.6.0", default-features = false }
+revm-primitives = { version = "15.2.0", default-features = false }
 rstest = "0.23.0"
 ruint = { version = "1" }
 rust-argon2 = { version = "2.1.0" }
