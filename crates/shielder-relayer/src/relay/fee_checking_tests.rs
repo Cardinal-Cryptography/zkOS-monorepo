@@ -1,18 +1,19 @@
 use alloy_primitives::address;
 use shielder_contract::{NoProvider, ShielderUser};
+use shielder_relayer::Coin;
 use tokio::{sync::mpsc::channel, time::Duration};
 
 use super::*;
 use crate::{
     config::{DryRunning, TokenPricingConfig},
-    price_feed::{Coin, Prices},
+    price_feed::Prices,
     relay::taskmaster::Taskmaster,
 };
 
 const NATIVE_TOTAL_FEE: u64 = 100;
 
 /// Return some app state. Surely not functional, but is sufficient for tests.
-/// Total fee is set to `NATIVE_TOTAL_FEE` native tokens.
+/// Total fee is set to `NATIVE_TOTAL_FEE` native tokens. Native token is set to `Coin::Azero`.
 fn app_state() -> AppState {
     let (recharge_send, _) = channel::<Address>(10);
     let users: Vec<ShielderUser<NoProvider>> = vec![];
@@ -26,6 +27,7 @@ fn app_state() -> AppState {
         token_pricing: Default::default(),
         signer_addresses: Default::default(),
         relay_gas: Default::default(),
+        native_token: Coin::Azero,
     }
 }
 
@@ -85,6 +87,7 @@ mod native_fee {
 
 mod erc20_fee {
     use assert2::assert;
+    use shielder_relayer::Coin;
 
     use super::*;
 
@@ -231,5 +234,33 @@ mod erc20_fee {
 
         let result = check_fee(&app_state, &query, &mut request_trace);
         assert!(let Err(_) = result);
+    }
+
+    #[test]
+    fn we_dont_hardcode_native_to_azero() {
+        let app_state = AppState {
+            native_token: Coin::Btc,
+            token_pricing: vec![
+                erc20_pricing(),
+                TokenPricingConfig {
+                    token: FeeToken::Native,
+                    pricing: Pricing::Feed {
+                        price_feed_coin: Coin::Btc,
+                    },
+                },
+            ],
+            ..app_state()
+        };
+        app_state.prices.set_price(Coin::Btc, Decimal::new(1, 0));
+        app_state.prices.set_price(Coin::Eth, Decimal::new(1, 0));
+
+        let query = RelayQuery {
+            fee_amount: U256::from(100),
+            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            ..RelayQuery::default()
+        };
+
+        let result = check_fee(&app_state, &query, &mut RequestTrace::new(&query));
+        assert!(let Ok(_) = result);
     }
 }

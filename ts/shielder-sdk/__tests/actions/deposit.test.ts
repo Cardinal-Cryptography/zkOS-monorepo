@@ -11,8 +11,8 @@ import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { DepositAction } from "../../src/actions/deposit";
 import { IContract } from "../../src/chain/contract";
-import { SendShielderTransaction } from "../../src/client";
-import { nativeToken } from "../../src/types";
+import { SendShielderTransaction } from "../../src/client/types";
+import { nativeToken } from "../../src/utils";
 import { OutdatedSdkError } from "../../src/errors";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
 
@@ -52,9 +52,9 @@ describe("DepositAction", () => {
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
-        .mockResolvedValue("0xmockedCalldata"),
+        .mockResolvedValue({ calldata: "0xmockedCalldata", gas: 123n }),
       getMerklePath: vitest
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([...mockedPath, scalarToBigint(mockedMerkleRoot)])
@@ -212,7 +212,8 @@ describe("DepositAction", () => {
       expect(mockSendTransaction).toHaveBeenCalledWith({
         data: "0xmockedCalldata",
         to: mockAddress,
-        value: amount
+        value: amount,
+        gas: 123n
       });
 
       expect(txHash).toBe("0xtxHash");
@@ -243,7 +244,7 @@ describe("DepositAction", () => {
             macSalt: bigint,
             macCommitment: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
         .mockRejectedValue(mockedErr);
 

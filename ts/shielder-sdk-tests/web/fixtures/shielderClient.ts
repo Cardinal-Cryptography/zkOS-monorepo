@@ -34,7 +34,7 @@ export interface ShielderClientFixture {
     amount: bigint,
     to: `0x${string}`
   ) => Promise<`0x${string}`>;
-  shieldedBalance: (token: Token) => Promise<bigint>;
+  shieldedBalance: (token: Token) => Promise<bigint | null>;
 }
 
 export const setupShielderClient = async (
@@ -66,16 +66,16 @@ export const setupShielderClient = async (
     return tx;
   };
   const callbacks = setupCallbacks();
-  const shielderClient = window.shielder.createShielderClient(
-    shielderKey,
-    chainConfig.chainId,
+  const shielderClient = window.shielder.createShielderClient({
+    shielderSeedPrivateKey: shielderKey,
+    chainId: BigInt(chainConfig.chainId),
     publicClient,
-    chainConfig.contractAddress,
-    relayerConfig.url,
+    contractAddress: chainConfig.contractAddress,
+    relayerUrl: relayerConfig.url,
     storage,
     cryptoClient,
-    callbacks.callbacks
-  );
+    callbacks: callbacks.callbacks
+  });
 
   return {
     shielderClient,
@@ -119,7 +119,9 @@ export const setupShielderClient = async (
       );
     },
     shieldedBalance: async (token) => {
-      return shielderClient.accountState(token).then((state) => state.balance);
+      return shielderClient
+        .accountState(token)
+        .then((state) => (state ? state.balance : null));
     }
   };
 };

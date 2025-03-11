@@ -45,6 +45,12 @@ export type NoteEvent = {
   to?: Address;
   relayerFee?: bigint;
   block: bigint;
+  tokenAddress: `0x${string}`;
+};
+
+export type NewAccountEvent = {
+  idHash: bigint;
+  tokenAddress: Address;
 };
 
 const getShielderContract = (
@@ -150,6 +156,7 @@ export type IContract = {
   ) => Promise<CalldataWithGas>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
   getNoteEventsFromBlock: (block: bigint) => Promise<NoteEvent[]>;
+  getNewAccountEventsFromBlock: (block: bigint) => Promise<NewAccountEvent[]>;
 };
 
 export class Contract implements IContract {
@@ -520,7 +527,7 @@ export class Contract implements IContract {
     ].map((event) => {
       return {
         name: event.eventName,
-        contractVersion: event.args.contractVersion,
+        contractVersion: event.args.contractVersion!,
         amount: event.args.amount!,
         newNoteIndex: event.args.newNoteIndex!,
         newNote: event.args.newNote!,
@@ -533,10 +540,28 @@ export class Contract implements IContract {
         relayerFee:
           event.eventName === "Withdraw"
             ? (event.args.fee as bigint)
-            : undefined
-      } as NoteEvent;
+            : undefined,
+        tokenAddress: event.args.tokenAddress!
+      };
     });
     return mergedIndices;
+  };
+
+  getNewAccountEventsFromBlock = async (
+    block: bigint
+  ): Promise<NewAccountEvent[]> => {
+    const fromBlock = block;
+    const toBlock = block;
+    const newAccountEvents = await this.contract.getEvents.NewAccount({
+      fromBlock,
+      toBlock
+    });
+    return newAccountEvents.map((event) => {
+      return {
+        idHash: event.args.idHash!,
+        tokenAddress: event.args.tokenAddress!
+      };
+    });
   };
 }
 

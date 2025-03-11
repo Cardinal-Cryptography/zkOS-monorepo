@@ -10,10 +10,10 @@ import {
 import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { NewAccountAction } from "../../src/actions/newAccount";
-import { AccountState } from "../../src/state";
+import { AccountState } from "../../src/state/types";
 import { IContract } from "../../src/chain/contract";
-import { SendShielderTransaction } from "../../src/client";
-import { nativeToken } from "../../src/types";
+import { SendShielderTransaction } from "../../src/client/types";
+import { nativeToken } from "../../src/utils";
 import { OutdatedSdkError } from "../../src/errors";
 
 const ANONYMITY_REVOKER_PUBKEY = [123n, 456n];
@@ -49,9 +49,9 @@ describe("NewAccountAction", () => {
             symKeyEncryption2X: bigint,
             symKeyEncryption2Y: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
-        .mockResolvedValue("0xmockedCalldata")
+        .mockResolvedValue({ calldata: "0xmockedCalldata", gas: 123n })
     } as unknown as IContract;
     action = new NewAccountAction(contract, cryptoClient);
     mockedState = {
@@ -182,7 +182,8 @@ describe("NewAccountAction", () => {
       expect(mockSendTransaction).toHaveBeenCalledWith({
         data: "0xmockedCalldata",
         to: mockAddress,
-        value: amount
+        value: amount,
+        gas: 123n
       });
 
       expect(txHash).toBe("0xtxHash");
@@ -212,7 +213,7 @@ describe("NewAccountAction", () => {
             symKeyEncryption2X: bigint,
             symKeyEncryption2Y: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: "0xmockedCalldata"; gas: 123n }>
         >()
         .mockRejectedValue(mockedErr);
 
