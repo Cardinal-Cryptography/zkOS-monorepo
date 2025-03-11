@@ -27,6 +27,8 @@ pub struct NewAccountPubInputsBytes {
     pub sym_key_encryption_1_y: Vec<u8>,
     pub sym_key_encryption_2_x: Vec<u8>,
     pub sym_key_encryption_2_y: Vec<u8>,
+    pub mac_salt: Vec<u8>,
+    pub mac_commitment: Vec<u8>,
 }
 
 impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
@@ -61,6 +63,10 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
             ),
             sym_key_encryption_2_y: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext2Y),
+            ),
+            mac_salt: field_to_bytes(knowledge.compute_public_input(NewAccountInstance::MacSalt)),
+            mac_commitment: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::MacCommitment),
             ),
         }
     }

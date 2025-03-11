@@ -16,7 +16,6 @@ use crate::utils::{vec_to_f, vec_to_path};
 #[cfg_attr(feature = "build-wasm", wasm_bindgen(getter_with_clone))]
 #[derive(Clone, Debug, Default)]
 pub struct DepositPubInputsBytes {
-    pub id_hiding: Vec<u8>,
     pub merkle_root: Vec<u8>,
     pub h_nullifier_old: Vec<u8>,
     pub h_note_new: Vec<u8>,
@@ -29,7 +28,6 @@ pub struct DepositPubInputsBytes {
 impl From<DepositProverKnowledge<Fr>> for DepositPubInputsBytes {
     fn from(knowledge: DepositProverKnowledge<Fr>) -> Self {
         DepositPubInputsBytes {
-            id_hiding: field_to_bytes(knowledge.compute_public_input(DepositInstance::IdHiding)),
             merkle_root: field_to_bytes(
                 knowledge.compute_public_input(DepositInstance::MerkleRoot),
             ),
@@ -69,7 +67,6 @@ impl DepositCircuit {
     pub fn prove(
         &self,
         id: Vec<u8>,
-        nonce: Vec<u8>,
         nullifier_old: Vec<u8>,
         trapdoor_old: Vec<u8>,
         account_balance_old: Vec<u8>,
@@ -83,7 +80,6 @@ impl DepositCircuit {
         self.0.prove(
             &DepositProverKnowledge {
                 id: vec_to_f(id),
-                nonce: vec_to_f(nonce),
                 nullifier_old: vec_to_f(nullifier_old),
                 trapdoor_old: vec_to_f(trapdoor_old),
                 account_old_balance: vec_to_f(account_balance_old),
