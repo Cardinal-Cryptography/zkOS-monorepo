@@ -6,7 +6,8 @@ import {
   type InjectedStorageInterface,
   STORAGE_KEY
 } from "../../src/storage/storageSchema";
-import { storageSchemaVersion } from "../../src/constants";
+
+const storageSchemaVersion = 2;
 
 const mockedTokenAddress = "0x7e50210642A8C6ecf8fd13Ce2E20A4F52C6C4d9a";
 
