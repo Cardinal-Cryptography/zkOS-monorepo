@@ -122,7 +122,7 @@ const createStorage = (
     const newStorage: z.infer<typeof storageObjectSchema> = {
       accounts: new Map(),
       nextAccountIndex: 0,
-      storageSchemaVersion: 2 // Use the current schema version
+      storageSchemaVersion
     };
 
     await setStorageObject(newStorage);

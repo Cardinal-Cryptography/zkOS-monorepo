@@ -8,6 +8,7 @@ import {
   AccountStateMerkleIndexed,
   ShielderTransaction
 } from "../types";
+import { firstAccountIndex } from "@/constants";
 
 export class StateSynchronizer {
   private singleTokenMutex: Mutex = new Mutex();
@@ -25,7 +26,7 @@ export class StateSynchronizer {
    * Locks to prevent concurrent storage changes.
    */
   async syncAllAccounts() {
-    let accountIndex = 0;
+    let accountIndex = firstAccountIndex;
     while (true) {
       let token =
         await this.accountRegistry.getTokenByAccountIndex(accountIndex);

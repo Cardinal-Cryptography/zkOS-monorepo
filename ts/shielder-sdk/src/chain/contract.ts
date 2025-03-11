@@ -46,6 +46,7 @@ export type NoteEvent = {
   to?: Address;
   relayerFee?: bigint;
   block: bigint;
+  tokenAddress: `0x${string}`;
 };
 
 export type NewAccountEvent = {
@@ -513,7 +514,7 @@ export class Contract implements IContract {
     ].map((event) => {
       return {
         name: event.eventName,
-        contractVersion: event.args.contractVersion,
+        contractVersion: event.args.contractVersion!,
         amount: event.args.amount!,
         newNoteIndex: event.args.newNoteIndex!,
         newNote: event.args.newNote!,
@@ -526,8 +527,9 @@ export class Contract implements IContract {
         relayerFee:
           event.eventName === "Withdraw"
             ? (event.args.fee as bigint)
-            : undefined
-      } as NoteEvent;
+            : undefined,
+        tokenAddress: event.args.tokenAddress!
+      };
     });
     return mergedIndices;
   };

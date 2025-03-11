@@ -2,6 +2,7 @@ import { TokenAccountFinder } from "./tokenAccountFinder";
 import { Token } from "@/types";
 import { AccountFactory } from "../accountFactory";
 import { ChainStateTransition } from "./chainStateTransition";
+import { firstAccountIndex } from "@/constants";
 
 export class HistoryFetcher {
   constructor(
@@ -11,7 +12,7 @@ export class HistoryFetcher {
   ) {}
 
   async *getTransactionHistory() {
-    let accountIndex = 0;
+    let accountIndex = firstAccountIndex;
     while (true) {
       const token =
         await this.tokenAccountFinder.findTokenByAccountIndex(accountIndex);
