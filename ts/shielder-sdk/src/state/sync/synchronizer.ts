@@ -10,15 +10,13 @@ import {
 } from "../types";
 
 export class StateSynchronizer {
+  private singleTokenMutex: Mutex = new Mutex();
+
   constructor(
     private accountRegistry: AccountRegistry,
     private chainStateTransition: ChainStateTransition,
     private tokenAccountFinder: TokenAccountFinder,
-    private syncCallback?: (
-      shielderTransaction: ShielderTransaction
-    ) => unknown,
-    private singleTokenMutex: Mutex = new Mutex(),
-    private allTokensMutex: Mutex = new Mutex()
+    private syncCallback?: (shielderTransaction: ShielderTransaction) => unknown
   ) {}
 
   /**
@@ -27,21 +25,19 @@ export class StateSynchronizer {
    * Locks to prevent concurrent storage changes.
    */
   async syncAllAccounts() {
-    await this.allTokensMutex.runExclusive(async () => {
-      let accountIndex = 0;
-      while (true) {
-        let token =
-          await this.accountRegistry.getTokenByAccountIndex(accountIndex);
-        if (!token) {
-          // try to find a token that has not been indexed yet
-          token =
-            await this.tokenAccountFinder.findTokenByAccountIndex(accountIndex);
-        }
-        if (!token) break; // no more tokens to sync
-        await this.syncSingleAccount(token);
-        accountIndex++;
+    let accountIndex = 0;
+    while (true) {
+      let token =
+        await this.accountRegistry.getTokenByAccountIndex(accountIndex);
+      if (!token) {
+        // try to find a token that has not been indexed yet
+        token =
+          await this.tokenAccountFinder.findTokenByAccountIndex(accountIndex);
       }
-    });
+      if (!token) break; // no more tokens to sync
+      await this.syncSingleAccount(token);
+      accountIndex++;
+    }
   }
 
   /**
