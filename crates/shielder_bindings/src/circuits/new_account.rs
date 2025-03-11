@@ -18,7 +18,7 @@ use crate::utils::vec_to_f;
 #[derive(Clone, Debug, Default)]
 pub struct NewAccountPubInputsBytes {
     pub hashed_note: Vec<u8>,
-    pub hashed_id: Vec<u8>,
+    pub prenullifier: Vec<u8>,
     pub initial_deposit: Vec<u8>,
     pub token_address: Vec<u8>,
     pub anonymity_revoker_public_key_x: Vec<u8>,
@@ -35,7 +35,9 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
             hashed_note: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::HashedNote),
             ),
-            hashed_id: field_to_bytes(knowledge.compute_public_input(NewAccountInstance::HashedId)),
+            prenullifier: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::Prenullifier),
+            ),
             initial_deposit: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::InitialDeposit),
             ),
@@ -49,16 +51,16 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
                 knowledge.compute_public_input(NewAccountInstance::AnonymityRevokerPublicKeyY),
             ),
             sym_key_encryption_1_x: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext1X),
+                knowledge.compute_public_input(NewAccountInstance::AnonymityRevokerPublicKeyX),
             ),
             sym_key_encryption_1_y: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext1Y),
+                knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext2X),
             ),
             sym_key_encryption_2_x: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext2X),
+                knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext2X),
             ),
             sym_key_encryption_2_y: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::SymKeyEncryptionCiphertext2Y),
+                knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext2Y),
             ),
         }
     }
@@ -87,6 +89,7 @@ impl NewAccountCircuit {
         initial_deposit: Vec<u8>,
         token_address: Vec<u8>,
         encryption_salt: Vec<u8>,
+        mac_salt: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
         anonymity_revoker_public_key_y: Vec<u8>,
     ) -> Vec<u8> {
@@ -98,6 +101,7 @@ impl NewAccountCircuit {
                 initial_deposit: vec_to_f(initial_deposit),
                 token_address: vec_to_f(token_address),
                 encryption_salt: field_element_to_le_bits(vec_to_f(encryption_salt)),
+                mac_salt: vec_to_f(mac_salt),
                 anonymity_revoker_public_key: GrumpkinPointAffine {
                     x: vec_to_f(anonymity_revoker_public_key_x),
                     y: vec_to_f(anonymity_revoker_public_key_y),
@@ -130,10 +134,10 @@ impl NewAccountCircuit {
                 NewAccountInstance::TokenAddress => &token_address,
                 NewAccountInstance::AnonymityRevokerPublicKeyX => &anonymity_revoker_public_key_x,
                 NewAccountInstance::AnonymityRevokerPublicKeyY => &anonymity_revoker_public_key_y,
-                NewAccountInstance::SymKeyEncryptionCiphertext1X => &sym_key_encryption_1_x,
-                NewAccountInstance::SymKeyEncryptionCiphertext1Y => &sym_key_encryption_1_y,
-                NewAccountInstance::SymKeyEncryptionCiphertext2X => &sym_key_encryption_2_x,
-                NewAccountInstance::SymKeyEncryptionCiphertext2Y => &sym_key_encryption_2_y,
+                NewAccountInstance::EncryptedKeyCiphertext1X => &sym_key_encryption_1_x,
+                NewAccountInstance::EncryptedKeyCiphertext1Y => &sym_key_encryption_1_y,
+                NewAccountInstance::EncryptedKeyCiphertext2X => &sym_key_encryption_2_x,
+                NewAccountInstance::EncryptedKeyCiphertext2Y => &sym_key_encryption_2_y,
             };
             vec_to_f(value.clone())
         };
@@ -152,6 +156,7 @@ pub fn new_account_pub_inputs(
     initial_deposit: Vec<u8>,
     token_address: Vec<u8>,
     encryption_salt: Vec<u8>, // vector of bits
+    mac_salt: Vec<u8>,
     anonymity_revoker_public_key_x: Vec<u8>,
     anonymity_revoker_public_key_y: Vec<u8>,
 ) -> NewAccountPubInputsBytes {
@@ -162,6 +167,7 @@ pub fn new_account_pub_inputs(
         initial_deposit: vec_to_f(initial_deposit),
         token_address: vec_to_f(token_address),
         encryption_salt: field_element_to_le_bits(vec_to_f(encryption_salt)),
+        mac_salt: vec_to_f(mac_salt),
         anonymity_revoker_public_key: GrumpkinPointAffine {
             x: vec_to_f(anonymity_revoker_public_key_x),
             y: vec_to_f(anonymity_revoker_public_key_y),

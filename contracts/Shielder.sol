@@ -62,7 +62,7 @@ contract Shielder is
     // -- Events --
     event NewAccount(
         bytes3 contractVersion,
-        uint256 idHash,
+        uint256 prenullifier,
         address tokenAddress,
         uint256 amount,
         uint256 newNote,
@@ -158,7 +158,7 @@ contract Shielder is
     function newAccountNative(
         bytes3 expectedContractVersion,
         uint256 newNote,
-        uint256 idHash,
+        uint256 prenullifier,
         uint256 symKeyEncryptionC1X,
         uint256 symKeyEncryptionC1Y,
         uint256 symKeyEncryptionC2X,
@@ -178,7 +178,7 @@ contract Shielder is
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             newNote,
-            idHash,
+            prenullifier,
             symKeyEncryptionC1X,
             symKeyEncryptionC1Y,
             symKeyEncryptionC2X,
@@ -190,7 +190,7 @@ contract Shielder is
 
         emit NewAccount(
             CONTRACT_VERSION,
-            idHash,
+            prenullifier,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             newNote,
@@ -208,7 +208,7 @@ contract Shielder is
         address tokenAddress,
         uint256 amount,
         uint256 newNote,
-        uint256 idHash,
+        uint256 prenullifier,
         uint256 symKeyEncryptionC1X,
         uint256 symKeyEncryptionC1Y,
         uint256 symKeyEncryptionC2X,
@@ -230,7 +230,7 @@ contract Shielder is
             tokenAddress,
             amount,
             newNote,
-            idHash,
+            prenullifier,
             symKeyEncryptionC1X,
             symKeyEncryptionC1Y,
             symKeyEncryptionC2X,
@@ -244,7 +244,7 @@ contract Shielder is
 
         emit NewAccount(
             CONTRACT_VERSION,
-            idHash,
+            prenullifier,
             tokenAddress,
             amount,
             newNote,

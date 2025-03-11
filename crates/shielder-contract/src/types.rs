@@ -20,7 +20,7 @@ sol! {
     contract ShielderContract {
         event NewAccount(
             bytes3 contractVersion,
-            uint256 idHash,
+            uint256 prenullifier,
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
@@ -81,7 +81,7 @@ sol! {
         function newAccountNative(
             bytes3 expectedContractVersion,
             uint256 newNote,
-            uint256 idHash,
+            uint256 prenullifier,
             uint256 symKeyEncryptionC1X,
             uint256 symKeyEncryptionC1Y,
             uint256 symKeyEncryptionC2X,
@@ -95,7 +95,7 @@ sol! {
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
-            uint256 idHash,
+            uint256 prenullifier,
             uint256 symKeyEncryptionC1X,
             uint256 symKeyEncryptionC1Y,
             uint256 symKeyEncryptionC2X,
