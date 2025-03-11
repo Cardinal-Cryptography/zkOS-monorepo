@@ -179,7 +179,8 @@ pub struct CLIConfig {
         long,
         help = "Token native to chain where the relayer operates.",
         long_help = "Token native to chain where the relayer operates. If not provided, the value\
-            from the environment variable `{NATIVE_ENV}` will be used."
+            from the environment variable `{NATIVE_ENV}` will be used. Example values: 'eth', \
+            'azero', 'btc'."
     )]
     pub native_token: Option<Coin>,
 }
