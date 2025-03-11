@@ -97,7 +97,6 @@ impl DepositCircuit {
     #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
-        id_hiding: Vec<u8>,
         merkle_root: Vec<u8>,
         h_nullifier_old: Vec<u8>,
         h_note_new: Vec<u8>,
@@ -109,7 +108,6 @@ impl DepositCircuit {
     ) -> Result<(), VerificationError> {
         let public_input = |input: DepositInstance| {
             let value = match input {
-                DepositInstance::IdHiding => &id_hiding,
                 DepositInstance::MerkleRoot => &merkle_root,
                 DepositInstance::HashedOldNullifier => &h_nullifier_old,
                 DepositInstance::HashedNewNote => &h_note_new,
@@ -130,7 +128,6 @@ impl DepositCircuit {
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 pub fn deposit_pub_inputs(
     id: Vec<u8>,
-    nonce: Vec<u8>,
     nullifier_old: Vec<u8>,
     trapdoor_old: Vec<u8>,
     account_balance_old: Vec<u8>,
@@ -143,7 +140,6 @@ pub fn deposit_pub_inputs(
 ) -> DepositPubInputsBytes {
     let knowledge = DepositProverKnowledge {
         id: vec_to_f(id),
-        nonce: vec_to_f(nonce),
         nullifier_old: vec_to_f(nullifier_old),
         trapdoor_old: vec_to_f(trapdoor_old),
         account_old_balance: vec_to_f(account_balance_old),
