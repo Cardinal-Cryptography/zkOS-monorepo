@@ -115,7 +115,7 @@ impl NewAccountCircuit {
     pub fn verify(
         &self,
         h_note: Vec<u8>,
-        h_id: Vec<u8>,
+        prenullifier: Vec<u8>,
         initial_deposit: Vec<u8>,
         token_address: Vec<u8>,
         anonymity_revoker_public_key_x: Vec<u8>,
@@ -124,11 +124,13 @@ impl NewAccountCircuit {
         sym_key_encryption_1_y: Vec<u8>,
         sym_key_encryption_2_x: Vec<u8>,
         sym_key_encryption_2_y: Vec<u8>,
+        mac_salt: Vec<u8>,
+        mac_commitment: Vec<u8>,
         proof: Vec<u8>,
     ) -> Result<(), VerificationError> {
         let public_input = |input: NewAccountInstance| {
             let value = match input {
-                NewAccountInstance::HashedId => &h_id,
+                NewAccountInstance::Prenullifier => &prenullifier,
                 NewAccountInstance::HashedNote => &h_note,
                 NewAccountInstance::InitialDeposit => &initial_deposit,
                 NewAccountInstance::TokenAddress => &token_address,
@@ -138,6 +140,8 @@ impl NewAccountCircuit {
                 NewAccountInstance::EncryptedKeyCiphertext1Y => &sym_key_encryption_1_y,
                 NewAccountInstance::EncryptedKeyCiphertext2X => &sym_key_encryption_2_x,
                 NewAccountInstance::EncryptedKeyCiphertext2Y => &sym_key_encryption_2_y,
+                NewAccountInstance::MacSalt => &mac_salt,
+                NewAccountInstance::MacCommitment => &mac_commitment,
             };
             vec_to_f(value.clone())
         };
