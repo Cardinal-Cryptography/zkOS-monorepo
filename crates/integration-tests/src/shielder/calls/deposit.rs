@@ -362,11 +362,6 @@ mod tests {
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.new_note, &mut swap_value);
 
-        mem::swap(&mut calldata.id_hiding, &mut swap_value);
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
-        mem::swap(&mut calldata.id_hiding, &mut swap_value);
-
         assert!(actor_balance_decreased_by(
             &deployment,
             token,
