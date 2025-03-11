@@ -28,7 +28,6 @@ sol! {
         );
         event Deposit(
             bytes3 contractVersion,
-            uint256 idHiding,
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
@@ -38,7 +37,6 @@ sol! {
         );
         event Withdraw(
             bytes3 contractVersion,
-            uint256 idHiding,
             address tokenAddress,
             uint256 amount,
             address withdrawalAddress,

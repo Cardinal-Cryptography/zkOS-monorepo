@@ -31,6 +31,7 @@ pub fn prepare_call(
         &NewAccountCallExtra {
             anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
             encryption_salt: [true; FIELD_BITS],
+            mac_salt: U256::ZERO,
         },
     )
 }

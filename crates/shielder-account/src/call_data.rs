@@ -24,7 +24,6 @@ use shielder_setup::{
 };
 use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
-use super::secrets::generate_id_hiding_nonce;
 use crate::ShielderAccount;
 
 struct ActionSecrets {

@@ -100,7 +100,6 @@ fn internal_server_error(msg: &str) -> Response {
 fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawNativeCall {
     withdrawNativeCall {
         expectedContractVersion: q.expected_contract_version,
-        idHiding: q.id_hiding,
         withdrawalAddress: q.withdraw_address,
         relayerAddress: relayer_address,
         relayerFee: relayer_fee,
