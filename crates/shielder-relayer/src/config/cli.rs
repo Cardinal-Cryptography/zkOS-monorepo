@@ -174,4 +174,13 @@ pub struct CLIConfig {
             the default value is `{DEFAULT_PRICE_FEED_VALIDITY_SECS:?}`."
     )]
     pub price_feed_validity: Option<u64>,
+
+    #[clap(
+        long,
+        help = "Token native to chain where the relayer operates.",
+        long_help = "Token native to chain where the relayer operates. If not provided, the value\
+            from the environment variable `{NATIVE_ENV}` will be used. Example values: 'eth', \
+            'azero', 'btc'."
+    )]
+    pub native_token: Option<Coin>,
 }

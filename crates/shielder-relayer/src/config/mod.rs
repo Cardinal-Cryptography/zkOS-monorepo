@@ -12,16 +12,16 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    FeeToken, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
-    LOGGING_FORMAT_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV, PRICE_FEED_REFRESH_INTERVAL_ENV,
-    PRICE_FEED_VALIDITY_ENV, RELAYER_HOST_ENV, RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV,
-    RELAYER_SIGNING_KEYS_ENV, RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV,
-    SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_PRICING_ENV, TOTAL_FEE_ENV,
+    Coin, FeeToken, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
+    LOGGING_FORMAT_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV,
+    PRICE_FEED_REFRESH_INTERVAL_ENV, PRICE_FEED_VALIDITY_ENV, RELAYER_HOST_ENV,
+    RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV,
+    RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_PRICING_ENV,
+    TOTAL_FEE_ENV,
 };
 
-use crate::{
-    config::defaults::{DEFAULT_BALANCE_MONITOR_INTERVAL_SECS, DEFAULT_RELAY_COUNT_FOR_RECHARGE},
-    price_feed::Coin,
+use crate::config::defaults::{
+    DEFAULT_BALANCE_MONITOR_INTERVAL_SECS, DEFAULT_RELAY_COUNT_FOR_RECHARGE,
 };
 
 mod cli;
@@ -55,6 +55,7 @@ pub struct ChainConfig {
     pub signing_keys: Vec<String>,
     pub total_fee: U256,
     pub relay_gas: u64,
+    pub native_token: Coin,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
@@ -119,6 +120,7 @@ fn resolve_config_from_cli_config(
         token_pricing,
         price_feed_validity,
         price_feed_refresh_interval,
+        native_token,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -157,6 +159,7 @@ fn resolve_config_from_cli_config(
         ))
         .expect("Invalid relay fee"),
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
+        native_token: resolve_value(native_token, NATIVE_TOKEN_ENV, None),
     };
 
     let token_pricing = token_pricing

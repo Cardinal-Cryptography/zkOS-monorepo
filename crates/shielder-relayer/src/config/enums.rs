@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use clap::ValueEnum;
-
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, ValueEnum)]
 pub enum LoggingFormat {
     #[default]

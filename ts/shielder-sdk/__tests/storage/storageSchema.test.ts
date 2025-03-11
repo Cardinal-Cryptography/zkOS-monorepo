@@ -1,10 +1,15 @@
 import { it, expect, vitest, describe, beforeEach, Mocked } from "vitest";
 import {
   accountObjectSchema,
+  storageObjectSchema,
   createStorage,
-  type InjectedStorageInterface
+  type InjectedStorageInterface,
+  STORAGE_KEY
 } from "../../src/storage/storageSchema";
-import { nativeTokenAddress } from "../../src/constants";
+
+const storageSchemaVersion = 2;
+
+const mockedTokenAddress = "0x7e50210642A8C6ecf8fd13Ce2E20A4F52C6C4d9a";
 
 describe("validateBigInt", () => {
   it("should parse valid bigint strings", () => {
@@ -18,6 +23,12 @@ describe("validateBigInt", () => {
     expect(result).toBe(9007199254740991n);
   });
 
+  it("should accept and return bigint values directly", () => {
+    const value = 123n;
+    const result = accountObjectSchema.shape.nonce.parse(value);
+    expect(result).toBe(123n);
+  });
+
   it("should throw error for invalid bigint strings", () => {
     expect(() =>
       accountObjectSchema.shape.nonce.parse("not a number")
@@ -25,67 +36,146 @@ describe("validateBigInt", () => {
   });
 });
 
-describe("storageSchema", () => {
-  it("should validate complete state object", () => {
-    const validState = {
+describe("accountObjectSchema", () => {
+  it("should validate complete account object", () => {
+    const validAccount = {
       nonce: "1",
       balance: "1000",
       idHash: "12345",
       currentNote: "67890",
       currentNoteIndex: "2",
-      storageSchemaVersion: 2
+      tokenAddress: mockedTokenAddress
     };
 
-    const result = accountObjectSchema.parse(validState);
+    const result = accountObjectSchema.parse(validAccount);
     expect(result).toEqual({
       nonce: 1n,
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
       currentNoteIndex: 2n,
-      storageSchemaVersion: 2
+      tokenAddress: mockedTokenAddress
     });
   });
 
   it.each([
     {
-      invalidState: {
+      invalidAccount: {
         nonce: "1",
         balance: "not a number", // non-bigint string here
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 2
+        currentNoteIndex: "2",
+        tokenAddress: mockedTokenAddress
       },
-      propertyKey: "balance"
+      errorContains: "balance"
     },
     {
-      invalidState: {
+      invalidAccount: {
         nonce: "1",
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: "2" // string here
+        currentNoteIndex: "2"
+        // missing tokenAddress
       },
-      propertyKey: "storageSchemaVersion"
+      errorContains: "tokenAddress"
     },
     {
-      invalidState: {
-        // missing nonce here
+      invalidAccount: {
+        // missing nonce
         balance: "1000",
         idHash: "12345",
         currentNote: "67890",
-        storageSchemaVersion: 2
+        currentNoteIndex: "2",
+        tokenAddress: mockedTokenAddress
       },
-      propertyKey: "nonce"
+      errorContains: "nonce"
     }
   ])(
-    "should throw error for state object with wrong types for $propertyKey",
-    ({ invalidState, propertyKey }) => {
-      expect(() => accountObjectSchema.parse(invalidState)).toThrow(
-        `${propertyKey}`
-      );
+    "should throw error for account object with issues in $errorContains",
+    ({ invalidAccount, errorContains }) => {
+      expect(() => accountObjectSchema.parse(invalidAccount)).toThrow();
+      try {
+        accountObjectSchema.parse(invalidAccount);
+      } catch (error) {
+        expect(JSON.stringify(error)).toContain(errorContains);
+      }
     }
   );
+});
+
+describe("storageObjectSchema", () => {
+  it("should validate complete storage object", () => {
+    const accountsMap = new Map();
+    accountsMap.set("0", {
+      nonce: 1n,
+      balance: 1000n,
+      idHash: 12345n,
+      currentNote: 67890n,
+      currentNoteIndex: 2n,
+      tokenAddress: mockedTokenAddress
+    });
+
+    const validStorage = {
+      accounts: accountsMap,
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion
+    };
+
+    const result = storageObjectSchema.parse(validStorage);
+    expect(result).toEqual(validStorage);
+  });
+
+  it("should throw error for storage object with invalid schema version", () => {
+    const accountsMap = new Map();
+    accountsMap.set("0", {
+      nonce: 1n,
+      balance: 1000n,
+      idHash: 12345n,
+      currentNote: 67890n,
+      currentNoteIndex: 2n,
+      tokenAddress: mockedTokenAddress
+    });
+
+    const invalidStorage = {
+      accounts: accountsMap,
+      nextAccountIndex: 1,
+      storageSchemaVersion: "invalid" // should be a number
+    };
+
+    expect(() => storageObjectSchema.parse(invalidStorage)).toThrow();
+    try {
+      storageObjectSchema.parse(invalidStorage);
+    } catch (error) {
+      expect(JSON.stringify(error)).toContain("storageSchemaVersion");
+    }
+  });
+
+  it("should throw error for storage object with invalid nextAccountIndex", () => {
+    const accountsMap = new Map();
+    accountsMap.set("0", {
+      nonce: 1n,
+      balance: 1000n,
+      idHash: 12345n,
+      currentNote: 67890n,
+      currentNoteIndex: 2n,
+      tokenAddress: mockedTokenAddress
+    });
+
+    const invalidStorage = {
+      accounts: accountsMap,
+      nextAccountIndex: "1", // should be a number
+      storageSchemaVersion: storageSchemaVersion
+    };
+
+    expect(() => storageObjectSchema.parse(invalidStorage)).toThrow();
+    try {
+      storageObjectSchema.parse(invalidStorage);
+    } catch (error) {
+      expect(JSON.stringify(error)).toContain("nextAccountIndex");
+    }
+  });
 });
 
 describe("createStorage", () => {
@@ -98,76 +188,185 @@ describe("createStorage", () => {
     };
   });
 
-  it("getItem should return null for non-existent key", async () => {
+  it("should initialize storage with default values if it doesn't exist", async () => {
     mockInjectedStorage.getItem.mockResolvedValue(null);
     const storage = createStorage(mockInjectedStorage);
 
-    const result = await storage.getItem(nativeTokenAddress);
-    expect(result).toBeNull();
-  });
+    const result = await storage.getStorage();
 
-  it("getItem should parse and return valid stored value", async () => {
-    const validState = {
-      nonce: "1",
-      balance: "1000",
-      idHash: "12345",
-      currentNote: "67890",
-      currentNoteIndex: "2",
-      storageSchemaVersion: 2
-    };
-    mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(validState));
-    const storage = createStorage(mockInjectedStorage);
-
-    const result = await storage.getItem(nativeTokenAddress);
     expect(result).toEqual({
-      nonce: 1n,
-      balance: 1000n,
-      idHash: 12345n,
-      currentNote: 67890n,
-      currentNoteIndex: 2n,
-      storageSchemaVersion: 2
+      accounts: new Map(),
+      nextAccountIndex: 0,
+      storageSchemaVersion: storageSchemaVersion
     });
   });
 
-  it("getItem should throw error for invalid stored value", async () => {
-    const invalidState = {
-      nonce: "not a number",
-      balance: "1000",
-      idHash: "12345",
-      currentNote: "67890",
-      storageSchemaVersion: 2
-    };
-    mockInjectedStorage.getItem.mockResolvedValue(JSON.stringify(invalidState));
-    const storage = createStorage(mockInjectedStorage);
-
-    await expect(storage.getItem(nativeTokenAddress)).rejects.toThrow(
-      `Failed to parse storage value for key ${nativeTokenAddress}:`
-    );
-  });
-
-  it("setItem should store stringified value with bigints converted", async () => {
-    const storage = createStorage(mockInjectedStorage);
-    const state = {
+  it("should parse and return valid stored storage", async () => {
+    // Create a valid storage object with an accounts map
+    const accountsMap = new Map();
+    accountsMap.set("0", {
       nonce: 1n,
       balance: 1000n,
       idHash: 12345n,
       currentNote: 67890n,
       currentNoteIndex: 2n,
-      storageSchemaVersion: 2
+      tokenAddress: mockedTokenAddress
+    });
+
+    // Mock the stored JSON string
+    // Note: Maps are serialized as arrays of entries
+    const mockStoredValue = {
+      accounts: JSON.stringify([
+        [
+          "0",
+          {
+            nonce: "1",
+            balance: "1000",
+            idHash: "12345",
+            currentNote: "67890",
+            currentNoteIndex: "2",
+            tokenAddress: mockedTokenAddress
+          }
+        ]
+      ]),
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion
     };
 
-    await storage.setItem(nativeTokenAddress, state);
+    mockInjectedStorage.getItem.mockResolvedValue(
+      JSON.stringify(mockStoredValue)
+    );
+    const storage = createStorage(mockInjectedStorage);
 
+    const result = await storage.getStorage();
+
+    // The expected result should have the accounts as a Map
+    const expectedAccountsMap = new Map();
+    expectedAccountsMap.set("0", {
+      nonce: 1n,
+      balance: 1000n,
+      idHash: 12345n,
+      currentNote: 67890n,
+      currentNoteIndex: 2n,
+      tokenAddress: mockedTokenAddress
+    });
+
+    expect(result).toEqual({
+      accounts: expectedAccountsMap,
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion
+    });
+  });
+
+  it("should throw error for invalid stored value", async () => {
+    const invalidStoredValue = {
+      accounts: JSON.stringify([
+        [
+          "0",
+          {
+            nonce: "not a number", // Invalid nonce
+            balance: "1000",
+            idHash: "12345",
+            currentNote: "67890",
+            currentNoteIndex: "2",
+            tokenAddress: mockedTokenAddress
+          }
+        ]
+      ]),
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion
+    };
+
+    mockInjectedStorage.getItem.mockResolvedValue(
+      JSON.stringify(invalidStoredValue)
+    );
+    const storage = createStorage(mockInjectedStorage);
+
+    await expect(storage.getStorage()).rejects.toThrow(
+      "Failed to parse storage value"
+    );
+  });
+
+  it("should store stringified storage with bigints and maps converted", async () => {
+    mockInjectedStorage.getItem.mockResolvedValue(null); // Start with empty storage
+    const storage = createStorage(mockInjectedStorage);
+
+    // Create a storage object to save
+    const accountsMap = new Map();
+    accountsMap.set("0", {
+      nonce: 1n,
+      balance: 1000n,
+      idHash: 12345n,
+      currentNote: 67890n,
+      currentNoteIndex: 2n,
+      tokenAddress: mockedTokenAddress
+    });
+
+    const storageToSave = {
+      accounts: accountsMap,
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion
+    };
+
+    await storage.setStorage(storageToSave);
+
+    // Check that setItem was called with the correct stringified value
     expect(mockInjectedStorage.setItem).toHaveBeenCalledWith(
-      nativeTokenAddress,
-      JSON.stringify({
-        nonce: "1",
-        balance: "1000",
-        idHash: "12345",
-        currentNote: "67890",
-        currentNoteIndex: "2",
-        storageSchemaVersion: 2
-      })
+      STORAGE_KEY,
+      expect.any(String)
+    );
+
+    // Parse the stringified value to check its structure
+    const stringifiedValue = mockInjectedStorage.setItem.mock.calls[0][1];
+    const parsedValue = JSON.parse(stringifiedValue);
+
+    // Check the structure of the stringified value
+    expect(parsedValue).toEqual({
+      accounts: expect.any(String), // The accounts map is stringified
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion
+    });
+
+    // Parse the accounts string to check its structure
+    const parsedAccounts = JSON.parse(parsedValue.accounts);
+    expect(parsedAccounts).toEqual([
+      [
+        "0",
+        {
+          nonce: "1", // Bigints are converted to strings
+          balance: "1000",
+          idHash: "12345",
+          currentNote: "67890",
+          currentNoteIndex: "2",
+          tokenAddress: mockedTokenAddress
+        }
+      ]
+    ]);
+  });
+
+  it("should throw error when setting storage with wrong schema version", async () => {
+    mockInjectedStorage.getItem.mockResolvedValue(null);
+    const storage = createStorage(mockInjectedStorage);
+
+    // Create a storage object with wrong schema version
+    const accountsMap = new Map();
+    accountsMap.set("0", {
+      nonce: 1n,
+      balance: 1000n,
+      idHash: 12345n,
+      currentNote: 67890n,
+      currentNoteIndex: 2n,
+      tokenAddress: mockedTokenAddress
+    });
+
+    const invalidStorage = {
+      accounts: accountsMap,
+      nextAccountIndex: 1,
+      storageSchemaVersion: storageSchemaVersion + 1 // Wrong version
+    };
+
+    await expect(storage.setStorage(invalidStorage)).rejects.toThrow(
+      "Storage schema version mismatch"
     );
   });
 });

@@ -1,18 +1,35 @@
+import { TokenAccountFinder } from "./tokenAccountFinder";
 import { Token } from "@/types";
-import { ChainStateTransition } from "./chainStateTransition";
 import { AccountFactory } from "../accountFactory";
+import { ChainStateTransition } from "./chainStateTransition";
+import { firstAccountIndex } from "@/constants";
 
 export class HistoryFetcher {
   constructor(
-    private chainStateTransition: ChainStateTransition,
-    private accountFactory: AccountFactory
+    private tokenAccountFinder: TokenAccountFinder,
+    private accountFactory: AccountFactory,
+    private chainStateTransition: ChainStateTransition
   ) {}
+
+  async *getTransactionHistory() {
+    let accountIndex = firstAccountIndex;
+    while (true) {
+      const token =
+        await this.tokenAccountFinder.findTokenByAccountIndex(accountIndex);
+      if (!token) break; // no more tokens to sync
+      yield* this.getTransactionHistorySingleToken(token, accountIndex);
+      accountIndex++;
+    }
+  }
   /**
    * Returns all the shielder transactions of the private account.
    * Note: This method is not efficient and should be used carefully.
    */
-  async *getTransactionHistorySingleToken(token: Token) {
-    let state = await this.accountFactory.createEmptyAccountState(token);
+  async *getTransactionHistorySingleToken(token: Token, accountIndex: number) {
+    let state = await this.accountFactory.createEmptyAccountState(
+      token,
+      accountIndex
+    );
     while (true) {
       const stateTransition =
         await this.chainStateTransition.findStateTransition(state);
