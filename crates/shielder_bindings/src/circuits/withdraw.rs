@@ -105,7 +105,6 @@ impl WithdrawCircuit {
     #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
-        id_hiding: Vec<u8>,
         merkle_root: Vec<u8>,
         h_nullifier_old: Vec<u8>,
         h_note_new: Vec<u8>,
@@ -139,7 +138,6 @@ impl WithdrawCircuit {
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 pub fn withdraw_pub_inputs(
     id: Vec<u8>,
-    nonce: Vec<u8>,
     nullifier_old: Vec<u8>,
     trapdoor_old: Vec<u8>,
     account_balance_old: Vec<u8>,
