@@ -27,16 +27,16 @@ const publicClient = createPublicClient({
 });
 
 // Initialize the client
-const shielderClient = createShielderClient(
-  "0xprivatekey", // 32-byte hex format private key
-  12345, // blockchain chain ID
+const shielderClient = createShielderClient({
+  shielderSeedPrivateKey: "0xprivatekey", // 32-byte hex format private key
+  chainId: 12345n, // blockchain chain ID as bigint
   publicClient, // viem public client
-  "0xcontractaddr", // Shielder contract address
-  "https://relayer.url", // URL of the relayer service
-  storage, // Storage interface for managing state
+  contractAddress: "0xcontractaddr", // Shielder contract address
+  relayerUrl: "https://relayer.url", // URL of the relayer service
+  storage, // Storage interface for managing state (see InjectedStorageInterface)
   cryptoClient, // Instance of CryptoClient
-  { ... } // Optional callbacks for monitoring operations
-);
+  callbacks: { ... } // Optional callbacks for monitoring operations
+});
 
 // Shield native tokens
 await shielderClient.shield(
@@ -60,6 +60,19 @@ const native = nativeToken();
 // Create an ERC20 token reference
 const usdc = erc20Token("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
 ```
+
+### Storage Interface
+
+The SDK requires a storage interface for managing state. This interface must implement the `InjectedStorageInterface`:
+
+```typescript
+interface InjectedStorageInterface {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+}
+```
+
+You can use browser's localStorage, React Native's AsyncStorage, or any other storage solution that implements this interface.
 
 ### CryptoClient
 
@@ -122,16 +135,14 @@ const txHash = await shielderClient.withdrawManual(
 #### Syncing State
 
 ```typescript
-// Sync the local state with blockchain for a specific token
-await shielderClient.syncShielderToken(nativeToken());
+// Sync the local state with blockchain for all tokens
+await shielderClient.syncShielder();
 
 // Get current account state for a specific token
 const state = await shielderClient.accountState(nativeToken());
 
-// Scan chain for all transactions for a specific token
-for await (const tx of shielderClient.scanChainForTokenShielderTransactions(
-  nativeToken()
-)) {
+// Scan chain for all transactions
+for await (const tx of shielderClient.scanChainForTokenShielderTransactions()) {
   console.log("Transaction:", tx);
 }
 ```

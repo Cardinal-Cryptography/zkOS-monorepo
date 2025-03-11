@@ -68,11 +68,11 @@ const rate = await cryptoClient.hasher.poseidonRate();
 The `SecretManager` interface handles the derivation of secrets for private transactions:
 
 ```typescript
-// Derive account ID from private key, chain ID, and token address
+// Derive account ID from private key, chain ID, and account nonce
 const id = await cryptoClient.secretManager.deriveId(
   "0xprivatekey",
   1n, // chain ID
-  "0xtokenAddress"
+  0 // account nonce
 );
 
 // Get secrets (trapdoor & nullifier) for a specific account and nonce
