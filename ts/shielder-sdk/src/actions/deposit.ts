@@ -27,16 +27,13 @@ export interface DepositCalldata extends Calldata {
 
 export class DepositAction extends NoteAction {
   private contract: IContract;
-  private nonceGenerator: INonceGenerator;
 
   constructor(
     contract: IContract,
-    cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator
+    cryptoClient: CryptoClient
   ) {
     super(cryptoClient);
     this.contract = contract;
-    this.nonceGenerator = nonceGenerator;
   }
 
   /**

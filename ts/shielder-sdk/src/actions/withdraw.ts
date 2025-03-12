@@ -9,7 +9,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer } from "@/chain/relayer";
-import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
@@ -32,20 +32,17 @@ export interface WithdrawCalldata {
 export class WithdrawAction extends NoteAction {
   private contract: IContract;
   private relayer: IRelayer;
-  private nonceGenerator: INonceGenerator;
   private chainId: bigint;
 
   constructor(
     contract: IContract,
     relayer: IRelayer,
     cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator,
     chainId: bigint
   ) {
     super(cryptoClient);
     this.contract = contract;
     this.relayer = relayer;
-    this.nonceGenerator = nonceGenerator;
     this.chainId = chainId;
   }
 
