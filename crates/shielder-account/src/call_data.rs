@@ -115,9 +115,9 @@ impl TryFrom<NewAccountCall> for newAccountNativeCall {
                 symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
                 symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
                 symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
-                proof: calldata.proof,
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
+                proof: calldata.proof,
             }),
             Token::ERC20(_) => Err(CallTypeConversionError),
         }
@@ -140,6 +140,8 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
                 symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
                 symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
                 symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
             }),
         }

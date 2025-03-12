@@ -100,6 +100,8 @@ sol! {
             uint256 symKeyEncryptionC1Y,
             uint256 symKeyEncryptionC2X,
             uint256 symKeyEncryptionC2Y,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
         ) external whenNotPaused;
         function depositNative(
