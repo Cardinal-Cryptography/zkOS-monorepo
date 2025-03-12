@@ -6,9 +6,7 @@ use integration_tests::{
     calls::{
         deposit::{invoke_call as deposit_call, prepare_call as deposit_calldata},
         new_account::{invoke_call as new_account_call, prepare_call as new_account_calldata},
-        withdraw_native::{
-            invoke_call as withdraw_call, prepare_args, prepare_call as withdraw_calldata,
-        },
+        withdraw::{invoke_call as withdraw_call, prepare_args, prepare_call as withdraw_calldata},
     },
     deploy::{deployment, Deployment},
     deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,

@@ -1,5 +1,3 @@
-// TODO: rename to withdraw.rs
-
 use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
@@ -125,7 +123,7 @@ mod tests {
         call_errors::ShielderCallErrors,
         calls::{
             deposit,
-            withdraw_native::{invoke_call, prepare_args, prepare_call, PrepareCallArgs},
+            withdraw::{invoke_call, prepare_args, prepare_call, PrepareCallArgs},
         },
         shielder::{
             actor_balance_decreased_by,
