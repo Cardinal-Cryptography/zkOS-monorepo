@@ -68,7 +68,6 @@ export class DepositAction extends NoteAction {
 
     const tokenAddress = getAddressByToken(state.token);
 
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -81,7 +80,6 @@ export class DepositAction extends NoteAction {
       );
     return {
       id: state.id,
-      nonce,
       nullifierOld,
       trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
@@ -154,7 +152,6 @@ export class DepositAction extends NoteAction {
         ? await this.contract.depositNativeCalldata(
             calldata.expectedContractVersion,
             from,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -167,7 +164,6 @@ export class DepositAction extends NoteAction {
             calldata.expectedContractVersion,
             calldata.token.address,
             from,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),

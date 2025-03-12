@@ -545,7 +545,7 @@ export class Contract implements IContract {
     });
     return newAccountEvents.map((event) => {
       return {
-        idHash: event.args.idHash!,
+        prenullifier: event.args.prenullifier!,
         tokenAddress: event.args.tokenAddress!
       };
     });

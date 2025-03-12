@@ -32,7 +32,7 @@ export class TokenAccountFinder {
     const bigintPreNullifierHash = scalarToBigint(preNullifierHash);
 
     const events = unfilteredEvents.filter((event) => {
-      return event.idHash === bigintPreNullifierHash;
+      return event.prenullifier === bigintPreNullifierHash;
     });
 
     if (events.length != 1) {

@@ -32,7 +32,6 @@ export type IRelayer = {
     expectedContractVersion: `0x${string}`,
     token: Token,
     feeAmount: bigint,
-    idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,

@@ -109,8 +109,6 @@ export class WithdrawAction extends NoteAction {
 
     const tokenAddress = getAddressByToken(state.token);
 
-    const idHidingNonce = this.nonceGenerator.randomIdHidingNonce();
-
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -131,7 +129,6 @@ export class WithdrawAction extends NoteAction {
 
     return {
       id: state.id,
-      nonce: idHidingNonce,
       nullifierOld,
       trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
@@ -226,7 +223,6 @@ export class WithdrawAction extends NoteAction {
         expectedContractVersion,
         calldata.token,
         calldata.totalFee,
-        scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
@@ -264,7 +260,6 @@ export class WithdrawAction extends NoteAction {
             withdrawalAddress,
             from, // use sender as relayer
             totalFee,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -280,7 +275,6 @@ export class WithdrawAction extends NoteAction {
             withdrawalAddress,
             from, // use sender as relayer
             totalFee,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),

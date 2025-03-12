@@ -43,7 +43,8 @@ export class NewAccountCircuit
         values.tokenAddress.bytes,
         values.encryptionSalt.bytes,
         values.anonymityRevokerPublicKeyX.bytes,
-        values.anonymityRevokerPublicKeyY.bytes
+        values.anonymityRevokerPublicKeyY.bytes,
+        values.macSalt.bytes
       )
     );
   }
@@ -65,12 +66,13 @@ export class NewAccountCircuit
       values.tokenAddress.bytes,
       values.encryptionSalt.bytes,
       values.anonymityRevokerPublicKeyX.bytes,
-      values.anonymityRevokerPublicKeyY.bytes
+      values.anonymityRevokerPublicKeyY.bytes,
+      values.macSalt.bytes
     );
 
     return Promise.resolve({
       hNote: new Scalar(pubInputsBytes.hashed_note),
-      hId: new Scalar(pubInputsBytes.hashed_id),
+      prenullifier: new Scalar(pubInputsBytes.prenullifier),
       initialDeposit: new Scalar(pubInputsBytes.initial_deposit),
       tokenAddress: new Scalar(pubInputsBytes.token_address),
       anonymityRevokerPublicKeyX: new Scalar(
@@ -82,7 +84,9 @@ export class NewAccountCircuit
       symKeyEncryption1X: new Scalar(pubInputsBytes.sym_key_encryption_1_x),
       symKeyEncryption1Y: new Scalar(pubInputsBytes.sym_key_encryption_1_y),
       symKeyEncryption2X: new Scalar(pubInputsBytes.sym_key_encryption_2_x),
-      symKeyEncryption2Y: new Scalar(pubInputsBytes.sym_key_encryption_2_y)
+      symKeyEncryption2Y: new Scalar(pubInputsBytes.sym_key_encryption_2_y),
+      macSalt: new Scalar(pubInputsBytes.mac_salt),
+      macCommitment: new Scalar(pubInputsBytes.mac_commitment)
     });
   }
 
@@ -98,7 +102,7 @@ export class NewAccountCircuit
       await Promise.resolve(
         this.wasmCircuit.verify(
           pubInputs.hNote.bytes,
-          pubInputs.hId.bytes,
+          pubInputs.prenullifier.bytes,
           pubInputs.initialDeposit.bytes,
           pubInputs.tokenAddress.bytes,
           pubInputs.anonymityRevokerPublicKeyX.bytes,
@@ -107,6 +111,8 @@ export class NewAccountCircuit
           pubInputs.symKeyEncryption1Y.bytes,
           pubInputs.symKeyEncryption2X.bytes,
           pubInputs.symKeyEncryption2Y.bytes,
+          pubInputs.macSalt.bytes,
+          pubInputs.macCommitment.bytes,
           proof
         )
       );
