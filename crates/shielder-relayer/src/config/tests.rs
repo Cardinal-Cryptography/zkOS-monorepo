@@ -30,13 +30,13 @@ fn config_resolution() {
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let fee_token_config = vec![
         TokenPricingConfig {
-            token: FeeToken::Native,
+            token: TokenKind::Native,
             pricing: Pricing::Fixed {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
         TokenPricingConfig {
-            token: FeeToken::ERC20(address!("2222222222222222222222222222222222222222")),
+            token: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
             pricing: Pricing::Feed {
                 price_feed_coin: Coin::Eth,
             },

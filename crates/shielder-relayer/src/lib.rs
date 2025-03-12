@@ -84,14 +84,14 @@ pub struct RelayQuery {
     pub nullifier_hash: U256,
     pub new_note: U256,
     pub proof: Bytes,
-    pub fee_token: FeeToken,
+    pub fee_token: TokenKind,
     pub fee_amount: U256,
     pub mac_salt: U256,
     pub mac_commitment: U256,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
-pub enum FeeToken {
+pub enum TokenKind {
     #[default]
     Native,
     ERC20(Address),

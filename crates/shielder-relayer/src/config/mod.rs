@@ -12,7 +12,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    Coin, FeeToken, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
+    Coin, TokenKind, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
     LOGGING_FORMAT_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV,
     PRICE_FEED_REFRESH_INTERVAL_ENV, PRICE_FEED_VALIDITY_ENV, RELAYER_HOST_ENV,
     RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV,
@@ -66,7 +66,7 @@ pub enum Pricing {
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct TokenPricingConfig {
-    pub token: FeeToken,
+    pub token: TokenKind,
     pub pricing: Pricing,
 }
 

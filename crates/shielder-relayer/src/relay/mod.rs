@@ -9,7 +9,7 @@ use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{server_error, FeeToken, RelayQuery, RelayResponse, SimpleServiceResponse};
+use shielder_relayer::{server_error, TokenKind, RelayQuery, RelayResponse, SimpleServiceResponse};
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 
@@ -138,14 +138,14 @@ fn check_fee(
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
     match query.fee_token {
-        FeeToken::Native => {
+        TokenKind::Native => {
             // todo: discuss if we want to prevent users from spending too much
             if query.fee_amount < app_state.total_fee {
                 request_trace.record_insufficient_fee(query.fee_amount);
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        FeeToken::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
+        TokenKind::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
     }
     Ok(())
 }
@@ -159,13 +159,13 @@ fn check_erc20_fee(
     let fee_token_pricing = app_state
         .token_pricing
         .iter()
-        .find(|x| x.token == FeeToken::ERC20(fee_token_address))
+        .find(|x| x.token == TokenKind::ERC20(fee_token_address))
         .map(|p| &p.pricing);
 
     let native_pricing = app_state
         .token_pricing
         .iter()
-        .find(|x| x.token == FeeToken::Native)
+        .find(|x| x.token == TokenKind::Native)
         .map(|p| &p.pricing);
 
     match (fee_token_pricing, native_pricing) {

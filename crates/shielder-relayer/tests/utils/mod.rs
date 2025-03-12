@@ -6,7 +6,7 @@ use alloy_primitives::{Address, Bytes, U256};
 use rand::Rng;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
-use shielder_relayer::{Coin, FeeToken, RelayQuery};
+use shielder_relayer::{Coin, TokenKind, RelayQuery};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -73,7 +73,7 @@ impl TestContext {
                 nullifier_hash: U256::ZERO,
                 new_note: U256::ZERO,
                 proof: Bytes::new(),
-                fee_token: FeeToken::Native,
+                fee_token: TokenKind::Native,
                 fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
                 mac_salt: U256::ZERO,
                 mac_commitment: U256::ZERO,
