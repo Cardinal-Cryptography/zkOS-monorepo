@@ -53,10 +53,10 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
                 knowledge.compute_public_input(NewAccountInstance::AnonymityRevokerPublicKeyY),
             ),
             sym_key_encryption_1_x: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::AnonymityRevokerPublicKeyX),
+                knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext1X),
             ),
             sym_key_encryption_1_y: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext2X),
+                knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext1Y),
             ),
             sym_key_encryption_2_x: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::EncryptedKeyCiphertext2X),

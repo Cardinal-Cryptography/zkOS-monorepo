@@ -42,9 +42,9 @@ export class NewAccountCircuit
         values.initialDeposit.bytes,
         values.tokenAddress.bytes,
         values.encryptionSalt.bytes,
+        values.macSalt.bytes,
         values.anonymityRevokerPublicKeyX.bytes,
-        values.anonymityRevokerPublicKeyY.bytes,
-        values.macSalt.bytes
+        values.anonymityRevokerPublicKeyY.bytes
       )
     );
   }
@@ -65,9 +65,9 @@ export class NewAccountCircuit
       values.initialDeposit.bytes,
       values.tokenAddress.bytes,
       values.encryptionSalt.bytes,
+      values.macSalt.bytes,
       values.anonymityRevokerPublicKeyX.bytes,
-      values.anonymityRevokerPublicKeyY.bytes,
-      values.macSalt.bytes
+      values.anonymityRevokerPublicKeyY.bytes
     );
 
     return Promise.resolve({
