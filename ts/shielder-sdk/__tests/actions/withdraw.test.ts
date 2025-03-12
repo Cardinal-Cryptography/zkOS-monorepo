@@ -34,8 +34,6 @@ describe("WithdrawAction", () => {
   const mockedPath = [0n, 1n];
   let mockedMerkleRoot: Scalar;
 
-  const mockedIdHidingNonce = 4n;
-
   beforeEach(async () => {
     cryptoClient = new MockedCryptoClient();
     mockedMerkleRoot = await cryptoClient.hasher.poseidonHash([
@@ -49,7 +47,6 @@ describe("WithdrawAction", () => {
           (
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
-            idHiding: bigint,
             oldNoteNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
@@ -70,7 +67,6 @@ describe("WithdrawAction", () => {
         .fn<
           (
             expectedContractVersion: `0x${string}`,
-            idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
@@ -87,9 +83,6 @@ describe("WithdrawAction", () => {
       contract,
       relayer,
       cryptoClient,
-      {
-        randomIdHidingNonce: () => Scalar.fromBigint(mockedIdHidingNonce)
-      },
       1n
     );
 
@@ -268,7 +261,6 @@ describe("WithdrawAction", () => {
         expectedVersion,
         nativeToken(),
         calldata.totalFee,
-        scalarToBigint(calldata.calldata.pubInputs.idHiding),
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
@@ -303,7 +295,6 @@ describe("WithdrawAction", () => {
             expectedContractVersion: `0x${string}`,
             token: Token,
             feeAmount: bigint,
-            idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
@@ -340,7 +331,6 @@ describe("WithdrawAction", () => {
             expectedContractVersion: `0x${string}`,
             token: Token,
             feeAmount: bigint,
-            idHiding: bigint,
             oldNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,

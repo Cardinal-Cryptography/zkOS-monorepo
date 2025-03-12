@@ -42,12 +42,14 @@ describe("NewAccountAction", () => {
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
             newNote: bigint,
-            idHash: bigint,
+            prenullifier: bigint,
             amount: bigint,
             symKeyEncryption1X: bigint,
             symKeyEncryption1Y: bigint,
             symKeyEncryption2X: bigint,
             symKeyEncryption2Y: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
