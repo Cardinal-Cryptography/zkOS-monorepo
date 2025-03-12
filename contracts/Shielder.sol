@@ -70,7 +70,6 @@ contract Shielder is
     );
     event Deposit(
         bytes3 contractVersion,
-        uint256 idHiding,
         address tokenAddress,
         uint256 amount,
         uint256 newNote,
@@ -80,7 +79,6 @@ contract Shielder is
     );
     event Withdraw(
         bytes3 contractVersion,
-        uint256 idHiding,
         address tokenAddress,
         uint256 amount,
         address withdrawalAddress,
@@ -339,7 +337,6 @@ contract Shielder is
 
         emit Deposit(
             CONTRACT_VERSION,
-            idHiding,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             newNote,
@@ -356,7 +353,6 @@ contract Shielder is
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
-        uint256 idHiding,
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
@@ -376,7 +372,6 @@ contract Shielder is
             expectedContractVersion,
             tokenAddress,
             amount,
-            idHiding,
             oldNullifierHash,
             newNote,
             merkleRoot,
@@ -389,7 +384,6 @@ contract Shielder is
 
         emit Deposit(
             CONTRACT_VERSION,
-            idHiding,
             tokenAddress,
             amount,
             newNote,
@@ -446,7 +440,6 @@ contract Shielder is
      */
     function withdrawNative(
         bytes3 expectedContractVersion,
-        uint256 idHiding,
         uint256 amount,
         address withdrawalAddress,
         uint256 merkleRoot,
@@ -460,7 +453,6 @@ contract Shielder is
     ) external whenNotPaused {
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
-            idHiding,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             withdrawalAddress,
@@ -490,7 +482,6 @@ contract Shielder is
 
         emit Withdraw(
             CONTRACT_VERSION,
-            idHiding,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             withdrawalAddress,
@@ -505,7 +496,6 @@ contract Shielder is
 
     function withdrawERC20(
         bytes3 expectedContractVersion,
-        uint256 idHiding,
         address tokenAddress,
         uint256 amount,
         address withdrawalAddress,
@@ -520,7 +510,6 @@ contract Shielder is
     ) external whenNotPaused {
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
-            idHiding,
             tokenAddress,
             amount,
             withdrawalAddress,
@@ -540,7 +529,6 @@ contract Shielder is
 
         emit Withdraw(
             CONTRACT_VERSION,
-            idHiding,
             tokenAddress,
             amount,
             withdrawalAddress,
@@ -555,7 +543,6 @@ contract Shielder is
 
     function _withdraw(
         bytes3 expectedContractVersion,
-        uint256 idHiding,
         address tokenAddress,
         uint256 amount,
         address withdrawalAddress,
@@ -570,7 +557,6 @@ contract Shielder is
     )
         private
         restrictContractVersion(expectedContractVersion)
-        fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
         returns (uint256)
@@ -583,15 +569,12 @@ contract Shielder is
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](9);
-        publicInputs[0] = idHiding;
-        publicInputs[1] = merkleRoot;
-        publicInputs[2] = oldNullifierHash;
-        publicInputs[3] = newNote;
-        publicInputs[4] = amount;
-        publicInputs[5] = addressToUInt256(tokenAddress);
-        publicInputs[7] = macSalt;
-        publicInputs[8] = macCommitment;
+        uint256[] memory publicInputs = new uint256[](8);
+        publicInputs[0] = merkleRoot;
+        publicInputs[1] = oldNullifierHash;
+        publicInputs[2] = newNote;
+        publicInputs[3] = amount;
+        publicInputs[4] = addressToUInt256(tokenAddress);
 
         uint256 chainId = block.chainid;
 
@@ -603,7 +586,9 @@ contract Shielder is
             chainId
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
-        publicInputs[6] = uint256(keccak256(commitment)) >> 4;
+        publicInputs[5] = uint256(keccak256(commitment)) >> 4;
+        publicInputs[6] = macSalt;
+        publicInputs[7] = macCommitment;
 
         bool success = WithdrawVerifier.verifyProof(proof, publicInputs);
 
