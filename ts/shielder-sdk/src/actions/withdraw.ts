@@ -281,9 +281,10 @@ export class WithdrawAction extends NoteAction {
             proof
           );
     const txHash = await sendShielderTransaction({
-      data: encodedCalldata,
+      data: encodedCalldata.calldata,
       to: this.contract.getAddress(),
-      value: 0n
+      value: 0n,
+      gas: encodedCalldata.gas
     }).catch((e) => {
       if (e instanceof OutdatedSdkError) {
         throw e;

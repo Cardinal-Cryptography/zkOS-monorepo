@@ -43,6 +43,7 @@ export type SendShielderTransaction = (params: {
   data: `0x${string}`;
   to: `0x${string}`;
   value: bigint;
+  gas: bigint;
 }) => Promise<`0x${string}`>;
 
 export type QuotedFees = {
