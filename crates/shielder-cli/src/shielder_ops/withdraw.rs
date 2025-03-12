@@ -9,7 +9,9 @@ use shielder_account::{
     ShielderAction,
 };
 use shielder_contract::{
-    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
+    events::get_event,
+    merkle_path::get_current_merkle_path,
+    ShielderContract::{withdrawNativeCall, Withdraw},
 };
 use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery, RelayResponse};
 use shielder_setup::version::contract_version;
@@ -128,23 +130,27 @@ async fn prepare_relayer_query(
         .get_chain_id()
         .await?;
 
-    let calldata = app_state.account.prepare_call::<WithdrawCallType>(
-        &params,
-        &pk,
-        Token::Native,
-        amount,
-        &WithdrawExtra {
-            merkle_proof: MerkleProof {
-                root: merkle_root,
-                path: merkle_path,
+    let calldata: withdrawNativeCall = app_state
+        .account
+        .prepare_call::<WithdrawCallType>(
+            &params,
+            &pk,
+            Token::Native,
+            amount,
+            &WithdrawExtra {
+                merkle_proof: MerkleProof {
+                    root: merkle_root,
+                    path: merkle_path,
+                },
+                to,
+                relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
+                relayer_fee,
+                contract_version: contract_version(),
+                chain_id: U256::from(chain_id),
             },
-            to,
-            relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
-            relayer_fee,
-            contract_version: contract_version(),
-            chain_id: U256::from(chain_id),
-        },
-    );
+        )
+        .try_into()
+        .unwrap();
 
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),

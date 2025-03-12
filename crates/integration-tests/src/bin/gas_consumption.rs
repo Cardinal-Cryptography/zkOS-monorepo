@@ -7,24 +7,22 @@ use integration_tests::{
         deposit::{invoke_call as deposit_call, prepare_call as deposit_calldata},
         new_account::{invoke_call as new_account_call, prepare_call as new_account_calldata},
         withdraw_native::{
-            invoke_call as withdraw_native_call, prepare_args,
-            prepare_call as withdraw_native_calldata,
+            invoke_call as withdraw_call, prepare_args, prepare_call as withdraw_calldata,
         },
     },
     deploy::{deployment, Deployment},
     deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,
 };
 use shielder_account::{
-    call_data::{DepositCall, NewAccountCall},
+    call_data::{DepositCall, NewAccountCall, WithdrawCall},
     ShielderAccount,
 };
-use shielder_contract::ShielderContract::withdrawNativeCall;
 
 #[derive(Debug)]
 enum Calldata {
     NewAccount(NewAccountCall),
     Deposit(DepositCall),
-    Withdraw(withdrawNativeCall),
+    Withdraw(WithdrawCall),
 }
 
 impl fmt::Display for Calldata {
@@ -77,10 +75,10 @@ fn main() {
     content.extend(&mut format!("{}: {gas_used}\n", &calldata).as_bytes().iter());
 
     let calldata = Calldata::Withdraw(
-        withdraw_native_calldata(
+        withdraw_calldata(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(amount, U256::from(1)),
+            prepare_args(TestToken::Native, amount, U256::from(1)),
         )
         .0,
     );
@@ -111,7 +109,7 @@ fn measure_gas(
                 .gas_used
         }
         Calldata::Withdraw(calldata) => {
-            withdraw_native_call(deployment, shielder_account, calldata)
+            withdraw_call(deployment, shielder_account, calldata)
                 .unwrap()
                 .1
                 .gas_used
