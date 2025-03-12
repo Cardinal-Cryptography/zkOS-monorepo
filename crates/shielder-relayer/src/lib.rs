@@ -77,7 +77,6 @@ impl QuoteFeeResponse {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct RelayQuery {
     pub expected_contract_version: FixedBytes<3>,
-    pub id_hiding: U256,
     pub amount: U256,
     pub withdraw_address: Address,
     pub merkle_root: U256,

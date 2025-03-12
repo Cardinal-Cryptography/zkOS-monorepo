@@ -3,7 +3,7 @@ export type Proof = Uint8Array;
 // follows the order in shielder-circuits::circuits::new_account
 export type NewAccountPubInputs<T> = {
   hNote: T;
-  hId: T;
+  prenullifier: T;
   initialDeposit: T;
   tokenAddress: T;
   anonymityRevokerPublicKeyX: T;
@@ -12,6 +12,8 @@ export type NewAccountPubInputs<T> = {
   symKeyEncryption1Y: T;
   symKeyEncryption2X: T;
   symKeyEncryption2Y: T;
+  macSalt: T;
+  macCommitment: T;
 };
 
 export type NewAccountAdvice<T> = {
@@ -23,11 +25,11 @@ export type NewAccountAdvice<T> = {
   encryptionSalt: T;
   anonymityRevokerPublicKeyX: T;
   anonymityRevokerPublicKeyY: T;
+  macSalt: T;
 };
 
 // follows the order in shielder-circuits::circuits::deposit
 export type DepositPubInputs<T> = {
-  idHiding: T;
   merkleRoot: T;
   hNullifierOld: T;
   hNoteNew: T;
@@ -39,7 +41,6 @@ export type DepositPubInputs<T> = {
 
 export type DepositAdvice<T> = {
   id: T;
-  nonce: T;
   nullifierOld: T;
   trapdoorOld: T;
   accountBalanceOld: T;
@@ -53,7 +54,6 @@ export type DepositAdvice<T> = {
 
 // follows the order in shielder-circuits::circuits::withdraw
 export type WithdrawPubInputs<T> = {
-  idHiding: T;
   merkleRoot: T;
   hNullifierOld: T;
   hNoteNew: T;
@@ -66,7 +66,6 @@ export type WithdrawPubInputs<T> = {
 
 export type WithdrawAdvice<T> = {
   id: T;
-  nonce: T;
   nullifierOld: T;
   trapdoorOld: T;
   accountBalanceOld: T;

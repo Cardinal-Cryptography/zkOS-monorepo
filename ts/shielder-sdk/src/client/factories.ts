@@ -1,14 +1,12 @@
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
-import { INonceGenerator } from "@/actions/utils";
 import { Contract, IContract } from "@/chain/contract";
 import { IRelayer, Relayer } from "@/chain/relayer";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, PublicClient } from "viem";
 import { ShielderCallbacks } from "./types";
 import { ShielderClient } from "./client";
-import { idHidingNonce } from "@/utils";
 import { IdManager } from "@/state/idManager";
 import { AccountFactory } from "@/state/accountFactory";
 import { AccountRegistry } from "@/state/accountRegistry";
@@ -62,10 +60,7 @@ export const createShielderClient = (
   const components = createShielderComponents({
     ...config,
     contract,
-    relayer,
-    nonceGenerator: {
-      randomIdHidingNonce: () => idHidingNonce()
-    }
+    relayer
   });
 
   return new ShielderClient(components, config.callbacks || {});
@@ -75,7 +70,6 @@ export const createShielderClient = (
 type ShielderComponentsConfig = BaseShielderConfig & {
   contract: IContract;
   relayer: IRelayer;
-  nonceGenerator: INonceGenerator;
 };
 
 type IdentityComponents = {
@@ -173,16 +167,11 @@ function createActionComponents(config: ShielderComponentsConfig) {
     config.contract,
     config.cryptoClient
   );
-  const depositAction = new DepositAction(
-    config.contract,
-    config.cryptoClient,
-    config.nonceGenerator
-  );
+  const depositAction = new DepositAction(config.contract, config.cryptoClient);
   const withdrawAction = new WithdrawAction(
     config.contract,
     config.relayer,
     config.cryptoClient,
-    config.nonceGenerator,
     config.chainId
   );
   const localStateTransition = new LocalStateTransition(

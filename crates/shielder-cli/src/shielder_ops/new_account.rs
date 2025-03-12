@@ -37,6 +37,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
                     &NewAccountCallExtra {
                         anonymity_revoker_public_key,
                         encryption_salt: get_encryption_salt(),
+                        mac_salt: get_mac_salt(),
                     },
                 )
                 .try_into()
@@ -58,7 +59,6 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
         .register_action(ShielderAction::new_account(
             amount,
             new_account_event.newNoteIndex,
-            new_account_event.idHash,
             tx_hash,
         ));
     info!("Created new account with {amount} tokens");
@@ -68,4 +68,9 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
 fn get_encryption_salt() -> [bool; FIELD_BITS] {
     let mut rng = OsRng;
     core::array::from_fn(|_| rng.gen_bool(0.5))
+}
+
+fn get_mac_salt() -> U256 {
+    let mut rng = OsRng;
+    U256::from_limbs([rng.gen(), rng.gen(), rng.gen(), rng.gen()])
 }

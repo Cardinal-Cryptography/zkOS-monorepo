@@ -55,7 +55,6 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
     app_state.account.register_action(ShielderAction::withdraw(
         amount,
         withdraw_event.newNoteIndex,
-        withdraw_event.idHiding,
         tx_hash,
         to,
     ));
@@ -148,7 +147,6 @@ async fn prepare_relayer_query(
 
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
-        id_hiding: calldata.idHiding,
         amount,
         withdraw_address: to,
         merkle_root,
