@@ -313,7 +313,6 @@ contract Shielder is
      */
     function depositNative(
         bytes3 expectedContractVersion,
-        uint256 idHiding,
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
@@ -330,7 +329,6 @@ contract Shielder is
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
-            idHiding,
             oldNullifierHash,
             newNote,
             merkleRoot,
@@ -405,7 +403,6 @@ contract Shielder is
         bytes3 expectedContractVersion,
         address tokenAddress,
         uint256 amount,
-        uint256 idHiding,
         uint256 oldNullifierHash,
         uint256 newNote,
         uint256 merkleRoot,
@@ -415,7 +412,6 @@ contract Shielder is
     )
         private
         restrictContractVersion(expectedContractVersion)
-        fieldElement(idHiding)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
         returns (uint256)
@@ -426,15 +422,14 @@ contract Shielder is
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](8);
-        publicInputs[0] = idHiding;
-        publicInputs[1] = merkleRoot;
-        publicInputs[2] = oldNullifierHash;
-        publicInputs[3] = newNote;
-        publicInputs[4] = amount;
-        publicInputs[5] = addressToUInt256(tokenAddress);
-        publicInputs[6] = macSalt;
-        publicInputs[7] = macCommitment;
+        uint256[] memory publicInputs = new uint256[](7);
+        publicInputs[0] = merkleRoot;
+        publicInputs[1] = oldNullifierHash;
+        publicInputs[2] = newNote;
+        publicInputs[3] = amount;
+        publicInputs[4] = addressToUInt256(tokenAddress);
+        publicInputs[5] = macSalt;
+        publicInputs[6] = macCommitment;
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 
