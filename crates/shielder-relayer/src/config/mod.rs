@@ -66,6 +66,7 @@ pub enum Pricing {
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct TokenConfig {
+    pub coin: Coin,
     pub kind: TokenKind,
     pub pricing: Pricing,
 }

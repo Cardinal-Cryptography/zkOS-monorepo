@@ -28,14 +28,17 @@ fn config_resolution() {
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
     let total_fee = DEFAULT_TOTAL_FEE.to_string();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
+    let native_token = Coin::Btc;
     let token_config = vec![
         TokenConfig {
+            coin: native_token,
             kind: TokenKind::Native,
             pricing: Pricing::Fixed {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
         TokenConfig {
+            coin: Coin::Eth,
             kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
             pricing: Pricing::Feed {
                 price_feed_coin: Coin::Eth,
@@ -44,7 +47,6 @@ fn config_resolution() {
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
     let price_feed_validity = 15;
-    let native_token = Coin::Btc;
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -109,10 +111,12 @@ fn config_resolution() {
             TOKEN_CONFIG_ENV,
             "[
                 {
+                    \"coin\":\"Btc\",
                     \"kind\":\"Native\",
                     \"pricing\":{\"Fixed\":{\"price\":\"1.23\"}}
                 },
                 {
+                    \"coin\":\"Eth\",
                     \"kind\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
                     \"pricing\":{\"Feed\":{\"price_feed_coin\":\"Eth\"}}
                 }

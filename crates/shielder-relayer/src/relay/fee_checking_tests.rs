@@ -95,6 +95,7 @@ mod erc20_fee {
 
     fn erc20_pricing() -> TokenConfig {
         TokenConfig {
+            coin: Coin::Eth,
             kind: TokenKind::ERC20(ERC20_ADDRESS),
             pricing: Pricing::Feed {
                 price_feed_coin: Coin::Eth,
@@ -104,6 +105,7 @@ mod erc20_fee {
 
     fn native_pricing() -> TokenConfig {
         TokenConfig {
+            coin: Coin::Azero,
             kind: TokenKind::Native,
             pricing: Pricing::Feed {
                 price_feed_coin: Coin::Azero,
@@ -223,7 +225,7 @@ mod erc20_fee {
         let app_state = app_state();
         app_state.prices.set_price(Coin::Eth, Decimal::new(15, 1));
         // there is no way of checking AZERO price (we don't configure background
-        // price fetching nor we set the price manually)
+        // price fetching, nor we set the price manually)
 
         let query = RelayQuery {
             fee_amount: U256::from(200),
@@ -243,6 +245,7 @@ mod erc20_fee {
             token_config: vec![
                 erc20_pricing(),
                 TokenConfig {
+                    coin: Coin::Btc,
                     kind: TokenKind::Native,
                     pricing: Pricing::Feed {
                         price_feed_coin: Coin::Btc,

@@ -149,10 +149,10 @@ pub struct CLIConfig {
             If that is not set, assumed to be empty. Parsed as JSON: \
             \
             This example configures a token to have a constant price of 12.3 USD: \
-            [{\"kind\":\"Native\", \"pricing\":{\"Fixed\":{\"price\":\"12.3\"}}}] \
+            [{\"coin\":\"Eth\", \"kind\":\"Native\", \"pricing\":{\"Fixed\":{\"price\":\"12.3\"}}}] \
             \
             This example configure a token to use the `Usdc` price feed for its pricing: \
-            [{\"kind\":{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"},\"pricing\":{\"Feed\":{\"price_feed_coin\":\"Usdc\"}}}]
+            [{\"coin\":\"Usdc\", \"kind\":{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"},\"pricing\":{\"Feed\":{\"price_feed_coin\":\"Usdc\"}}}]
             "
     )]
     pub token_config: Option<String>,
