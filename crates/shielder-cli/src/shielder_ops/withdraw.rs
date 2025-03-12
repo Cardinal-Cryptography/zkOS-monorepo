@@ -11,7 +11,7 @@ use shielder_account::{
 use shielder_contract::{
     events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
-use shielder_relayer::{TokenKind, QuoteFeeResponse, RelayQuery, RelayResponse};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};

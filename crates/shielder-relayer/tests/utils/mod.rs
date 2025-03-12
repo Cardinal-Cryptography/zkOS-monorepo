@@ -6,7 +6,7 @@ use alloy_primitives::{Address, Bytes, U256};
 use rand::Rng;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
-use shielder_relayer::{Coin, TokenKind, RelayQuery};
+use shielder_relayer::{Coin, RelayQuery, TokenKind};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,

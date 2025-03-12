@@ -10,7 +10,7 @@ use shielder_circuits::{
 use shielder_contract::{
     alloy_primitives::U256, merkle_path::get_current_merkle_path, providers::create_simple_provider,
 };
-use shielder_relayer::{TokenKind, QuoteFeeResponse, RelayQuery};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, TokenKind};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};

@@ -70,8 +70,8 @@ fi
 if [[ -n "${PRICE_FEED_REFRESH_INTERVAL:-}" ]]; then
   ARGS+=(-e PRICE_FEED_REFRESH_INTERVAL="${PRICE_FEED_REFRESH_INTERVAL}")
 fi
-if [[ -n "${TOKEN_PRICING:-}" ]]; then
-  ARGS+=(-e TOKEN_PRICING="${TOKEN_PRICING}")
+if [[ -n "${TOKEN_CONFIG:-}" ]]; then
+  ARGS+=(-e TOKEN_CONFIG="${TOKEN_CONFIG}")
 fi
 if [[ -n "${NATIVE_TOKEN:-}" ]]; then
   ARGS+=(-e NATIVE_TOKEN="${NATIVE_TOKEN}")
