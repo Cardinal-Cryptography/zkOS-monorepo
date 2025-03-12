@@ -172,12 +172,14 @@ describe("NewAccountAction", () => {
         expectedVersion,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.hNote),
-        scalarToBigint(calldata.calldata.pubInputs.hId),
+        scalarToBigint(calldata.calldata.pubInputs.prenullifier),
         amount,
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1X),
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1Y),
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2X),
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2Y),
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.calldata.proof
       );
 
@@ -207,12 +209,14 @@ describe("NewAccountAction", () => {
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
             newNote: bigint,
-            idHash: bigint,
+            prenullifier: bigint,
             amount: bigint,
             symKeyEncryption1X: bigint,
             symKeyEncryption1Y: bigint,
             symKeyEncryption2X: bigint,
             symKeyEncryption2Y: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
           ) => Promise<`0x${string}`>
         >()
