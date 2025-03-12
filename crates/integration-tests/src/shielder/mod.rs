@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{SolCall, SolEventInterface};
@@ -95,6 +95,15 @@ impl TestToken {
         match self {
             TestToken::Native => Token::Native,
             TestToken::ERC20 => Token::ERC20(deployment.test_erc20.contract_address),
+        }
+    }
+}
+
+impl fmt::Display for TestToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Native => write!(f, "Native"),
+            Self::ERC20 => write!(f, "ERC20"),
         }
     }
 }

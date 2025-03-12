@@ -14,8 +14,9 @@ def parse_report(file_path, annotation):
 
 def calculate_differences(main_data, current_data):
     differences = []
-    for name in main_data:
-        main_value = main_data[name]
+    all_names = sorted(set(main_data) | set(current_data))
+    for name in all_names:
+        main_value = main_data.get(name, 0)
         current_value = current_data.get(name, 0)
         if main_value > 0:
             difference = ((current_value - main_value) / main_value) * 100
