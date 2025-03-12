@@ -182,7 +182,6 @@ class MockedDepositCircuit implements DepositCircuit {
 
   pubInputs(values: DepositAdvice<Scalar>): Promise<DepositPubInputs<Scalar>> {
     return Promise.resolve({
-      idHiding: Scalar.fromBigint(0n),
       merkleRoot: Scalar.fromBigint(0n),
       hNullifierOld: Scalar.fromBigint(0n),
       hNoteNew: Scalar.fromBigint(0n),
@@ -210,7 +209,6 @@ class MockedWithdrawCircuit implements WithdrawCircuit {
     values: WithdrawAdvice<Scalar>
   ): Promise<WithdrawPubInputs<Scalar>> {
     return Promise.resolve({
-      idHiding: Scalar.fromBigint(0n),
       merkleRoot: Scalar.fromBigint(0n),
       hNullifierOld: Scalar.fromBigint(0n),
       hNoteNew: Scalar.fromBigint(0n),
