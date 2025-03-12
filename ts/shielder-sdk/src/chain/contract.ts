@@ -50,7 +50,7 @@ export type NoteEvent = {
 };
 
 export type NewAccountEvent = {
-  idHash: bigint;
+  prenullifier: bigint;
   tokenAddress: Address;
 };
 
@@ -73,12 +73,14 @@ export type IContract = {
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   newAccountTokenCalldata: (
@@ -86,18 +88,19 @@ export type IContract = {
     tokenAddress: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => Promise<`0x${string}`>;
   depositNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -110,7 +113,6 @@ export type IContract = {
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -125,7 +127,6 @@ export type IContract = {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -141,7 +142,6 @@ export type IContract = {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -183,12 +183,14 @@ export class Contract implements IContract {
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -196,11 +198,13 @@ export class Contract implements IContract {
         [
           expectedContractVersion,
           newNote,
-          idHash,
+          prenullifier,
           symKeyEncryption1X,
           symKeyEncryption1Y,
           symKeyEncryption2X,
           symKeyEncryption2Y,
+          macSalt,
+          macCommitment,
           bytesToHex(proof)
         ],
         { account: from, value: amount, gas: shieldActionGasLimit }
@@ -212,11 +216,13 @@ export class Contract implements IContract {
       args: [
         expectedContractVersion,
         newNote,
-        idHash,
+        prenullifier,
         symKeyEncryption1X,
         symKeyEncryption1Y,
         symKeyEncryption2X,
         symKeyEncryption2Y,
+        macSalt,
+        macCommitment,
         bytesToHex(proof)
       ]
     });
@@ -227,12 +233,14 @@ export class Contract implements IContract {
     tokenAddress: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => {
     await handleWrongContractVersionError(() => {
@@ -242,11 +250,13 @@ export class Contract implements IContract {
           tokenAddress,
           amount,
           newNote,
-          idHash,
+          prenullifier,
           symKeyEncryption1X,
           symKeyEncryption1Y,
           symKeyEncryption2X,
           symKeyEncryption2Y,
+          macSalt,
+          macCommitment,
           bytesToHex(proof)
         ],
         { account: from, gas: shieldActionGasLimit }
@@ -260,11 +270,13 @@ export class Contract implements IContract {
         tokenAddress,
         amount,
         newNote,
-        idHash,
+        prenullifier,
         symKeyEncryption1X,
         symKeyEncryption1Y,
         symKeyEncryption2X,
         symKeyEncryption2Y,
+        macSalt,
+        macCommitment,
         bytesToHex(proof)
       ]
     });
@@ -273,7 +285,6 @@ export class Contract implements IContract {
   depositNativeCalldata = async (
     expectedContractVersion: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -286,7 +297,6 @@ export class Contract implements IContract {
       return this.contract.simulate.depositNative(
         [
           expectedContractVersion,
-          idHiding,
           oldNoteNullifierHash,
           newNote,
           merkleRoot,
@@ -302,7 +312,6 @@ export class Contract implements IContract {
       functionName: "depositNative",
       args: [
         expectedContractVersion,
-        idHiding,
         oldNoteNullifierHash,
         newNote,
         merkleRoot,
@@ -317,7 +326,6 @@ export class Contract implements IContract {
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -332,7 +340,6 @@ export class Contract implements IContract {
           expectedContractVersion,
           tokenAddress,
           amount,
-          idHiding,
           oldNoteNullifierHash,
           newNote,
           merkleRoot,
@@ -350,7 +357,6 @@ export class Contract implements IContract {
         expectedContractVersion,
         tokenAddress,
         amount,
-        idHiding,
         oldNoteNullifierHash,
         newNote,
         merkleRoot,
@@ -367,7 +373,6 @@ export class Contract implements IContract {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -380,7 +385,6 @@ export class Contract implements IContract {
       return this.contract.simulate.withdrawNative(
         [
           expectedContractVersion,
-          idHiding,
           amount,
           withdrawalAddress,
           merkleRoot,
@@ -400,7 +404,6 @@ export class Contract implements IContract {
       functionName: "withdrawNative",
       args: [
         expectedContractVersion,
-        idHiding,
         amount,
         withdrawalAddress,
         merkleRoot,
@@ -422,7 +425,6 @@ export class Contract implements IContract {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -435,7 +437,6 @@ export class Contract implements IContract {
       return this.contract.simulate.withdrawERC20(
         [
           expectedContractVersion,
-          idHiding,
           tokenAddress,
           amount,
           withdrawalAddress,
@@ -456,7 +457,6 @@ export class Contract implements IContract {
       functionName: "withdrawERC20",
       args: [
         expectedContractVersion,
-        idHiding,
         tokenAddress,
         amount,
         withdrawalAddress,
