@@ -9,13 +9,13 @@ use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{server_error, FeeToken, RelayQuery, RelayResponse, SimpleServiceResponse};
+use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind};
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
-    config::Pricing,
+    config::{Pricing, TokenConfig},
     metrics::WITHDRAW_FAILURE,
     price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
@@ -138,14 +138,14 @@ fn check_fee(
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
     match query.fee_token {
-        FeeToken::Native => {
+        TokenKind::Native => {
             // todo: discuss if we want to prevent users from spending too much
             if query.fee_amount < app_state.total_fee {
                 request_trace.record_insufficient_fee(query.fee_amount);
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        FeeToken::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
+        TokenKind::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
     }
     Ok(())
 }
@@ -156,19 +156,17 @@ fn check_erc20_fee(
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    let fee_token_pricing = app_state
-        .token_pricing
+    let fee_token_config = app_state
+        .token_config
         .iter()
-        .find(|x| x.token == FeeToken::ERC20(fee_token_address))
-        .map(|p| &p.pricing);
+        .find(|x| x.kind == TokenKind::ERC20(fee_token_address));
 
-    let native_pricing = app_state
-        .token_pricing
+    let native_config = app_state
+        .token_config
         .iter()
-        .find(|x| x.token == FeeToken::Native)
-        .map(|p| &p.pricing);
+        .find(|x| x.kind == TokenKind::Native);
 
-    match (fee_token_pricing, native_pricing) {
+    match (fee_token_config, native_config) {
         (None, _) => {
             request_trace.record_incorrect_token_fee(fee_token_address);
             Err(bad_request(&format!(
@@ -179,9 +177,9 @@ fn check_erc20_fee(
             error!("MISSING NATIVE TOKEN PRICING!");
             Err(server_error("Server is missing native token pricing."))
         }
-        (Some(fee_token_pricing), Some(native_pricing)) => {
+        (Some(fee_token_config), Some(native_config)) => {
             let ratio =
-                price_relative_to_native(&app_state.prices, fee_token_pricing, native_pricing)
+                price_relative_to_native(&app_state.prices, fee_token_config, native_config)
                     .ok_or_else(|| {
                         temporary_failure("Verification failed temporarily, try again later.")
                     })?;
@@ -199,15 +197,15 @@ fn check_erc20_fee(
 
 fn price_relative_to_native(
     prices: &Prices,
-    fee_token_pricing: &Pricing,
-    native_pricing: &Pricing,
+    fee_token_config: &TokenConfig,
+    native_config: &TokenConfig,
 ) -> Option<Decimal> {
-    let resolve_price = |pricing: &Pricing| match pricing {
-        Pricing::Fixed { price } => Some(*price),
-        Pricing::Feed { price_feed_coin } => prices.price(*price_feed_coin),
+    let resolve_price = |config: &TokenConfig| match config.pricing {
+        Pricing::Fixed { price } => Some(price),
+        Pricing::Feed => prices.price(config.coin),
     };
-    let fee_token_price = resolve_price(fee_token_pricing)?;
-    let native_price = resolve_price(native_pricing)?;
+    let fee_token_price = resolve_price(fee_token_config)?;
+    let native_price = resolve_price(native_config)?;
 
     Some(fee_token_price / native_price)
 }

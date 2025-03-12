@@ -10,7 +10,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use config::TokenPricingConfig;
+use config::TokenConfig;
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
@@ -49,7 +49,7 @@ pub struct AppState {
     pub taskmaster: Taskmaster,
     pub balances: Balances,
     pub prices: Prices,
-    pub token_pricing: Vec<TokenPricingConfig>,
+    pub token_config: Vec<TokenConfig>,
     pub native_token: Coin,
 }
 
@@ -149,7 +149,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
             config.operations.dry_running,
             report_for_recharge,
         ),
-        token_pricing: config.operations.token_pricing.clone(),
+        token_config: config.operations.token_config.clone(),
         prices,
         native_token: config.chain.native_token,
     };

@@ -26,7 +26,7 @@ pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
 pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 pub const PRICE_FEED_VALIDITY_ENV: &str = "PRICE_FEED_VALIDITY";
 pub const PRICE_FEED_REFRESH_INTERVAL_ENV: &str = "PRICE_FEED_REFRESH_INTERVAL";
-pub const TOKEN_PRICING_ENV: &str = "TOKEN_PRICING";
+pub const TOKEN_CONFIG_ENV: &str = "TOKEN_CONFIG";
 pub const NATIVE_TOKEN_ENV: &str = "NATIVE_TOKEN";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -84,14 +84,14 @@ pub struct RelayQuery {
     pub nullifier_hash: U256,
     pub new_note: U256,
     pub proof: Bytes,
-    pub fee_token: FeeToken,
+    pub fee_token: TokenKind,
     pub fee_amount: U256,
     pub mac_salt: U256,
     pub mac_commitment: U256,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
-pub enum FeeToken {
+pub enum TokenKind {
     #[default]
     Native,
     ERC20(Address),
