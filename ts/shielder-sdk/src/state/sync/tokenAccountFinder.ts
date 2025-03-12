@@ -15,13 +15,12 @@ export class TokenAccountFinder {
   ) {}
 
   async findTokenByAccountIndex(accountIndex: number): Promise<Token | null> {
-    const preNullifier = await this.idManager.getId(accountIndex);
-    const preNullifierHash = await this.cryptoClient.hasher.poseidonHash([
-      preNullifier
+    const preNullifier = await this.cryptoClient.hasher.poseidonHash([
+      await this.idManager.getId(accountIndex)
     ]);
 
     const block = await this.contract.nullifierBlock(
-      scalarToBigint(preNullifierHash)
+      scalarToBigint(preNullifier)
     );
     if (!block) {
       // Account does not exist
@@ -29,10 +28,10 @@ export class TokenAccountFinder {
     }
     const unfilteredEvents =
       await this.contract.getNewAccountEventsFromBlock(block);
-    const bigintPreNullifierHash = scalarToBigint(preNullifierHash);
+    const bigintPreNullifier = scalarToBigint(preNullifier);
 
     const events = unfilteredEvents.filter((event) => {
-      return event.idHash === bigintPreNullifierHash;
+      return event.prenullifier === bigintPreNullifier;
     });
 
     if (events.length != 1) {

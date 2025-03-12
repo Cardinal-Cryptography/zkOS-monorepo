@@ -162,7 +162,6 @@ mod tests {
             events,
             vec![ShielderContractEvents::Deposit(Deposit {
                 contractVersion: FixedBytes([0, 1, 0]),
-                idHiding: calldata.id_hiding,
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(amount),
                 newNote: calldata.new_note,
@@ -324,11 +323,6 @@ mod tests {
         assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.new_note, &mut swap_value);
 
-        mem::swap(&mut calldata.id_hiding, &mut swap_value);
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-        assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
-        mem::swap(&mut calldata.id_hiding, &mut swap_value);
-
         assert!(actor_balance_decreased_by(
             &deployment,
             token,
@@ -351,7 +345,6 @@ mod tests {
             token: token.token(&deployment),
             amount: U256::from(10),
             expected_contract_version: FixedBytes([0, 1, 0]),
-            id_hiding: U256::ZERO,
             old_nullifier_hash: U256::ZERO,
             new_note: U256::ZERO,
             merkle_root: U256::ZERO,

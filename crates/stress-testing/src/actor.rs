@@ -59,6 +59,7 @@ impl Actor {
                 &NewAccountCallExtra {
                     anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
                     encryption_salt: [Default::default(); FIELD_BITS],
+                    mac_salt: U256::ZERO,
                 },
             )
             .try_into()

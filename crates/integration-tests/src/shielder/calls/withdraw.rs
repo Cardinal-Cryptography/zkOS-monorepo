@@ -196,7 +196,6 @@ mod tests {
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 1, 0]),
-                idHiding: withdraw_calldata.id_hiding,
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -260,7 +259,6 @@ mod tests {
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 1, 0]),
-                idHiding: withdraw_calldata.id_hiding,
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -454,7 +452,6 @@ mod tests {
         let calldata = WithdrawCall {
             expected_contract_version: FixedBytes([9, 8, 7]),
             token: token.token(&deployment),
-            id_hiding: U256::ZERO,
             withdrawal_address: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayer_fee: U256::ZERO,
@@ -494,7 +491,6 @@ mod tests {
         let calldata = WithdrawCall {
             expected_contract_version: FixedBytes([0, 1, 0]),
             token: token.token(&deployment),
-            id_hiding: U256::ZERO,
             withdrawal_address: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayer_fee: U256::ZERO,
@@ -587,11 +583,6 @@ mod tests {
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
         assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.new_note, &mut swap_value);
-
-        mem::swap(&mut calldata.id_hiding, &mut swap_value);
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-        assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
-        mem::swap(&mut calldata.id_hiding, &mut swap_value);
 
         assert!(actor_balance_decreased_by(
             &deployment,

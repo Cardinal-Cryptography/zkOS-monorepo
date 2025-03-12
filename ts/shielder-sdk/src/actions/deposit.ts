@@ -8,7 +8,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Calldata } from "./types";
-import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
@@ -27,16 +27,10 @@ export interface DepositCalldata extends Calldata {
 
 export class DepositAction extends NoteAction {
   private contract: IContract;
-  private nonceGenerator: INonceGenerator;
 
-  constructor(
-    contract: IContract,
-    cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator
-  ) {
+  constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
     this.contract = contract;
-    this.nonceGenerator = nonceGenerator;
   }
 
   /**
@@ -68,7 +62,6 @@ export class DepositAction extends NoteAction {
 
     const tokenAddress = getAddressByToken(state.token);
 
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -81,7 +74,6 @@ export class DepositAction extends NoteAction {
       );
     return {
       id: state.id,
-      nonce,
       nullifierOld,
       trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
@@ -154,7 +146,6 @@ export class DepositAction extends NoteAction {
         ? await this.contract.depositNativeCalldata(
             calldata.expectedContractVersion,
             from,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -167,7 +158,6 @@ export class DepositAction extends NoteAction {
             calldata.expectedContractVersion,
             calldata.token.address,
             from,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),

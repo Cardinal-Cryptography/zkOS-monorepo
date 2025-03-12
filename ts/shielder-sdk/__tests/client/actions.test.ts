@@ -55,7 +55,7 @@ describe("ShielderActions", () => {
     calldata: {
       pubInputs: {
         hNote: Scalar.fromBigint(0n),
-        hId: Scalar.fromBigint(0n),
+        prenullifier: Scalar.fromBigint(0n),
         initialDeposit: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
@@ -63,7 +63,9 @@ describe("ShielderActions", () => {
         symKeyEncryption1X: Scalar.fromBigint(0n),
         symKeyEncryption1Y: Scalar.fromBigint(0n),
         symKeyEncryption2X: Scalar.fromBigint(0n),
-        symKeyEncryption2Y: Scalar.fromBigint(0n)
+        symKeyEncryption2Y: Scalar.fromBigint(0n),
+        macSalt: Scalar.fromBigint(0n),
+        macCommitment: Scalar.fromBigint(0n)
       },
       proof: new Uint8Array()
     },
@@ -76,7 +78,6 @@ describe("ShielderActions", () => {
   const createMockDepositCalldata = (): DepositCalldata => ({
     calldata: {
       pubInputs: {
-        idHiding: Scalar.fromBigint(0n),
         merkleRoot: Scalar.fromBigint(0n),
         hNullifierOld: Scalar.fromBigint(0n),
         hNoteNew: Scalar.fromBigint(0n),
@@ -98,7 +99,6 @@ describe("ShielderActions", () => {
   ): WithdrawCalldata => ({
     calldata: {
       pubInputs: {
-        idHiding: Scalar.fromBigint(0n),
         merkleRoot: Scalar.fromBigint(0n),
         hNullifierOld: Scalar.fromBigint(0n),
         hNoteNew: Scalar.fromBigint(0n),

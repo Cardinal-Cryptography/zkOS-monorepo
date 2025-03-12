@@ -36,7 +36,6 @@ export class DepositCircuit
     return Promise.resolve(
       this.wasmCircuit.prove(
         values.id.bytes,
-        values.nonce.bytes,
         values.nullifierOld.bytes,
         values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
@@ -61,7 +60,6 @@ export class DepositCircuit
     }
     const pubInputsBytes = this.wasmModule.deposit_pub_inputs(
       values.id.bytes,
-      values.nonce.bytes,
       values.nullifierOld.bytes,
       values.trapdoorOld.bytes,
       values.accountBalanceOld.bytes,
@@ -73,7 +71,6 @@ export class DepositCircuit
       values.macSalt.bytes
     );
     return Promise.resolve({
-      idHiding: new Scalar(pubInputsBytes.id_hiding),
       merkleRoot: new Scalar(pubInputsBytes.merkle_root),
       hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
       hNoteNew: new Scalar(pubInputsBytes.h_note_new),
@@ -94,7 +91,6 @@ export class DepositCircuit
     try {
       await Promise.resolve(
         this.wasmCircuit.verify(
-          pubInputs.idHiding.bytes,
           pubInputs.merkleRoot.bytes,
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,

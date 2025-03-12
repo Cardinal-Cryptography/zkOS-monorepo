@@ -145,17 +145,17 @@ pub struct CLIConfig {
         long,
         help = "Token pricing configuration for tokens that are qualified as a fee token.",
         long_help = "Token pricing configuration for tokens that are qualified as a fee token. \
-            If not provided, the value from the environment variable `{TOKEN_PRICING_ENV}` will be used. \
+            If not provided, the value from the environment variable `{TOKEN_CONFIG_ENV}` will be used. \
             If that is not set, assumed to be empty. Parsed as JSON: \
             \
             This example configures a token to have a constant price of 12.3 USD: \
-            [{\"token\":\"Native\", \"pricing\":{\"Fixed\":{\"price\":\"12.3\"}}}] \
+            [{\"coin\":\"Eth\", \"kind\":\"Native\", \"pricing\":{\"Fixed\":{\"price\":\"12.3\"}}}] \
             \
             This example configure a token to use the `Usdc` price feed for its pricing: \
-            [{\"token\":{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"},\"pricing\":{\"Feed\":{\"price_feed_coin\":\"Usdc\"}}}]
+            [{\"coin\":\"Usdc\", \"kind\":{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"},\"pricing\":\"Feed\"}]
             "
     )]
-    pub token_pricing: Option<String>,
+    pub token_config: Option<String>,
 
     #[clap(
         long,

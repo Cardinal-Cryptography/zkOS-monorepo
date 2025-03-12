@@ -30,6 +30,7 @@ pub fn prepare_call(
         &NewAccountCallExtra {
             anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
             encryption_salt: [true; FIELD_BITS],
+            mac_salt: U256::ZERO,
         },
     )
 }
@@ -150,7 +151,7 @@ mod tests {
             events,
             vec![ShielderContractEvents::NewAccount(NewAccount {
                 contractVersion: FixedBytes([0, 1, 0]),
-                idHash: calldata.id_hash,
+                prenullifier: calldata.prenullifier,
                 tokenAddress: token.address(&mut deployment),
                 amount,
                 newNote: calldata.new_note,
@@ -220,10 +221,10 @@ mod tests {
         );
         let mut swap_value = U256::from_str(Fr::MODULUS).unwrap();
 
-        mem::swap(&mut calldata.id_hash, &mut swap_value);
+        mem::swap(&mut calldata.prenullifier, &mut swap_value);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
         assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
-        mem::swap(&mut calldata.id_hash, &mut swap_value);
+        mem::swap(&mut calldata.prenullifier, &mut swap_value);
 
         mem::swap(&mut calldata.new_note, &mut swap_value);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -284,7 +285,7 @@ mod tests {
         let mut shielder_account = ShielderAccount::default();
         let amount = U256::from(10);
         let mut calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-        calldata.id_hash = calldata.id_hash.wrapping_add(U256::from(1));
+        calldata.prenullifier = calldata.prenullifier.wrapping_add(U256::from(1));
 
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
