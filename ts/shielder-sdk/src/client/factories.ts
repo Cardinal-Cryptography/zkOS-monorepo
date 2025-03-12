@@ -1,7 +1,6 @@
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
-import { INonceGenerator } from "@/actions/utils";
 import { Contract, IContract } from "@/chain/contract";
 import { IRelayer, Relayer } from "@/chain/relayer";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
@@ -168,10 +167,7 @@ function createActionComponents(config: ShielderComponentsConfig) {
     config.contract,
     config.cryptoClient
   );
-  const depositAction = new DepositAction(
-    config.contract,
-    config.cryptoClient,
-  );
+  const depositAction = new DepositAction(config.contract, config.cryptoClient);
   const withdrawAction = new WithdrawAction(
     config.contract,
     config.relayer,
