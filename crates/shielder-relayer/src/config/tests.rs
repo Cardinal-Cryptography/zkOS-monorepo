@@ -40,9 +40,7 @@ fn config_resolution() {
         TokenConfig {
             coin: Coin::Eth,
             kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
-            pricing: Pricing::Feed {
-                price_feed_coin: Coin::Eth,
-            },
+            pricing: Pricing::Feed,
         },
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
@@ -65,13 +63,13 @@ fn config_resolution() {
             native_token,                                     // from env
         },
         operations: OperationalConfig {
-            balance_monitor_interval_secs,  // from env
-            nonce_policy,                   // default
-            dry_running,                    // from CLI
-            relay_count_for_recharge,       // default
-            token_config,                   // from env
-            price_feed_refresh_interval,    // default
-            price_feed_validity,            // from CLI
+            balance_monitor_interval_secs, // from env
+            nonce_policy,                  // default
+            dry_running,                   // from CLI
+            relay_count_for_recharge,      // default
+            token_config,                  // from env
+            price_feed_refresh_interval,   // default
+            price_feed_validity,           // from CLI
         },
     };
 
@@ -118,7 +116,7 @@ fn config_resolution() {
                 {
                     \"coin\":\"Eth\",
                     \"kind\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
-                    \"pricing\":{\"Feed\":{\"price_feed_coin\":\"Eth\"}}
+                    \"pricing\":\"Feed\"
                 }
             ]",
         );

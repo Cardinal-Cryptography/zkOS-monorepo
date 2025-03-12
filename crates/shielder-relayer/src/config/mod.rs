@@ -61,7 +61,7 @@ pub struct ChainConfig {
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Pricing {
     Fixed { price: Decimal },
-    Feed { price_feed_coin: Coin },
+    Feed,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]

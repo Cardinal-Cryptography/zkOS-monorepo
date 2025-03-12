@@ -15,7 +15,7 @@ use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
-    config::Pricing,
+    config::{Pricing, TokenConfig},
     metrics::WITHDRAW_FAILURE,
     price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
@@ -159,16 +159,14 @@ fn check_erc20_fee(
     let fee_token_config = app_state
         .token_config
         .iter()
-        .find(|x| x.kind == TokenKind::ERC20(fee_token_address))
-        .map(|p| &p.pricing);
+        .find(|x| x.kind == TokenKind::ERC20(fee_token_address));
 
-    let native_pricing = app_state
+    let native_config = app_state
         .token_config
         .iter()
-        .find(|x| x.kind == TokenKind::Native)
-        .map(|p| &p.pricing);
+        .find(|x| x.kind == TokenKind::Native);
 
-    match (fee_token_config, native_pricing) {
+    match (fee_token_config, native_config) {
         (None, _) => {
             request_trace.record_incorrect_token_fee(fee_token_address);
             Err(bad_request(&format!(
@@ -179,9 +177,9 @@ fn check_erc20_fee(
             error!("MISSING NATIVE TOKEN PRICING!");
             Err(server_error("Server is missing native token pricing."))
         }
-        (Some(fee_token_config), Some(native_pricing)) => {
+        (Some(fee_token_config), Some(native_config)) => {
             let ratio =
-                price_relative_to_native(&app_state.prices, fee_token_config, native_pricing)
+                price_relative_to_native(&app_state.prices, fee_token_config, native_config)
                     .ok_or_else(|| {
                         temporary_failure("Verification failed temporarily, try again later.")
                     })?;
@@ -199,15 +197,15 @@ fn check_erc20_fee(
 
 fn price_relative_to_native(
     prices: &Prices,
-    fee_token_config: &Pricing,
-    native_pricing: &Pricing,
+    fee_token_config: &TokenConfig,
+    native_config: &TokenConfig,
 ) -> Option<Decimal> {
-    let resolve_price = |pricing: &Pricing| match pricing {
-        Pricing::Fixed { price } => Some(*price),
-        Pricing::Feed { price_feed_coin } => prices.price(*price_feed_coin),
+    let resolve_price = |config: &TokenConfig| match config.pricing {
+        Pricing::Fixed { price } => Some(price),
+        Pricing::Feed => prices.price(config.coin),
     };
     let fee_token_price = resolve_price(fee_token_config)?;
-    let native_price = resolve_price(native_pricing)?;
+    let native_price = resolve_price(native_config)?;
 
     Some(fee_token_price / native_price)
 }

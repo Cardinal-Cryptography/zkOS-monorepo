@@ -97,9 +97,7 @@ mod erc20_fee {
         TokenConfig {
             coin: Coin::Eth,
             kind: TokenKind::ERC20(ERC20_ADDRESS),
-            pricing: Pricing::Feed {
-                price_feed_coin: Coin::Eth,
-            },
+            pricing: Pricing::Feed,
         }
     }
 
@@ -107,9 +105,7 @@ mod erc20_fee {
         TokenConfig {
             coin: Coin::Azero,
             kind: TokenKind::Native,
-            pricing: Pricing::Feed {
-                price_feed_coin: Coin::Azero,
-            },
+            pricing: Pricing::Feed,
         }
     }
 
@@ -247,9 +243,7 @@ mod erc20_fee {
                 TokenConfig {
                     coin: Coin::Btc,
                     kind: TokenKind::Native,
-                    pricing: Pricing::Feed {
-                        price_feed_coin: Coin::Btc,
-                    },
+                    pricing: Pricing::Feed,
                 },
             ],
             ..app_state()
