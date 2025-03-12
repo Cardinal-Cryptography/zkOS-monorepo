@@ -257,7 +257,7 @@ contract Shielder is
         address tokenAddress,
         uint256 amount,
         uint256 newNote,
-        uint256 idHash,
+        uint256 prenullifier,
         uint256 symKeyEncryptionC1X,
         uint256 symKeyEncryptionC1Y,
         uint256 symKeyEncryptionC2X,
@@ -269,7 +269,7 @@ contract Shielder is
         private
         restrictContractVersion(expectedContractVersion)
         fieldElement(newNote)
-        fieldElement(idHash)
+        fieldElement(prenullifier)
         fieldElement(symKeyEncryptionC1X)
         fieldElement(symKeyEncryptionC1Y)
         fieldElement(symKeyEncryptionC2X)
@@ -278,11 +278,11 @@ contract Shielder is
     {
         if (amount > depositLimit()) revert AmountOverDepositLimit();
 
-        if (nullifiers(idHash) != 0) revert DuplicatedNullifier();
+        if (nullifiers(prenullifier) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](12);
         publicInputs[0] = newNote;
-        publicInputs[1] = idHash;
+        publicInputs[1] = prenullifier;
         publicInputs[2] = amount;
         publicInputs[3] = addressToUInt256(tokenAddress);
 
@@ -303,7 +303,7 @@ contract Shielder is
         if (!success) revert NewAccountVerificationFailed();
 
         uint256 newNoteIndex = _addNote(newNote);
-        _registerNullifier(idHash);
+        _registerNullifier(prenullifier);
 
         return newNoteIndex;
     }
