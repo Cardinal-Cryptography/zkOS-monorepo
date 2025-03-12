@@ -55,7 +55,6 @@ export class Relayer implements IRelayer {
     expectedContractVersion: `0x${string}`,
     token: Token,
     feeAmount: bigint,
-    idHiding: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -75,7 +74,6 @@ export class Relayer implements IRelayer {
         body: JSON.stringify(
           {
             expected_contract_version: expectedContractVersion,
-            id_hiding: idHiding,
             amount,
             withdraw_address: withdrawalAddress,
             merkle_root: merkleRoot,
