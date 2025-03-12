@@ -8,7 +8,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Calldata } from "./types";
-import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
@@ -28,10 +28,7 @@ export interface DepositCalldata extends Calldata {
 export class DepositAction extends NoteAction {
   private contract: IContract;
 
-  constructor(
-    contract: IContract,
-    cryptoClient: CryptoClient
-  ) {
+  constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
     this.contract = contract;
   }

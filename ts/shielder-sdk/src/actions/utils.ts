@@ -81,7 +81,3 @@ export abstract class NoteAction {
     return await this.cryptoClient.converter.hex32ToScalar(random32BytesHex);
   }
 }
-
-export interface INonceGenerator {
-  randomIdHidingNonce(): Scalar;
-}
