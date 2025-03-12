@@ -72,7 +72,7 @@ describe("TokenAccountFinder", () => {
 
       // Mock event
       const mockEvent = {
-        idHash: 456n, // Same as preNullifierHash as bigint
+        prenullifier: 456n, // Same as preNullifierHash as bigint
         tokenAddress
       };
 
@@ -160,14 +160,14 @@ describe("TokenAccountFinder", () => {
       const tokenAddress2 =
         "0x2222222222222222222222222222222222222222" as `0x${string}`;
 
-      // Mock events with the same idHash
+      // Mock events with the same prenullifier
       const mockEvents = [
         {
-          idHash: 456n, // Same as preNullifierHash as bigint
+          prenullifier: 456n, // Same as preNullifierHash as bigint
           tokenAddress: tokenAddress1
         },
         {
-          idHash: 456n, // Same as preNullifierHash as bigint
+          prenullifier: 456n, // Same as preNullifierHash as bigint
           tokenAddress: tokenAddress2
         }
       ];
@@ -190,7 +190,7 @@ describe("TokenAccountFinder", () => {
       expect(mockGetNewAccountEventsFromBlock).toHaveBeenCalledWith(block);
     });
 
-    it("should filter events by idHash", async () => {
+    it("should filter events by prenullifier", async () => {
       // Mock data
       const accountIndex = 1;
       const preNullifier = Scalar.fromBigint(123n);
@@ -202,14 +202,14 @@ describe("TokenAccountFinder", () => {
         "0x2222222222222222222222222222222222222222" as `0x${string}`;
       const mockToken: Token = erc20Token(tokenAddress1);
 
-      // Mock events with different idHashes
+      // Mock events with different prenullifier
       const mockEvents = [
         {
-          idHash: 456n, // Matches preNullifierHash
+          prenullifier: 456n, // Matches preNullifier
           tokenAddress: tokenAddress1
         },
         {
-          idHash: 789n, // Different idHash
+          prenullifier: 789n, // Different prenullifier
           tokenAddress: tokenAddress2
         }
       ];

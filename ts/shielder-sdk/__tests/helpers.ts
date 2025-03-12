@@ -153,6 +153,7 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
   ): Promise<NewAccountPubInputs<Scalar>> {
     return Promise.resolve({
       hNote: Scalar.fromBigint(0n),
+      prenullifier: Scalar.fromBigint(0n),
       initialDeposit: Scalar.fromBigint(0n),
       tokenAddress: Scalar.fromBigint(0n),
       anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
