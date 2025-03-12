@@ -12,11 +12,11 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    Coin, FeeToken, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
+    Coin, TokenKind, BALANCE_MONITOR_INTERVAL_SECS_ENV, DRY_RUNNING_ENV, FEE_DESTINATION_KEY_ENV,
     LOGGING_FORMAT_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, NONCE_POLICY_ENV,
     PRICE_FEED_REFRESH_INTERVAL_ENV, PRICE_FEED_VALIDITY_ENV, RELAYER_HOST_ENV,
     RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV,
-    RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_PRICING_ENV,
+    RELAY_COUNT_FOR_RECHARGE_ENV, RELAY_GAS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_CONFIG_ENV,
     TOTAL_FEE_ENV,
 };
 
@@ -61,12 +61,13 @@ pub struct ChainConfig {
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub enum Pricing {
     Fixed { price: Decimal },
-    Feed { price_feed_coin: Coin },
+    Feed,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct TokenPricingConfig {
-    pub token: FeeToken,
+pub struct TokenConfig {
+    pub coin: Coin,
+    pub kind: TokenKind,
     pub pricing: Pricing,
 }
 
@@ -76,7 +77,7 @@ pub struct OperationalConfig {
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
-    pub token_pricing: Vec<TokenPricingConfig>,
+    pub token_config: Vec<TokenConfig>,
     pub price_feed_validity: u64,
     pub price_feed_refresh_interval: u64,
 }
@@ -117,7 +118,7 @@ fn resolve_config_from_cli_config(
         relay_count_for_recharge,
         total_fee,
         relay_gas,
-        token_pricing,
+        token_config,
         price_feed_validity,
         price_feed_refresh_interval,
         native_token,
@@ -162,10 +163,10 @@ fn resolve_config_from_cli_config(
         native_token: resolve_value(native_token, NATIVE_TOKEN_ENV, None),
     };
 
-    let token_pricing = token_pricing
-        .or_else(|| std::env::var(TOKEN_PRICING_ENV).ok())
+    let token_config = token_config
+        .or_else(|| std::env::var(TOKEN_CONFIG_ENV).ok())
         .unwrap_or_else(|| "[]".to_string());
-    let token_pricing = serde_json::from_str(&token_pricing).expect("Invalid token pricing");
+    let token_config = serde_json::from_str(&token_config).expect("Invalid token pricing");
 
     let operational_config = OperationalConfig {
         balance_monitor_interval_secs: resolve_value(
@@ -180,7 +181,7 @@ fn resolve_config_from_cli_config(
             RELAY_COUNT_FOR_RECHARGE_ENV,
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
-        token_pricing,
+        token_config,
         price_feed_validity: resolve_value(
             price_feed_validity,
             PRICE_FEED_VALIDITY_ENV,

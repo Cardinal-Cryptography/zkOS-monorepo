@@ -55,7 +55,6 @@ pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
     app_state.account.register_action(ShielderAction::deposit(
         amount,
         deposit_event.newNoteIndex,
-        deposit_event.idHiding,
         tx_hash,
     ));
     info!("Deposited {amount} tokens");

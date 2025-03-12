@@ -25,12 +25,12 @@ export class ChainStateTransition {
     transaction: ShielderTransaction;
   } | null> {
     const nullifier = await this.getNullifier(state);
-    const nullifierHash = await this.cryptoClient.hasher.poseidonHash([
-      nullifier
-    ]);
+    const nullifierHashOrPrenullifier = nullifier
+      ? await this.cryptoClient.hasher.poseidonHash([nullifier]) // nullifier hash
+      : await this.cryptoClient.hasher.poseidonHash([state.id]); // prenullifier
 
     const block = await this.contract.nullifierBlock(
-      scalarToBigint(nullifierHash)
+      scalarToBigint(nullifierHashOrPrenullifier)
     );
     if (!block) {
       /// this is the last shielder transaction
@@ -89,8 +89,7 @@ export class ChainStateTransition {
         )
       ).nullifier;
     }
-    // pre-nullifier
-    return state.id;
+    return null;
   }
 }
 

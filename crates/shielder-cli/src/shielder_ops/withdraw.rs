@@ -11,7 +11,7 @@ use shielder_account::{
 use shielder_contract::{
     events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
-use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery, RelayResponse};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -55,7 +55,6 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
     app_state.account.register_action(ShielderAction::withdraw(
         amount,
         withdraw_event.newNoteIndex,
-        withdraw_event.idHiding,
         tx_hash,
         to,
     ));
@@ -148,14 +147,13 @@ async fn prepare_relayer_query(
 
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
-        id_hiding: calldata.idHiding,
         amount,
         withdraw_address: to,
         merkle_root,
         nullifier_hash: calldata.oldNullifierHash,
         new_note: calldata.newNote,
         proof: calldata.proof,
-        fee_token: FeeToken::Native,
+        fee_token: TokenKind::Native,
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,

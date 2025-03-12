@@ -49,7 +49,7 @@ export type NoteEvent = {
 };
 
 export type NewAccountEvent = {
-  idHash: bigint;
+  prenullifier: bigint;
   tokenAddress: Address;
 };
 
@@ -77,12 +77,14 @@ export type IContract = {
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => Promise<CalldataWithGas>;
   newAccountTokenCalldata: (
@@ -90,18 +92,19 @@ export type IContract = {
     tokenAddress: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => Promise<CalldataWithGas>;
   depositNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -114,7 +117,6 @@ export type IContract = {
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -129,7 +131,6 @@ export type IContract = {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -145,7 +146,6 @@ export type IContract = {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -187,22 +187,26 @@ export class Contract implements IContract {
     expectedContractVersion: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
       newNote,
-      idHash,
+      prenullifier,
       symKeyEncryption1X,
       symKeyEncryption1Y,
       symKeyEncryption2X,
       symKeyEncryption2Y,
+      macSalt,
+      macCommitment,
       bytesToHex(proof)
     ] as const;
     const gas = safe_gas(
@@ -235,12 +239,14 @@ export class Contract implements IContract {
     tokenAddress: `0x${string}`,
     from: Address,
     newNote: bigint,
-    idHash: bigint,
+    prenullifier: bigint,
     amount: bigint,
     symKeyEncryption1X: bigint,
     symKeyEncryption1Y: bigint,
     symKeyEncryption2X: bigint,
     symKeyEncryption2Y: bigint,
+    macSalt: bigint,
+    macCommitment: bigint,
     proof: Uint8Array
   ) => {
     const args = [
@@ -248,11 +254,13 @@ export class Contract implements IContract {
       tokenAddress,
       amount,
       newNote,
-      idHash,
+      prenullifier,
       symKeyEncryption1X,
       symKeyEncryption1Y,
       symKeyEncryption2X,
       symKeyEncryption2Y,
+      macSalt,
+      macCommitment,
       bytesToHex(proof)
     ] as const;
     const gas = safe_gas(
@@ -281,7 +289,6 @@ export class Contract implements IContract {
   depositNativeCalldata = async (
     expectedContractVersion: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -292,7 +299,6 @@ export class Contract implements IContract {
   ) => {
     const args = [
       expectedContractVersion,
-      idHiding,
       oldNoteNullifierHash,
       newNote,
       merkleRoot,
@@ -329,7 +335,6 @@ export class Contract implements IContract {
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
     from: Address,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -342,7 +347,6 @@ export class Contract implements IContract {
       expectedContractVersion,
       tokenAddress,
       amount,
-      idHiding,
       oldNoteNullifierHash,
       newNote,
       merkleRoot,
@@ -379,7 +383,6 @@ export class Contract implements IContract {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -390,7 +393,6 @@ export class Contract implements IContract {
   ) => {
     const args = [
       expectedContractVersion,
-      idHiding,
       amount,
       withdrawalAddress,
       merkleRoot,
@@ -438,7 +440,6 @@ export class Contract implements IContract {
     withdrawalAddress: Address,
     relayerAddress: Address,
     relayerFee: bigint,
-    idHiding: bigint,
     oldNoteNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -449,7 +450,6 @@ export class Contract implements IContract {
   ) => {
     const args = [
       expectedContractVersion,
-      idHiding,
       tokenAddress,
       amount,
       withdrawalAddress,
@@ -558,7 +558,7 @@ export class Contract implements IContract {
     });
     return newAccountEvents.map((event) => {
       return {
-        idHash: event.args.idHash!,
+        prenullifier: event.args.prenullifier!,
         tokenAddress: event.args.tokenAddress!
       };
     });

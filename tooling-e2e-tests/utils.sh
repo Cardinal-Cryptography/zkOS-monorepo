@@ -93,24 +93,27 @@ deploy_erc20_tokens() {
   export TOKEN_CONTRACT_ADDRESSES
 
   # set pricing for relayer
-  TOKEN_PRICING=$(cat <<EOF
+  TOKEN_CONFIG=$(cat <<EOF
   [
     {
-      "token":"Native",
+      "coin": "Eth",
+      "kind":"Native",
       "pricing":{"Fixed":{"price":"1"}}
     },
     {
-      "token":{"ERC20":"${TT1}"},
+      "coin": "Usdc",
+      "kind":{"ERC20":"${TT1}"},
       "pricing":{"Fixed":{"price":"1"}}
     },
     {
-      "token":{"ERC20":"${TT2}"},
+      "coin": "Usdt",
+      "kind":{"ERC20":"${TT2}"},
       "pricing":{"Fixed":{"price":"1"}}
     }
   ]
 EOF
   )
-  export TOKEN_PRICING
+  export TOKEN_CONFIG
 
   log_progress "✅ Tokens deployed"
 }

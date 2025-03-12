@@ -5,7 +5,7 @@ use tokio::{sync::mpsc::channel, time::Duration};
 
 use super::*;
 use crate::{
-    config::{DryRunning, TokenPricingConfig},
+    config::{DryRunning, TokenConfig},
     price_feed::Prices,
     relay::taskmaster::Taskmaster,
 };
@@ -24,7 +24,7 @@ fn app_state() -> AppState {
         node_rpc_url: Default::default(),
         balances: Default::default(),
         fee_destination: Default::default(),
-        token_pricing: Default::default(),
+        token_config: Default::default(),
         signer_addresses: Default::default(),
         relay_gas: Default::default(),
         native_token: Coin::Azero,
@@ -40,7 +40,7 @@ mod native_fee {
     fn too_low_fee_fails() {
         let query = RelayQuery {
             fee_amount: U256::from(80),
-            fee_token: FeeToken::Native,
+            fee_token: TokenKind::Native,
             ..Default::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -52,7 +52,7 @@ mod native_fee {
     fn low_fee_but_within_margin_fails() {
         let query = RelayQuery {
             fee_amount: U256::from(99),
-            fee_token: FeeToken::Native,
+            fee_token: TokenKind::Native,
             ..Default::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -64,7 +64,7 @@ mod native_fee {
     fn exact_fee_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(100),
-            fee_token: FeeToken::Native,
+            fee_token: TokenKind::Native,
             ..Default::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -76,7 +76,7 @@ mod native_fee {
     fn way_too_high_fee_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(1000000),
-            fee_token: FeeToken::Native,
+            fee_token: TokenKind::Native,
             ..Default::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -93,35 +93,33 @@ mod erc20_fee {
 
     const ERC20_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
 
-    fn erc20_pricing() -> TokenPricingConfig {
-        TokenPricingConfig {
-            token: FeeToken::ERC20(ERC20_ADDRESS),
-            pricing: Pricing::Feed {
-                price_feed_coin: Coin::Eth,
-            },
+    fn erc20_pricing() -> TokenConfig {
+        TokenConfig {
+            coin: Coin::Eth,
+            kind: TokenKind::ERC20(ERC20_ADDRESS),
+            pricing: Pricing::Feed,
         }
     }
 
-    fn native_pricing() -> TokenPricingConfig {
-        TokenPricingConfig {
-            token: FeeToken::Native,
-            pricing: Pricing::Feed {
-                price_feed_coin: Coin::Azero,
-            },
+    fn native_pricing() -> TokenConfig {
+        TokenConfig {
+            coin: Coin::Azero,
+            kind: TokenKind::Native,
+            pricing: Pricing::Feed,
         }
     }
 
     #[test]
     fn either_pricing_is_not_set_fails() {
         let mut app_state = AppState {
-            token_pricing: vec![],
+            token_config: vec![],
             ..app_state()
         };
         app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
         app_state.prices.set_price(Coin::Azero, Decimal::new(4, 0));
 
         let query = RelayQuery {
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             fee_amount: U256::from(100000000),
             ..RelayQuery::default()
         };
@@ -131,11 +129,11 @@ mod erc20_fee {
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
 
         // When native is not set.
-        app_state.token_pricing = vec![erc20_pricing()];
+        app_state.token_config = vec![erc20_pricing()];
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
 
         // When fee token is not set.
-        app_state.token_pricing = vec![native_pricing()];
+        app_state.token_config = vec![native_pricing()];
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
     }
 
@@ -145,7 +143,7 @@ mod erc20_fee {
     ///   - AZERO price is $3
     fn app_state_with_pricing() -> AppState {
         let app_state = AppState {
-            token_pricing: vec![native_pricing(), erc20_pricing()],
+            token_config: vec![native_pricing(), erc20_pricing()],
             ..app_state()
         };
         app_state.prices.set_price(Coin::Eth, Decimal::new(15, 1));
@@ -157,7 +155,7 @@ mod erc20_fee {
     fn exact_fee_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(200), // total fee is AZERO 100, which is worth $300
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -170,7 +168,7 @@ mod erc20_fee {
     fn too_low_fee_fails() {
         let query = RelayQuery {
             fee_amount: U256::from(20), // total fee is AZERO 100, which is worth $300
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -183,7 +181,7 @@ mod erc20_fee {
     fn low_fee_but_within_margin_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(199), // total fee is AZERO 100, which is worth $300
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -196,7 +194,7 @@ mod erc20_fee {
     fn way_too_high_fee_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(200000),
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -209,7 +207,7 @@ mod erc20_fee {
     fn unknown_fee_token_fails() {
         let query = RelayQuery {
             fee_amount: U256::from(200_000_000),
-            fee_token: FeeToken::ERC20(address!("2222222222222222222222222222222222222222")),
+            fee_token: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -223,11 +221,11 @@ mod erc20_fee {
         let app_state = app_state();
         app_state.prices.set_price(Coin::Eth, Decimal::new(15, 1));
         // there is no way of checking AZERO price (we don't configure background
-        // price fetching nor we set the price manually)
+        // price fetching, nor we set the price manually)
 
         let query = RelayQuery {
             fee_amount: U256::from(200),
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -240,13 +238,12 @@ mod erc20_fee {
     fn we_dont_hardcode_native_to_azero() {
         let app_state = AppState {
             native_token: Coin::Btc,
-            token_pricing: vec![
+            token_config: vec![
                 erc20_pricing(),
-                TokenPricingConfig {
-                    token: FeeToken::Native,
-                    pricing: Pricing::Feed {
-                        price_feed_coin: Coin::Btc,
-                    },
+                TokenConfig {
+                    coin: Coin::Btc,
+                    kind: TokenKind::Native,
+                    pricing: Pricing::Feed,
                 },
             ],
             ..app_state()
@@ -256,7 +253,7 @@ mod erc20_fee {
 
         let query = RelayQuery {
             fee_amount: U256::from(100),
-            fee_token: FeeToken::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
             ..RelayQuery::default()
         };
 

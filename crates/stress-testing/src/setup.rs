@@ -81,7 +81,6 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
         actor.account.register_action(ShielderAction::new_account(
             shielded_amount,
             new_account_event.newNoteIndex,
-            new_account_event.idHash,
             tx_hash,
         ));
 

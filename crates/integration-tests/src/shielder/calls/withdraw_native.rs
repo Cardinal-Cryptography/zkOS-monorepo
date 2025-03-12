@@ -172,7 +172,6 @@ mod tests {
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 1, 0]),
-                idHiding: withdraw_calldata.idHiding,
                 tokenAddress: Address::ZERO,
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -222,7 +221,6 @@ mod tests {
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: FixedBytes([0, 1, 0]),
-                idHiding: withdraw_calldata.idHiding,
                 tokenAddress: Address::ZERO,
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -369,7 +367,6 @@ mod tests {
 
         let calldata = withdrawNativeCall {
             expectedContractVersion: FixedBytes([9, 8, 7]),
-            idHiding: U256::ZERO,
             withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayerFee: U256::ZERO,
@@ -402,7 +399,6 @@ mod tests {
 
         let calldata = withdrawNativeCall {
             expectedContractVersion: FixedBytes([0, 1, 0]),
-            idHiding: U256::ZERO,
             withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
             relayerFee: U256::ZERO,
@@ -475,11 +471,6 @@ mod tests {
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
         assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.newNote, &mut swap_value);
-
-        mem::swap(&mut calldata.idHiding, &mut swap_value);
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
-        mem::swap(&mut calldata.idHiding, &mut swap_value);
 
         assert!(actor_balance_decreased_by(&deployment, U256::from(20)));
         assert!(recipient_balance_increased_by(&deployment, U256::from(0)));

@@ -10,7 +10,7 @@ use shielder_circuits::{
 use shielder_contract::{
     alloy_primitives::U256, merkle_path::get_current_merkle_path, providers::create_simple_provider,
 };
-use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, TokenKind};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
@@ -128,14 +128,13 @@ async fn prepare_relay_query(
 
     let query = RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
-        id_hiding: calldata.idHiding,
         amount: U256::from(WITHDRAW_AMOUNT),
         withdraw_address: to,
         merkle_root,
         nullifier_hash: calldata.oldNullifierHash,
         new_note: calldata.newNote,
         proof: calldata.proof,
-        fee_token: FeeToken::Native,
+        fee_token: TokenKind::Native,
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,

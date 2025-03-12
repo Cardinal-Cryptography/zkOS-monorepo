@@ -1,7 +1,5 @@
 use alloy_primitives::U256;
-use rand::{rngs::OsRng, Rng};
 use sha3::Digest;
-use shielder_circuits::consts::NONCE_UPPER_LIMIT;
 
 enum Label {
     Nullifier,
@@ -66,14 +64,6 @@ pub fn derive_id(private_key: U256, chain_id: u64, account_nonce: u32) -> U256 {
     hasher.update(chain_id.to_be_bytes());
     hasher.update(account_nonce.to_be_bytes());
     finalize_hash(hasher)
-}
-
-/// Random generation of a nonce for ID hiding.
-pub fn generate_id_hiding_nonce() -> U256 {
-    let mut rng = OsRng;
-    let nonce = rng.gen_range(0..NONCE_UPPER_LIMIT);
-
-    U256::from(nonce)
 }
 
 #[cfg(test)]
