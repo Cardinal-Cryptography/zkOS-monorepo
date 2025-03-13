@@ -80,7 +80,7 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
 
 async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
-        .get(app_state.relayer_rpc_url.fees_url())
+        .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {
             fee_token: TokenKind::Native,
             pocket_money: U256::ZERO,
