@@ -49,9 +49,9 @@ describe("DepositAction", () => {
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
-        .mockResolvedValue("0xmockedCalldata"),
+        .mockResolvedValue({ calldata: "0xmockedCalldata", gas: 123n }),
       getMerklePath: vitest
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([...mockedPath, scalarToBigint(mockedMerkleRoot)])
@@ -206,7 +206,8 @@ describe("DepositAction", () => {
       expect(mockSendTransaction).toHaveBeenCalledWith({
         data: "0xmockedCalldata",
         to: mockAddress,
-        value: amount
+        value: amount,
+        gas: 123n
       });
 
       expect(txHash).toBe("0xtxHash");
@@ -236,7 +237,7 @@ describe("DepositAction", () => {
             macSalt: bigint,
             macCommitment: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
         .mockRejectedValue(mockedErr);
 

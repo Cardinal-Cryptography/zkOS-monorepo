@@ -53,13 +53,9 @@ export class DepositAction extends NoteAction {
 
   async prepareAdvice(
     state: AccountStateMerkleIndexed,
-    amount: bigint
+    amount: bigint,
+    merklePath: Uint8Array
   ): Promise<DepositAdvice<Scalar>> {
-    const lastNodeIndex = state.currentNoteIndex;
-    const [merklePath] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-
     const tokenAddress = getAddressByToken(state.token);
 
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
@@ -97,9 +93,14 @@ export class DepositAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount);
+    const advice = await this.prepareAdvice(state, amount, merklePath);
 
     const proof = await this.cryptoClient.depositCircuit
       .prove(advice)
@@ -167,9 +168,10 @@ export class DepositAction extends NoteAction {
             proof
           );
     const txHash = await sendShielderTransaction({
-      data: encodedCalldata,
+      data: encodedCalldata.calldata,
       to: this.contract.getAddress(),
-      value: calldata.token.type === "native" ? amount : 0n
+      value: calldata.token.type === "native" ? amount : 0n,
+      gas: encodedCalldata.gas
     }).catch((e) => {
       if (e instanceof OutdatedSdkError) {
         throw e;

@@ -66,7 +66,8 @@ describe("ShielderClient", () => {
     } as unknown as Mocked<PublicClient>;
 
     mockAccountRegistry = {
-      getAccountState: vitest.fn()
+      getAccountState: vitest.fn(),
+      getAccountStatesList: vitest.fn()
     } as unknown as Mocked<AccountRegistry>;
 
     mockStateSynchronizer = {
@@ -213,6 +214,20 @@ describe("ShielderClient", () => {
         "syncing",
         "sync"
       );
+    });
+  });
+
+  describe("accountStatesList", () => {
+    it("should return account states list", async () => {
+      const mockAccountStates = [mockState];
+      mockAccountRegistry.getAccountStatesList.mockResolvedValue(
+        mockAccountStates
+      );
+
+      const accountStates = await client.accountStatesList();
+
+      expect(accountStates).toEqual(mockAccountStates);
+      expect(mockAccountRegistry.getAccountStatesList).toHaveBeenCalledTimes(1);
     });
   });
 

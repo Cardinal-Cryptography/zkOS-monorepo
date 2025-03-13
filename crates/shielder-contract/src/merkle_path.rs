@@ -14,7 +14,7 @@ pub async fn get_current_merkle_path(
 }
 
 /// Reorganize a flattened merkle path into a 2D array and a root element.
-fn reorganize_merkle_path(
+pub fn reorganize_merkle_path(
     merkle_path: Vec<U256>,
 ) -> ContractResult<(U256, [[U256; ARITY]; TREE_HEIGHT])> {
     if merkle_path.len() != ARITY * TREE_HEIGHT + 1 {
@@ -23,14 +23,14 @@ fn reorganize_merkle_path(
 
     let root = *merkle_path.last().expect("Empty merkle path");
 
-    let mut result = [[U256::ZERO; ARITY]; TREE_HEIGHT];
+    let mut path = [[U256::ZERO; ARITY]; TREE_HEIGHT];
     for (i, element) in merkle_path
         .into_iter()
         .enumerate()
         .take(ARITY * TREE_HEIGHT)
     {
-        result[i / ARITY][i % ARITY] = element;
+        path[i / ARITY][i % ARITY] = element;
     }
 
-    Ok((root, result))
+    Ok((root, path))
 }

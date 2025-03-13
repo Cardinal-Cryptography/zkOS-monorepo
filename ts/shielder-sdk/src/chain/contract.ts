@@ -10,7 +10,6 @@ import {
 import { BaseError, ContractFunctionRevertedError } from "viem";
 
 import { abi } from "../_generated/abi";
-import { shieldActionGasLimit } from "@/constants";
 import { OutdatedSdkError } from "@/errors";
 
 export async function handleWrongContractVersionError<T>(
@@ -65,6 +64,11 @@ const getShielderContract = (
   });
 };
 
+type CalldataWithGas = {
+  calldata: `0x${string}`;
+  gas: bigint;
+};
+
 export type IContract = {
   getAddress: () => Address;
   getMerklePath: (idx: bigint) => Promise<readonly bigint[]>;
@@ -82,7 +86,7 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     proof: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<CalldataWithGas>;
   newAccountTokenCalldata: (
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
@@ -97,7 +101,7 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     proof: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<CalldataWithGas>;
   depositNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
@@ -108,7 +112,7 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     proof: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<CalldataWithGas>;
   depositTokenCalldata: (
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
@@ -120,7 +124,7 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     proof: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<CalldataWithGas>;
   withdrawNativeCalldata: (
     expectedContractVersion: `0x${string}`,
     from: Address,
@@ -134,7 +138,7 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     proof: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<CalldataWithGas>;
   withdrawTokenCalldata: (
     expectedContractVersion: `0x${string}`,
     tokenAddress: `0x${string}`,
@@ -149,7 +153,7 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     proof: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<CalldataWithGas>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
   getNoteEventsFromBlock: (block: bigint) => Promise<NoteEvent[]>;
   getNewAccountEventsFromBlock: (block: bigint) => Promise<NewAccountEvent[]>;
@@ -193,39 +197,41 @@ export class Contract implements IContract {
     macCommitment: bigint,
     proof: Uint8Array
   ) => {
+    const args = [
+      expectedContractVersion,
+      newNote,
+      prenullifier,
+      symKeyEncryption1X,
+      symKeyEncryption1Y,
+      symKeyEncryption2X,
+      symKeyEncryption2Y,
+      macSalt,
+      macCommitment,
+      bytesToHex(proof)
+    ] as const;
+    const gas = safe_gas(
+      await handleWrongContractVersionError(() =>
+        this.contract.estimateGas.newAccountNative(args, {
+          account: from,
+          value: amount
+        })
+      )
+    );
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.newAccountNative(
-        [
-          expectedContractVersion,
-          newNote,
-          prenullifier,
-          symKeyEncryption1X,
-          symKeyEncryption1Y,
-          symKeyEncryption2X,
-          symKeyEncryption2Y,
-          macSalt,
-          macCommitment,
-          bytesToHex(proof)
-        ],
-        { account: from, value: amount, gas: shieldActionGasLimit }
-      );
+      return this.contract.simulate.newAccountNative(args, {
+        account: from,
+        value: amount,
+        gas
+      });
     });
-    return encodeFunctionData({
-      abi,
-      functionName: "newAccountNative",
-      args: [
-        expectedContractVersion,
-        newNote,
-        prenullifier,
-        symKeyEncryption1X,
-        symKeyEncryption1Y,
-        symKeyEncryption2X,
-        symKeyEncryption2Y,
-        macSalt,
-        macCommitment,
-        bytesToHex(proof)
-      ]
-    });
+    return {
+      calldata: encodeFunctionData({
+        abi,
+        functionName: "newAccountNative",
+        args
+      }),
+      gas
+    };
   };
 
   newAccountTokenCalldata = async (
@@ -243,43 +249,41 @@ export class Contract implements IContract {
     macCommitment: bigint,
     proof: Uint8Array
   ) => {
+    const args = [
+      expectedContractVersion,
+      tokenAddress,
+      amount,
+      newNote,
+      prenullifier,
+      symKeyEncryption1X,
+      symKeyEncryption1Y,
+      symKeyEncryption2X,
+      symKeyEncryption2Y,
+      macSalt,
+      macCommitment,
+      bytesToHex(proof)
+    ] as const;
+    const gas = safe_gas(
+      await handleWrongContractVersionError(() =>
+        this.contract.estimateGas.newAccountERC20(args, {
+          account: from
+        })
+      )
+    );
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.newAccountERC20(
-        [
-          expectedContractVersion,
-          tokenAddress,
-          amount,
-          newNote,
-          prenullifier,
-          symKeyEncryption1X,
-          symKeyEncryption1Y,
-          symKeyEncryption2X,
-          symKeyEncryption2Y,
-          macSalt,
-          macCommitment,
-          bytesToHex(proof)
-        ],
-        { account: from, gas: shieldActionGasLimit }
-      );
+      return this.contract.simulate.newAccountERC20(args, {
+        account: from,
+        gas
+      });
     });
-    return encodeFunctionData({
-      abi,
-      functionName: "newAccountERC20",
-      args: [
-        expectedContractVersion,
-        tokenAddress,
-        amount,
-        newNote,
-        prenullifier,
-        symKeyEncryption1X,
-        symKeyEncryption1Y,
-        symKeyEncryption2X,
-        symKeyEncryption2Y,
-        macSalt,
-        macCommitment,
-        bytesToHex(proof)
-      ]
-    });
+    return {
+      calldata: encodeFunctionData({
+        abi,
+        functionName: "newAccountERC20",
+        args
+      }),
+      gas
+    };
   };
 
   depositNativeCalldata = async (
@@ -293,33 +297,38 @@ export class Contract implements IContract {
     macCommitment: bigint,
     proof: Uint8Array
   ) => {
+    const args = [
+      expectedContractVersion,
+      oldNoteNullifierHash,
+      newNote,
+      merkleRoot,
+      macSalt,
+      macCommitment,
+      bytesToHex(proof)
+    ] as const;
+    const gas = safe_gas(
+      await handleWrongContractVersionError(() =>
+        this.contract.estimateGas.depositNative(args, {
+          account: from,
+          value: amount
+        })
+      )
+    );
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.depositNative(
-        [
-          expectedContractVersion,
-          oldNoteNullifierHash,
-          newNote,
-          merkleRoot,
-          macSalt,
-          macCommitment,
-          bytesToHex(proof)
-        ],
-        { account: from, value: amount, gas: shieldActionGasLimit }
-      );
+      return this.contract.simulate.depositNative(args, {
+        account: from,
+        value: amount,
+        gas
+      });
     });
-    return encodeFunctionData({
-      abi,
-      functionName: "depositNative",
-      args: [
-        expectedContractVersion,
-        oldNoteNullifierHash,
-        newNote,
-        merkleRoot,
-        macSalt,
-        macCommitment,
-        bytesToHex(proof)
-      ]
-    });
+    return {
+      calldata: encodeFunctionData({
+        abi,
+        functionName: "depositNative",
+        args
+      }),
+      gas
+    };
   };
 
   depositTokenCalldata = async (
@@ -334,37 +343,38 @@ export class Contract implements IContract {
     macCommitment: bigint,
     proof: Uint8Array
   ) => {
+    const args = [
+      expectedContractVersion,
+      tokenAddress,
+      amount,
+      oldNoteNullifierHash,
+      newNote,
+      merkleRoot,
+      macSalt,
+      macCommitment,
+      bytesToHex(proof)
+    ] as const;
+    const gas = safe_gas(
+      await handleWrongContractVersionError(() =>
+        this.contract.estimateGas.depositERC20(args, {
+          account: from
+        })
+      )
+    );
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.depositERC20(
-        [
-          expectedContractVersion,
-          tokenAddress,
-          amount,
-          oldNoteNullifierHash,
-          newNote,
-          merkleRoot,
-          macSalt,
-          macCommitment,
-          bytesToHex(proof)
-        ],
-        { account: from, gas: shieldActionGasLimit }
-      );
+      return this.contract.simulate.depositERC20(args, {
+        account: from,
+        gas
+      });
     });
-    return encodeFunctionData({
-      abi,
-      functionName: "depositERC20",
-      args: [
-        expectedContractVersion,
-        tokenAddress,
-        amount,
-        oldNoteNullifierHash,
-        newNote,
-        merkleRoot,
-        macSalt,
-        macCommitment,
-        bytesToHex(proof)
-      ]
-    });
+    return {
+      calldata: encodeFunctionData({
+        abi,
+        functionName: "depositERC20",
+        args
+      }),
+      gas
+    };
   };
 
   withdrawNativeCalldata = async (
@@ -381,41 +391,46 @@ export class Contract implements IContract {
     macCommitment: bigint,
     proof: Uint8Array
   ) => {
+    const args = [
+      expectedContractVersion,
+      amount,
+      withdrawalAddress,
+      merkleRoot,
+      oldNoteNullifierHash,
+      newNote,
+      bytesToHex(proof),
+      relayerAddress,
+      relayerFee,
+      macSalt,
+      macCommitment
+    ] as const;
+    const gas = safe_gas(
+      await handleWrongContractVersionError(() =>
+        this.contract.estimateGas.withdrawNative(args, {
+          account: from
+        })
+      )
+    );
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.withdrawNative(
-        [
-          expectedContractVersion,
-          amount,
-          withdrawalAddress,
-          merkleRoot,
-          oldNoteNullifierHash,
-          newNote,
-          bytesToHex(proof),
-          relayerAddress,
-          relayerFee,
-          macSalt,
-          macCommitment
-        ],
-        { account: from, gas: shieldActionGasLimit }
-      );
+      return this.contract.simulate.withdrawNative(args, {
+        account: from,
+        gas
+      });
     });
-    return encodeFunctionData({
-      abi,
-      functionName: "withdrawNative",
-      args: [
-        expectedContractVersion,
-        amount,
-        withdrawalAddress,
-        merkleRoot,
-        oldNoteNullifierHash,
-        newNote,
-        bytesToHex(proof),
-        relayerAddress,
-        relayerFee,
-        macSalt,
-        macCommitment
-      ]
+    await handleWrongContractVersionError(() => {
+      return this.contract.simulate.withdrawNative(args, {
+        account: from,
+        gas
+      });
     });
+    return {
+      calldata: encodeFunctionData({
+        abi,
+        functionName: "withdrawNative",
+        args
+      }),
+      gas
+    };
   };
 
   withdrawTokenCalldata = async (
@@ -433,43 +448,41 @@ export class Contract implements IContract {
     macCommitment: bigint,
     proof: Uint8Array
   ) => {
+    const args = [
+      expectedContractVersion,
+      tokenAddress,
+      amount,
+      withdrawalAddress,
+      merkleRoot,
+      oldNoteNullifierHash,
+      newNote,
+      bytesToHex(proof),
+      relayerAddress,
+      relayerFee,
+      macSalt,
+      macCommitment
+    ] as const;
+    const gas = safe_gas(
+      await handleWrongContractVersionError(() =>
+        this.contract.estimateGas.withdrawERC20(args, {
+          account: from
+        })
+      )
+    );
     await handleWrongContractVersionError(() => {
-      return this.contract.simulate.withdrawERC20(
-        [
-          expectedContractVersion,
-          tokenAddress,
-          amount,
-          withdrawalAddress,
-          merkleRoot,
-          oldNoteNullifierHash,
-          newNote,
-          bytesToHex(proof),
-          relayerAddress,
-          relayerFee,
-          macSalt,
-          macCommitment
-        ],
-        { account: from, gas: shieldActionGasLimit }
-      );
+      return this.contract.simulate.withdrawERC20(args, {
+        account: from,
+        gas
+      });
     });
-    return encodeFunctionData({
-      abi,
-      functionName: "withdrawERC20",
-      args: [
-        expectedContractVersion,
-        tokenAddress,
-        amount,
-        withdrawalAddress,
-        merkleRoot,
-        oldNoteNullifierHash,
-        newNote,
-        bytesToHex(proof),
-        relayerAddress,
-        relayerFee,
-        macSalt,
-        macCommitment
-      ]
-    });
+    return {
+      calldata: encodeFunctionData({
+        abi,
+        functionName: "withdrawERC20",
+        args
+      }),
+      gas
+    };
   };
 
   /**
@@ -550,4 +563,8 @@ export class Contract implements IContract {
       };
     });
   };
+}
+
+function safe_gas(gas: bigint) {
+  return (gas * 130n) / 100n;
 }

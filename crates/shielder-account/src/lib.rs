@@ -22,8 +22,6 @@ pub struct ShielderAccount {
     /// WARNING: You SHOULD NOT use `Self::Default` in production, as this will set the seed to
     /// zero, which is insecure and might get in conflict with other accounts (similarly set up).
     pub id: U256,
-    /// Salt used to generate the MAC for the account.
-    pub mac_salt: U256,
     /// The nonce used to generate nullifiers and trapdoors. It is incremented after each action.
     pub nonce: u32,
     /// The total current amount of tokens shielded by the account.
@@ -36,7 +34,6 @@ impl Display for ShielderAccount {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ShielderAccount")
             .field("id", &self.id)
-            .field("MAC salt", &self.mac_salt)
             .field("nonce", &self.nonce)
             .field("shielded_amount", &self.shielded_amount)
             .field("current_leaf_index", &self.current_leaf_index())

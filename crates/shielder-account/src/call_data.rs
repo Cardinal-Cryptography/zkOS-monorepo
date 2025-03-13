@@ -261,14 +261,14 @@ impl TryFrom<DepositCall> for depositERC20Call {
     }
 }
 
-pub struct MerkleProof {
-    pub root: U256,
-    pub path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
+pub struct DepositExtra {
+    pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
+    pub mac_salt: U256,
 }
 
 pub enum DepositCallType {}
 impl CallType for DepositCallType {
-    type Extra = MerkleProof;
+    type Extra = DepositExtra;
     type ProverKnowledge = DepositProverKnowledge<Fr>;
 
     type Calldata = DepositCall;
@@ -277,7 +277,7 @@ impl CallType for DepositCallType {
         account: &ShielderAccount,
         token: Token,
         amount: U256,
-        merkle: &Self::Extra,
+        extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
         let ActionSecrets {
             nullifier_old,
@@ -293,11 +293,11 @@ impl CallType for DepositCallType {
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
-            path: map_path_to_field(merkle.path),
+            path: map_path_to_field(extra.merkle_path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
-            mac_salt: u256_to_field(account.mac_salt),
+            mac_salt: u256_to_field(extra.mac_salt),
         }
     }
 
@@ -385,12 +385,13 @@ impl TryFrom<WithdrawCall> for withdrawERC20Call {
 }
 
 pub struct WithdrawExtra {
-    pub merkle_proof: MerkleProof,
+    pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
     pub to: Address,
     pub relayer_address: Address,
     pub relayer_fee: U256,
     pub contract_version: ContractVersion,
     pub chain_id: U256,
+    pub mac_salt: U256,
 }
 
 pub enum WithdrawCallType {}
@@ -428,12 +429,12 @@ impl CallType for WithdrawCallType {
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
-            path: map_path_to_field(extra.merkle_proof.path),
+            path: map_path_to_field(extra.merkle_path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
             commitment: u256_to_field(commitment),
-            mac_salt: u256_to_field(account.mac_salt),
+            mac_salt: u256_to_field(extra.mac_salt),
         }
     }
 

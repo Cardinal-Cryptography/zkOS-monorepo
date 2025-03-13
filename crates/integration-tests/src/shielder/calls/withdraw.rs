@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{MerkleProof, Token, WithdrawCall, WithdrawCallType, WithdrawExtra},
+    call_data::{Token, WithdrawCall, WithdrawCallType, WithdrawExtra},
     ShielderAccount,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
@@ -12,7 +12,7 @@ use crate::{
     shielder::{
         deploy::{Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS},
         invoke_shielder_call,
-        merkle::get_merkle_args,
+        merkle::get_merkle_path,
         CallResult,
     },
     TestToken,
@@ -46,7 +46,7 @@ pub fn prepare_call(
         .expect("No leaf index");
 
     let (params, pk) = deployment.withdraw_proving_params.clone();
-    let (merkle_root, merkle_path) = get_merkle_args(
+    let merkle_path = get_merkle_path(
         deployment.contract_suite.shielder,
         note_index,
         &mut deployment.evm,
@@ -58,10 +58,7 @@ pub fn prepare_call(
         args.token.token(deployment),
         U256::from(args.amount),
         &WithdrawExtra {
-            merkle_proof: MerkleProof {
-                root: merkle_root,
-                path: merkle_path,
-            },
+            merkle_path,
             to: args.withdraw_address,
             relayer_address: args.relayer_address,
             relayer_fee: args.relayer_fee,
@@ -71,6 +68,7 @@ pub fn prepare_call(
                 patch_version: 0,
             },
             chain_id: U256::from(1),
+            mac_salt: U256::ZERO,
         },
     );
 
