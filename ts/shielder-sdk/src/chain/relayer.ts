@@ -121,7 +121,14 @@ export class Relayer implements IRelayer {
     let response;
     try {
       response = await fetch(`${this.url}${feePath}`, {
-        method: "GET"
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fee_token: "Native",
+          pocket_money: "0"
+        })
       });
     } catch (error) {
       throw new Error(`${(error as Error).message}`);

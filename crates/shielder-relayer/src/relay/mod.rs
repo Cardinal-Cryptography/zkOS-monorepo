@@ -9,7 +9,9 @@ use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind};
+use shielder_relayer::{
+    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
+};
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 
@@ -30,7 +32,6 @@ mod taskmaster;
 
 const TASK_QUEUE_SIZE: usize = 1024;
 const OPTIMISTIC_DRY_RUN_THRESHOLD: u32 = 32;
-const RELATIVE_PRICE_DIGITS: u32 = 20;
 const FEE_MARGIN_PERCENT: u32 = 10;
 
 pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) -> impl IntoResponse {
@@ -183,7 +184,8 @@ fn check_erc20_fee(
                         temporary_failure("Verification failed temporarily, try again later.")
                     })?;
 
-            let expected_fee = mul_price(query.fee_amount, ratio)?;
+            let expected_fee =
+                scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
 
             if add_fee_error_margin(expected_fee) < app_state.total_fee {
                 request_trace.record_insufficient_fee(query.fee_amount);
@@ -207,19 +209,6 @@ fn price_relative_to_native(
     let native_price = resolve_price(native_config)?;
 
     Some(fee_token_price / native_price)
-}
-
-fn mul_price(a: U256, b: Decimal) -> Result<U256, Response> {
-    let b = b
-        .round_sf(RELATIVE_PRICE_DIGITS)
-        .ok_or_else(|| internal_server_error("Pricing error"))?;
-    let mantissa: U256 = b
-        .mantissa()
-        .try_into()
-        .map_err(|_| internal_server_error("Pricing error"))?;
-    let scale = U256::pow(U256::from(10), U256::from(b.scale()));
-
-    Ok(a * mantissa / scale)
 }
 
 fn add_fee_error_margin(fee: U256) -> U256 {

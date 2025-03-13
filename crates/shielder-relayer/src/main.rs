@@ -157,7 +157,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let app = Router::new()
         .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
-        .route("/quote_fees", get(quote::quote_fees))
+        .route("/quote_fees", post(quote::quote_fees))
         .route("/fee_address", get(fee_address))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))

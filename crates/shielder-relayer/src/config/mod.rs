@@ -71,6 +71,15 @@ pub struct TokenConfig {
     pub pricing: Pricing,
 }
 
+impl TokenConfig {
+    pub fn token_address(&self) -> Option<Address> {
+        match self.kind {
+            TokenKind::Native => None,
+            TokenKind::ERC20(address) => Some(address),
+        }
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
     pub balance_monitor_interval_secs: u64,

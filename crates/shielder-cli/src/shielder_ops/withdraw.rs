@@ -13,7 +13,7 @@ use shielder_contract::{
     merkle_path::get_current_merkle_path,
     ShielderContract::{withdrawNativeCall, Withdraw},
 };
-use shielder_relayer::{QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
+use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -82,7 +82,11 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
 
 async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
-        .get(app_state.relayer_rpc_url.fees_url())
+        .post(app_state.relayer_rpc_url.fees_url())
+        .json(&QuoteFeeQuery {
+            fee_token: TokenKind::Native,
+            pocket_money: U256::ZERO,
+        })
         .send()
         .await?;
 
@@ -93,7 +97,7 @@ async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
         );
     }
     let quoted_fees = relayer_response.json::<QuoteFeeResponse>().await?;
-    Ok(quoted_fees.total_fee.parse()?)
+    Ok(quoted_fees.total_fee)
 }
 
 async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address> {

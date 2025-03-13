@@ -6,6 +6,7 @@ use axum::{
     Json,
 };
 use clap::ValueEnum;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 use strum_macros::EnumIter;
@@ -56,22 +57,43 @@ impl RelayResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QuoteFeeResponse {
-    /// The fee used as a contract input by the relayer. Decimal string.
-    pub total_fee: String,
-    /// The estimation of a base fee for relay call. Decimal string.
-    pub base_fee: String,
-    /// The estimation of a relay fee for relay call. Decimal string.
-    pub relay_fee: String,
+    // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON
+    /// The fee used as a contract input by the relayer.
+    pub total_fee: U256,
+    /// The estimation of a base fee for relay call.
+    pub base_fee: U256,
+    /// The estimation of a relay fee for relay call.
+    pub relay_fee: U256,
+    // 8< ----------------------------------------------------- >8
+    /// The total relay cost in native token.
+    pub total_cost_native: U256,
+    /// The total relay cost in fee token.
+    pub total_cost_fee_token: U256,
+
+    /// Current gas price (in native token).
+    pub gas_price: U256,
+    /// Gas cost for relay call (in native token).
+    pub gas_cost_native: U256,
+    /// Gas cost for relay call (in fee token).
+    pub gas_cost_fee_token: U256,
+
+    /// The commission for the relayer in native token.
+    pub commission_native: U256,
+    /// The commission for the relayer in fee token.
+    pub commission_fee_token: U256,
+
+    /// Current price of the native token.
+    pub native_token_price: Decimal,
+    /// Current price of the fee token.
+    pub fee_token_price: Decimal,
+    /// Current ratio between the native token and the fee token.
+    pub token_price_ratio: Decimal,
 }
 
-impl QuoteFeeResponse {
-    pub fn from(total_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
-        Json(Self {
-            total_fee: total_fee.to_string(), // convert to decimal string
-            base_fee: base_fee.to_string(),   // convert to decimal string
-            relay_fee: relay_fee.to_string(), // convert to decimal string
-        })
-    }
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct QuoteFeeQuery {
+    pub fee_token: TokenKind,
+    pub pocket_money: U256,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -125,4 +147,15 @@ impl FromStr for Coin {
             _ => Err(()),
         }
     }
+}
+
+pub const RELATIVE_PRICE_DIGITS: u32 = 20;
+
+pub fn scale_u256(a: U256, b: Decimal) -> Result<U256, &'static str> {
+    let b = b
+        .round_sf(RELATIVE_PRICE_DIGITS)
+        .ok_or("Arithmetic error")?;
+    let mantissa: U256 = b.mantissa().try_into().map_err(|_| "Arithmetic error")?;
+    let scale = U256::pow(U256::from(10), U256::from(b.scale()));
+    Ok(a * mantissa / scale)
 }
