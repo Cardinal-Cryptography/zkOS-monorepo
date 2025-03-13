@@ -8,7 +8,8 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
 };
 use shielder_contract::{
-    alloy_primitives::U256, merkle_path::get_current_merkle_path, providers::create_simple_provider,
+    alloy_primitives::U256, merkle_path::get_current_merkle_path,
+    providers::create_simple_provider, ShielderContract::withdrawNativeCall,
 };
 use shielder_relayer::{QuoteFeeResponse, RelayQuery, TokenKind};
 use shielder_setup::version::contract_version;
@@ -107,21 +108,25 @@ async fn prepare_relay_query(
         .get_chain_id()
         .await?;
 
-    let calldata = actor.account.prepare_call::<WithdrawCallType>(
-        params,
-        pk,
-        Token::Native,
-        U256::from(WITHDRAW_AMOUNT),
-        &WithdrawExtra {
-            merkle_path,
-            to,
-            relayer_address: config.relayer_address,
-            relayer_fee,
-            contract_version: contract_version(),
-            chain_id: U256::from(chain_id),
-            mac_salt: U256::ZERO,
-        },
-    );
+    let calldata: withdrawNativeCall = actor
+        .account
+        .prepare_call::<WithdrawCallType>(
+            params,
+            pk,
+            Token::Native,
+            U256::from(WITHDRAW_AMOUNT),
+            &WithdrawExtra {
+                merkle_path,
+                to,
+                relayer_address: config.relayer_address,
+                relayer_fee,
+                contract_version: contract_version(),
+                chain_id: U256::from(chain_id),
+                mac_salt: U256::ZERO,
+            },
+        )
+        .try_into()
+        .unwrap();
 
     let query = RelayQuery {
         expected_contract_version: contract_version().to_bytes(),

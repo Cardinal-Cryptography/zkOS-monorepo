@@ -1,18 +1,20 @@
 use std::str::FromStr;
 
 use alloy_primitives::{Address, U256};
-use alloy_sol_types::{SolCall, SolEventInterface, SolInterface};
+use alloy_sol_types::{SolCall, SolEventInterface};
+use call_errors::{decode_call_errors, ShielderCallErrors};
 use deploy::{
-    Deployment, ACTOR_ADDRESS, ACTOR_INITIAL_NATIVE_BALANCE, DEPLOYER_ADDRESS, RECIPIENT_ADDRESS,
-    RECIPIENT_INITIAL_NATIVE_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_NATIVE_BALANCE,
+    Deployment, ACTOR_ADDRESS, ACTOR_INITIAL_ERC20_BALANCE, ACTOR_INITIAL_NATIVE_BALANCE,
+    DEPLOYER_ADDRESS, RECIPIENT_ADDRESS, RECIPIENT_INITIAL_ERC20_BALANCE,
+    RECIPIENT_INITIAL_NATIVE_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_ERC20_BALANCE,
+    RELAYER_INITIAL_NATIVE_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
 use shielder_account::call_data::Token;
-use shielder_contract::ShielderContract::{
-    unpauseCall, ShielderContractErrors, ShielderContractEvents,
-};
+use shielder_contract::ShielderContract::{unpauseCall, ShielderContractEvents};
 
 pub mod address_conversion;
+pub mod call_errors;
 pub mod calls;
 pub mod deploy;
 pub mod erc1967proxy;
@@ -31,7 +33,7 @@ fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     .expect("Call failed");
 }
 
-type CallResult = Result<(Vec<ShielderContractEvents>, SuccessResult), ShielderContractErrors>;
+type CallResult = Result<(Vec<ShielderContractEvents>, SuccessResult), ShielderCallErrors>;
 
 // Calls Shielder. If successful, returns *just the events emitted by the Shielder contract*,
 // filtering out any other emitted events. If unsuccessful, returns the revert code.
@@ -51,9 +53,7 @@ pub fn invoke_shielder_call(
         .map_err(|e| {
             println!("ERROR {:?}", e);
             match e {
-                EvmRunnerError::Revert(e) => {
-                    ShielderContractErrors::abi_decode(e.output().unwrap(), true).unwrap()
-                }
+                EvmRunnerError::Revert(e) => decode_call_errors(e.output().unwrap()),
                 _ => panic!("Expected EvmRunnerError::Revert"),
             }
         })?;
@@ -99,26 +99,51 @@ impl TestToken {
     }
 }
 
-pub fn get_balance(deployment: &Deployment, address: &str) -> U256 {
-    deployment
-        .evm
-        .get_balance(Address::from_str(address).unwrap())
-        .unwrap()
+fn get_balance(deployment: &Deployment, token: TestToken, address: &str) -> U256 {
+    let address = Address::from_str(address).unwrap();
+
+    match token {
+        TestToken::Native => deployment.evm.get_balance(address).unwrap(),
+        TestToken::ERC20 => deployment
+            .test_erc20
+            .get_balance(&deployment.evm, address)
+            .unwrap(),
+    }
 }
 
-pub fn actor_balance_decreased_by(deployment: &Deployment, amount: U256) -> bool {
-    get_balance(deployment, ACTOR_ADDRESS) == ACTOR_INITIAL_NATIVE_BALANCE - amount
+pub fn actor_balance_decreased_by(deployment: &Deployment, token: TestToken, amount: U256) -> bool {
+    let initial_balance = match token {
+        TestToken::Native => ACTOR_INITIAL_NATIVE_BALANCE,
+        TestToken::ERC20 => ACTOR_INITIAL_ERC20_BALANCE,
+    };
+    get_balance(deployment, token, ACTOR_ADDRESS) == initial_balance - amount
 }
 
-pub fn recipient_balance_increased_by(deployment: &Deployment, amount: U256) -> bool {
-    get_balance(deployment, RECIPIENT_ADDRESS) == RECIPIENT_INITIAL_NATIVE_BALANCE + amount
+pub fn recipient_balance_increased_by(
+    deployment: &Deployment,
+    token: TestToken,
+    amount: U256,
+) -> bool {
+    let initial_balance = match token {
+        TestToken::Native => RECIPIENT_INITIAL_NATIVE_BALANCE,
+        TestToken::ERC20 => RECIPIENT_INITIAL_ERC20_BALANCE,
+    };
+    get_balance(deployment, token, RECIPIENT_ADDRESS) == initial_balance + amount
 }
 
-pub fn relayer_balance_increased_by(deployment: &Deployment, amount: U256) -> bool {
-    get_balance(deployment, RELAYER_ADDRESS) == RELAYER_INITIAL_NATIVE_BALANCE + amount
+pub fn relayer_balance_increased_by(
+    deployment: &Deployment,
+    token: TestToken,
+    amount: U256,
+) -> bool {
+    let initial_balance = match token {
+        TestToken::Native => RELAYER_INITIAL_NATIVE_BALANCE,
+        TestToken::ERC20 => RELAYER_INITIAL_ERC20_BALANCE,
+    };
+    get_balance(deployment, token, RELAYER_ADDRESS) == initial_balance + amount
 }
 
-pub fn destination_balances_unchanged(deployment: &Deployment) -> bool {
-    recipient_balance_increased_by(deployment, U256::ZERO)
-        && relayer_balance_increased_by(deployment, U256::ZERO)
+pub fn destination_balances_unchanged(deployment: &Deployment, token: TestToken) -> bool {
+    recipient_balance_increased_by(deployment, token, U256::ZERO)
+        && relayer_balance_increased_by(deployment, token, U256::ZERO)
 }
