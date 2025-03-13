@@ -19,14 +19,14 @@ export class StorageManager {
    */
   async saveRawAccount(index: number, account: AccountObject): Promise<void> {
     const storageData = await this.storage.getStorage();
-    storageData.accounts.set(index.toString(), { ...account });
     if (index === storageData.nextAccountIndex) {
       storageData.nextAccountIndex += 1;
-    } else if (index >= storageData.nextAccountIndex) {
+    } else if (index > storageData.nextAccountIndex) {
       throw new Error(
         `Cannot save account at index ${index} when next account index is ${storageData.nextAccountIndex}`
       );
     }
+    storageData.accounts.set(index.toString(), { ...account });
     await this.storage.setStorage(storageData);
   }
 

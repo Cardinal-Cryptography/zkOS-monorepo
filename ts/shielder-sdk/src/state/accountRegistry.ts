@@ -59,7 +59,6 @@ export class AccountRegistry {
       accountState,
       accountIndex
     );
-    // Save
     await this.storageManager.saveRawAccount(accountIndex, accountObject);
   }
 
