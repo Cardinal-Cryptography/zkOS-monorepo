@@ -65,7 +65,6 @@ pub struct QuoteFeeResponse {
     /// The estimation of a relay fee for relay call.
     pub relay_fee: U256,
     // 8< ----------------------------------------------------- >8
-
     /// The total relay cost in native token.
     pub total_cost_native: U256,
     /// The total relay cost in fee token.
@@ -83,8 +82,12 @@ pub struct QuoteFeeResponse {
     /// The commission for the relayer in fee token.
     pub commission_fee_token: U256,
 
-    /// Current ratio between native token and fee token.
-    pub token_price: Decimal,
+    /// Current price of the native token.
+    pub native_token_price: Decimal,
+    /// Current price of the fee token.
+    pub fee_token_price: Decimal,
+    /// Current ratio between the native token and the fee token.
+    pub token_price_ratio: Decimal,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -144,4 +147,15 @@ impl FromStr for Coin {
             _ => Err(()),
         }
     }
+}
+
+pub const RELATIVE_PRICE_DIGITS: u32 = 20;
+
+pub fn scale_u256(a: U256, b: Decimal) -> Result<U256, &'static str> {
+    let b = b
+        .round_sf(RELATIVE_PRICE_DIGITS)
+        .ok_or("Arithmetic error")?;
+    let mantissa: U256 = b.mantissa().try_into().map_err(|_| "Arithmetic error")?;
+    let scale = U256::pow(U256::from(10), U256::from(b.scale()));
+    Ok(a * mantissa / scale)
 }
