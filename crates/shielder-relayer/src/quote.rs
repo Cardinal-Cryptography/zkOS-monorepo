@@ -11,7 +11,7 @@ pub async fn quote_fees(
     Json(query): Json<QuoteFeeQuery>,
 ) -> impl IntoResponse {
     match _quote_fees(app_state, query).await {
-        Ok(response) => (StatusCode::OK, response.to_json()).into_response(),
+        Ok(response) => (StatusCode::OK, Json(response)).into_response(),
         Err(err) => {
             error!(err);
             server_error(&err)
@@ -21,8 +21,8 @@ pub async fn quote_fees(
 
 async fn _quote_fees(
     app_state: AppState,
-    query: QuoteFeeQuery,
-) -> Result<QuoteFeeResponse<U256>, String> {
+    _query: QuoteFeeQuery,
+) -> Result<QuoteFeeResponse, String> {
     let gas_price = get_gas_price(&app_state).await?;
 
     let base_fee = U256::from(app_state.relay_gas) * U256::from(gas_price);

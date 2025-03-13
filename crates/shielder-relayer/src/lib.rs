@@ -56,55 +56,35 @@ impl RelayResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct QuoteFeeResponse<T> {
+pub struct QuoteFeeResponse {
+    // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON
     /// The fee used as a contract input by the relayer.
-    #[deprecated]
-    pub total_fee: T,
+    pub total_fee: U256,
     /// The estimation of a base fee for relay call.
-    #[deprecated]
-    pub base_fee: T,
+    pub base_fee: U256,
     /// The estimation of a relay fee for relay call.
-    #[deprecated]
-    pub relay_fee: T,
+    pub relay_fee: U256,
+    // 8< ----------------------------------------------------- >8
 
     /// The total relay cost in native token.
-    pub total_cost_native: T,
+    pub total_cost_native: U256,
     /// The total relay cost in fee token.
-    pub total_cost_fee_token: T,
+    pub total_cost_fee_token: U256,
 
     /// Current gas price (in native token).
-    pub gas_price: T,
+    pub gas_price: U256,
     /// Gas cost for relay call (in native token).
-    pub gas_cost_native: T,
+    pub gas_cost_native: U256,
     /// Gas cost for relay call (in fee token).
-    pub gas_cost_fee_token: T,
+    pub gas_cost_fee_token: U256,
 
     /// The commission for the relayer in native token.
-    pub commission_native: T,
+    pub commission_native: U256,
     /// The commission for the relayer in fee token.
-    pub commission_fee_token: T,
+    pub commission_fee_token: U256,
 
     /// Current ratio between native token and fee token.
     pub token_price: Decimal,
-}
-
-impl<T: ToString> QuoteFeeResponse<T> {
-    pub fn to_json(&self) -> Json<QuoteFeeResponse<String>> {
-        Json(QuoteFeeResponse {
-            total_fee: self.total_fee.to_string(),
-            base_fee: self.base_fee.to_string(),
-            relay_fee: self.relay_fee.to_string(),
-
-            total_cost_native: self.total_cost_native.to_string(),
-            total_cost_fee_token: self.total_cost_fee_token.to_string(),
-            gas_price: self.gas_price.to_string(),
-            gas_cost_native: self.gas_cost_native.to_string(),
-            gas_cost_fee_token: self.gas_cost_fee_token.to_string(),
-            commission_native: self.commission_native.to_string(),
-            commission_fee_token: self.commission_fee_token.to_string(),
-            token_price: self.token_price,
-        })
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

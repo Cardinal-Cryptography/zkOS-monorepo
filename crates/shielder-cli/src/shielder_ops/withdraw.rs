@@ -91,7 +91,7 @@ async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
         );
     }
     let quoted_fees = relayer_response.json::<QuoteFeeResponse>().await?;
-    Ok(quoted_fees.total_fee.parse()?)
+    Ok(quoted_fees.total_fee)
 }
 
 async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address> {
