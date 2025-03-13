@@ -51,31 +51,15 @@ export class AccountRegistry {
     const indexedAccount =
       await this.storageManager.findAccountByTokenAddress(tokenAddress);
 
-    if (indexedAccount !== null) {
-      // Existing account
-      const { accountIndex } = indexedAccount;
-      const accountObject = await this.accountStateSerde.toAccountObject(
-        accountState,
-        accountIndex
-      );
+    const { accountIndex } = indexedAccount ?? {
+      accountIndex: await this.storageManager.getNextAccountIndex()
+    };
 
-      // Save
-      await this.storageManager.saveRawAccount(accountIndex, accountObject);
-    } else {
-      // New account
-      const accountIndex = await this.storageManager.getNextAccountIndex();
-
-      const accountObject = await this.accountStateSerde.toAccountObject(
-        accountState,
-        accountIndex
-      );
-
-      // Save and increment index
-      await this.storageManager.saveRawAccountAndIncrementNextAccountIndex(
-        accountIndex,
-        accountObject
-      );
-    }
+    const accountObject = await this.accountStateSerde.toAccountObject(
+      accountState,
+      accountIndex
+    );
+    await this.storageManager.saveRawAccount(accountIndex, accountObject);
   }
 
   async getTokenByAccountIndex(accountIndex: number): Promise<Token | null> {
@@ -86,5 +70,19 @@ export class AccountRegistry {
     }
 
     return null;
+  }
+
+  async getAccountStatesList(): Promise<AccountStateMerkleIndexed[]> {
+    const accounts = await this.storageManager.getAllAccounts();
+
+    return Promise.all(
+      accounts.map(({ accountIndex, accountObject }) =>
+        this.accountStateSerde.toAccountState(
+          accountObject,
+          accountIndex,
+          getTokenByAddress(accountObject.tokenAddress as `0x${string}`)
+        )
+      )
+    );
   }
 }

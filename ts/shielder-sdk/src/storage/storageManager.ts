@@ -19,6 +19,13 @@ export class StorageManager {
    */
   async saveRawAccount(index: number, account: AccountObject): Promise<void> {
     const storageData = await this.storage.getStorage();
+    if (index === storageData.nextAccountIndex) {
+      storageData.nextAccountIndex += 1;
+    } else if (index > storageData.nextAccountIndex) {
+      throw new Error(
+        `Cannot save account at index ${index} when next account index is ${storageData.nextAccountIndex}`
+      );
+    }
     storageData.accounts.set(index.toString(), { ...account });
     await this.storage.setStorage(storageData);
   }
@@ -29,19 +36,6 @@ export class StorageManager {
   async getNextAccountIndex(): Promise<number> {
     const storageData = await this.storage.getStorage();
     return storageData.nextAccountIndex;
-  }
-
-  /**
-   * Increments the next account index
-   */
-  async saveRawAccountAndIncrementNextAccountIndex(
-    index: number,
-    account: AccountObject
-  ): Promise<void> {
-    const storageData = await this.storage.getStorage();
-    storageData.accounts.set(index.toString(), { ...account });
-    storageData.nextAccountIndex += 1;
-    await this.storage.setStorage(storageData);
   }
 
   /**
@@ -63,5 +57,20 @@ export class StorageManager {
     }
 
     return null;
+  }
+
+  /**
+   * Gets all accounts
+   */
+  async getAllAccounts(): Promise<
+    { accountIndex: number; accountObject: AccountObject }[]
+  > {
+    const storageData = await this.storage.getStorage();
+    return Array.from(storageData.accounts.entries()).map(
+      ([index, account]) => ({
+        accountIndex: parseInt(index),
+        accountObject: { ...account }
+      })
+    );
   }
 }
