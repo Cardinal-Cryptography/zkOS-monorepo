@@ -6,11 +6,10 @@ use shielder_account::{
     ShielderAccount,
 };
 use shielder_circuits::consts::FIELD_BITS;
-use shielder_contract::ShielderContract::{
-    newAccountERC20Call, newAccountNativeCall, ShielderContractErrors,
-};
+use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeCall};
 
 use crate::{
+    call_errors::ShielderCallErrors,
     deploy::{ACTOR_ADDRESS, ANONYMITY_REVOKER_PKEY},
     shielder::{invoke_shielder_call, CallResult, Deployment},
     TestToken,
@@ -79,7 +78,7 @@ pub fn create_account_and_call(
     token: TestToken,
     id: U256,
     initial_amount: U256,
-) -> Result<ShielderAccount, ShielderContractErrors> {
+) -> Result<ShielderAccount, ShielderCallErrors> {
     let mut shielder_account = ShielderAccount::new(id);
 
     let calldata = prepare_call(deployment, &mut shielder_account, token, initial_amount);
@@ -95,45 +94,22 @@ pub fn create_account_and_call(
 mod tests {
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
-    use alloy_primitives::{Address, FixedBytes, U256};
+    use alloy_primitives::{FixedBytes, U256};
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
     use shielder_account::ShielderAccount;
     use shielder_circuits::Fr;
     use shielder_contract::ShielderContract::{
-        NewAccount, ShielderContractErrors, ShielderContractEvents, WrongContractVersion,
+        NewAccount, ShielderContractEvents, WrongContractVersion,
     };
 
     use crate::{
+        call_errors::ShielderCallErrors,
         calls::new_account::{create_account_and_call, invoke_call, prepare_call, TestToken},
-        deploy::{
-            deployment, ACTOR_ADDRESS, ACTOR_INITIAL_ERC20_BALANCE, ACTOR_INITIAL_NATIVE_BALANCE,
-        },
-        shielder::Deployment,
+        deploy::deployment,
+        shielder::{actor_balance_decreased_by, Deployment},
     };
-
-    // TODO: move to `mod.rs` once ERC20 is added to deposit and withdraw tests.
-    fn get_balance(deployment: &Deployment, token: TestToken, address: &str) -> U256 {
-        let address = Address::from_str(address).unwrap();
-
-        match token {
-            TestToken::Native => deployment.evm.get_balance(address).unwrap(),
-            TestToken::ERC20 => deployment
-                .test_erc20
-                .get_balance(&deployment.evm, address)
-                .unwrap(),
-        }
-    }
-
-    // TODO: move to `mod.rs` once ERC20 is added to deposit and withdraw tests.
-    fn actor_balance_decreased_by(deployment: &Deployment, token: TestToken, amount: U256) -> bool {
-        let initial_balance = match token {
-            TestToken::Native => ACTOR_INITIAL_NATIVE_BALANCE,
-            TestToken::ERC20 => ACTOR_INITIAL_ERC20_BALANCE,
-        };
-        get_balance(deployment, token, ACTOR_ADDRESS) == initial_balance - amount
-    }
 
     const GAS_CONSUMPTION_NATIVE: u64 = 1989104;
     const GAS_CONSUMPTION_ERC20: u64 = 2024678;
@@ -155,7 +131,7 @@ mod tests {
         };
         assert!(
             gas_used < 110 * expected_gas_used / 100,
-            "new account native transaction consumes {gas_used}, which is 10% beyond baseline of {expected_gas_used}"
+            "new account transaction consumes {gas_used}, which is 10% beyond baseline of {expected_gas_used}"
         );
     }
 
@@ -199,7 +175,7 @@ mod tests {
 
         assert_matches!(
             result,
-            Err(ShielderContractErrors::WrongContractVersion(
+            Err(ShielderCallErrors::WrongContractVersion(
                 WrongContractVersion {
                     actual: FixedBytes([0, 1, 0]),
                     expectedByCaller: FixedBytes([9, 8, 7]),
@@ -219,7 +195,7 @@ mod tests {
 
         let result = create_account_and_call(&mut deployment, token, U256::from(1), U256::from(10));
 
-        assert_matches!(result, Err(ShielderContractErrors::DuplicatedNullifier(_)));
+        assert_matches!(result, Err(ShielderCallErrors::DuplicatedNullifier(_)));
         assert!(actor_balance_decreased_by(
             &deployment,
             token,
@@ -247,12 +223,12 @@ mod tests {
 
         mem::swap(&mut calldata.prenullifier, &mut swap_value);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.prenullifier, &mut swap_value);
 
         mem::swap(&mut calldata.new_note, &mut swap_value);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-        assert_matches!(result, Err(ShielderContractErrors::NotAFieldElement(_)));
+        assert_matches!(result, Err(ShielderCallErrors::NotAFieldElement(_)));
         mem::swap(&mut calldata.new_note, &mut swap_value);
 
         assert!(actor_balance_decreased_by(
@@ -297,7 +273,7 @@ mod tests {
 
         assert_matches!(
             result_2,
-            Err(ShielderContractErrors::ContractBalanceLimitReached(_))
+            Err(ShielderCallErrors::ContractBalanceLimitReached(_))
         );
         assert!(actor_balance_decreased_by(&deployment, token, amount_1))
     }
@@ -315,7 +291,7 @@ mod tests {
 
         assert_matches!(
             result,
-            Err(ShielderContractErrors::NewAccountVerificationFailed(_))
+            Err(ShielderCallErrors::NewAccountVerificationFailed(_))
         );
         assert!(actor_balance_decreased_by(&deployment, token, U256::ZERO))
     }
@@ -351,9 +327,6 @@ mod tests {
 
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
-        assert_matches!(
-            result,
-            Err(ShielderContractErrors::AmountOverDepositLimit(_))
-        )
+        assert_matches!(result, Err(ShielderCallErrors::AmountOverDepositLimit(_)))
     }
 }

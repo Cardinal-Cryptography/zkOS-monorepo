@@ -59,8 +59,6 @@ sol! {
         error AmountOverDepositLimit();
         error AmountTooHigh();
         error ContractBalanceLimitReached();
-        error LeafIsNotInTheTree();
-        error PrecompileCallFailed();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
 

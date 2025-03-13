@@ -14,7 +14,7 @@ use shielder_circuits::{
 use shielder_contract::{
     ShielderContract::{
         depositERC20Call, depositNativeCall, newAccountERC20Call, newAccountNativeCall,
-        withdrawNativeCall,
+        withdrawERC20Call, withdrawNativeCall,
     },
     WithdrawCommitment,
 };
@@ -321,6 +321,69 @@ impl CallType for DepositCallType {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct WithdrawCall {
+    pub amount: U256,
+    pub token: Token,
+    pub expected_contract_version: FixedBytes<3>,
+    pub withdrawal_address: Address,
+    pub relayer_address: Address,
+    pub merkle_root: U256,
+    pub old_nullifier_hash: U256,
+    pub new_note: U256,
+    pub relayer_fee: U256,
+    pub mac_salt: U256,
+    pub mac_commitment: U256,
+    pub proof: Bytes,
+}
+
+impl TryFrom<WithdrawCall> for withdrawNativeCall {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: WithdrawCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                amount: calldata.amount,
+                withdrawalAddress: calldata.withdrawal_address,
+                merkleRoot: calldata.merkle_root,
+                oldNullifierHash: calldata.old_nullifier_hash,
+                newNote: calldata.new_note,
+                proof: calldata.proof,
+                relayerAddress: calldata.relayer_address,
+                relayerFee: calldata.relayer_fee,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
+            }),
+            Token::ERC20(_) => Err(CallTypeConversionError),
+        }
+    }
+}
+
+impl TryFrom<WithdrawCall> for withdrawERC20Call {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: WithdrawCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Err(CallTypeConversionError),
+            Token::ERC20(token_address) => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                tokenAddress: token_address,
+                amount: calldata.amount,
+                withdrawalAddress: calldata.withdrawal_address,
+                merkleRoot: calldata.merkle_root,
+                oldNullifierHash: calldata.old_nullifier_hash,
+                newNote: calldata.new_note,
+                proof: calldata.proof,
+                relayerAddress: calldata.relayer_address,
+                relayerFee: calldata.relayer_fee,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
+            }),
+        }
+    }
+}
+
 pub struct WithdrawExtra {
     pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
     pub to: Address,
@@ -335,7 +398,7 @@ pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
     type ProverKnowledge = WithdrawProverKnowledge<Fr>;
-    type Calldata = withdrawNativeCall;
+    type Calldata = WithdrawCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -381,18 +444,19 @@ impl CallType for WithdrawCallType {
         extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
-        withdrawNativeCall {
-            expectedContractVersion: contract_version().to_bytes(),
+        WithdrawCall {
+            expected_contract_version: contract_version().to_bytes(),
+            token: field_to_address(pk.token_address).into(),
             amount: field_to_u256(pk.compute_public_input(WithdrawalValue)),
-            withdrawalAddress: extra.to,
-            merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
-            oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
-            newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
+            withdrawal_address: extra.to,
+            merkle_root: field_to_u256(pk.compute_public_input(MerkleRoot)),
+            old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
+            new_note: field_to_u256(pk.compute_public_input(HashedNewNote)),
             proof: Bytes::from(proof),
-            relayerAddress: extra.relayer_address,
-            relayerFee: extra.relayer_fee,
-            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
-            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
+            relayer_address: extra.relayer_address,
+            relayer_fee: extra.relayer_fee,
+            mac_salt: field_to_u256(pk.compute_public_input(MacSalt)),
+            mac_commitment: field_to_u256(pk.compute_public_input(MacCommitment)),
         }
     }
 }
