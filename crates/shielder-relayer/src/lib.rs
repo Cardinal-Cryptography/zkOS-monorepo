@@ -55,21 +55,21 @@ impl RelayResponse {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct QuoteFeeResponse {
+pub struct QuoteFeeResponse<T> {
     /// The fee used as a contract input by the relayer. Decimal string.
-    pub total_fee: String,
+    pub total_fee: T,
     /// The estimation of a base fee for relay call. Decimal string.
-    pub base_fee: String,
+    pub base_fee: T,
     /// The estimation of a relay fee for relay call. Decimal string.
-    pub relay_fee: String,
+    pub relay_fee: T,
 }
 
-impl QuoteFeeResponse {
-    pub fn from(total_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
-        Json(Self {
-            total_fee: total_fee.to_string(), // convert to decimal string
-            base_fee: base_fee.to_string(),   // convert to decimal string
-            relay_fee: relay_fee.to_string(), // convert to decimal string
+impl<T: ToString> QuoteFeeResponse<T> {
+    pub fn to_json(&self) -> Json<QuoteFeeResponse<String>> {
+        Json(QuoteFeeResponse {
+            total_fee: self.total_fee.to_string(), // convert to decimal string
+            base_fee: self.base_fee.to_string(),   // convert to decimal string
+            relay_fee: self.relay_fee.to_string(), // convert to decimal string
         })
     }
 }
