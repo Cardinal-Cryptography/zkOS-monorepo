@@ -165,9 +165,6 @@ describe("AccountRegistry", () => {
         accountIndex,
         mockAccountObject
       );
-      expect(
-        storageManager.saveRawAccountAndIncrementNextAccountIndex
-      ).not.toHaveBeenCalled();
     });
 
     it("should create new account state when not found", async () => {
@@ -200,10 +197,10 @@ describe("AccountRegistry", () => {
         accountState,
         nextAccountIndex
       );
-      expect(storageManager.saveRawAccount).not.toHaveBeenCalled();
-      expect(
-        storageManager.saveRawAccountAndIncrementNextAccountIndex
-      ).toHaveBeenCalledWith(nextAccountIndex, mockAccountObject);
+      expect(storageManager.saveRawAccount).toHaveBeenCalledWith(
+        nextAccountIndex,
+        mockAccountObject
+      );
     });
   });
 
@@ -259,7 +256,6 @@ describe("AccountRegistry", () => {
       );
     });
     it("should return list of account states", async () => {
-      const accountIndex = 0;
       const accountObject = createMockAccountObject();
       const token = nativeToken();
       const accountState = createMockAccountState(token);
@@ -267,11 +263,8 @@ describe("AccountRegistry", () => {
       const token2 = erc20Token(testErc20Address);
       const accountState2 = createMockAccountState(token2);
 
-      await storageManager.saveRawAccount(accountIndex, accountObject);
-      await storageManager.saveRawAccountAndIncrementNextAccountIndex(
-        accountIndex + 1,
-        accountObject2
-      );
+      await storageManager.saveRawAccount(0, accountObject);
+      await storageManager.saveRawAccount(1, accountObject2);
 
       vi.mocked(accountStateSerde.toAccountState)
         .mockResolvedValueOnce(accountState)
@@ -282,12 +275,12 @@ describe("AccountRegistry", () => {
       expect(result).toEqual([accountState, accountState2]);
       expect(accountStateSerde.toAccountState).toHaveBeenCalledWith(
         accountObject,
-        accountIndex,
+        0,
         token
       );
       expect(accountStateSerde.toAccountState).toHaveBeenCalledWith(
         accountObject2,
-        accountIndex + 1,
+        1,
         token2
       );
     });

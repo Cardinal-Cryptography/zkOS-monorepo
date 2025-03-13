@@ -89,11 +89,13 @@ describe("StorageManager", () => {
       // Check that the account was added to the map
       const setStorageCall = mockStorage.setStorage.mock.calls[0][0];
       expect(setStorageCall.accounts.get("0")).toEqual(sampleAccount);
+      expect(setStorageCall.nextAccountIndex).toBe(1);
     });
 
     it("should update an existing account", async () => {
       // Add an initial account
       mockStorageData.accounts.set("0", { ...sampleAccount, balance: 500n });
+      mockStorageData.nextAccountIndex = 1;
 
       // Update the account
       await storageManager.saveRawAccount(0, sampleAccount);
@@ -104,16 +106,15 @@ describe("StorageManager", () => {
       // Check that the account was updated
       const setStorageCall = mockStorage.setStorage.mock.calls[0][0];
       expect(setStorageCall.accounts.get("0")).toEqual(sampleAccount);
+      expect(setStorageCall.nextAccountIndex).toBe(1);
     });
 
-    it("should handle storage errors", async () => {
-      mockStorage.setStorage.mockRejectedValueOnce(new Error("Storage error"));
-
+    it("should throw an error if the account index is greater than the next account index", async () => {
       await expect(
-        storageManager.saveRawAccount(0, sampleAccount)
-      ).rejects.toThrow("Storage error");
-      expect(mockStorage.getStorage).toHaveBeenCalledTimes(1);
-      expect(mockStorage.setStorage).toHaveBeenCalledTimes(1);
+        storageManager.saveRawAccount(2, sampleAccount)
+      ).rejects.toThrow(
+        "Cannot save account at index 2 when next account index is 1"
+      );
     });
   });
 
@@ -133,39 +134,6 @@ describe("StorageManager", () => {
         "Storage error"
       );
       expect(mockStorage.getStorage).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("saveRawAccountAndIncrementNextAccountIndex", () => {
-    it("should save account and increment next account index", async () => {
-      mockStorageData.nextAccountIndex = 1;
-
-      await storageManager.saveRawAccountAndIncrementNextAccountIndex(
-        0,
-        sampleAccount
-      );
-
-      expect(mockStorage.getStorage).toHaveBeenCalledTimes(1);
-      expect(mockStorage.setStorage).toHaveBeenCalledTimes(1);
-
-      // Check that the account was added and index incremented
-      const setStorageCall = mockStorage.setStorage.mock.calls[0][0];
-      expect(setStorageCall.accounts.get("0")).toEqual(sampleAccount);
-      expect(setStorageCall.nextAccountIndex).toBe(2);
-    });
-
-    it("should handle storage errors", async () => {
-      mockStorage.setStorage.mockRejectedValueOnce(new Error("Storage error"));
-
-      await expect(
-        storageManager.saveRawAccountAndIncrementNextAccountIndex(
-          0,
-          sampleAccount
-        )
-      ).rejects.toThrow("Storage error");
-
-      expect(mockStorage.getStorage).toHaveBeenCalledTimes(1);
-      expect(mockStorage.setStorage).toHaveBeenCalledTimes(1);
     });
   });
 
