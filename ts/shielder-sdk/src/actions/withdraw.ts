@@ -97,13 +97,9 @@ export class WithdrawAction extends NoteAction {
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
     relayerAddress: `0x${string}`,
-    totalFee: bigint
+    totalFee: bigint,
+    merklePath: Uint8Array
   ): Promise<WithdrawAdvice<Scalar>> {
-    const lastNodeIndex = state.currentNoteIndex;
-    const [merklePath] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-
     const tokenAddress = getAddressByToken(state.token);
 
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
@@ -166,6 +162,11 @@ export class WithdrawAction extends NoteAction {
       );
     }
 
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
     const time = Date.now();
 
     const advice = await this.prepareAdvice(
@@ -174,7 +175,8 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      totalFee
+      totalFee,
+      merklePath
     );
 
     const proof = await this.cryptoClient.withdrawCircuit
