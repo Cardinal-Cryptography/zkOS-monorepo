@@ -5,7 +5,7 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra},
+    call_data::{Token, WithdrawCallType, WithdrawExtra},
     ShielderAction,
 };
 use shielder_contract::{
@@ -18,7 +18,10 @@ use tracing::{debug, info};
 
 use crate::{
     app_state::{AppState, RelayerRpcUrl},
-    shielder_ops::pk::{get_proving_equipment, CircuitType},
+    shielder_ops::{
+        get_mac_salt,
+        pk::{get_proving_equipment, CircuitType},
+    },
 };
 
 pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Result<()> {
@@ -133,15 +136,13 @@ async fn prepare_relayer_query(
         Token::Native,
         amount,
         &WithdrawExtra {
-            merkle_proof: MerkleProof {
-                root: merkle_root,
-                path: merkle_path,
-            },
+            merkle_path,
             to,
             relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
             relayer_fee,
             contract_version: contract_version(),
             chain_id: U256::from(chain_id),
+            mac_salt: get_mac_salt(),
         },
     );
 

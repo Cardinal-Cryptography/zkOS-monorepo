@@ -1,7 +1,7 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{DepositCallType, MerkleProof, Token},
+    call_data::{DepositCallType, DepositExtra, Token},
     ShielderAction,
 };
 use shielder_contract::{
@@ -12,7 +12,10 @@ use tracing::{debug, info};
 
 use crate::{
     app_state::AppState,
-    shielder_ops::pk::{get_proving_equipment, CircuitType},
+    shielder_ops::{
+        get_mac_salt,
+        pk::{get_proving_equipment, CircuitType},
+    },
 };
 
 pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
@@ -23,7 +26,7 @@ pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
         .current_leaf_index()
         .expect("Deposit mustn't be the first action");
     let shielder_user = app_state.create_shielder_user();
-    let (merkle_root, merkle_path) = get_current_merkle_path(leaf_index, &shielder_user).await?;
+    let (_merkle_root, merkle_path) = get_current_merkle_path(leaf_index, &shielder_user).await?;
     let (tx_hash, block_hash) = shielder_user
         .deposit_native::<Call>(
             app_state
@@ -33,9 +36,9 @@ pub async fn deposit(app_state: &mut AppState, amount: u128) -> Result<()> {
                     &pk,
                     Token::Native,
                     amount,
-                    &MerkleProof {
-                        root: merkle_root,
-                        path: merkle_path,
+                    &DepositExtra {
+                        merkle_path,
+                        mac_salt: get_mac_salt(),
                     },
                 )
                 .try_into()

@@ -2,14 +2,14 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{DepositCall, DepositCallType, MerkleProof, Token},
+    call_data::{DepositCall, DepositCallType, DepositExtra, Token},
     ShielderAccount,
 };
 use shielder_contract::ShielderContract::{depositERC20Call, depositNativeCall};
 
 use crate::{
     deploy::ACTOR_ADDRESS,
-    shielder::{deploy::Deployment, invoke_shielder_call, merkle::get_merkle_args, CallResult},
+    shielder::{deploy::Deployment, invoke_shielder_call, merkle::get_merkle_path, CallResult},
     TestToken,
 };
 pub fn prepare_call(
@@ -23,7 +23,7 @@ pub fn prepare_call(
         .expect("No leaf index");
 
     let (params, pk) = deployment.deposit_proving_params.clone();
-    let (merkle_root, merkle_path) = get_merkle_args(
+    let merkle_path = get_merkle_path(
         deployment.contract_suite.shielder,
         note_index,
         &mut deployment.evm,
@@ -33,9 +33,9 @@ pub fn prepare_call(
         &pk,
         token.token(deployment),
         amount,
-        &MerkleProof {
-            root: merkle_root,
-            path: merkle_path,
+        &DepositExtra {
+            merkle_path,
+            mac_salt: U256::ZERO,
         },
     );
     (calldata, note_index)
