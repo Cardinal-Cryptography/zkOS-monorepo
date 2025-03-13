@@ -56,6 +56,14 @@ export class ShielderClient {
   }
 
   /**
+   * Get the list of all account states.
+   * @returns the list of all account states
+   */
+  async accountStatesList() {
+    return await this.accountRegistry.getAccountStatesList();
+  }
+
+  /**
    * Get the current account state for token.
    * @param {Token} token - token to get the account state for
    * @returns the current account state
