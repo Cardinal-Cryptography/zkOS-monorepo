@@ -6,6 +6,7 @@ use axum::{
     Json,
 };
 use clap::ValueEnum;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 use strum_macros::EnumIter;
@@ -56,22 +57,60 @@ impl RelayResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QuoteFeeResponse<T> {
-    /// The fee used as a contract input by the relayer. Decimal string.
+    /// The fee used as a contract input by the relayer.
+    #[deprecated]
     pub total_fee: T,
-    /// The estimation of a base fee for relay call. Decimal string.
+    /// The estimation of a base fee for relay call.
+    #[deprecated]
     pub base_fee: T,
-    /// The estimation of a relay fee for relay call. Decimal string.
+    /// The estimation of a relay fee for relay call.
+    #[deprecated]
     pub relay_fee: T,
+
+    /// The total relay cost in native token.
+    pub total_cost_native: T,
+    /// The total relay cost in fee token.
+    pub total_cost_fee_token: T,
+
+    /// Current gas price (in native token).
+    pub gas_price: T,
+    /// Gas cost for relay call (in native token).
+    pub gas_cost_native: T,
+    /// Gas cost for relay call (in fee token).
+    pub gas_cost_fee_token: T,
+
+    /// The commission for the relayer in native token.
+    pub commission_native: T,
+    /// The commission for the relayer in fee token.
+    pub commission_fee_token: T,
+
+    /// Current ratio between native token and fee token.
+    pub token_price: Decimal,
 }
 
 impl<T: ToString> QuoteFeeResponse<T> {
     pub fn to_json(&self) -> Json<QuoteFeeResponse<String>> {
         Json(QuoteFeeResponse {
-            total_fee: self.total_fee.to_string(), // convert to decimal string
-            base_fee: self.base_fee.to_string(),   // convert to decimal string
-            relay_fee: self.relay_fee.to_string(), // convert to decimal string
+            total_fee: self.total_fee.to_string(),
+            base_fee: self.base_fee.to_string(),
+            relay_fee: self.relay_fee.to_string(),
+
+            total_cost_native: self.total_cost_native.to_string(),
+            total_cost_fee_token: self.total_cost_fee_token.to_string(),
+            gas_price: self.gas_price.to_string(),
+            gas_cost_native: self.gas_cost_native.to_string(),
+            gas_cost_fee_token: self.gas_cost_fee_token.to_string(),
+            commission_native: self.commission_native.to_string(),
+            commission_fee_token: self.commission_fee_token.to_string(),
+            token_price: self.token_price,
         })
     }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct QuoteFeeQuery {
+    pub fee_token: TokenKind,
+    pub pocket_money: U256,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
