@@ -64,4 +64,19 @@ export class StorageManager {
 
     return null;
   }
+
+  /**
+   * Gets all accounts
+   */
+  async getAllAccounts(): Promise<
+    { accountIndex: number; accountObject: AccountObject }[]
+  > {
+    const storageData = await this.storage.getStorage();
+    return Array.from(storageData.accounts.entries()).map(
+      ([index, account]) => ({
+        accountIndex: parseInt(index),
+        accountObject: { ...account }
+      })
+    );
+  }
 }

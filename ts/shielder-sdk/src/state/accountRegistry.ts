@@ -87,4 +87,18 @@ export class AccountRegistry {
 
     return null;
   }
+
+  async getAccountStatesList(): Promise<AccountStateMerkleIndexed[]> {
+    const accounts = await this.storageManager.getAllAccounts();
+
+    return Promise.all(
+      accounts.map(({ accountIndex, accountObject }) =>
+        this.accountStateSerde.toAccountState(
+          accountObject,
+          accountIndex,
+          getTokenByAddress(accountObject.tokenAddress as `0x${string}`)
+        )
+      )
+    );
+  }
 }

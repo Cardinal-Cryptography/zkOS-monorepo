@@ -7,7 +7,7 @@ import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { nativeToken, erc20Token } from "../../src/utils";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
 import { Token } from "../../src/types";
-import { AccountObject } from "../../src/storage/storageSchema";
+import { AccountObject, createStorage } from "../../src/storage/storageSchema";
 
 const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 const testErc20Address = "0x1111111111111111111111111111111111111111";
@@ -236,6 +236,60 @@ describe("AccountRegistry", () => {
         expect(storageManager.getRawAccount).toHaveBeenCalledWith(index);
         vi.clearAllMocks();
       });
+    });
+  });
+
+  describe("getAccountStatesList", () => {
+    beforeEach(() => {
+      const map = new Map<string, string>();
+      storageManager = new StorageManager(
+        createStorage({
+          getItem: async (key: string) => {
+            return map.get(key) ?? null;
+          },
+          setItem: async (key: string, value: string) => {
+            map.set(key, value);
+          }
+        })
+      );
+      accountRegistry = new AccountRegistry(
+        storageManager,
+        accountFactory,
+        accountStateSerde
+      );
+    });
+    it("should return list of account states", async () => {
+      const accountIndex = 0;
+      const accountObject = createMockAccountObject();
+      const token = nativeToken();
+      const accountState = createMockAccountState(token);
+      const accountObject2 = createMockAccountObject(testErc20Address);
+      const token2 = erc20Token(testErc20Address);
+      const accountState2 = createMockAccountState(token2);
+
+      await storageManager.saveRawAccount(accountIndex, accountObject);
+      await storageManager.saveRawAccountAndIncrementNextAccountIndex(
+        accountIndex + 1,
+        accountObject2
+      );
+
+      vi.mocked(accountStateSerde.toAccountState)
+        .mockResolvedValueOnce(accountState)
+        .mockResolvedValueOnce(accountState2);
+
+      const result = await accountRegistry.getAccountStatesList();
+
+      expect(result).toEqual([accountState, accountState2]);
+      expect(accountStateSerde.toAccountState).toHaveBeenCalledWith(
+        accountObject,
+        accountIndex,
+        token
+      );
+      expect(accountStateSerde.toAccountState).toHaveBeenCalledWith(
+        accountObject2,
+        accountIndex + 1,
+        token2
+      );
     });
   });
 });
