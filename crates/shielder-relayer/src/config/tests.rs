@@ -54,13 +54,11 @@ fn config_resolution() {
             metrics_port, // from CLI
         },
         chain: ChainConfig {
-            node_rpc_url: node_rpc_url.clone(),               // from CLI
-            shielder_contract_address,                        // from CLI
-            fee_destination_key: fee_destination_key.clone(), // from env
-            signing_keys: vec![key1.clone(), key2.clone()],   // from env
-            total_fee: U256::from_str(&total_fee).unwrap(),   // from CLI
-            relay_gas,                                        // from env
-            native_token,                                     // from env
+            node_rpc_url: node_rpc_url.clone(),             // from CLI
+            shielder_contract_address,                      // from CLI
+            total_fee: U256::from_str(&total_fee).unwrap(), // from CLI
+            relay_gas,                                      // from env
+            native_token,                                   // from env
         },
         operations: OperationalConfig {
             balance_monitor_interval_secs, // from env
@@ -70,6 +68,10 @@ fn config_resolution() {
             token_config,                  // from env
             price_feed_refresh_interval,   // default
             price_feed_validity,           // from CLI
+        },
+        keys: KeyConfig {
+            fee_destination_key: fee_destination_key.clone(), // from env
+            signing_keys: vec![key1.clone(), key2.clone()],   // from env
         },
     };
 
