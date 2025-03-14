@@ -85,6 +85,7 @@ pub struct KeyConfig {
 
 impl Debug for KeyConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        #[allow(clippy::ptr_arg)]
         fn fmt_key(key: &String) -> String {
             format!("{}...{}", &key[..5], &key[key.len() - 3..])
         }
