@@ -77,4 +77,9 @@ if [[ -n "${NATIVE_TOKEN:-}" ]]; then
   ARGS+=(-e NATIVE_TOKEN="${NATIVE_TOKEN}")
 fi
 
-docker run --rm -d "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
+DETACHED_FLAG=""
+if [[ -n "${DETACHED:-}" ]]; then
+  DETACHED_FLAG="-d"
+fi
+
+docker run --rm ${DETACHED_FLAG} "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
