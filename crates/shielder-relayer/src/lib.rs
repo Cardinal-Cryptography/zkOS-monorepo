@@ -134,6 +134,18 @@ pub enum Coin {
     Usdc,
 }
 
+impl Coin {
+    pub fn decimals(&self) -> u32 {
+        match self {
+            Coin::Azero => 18,
+            Coin::Eth => 18,
+            Coin::Btc => 8,
+            Coin::Usdt => 6,
+            Coin::Usdc => 6,
+        }
+    }
+}
+
 impl FromStr for Coin {
     type Err = ();
 
