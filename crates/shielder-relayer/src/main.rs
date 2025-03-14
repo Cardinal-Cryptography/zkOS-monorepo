@@ -65,7 +65,10 @@ async fn main() -> Result<()> {
     init_logging(server_config.logging_format)?;
 
     info!("Starting Shielder relayer.");
-    info!("Server configuration:\n{:#?}", server_config);
+    info!(
+        "Server configuration:\n{}",
+        server_config.print_safe_config()
+    );
 
     let signers = get_signer_info(&server_config.chain)?;
     let prices = Prices::new(

@@ -26,6 +26,7 @@ use crate::config::defaults::{
 
 mod cli;
 mod defaults;
+mod display;
 mod enums;
 #[cfg(test)]
 mod tests;
