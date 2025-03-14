@@ -3,14 +3,16 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+pub use fetching::Price;
+use fetching::{fetch_price, PriceFetchError};
+#[cfg(test)]
 use rust_decimal::Decimal;
-use serde::Deserialize;
 use shielder_relayer::Coin;
 use strum::IntoEnumIterator;
 use time::OffsetDateTime;
 use tokio::time::Duration;
 
-const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
+mod fetching;
 
 /// A collection of prices for various coins.
 ///
@@ -21,23 +23,6 @@ pub struct Prices {
     validity: time::Duration,
     refresh_interval: Duration,
     inner: Arc<Mutex<HashMap<Coin, Price>>>,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-struct Price {
-    #[serde(rename = "Price")]
-    price: Decimal,
-    #[serde(
-        rename = "Time",
-        deserialize_with = "time::serde::iso8601::deserialize"
-    )]
-    time: OffsetDateTime,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("Reqwest error: {0}")]
-    Reqwest(#[from] reqwest::Error),
 }
 
 impl Prices {
@@ -58,21 +43,22 @@ impl Prices {
     }
 
     /// Get the price of a coin or `None` if the price is not available or outdated.
-    pub fn price(&self, coin: Coin) -> Option<Decimal> {
+    pub fn price(&self, coin: Coin) -> Option<Price> {
         let inner = self.inner.lock().expect("Mutex poisoned");
+
         inner.get(&coin).cloned().and_then(|price| {
             if price
                 .time
                 .gt(&OffsetDateTime::now_utc().saturating_sub(self.validity))
             {
-                Some(price.price)
+                Some(price)
             } else {
                 None
             }
         })
     }
 
-    async fn update(&self) -> Result<(), Error> {
+    async fn update(&self) -> Result<(), PriceFetchError> {
         for coin in Coin::iter() {
             let price = fetch_price(coin).await?;
             let mut inner = self.inner.lock().expect("Mutex poisoned");
@@ -83,9 +69,10 @@ impl Prices {
     }
 
     #[cfg(test)]
-    pub fn set_price(&self, coin: Coin, price: Decimal) {
+    pub fn set_price(&self, coin: Coin, unit_price: Decimal) {
         let price = Price {
-            price,
+            token_price: unit_price / Decimal::from_i128_with_scale(1, coin.decimals()),
+            unit_price,
             time: OffsetDateTime::now_utc(),
         };
         self.inner
@@ -103,19 +90,36 @@ pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
     }
 }
 
-async fn fetch_price(coin: Coin) -> Result<Price, Error> {
-    Ok(reqwest::get(format!("{}{}", BASE_PATH, price_path(coin)))
-        .await?
-        .json::<Price>()
-        .await?)
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-fn price_path(coin: Coin) -> &'static str {
-    match coin {
-        Coin::Azero => "/AlephZero/0x0000000000000000000000000000000000000000",
-        Coin::Eth => "/Ethereum/0x0000000000000000000000000000000000000000",
-        Coin::Btc => "/Bitcoin/0x0000000000000000000000000000000000000000",
-        Coin::Usdt => "/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        Coin::Usdc => "/Ethereum/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    #[tokio::test]
+    async fn single_update() {
+        let prices = Prices::new(Duration::from_secs(1_000_000), Default::default());
+        prices.update().await.unwrap();
+        for coin in Coin::iter() {
+            assert!(prices.price(coin).is_some());
+        }
+    }
+
+    #[tokio::test]
+    async fn with_short_validity_even_after_update_there_is_no_price_available() {
+        let prices = Prices::new(Duration::from_millis(1), Default::default());
+        prices.update().await.unwrap();
+        for coin in Coin::iter() {
+            assert!(prices.price(coin).is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn start_price_feed_works() {
+        let prices = Prices::new(Duration::from_secs(1_000_000), Duration::from_secs(1));
+        tokio::spawn(start_price_feed(prices.clone()));
+
+        tokio::time::sleep(Duration::from_secs(10)).await;
+        for coin in Coin::iter() {
+            assert!(prices.price(coin).is_some());
+        }
     }
 }
