@@ -6,7 +6,7 @@ use shielder_contract::{alloy_primitives::U256, providers::create_simple_provide
 use shielder_relayer::{scale_u256, server_error, QuoteFeeQuery, QuoteFeeResponse, TokenKind};
 use tracing::error;
 
-use crate::AppState;
+use crate::{price_feed::Price, AppState};
 
 pub async fn quote_fees(
     State(app_state): State<AppState>,
@@ -44,7 +44,7 @@ async fn _quote_fees(
         TokenKind::Native => {
             let price = get_native_token_price(&app_state)?;
             Prices {
-                fee_token_price: price,
+                fee_token_price: price.clone(),
                 native_token_price: price,
                 ratio: Decimal::ONE,
             }
@@ -67,8 +67,10 @@ async fn _quote_fees(
         commission_native,
         commission_fee_token: scale_u256(commission_native, prices.ratio)?,
 
-        native_token_price: prices.native_token_price,
-        fee_token_price: prices.fee_token_price,
+        native_token_price: prices.native_token_price.token_price,
+        native_token_unit_price: prices.native_token_price.unit_price,
+        fee_token_price: prices.fee_token_price.token_price,
+        fee_token_unit_price: prices.fee_token_price.unit_price,
         token_price_ratio: prices.ratio,
     })
 }
@@ -85,12 +87,12 @@ async fn get_gas_price(app_state: &AppState) -> Result<u128, String> {
 }
 
 struct Prices {
-    fee_token_price: Decimal,
-    native_token_price: Decimal,
+    fee_token_price: Price,
+    native_token_price: Price,
     ratio: Decimal,
 }
 
-fn get_native_token_price(app_state: &AppState) -> Result<Decimal, String> {
+fn get_native_token_price(app_state: &AppState) -> Result<Price, String> {
     Ok(app_state
         .prices
         .price(app_state.native_token)
@@ -110,7 +112,7 @@ fn get_token_price(app_state: &AppState, address: Address) -> Result<Prices, Str
         .price(fee_token.coin)
         .ok_or("Fee token price not available")?;
 
-    let ratio = native_token_price / fee_token_price;
+    let ratio = native_token_price.unit_price / fee_token_price.unit_price;
 
     Ok(Prices {
         fee_token_price,

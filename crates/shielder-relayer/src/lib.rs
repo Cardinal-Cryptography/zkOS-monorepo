@@ -82,10 +82,14 @@ pub struct QuoteFeeResponse {
     /// The commission for the relayer in fee token.
     pub commission_fee_token: U256,
 
-    /// Current price of the native token.
+    /// Current price of the native token (base unit, like 1 ETH or 1 BTC).
     pub native_token_price: Decimal,
-    /// Current price of the fee token.
+    /// Current price of the minimal unit of the native token (like 1 wei or 1 satoshi).
+    pub native_token_unit_price: Decimal,
+    /// Current price of the fee token (base unit, like 1 ETH or 1 BTC).
     pub fee_token_price: Decimal,
+    /// Current price of the minimal unit of the fee token (like 1 wei or 1 satoshi).
+    pub fee_token_unit_price: Decimal,
     /// Current ratio between the native token and the fee token.
     pub token_price_ratio: Decimal,
 }

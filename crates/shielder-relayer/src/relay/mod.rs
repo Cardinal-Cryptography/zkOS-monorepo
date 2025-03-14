@@ -203,7 +203,7 @@ fn price_relative_to_native(
 ) -> Option<Decimal> {
     let resolve_price = |config: &TokenConfig| match config.pricing {
         Pricing::Fixed { price } => Some(price),
-        Pricing::Feed => prices.price(config.coin),
+        Pricing::Feed => prices.price(config.coin).map(|price| price.unit_price),
     };
     let fee_token_price = resolve_price(fee_token_config)?;
     let native_price = resolve_price(native_config)?;
