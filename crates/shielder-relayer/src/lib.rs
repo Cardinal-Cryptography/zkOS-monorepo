@@ -11,27 +11,8 @@ use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
 use strum_macros::EnumIter;
 
-pub const LOGGING_FORMAT_ENV: &str = "LOGGING_FORMAT";
-pub const RELAYER_HOST_ENV: &str = "RELAYER_HOST";
-pub const RELAYER_PORT_ENV: &str = "RELAYER_PORT";
-pub const RELAYER_METRICS_PORT_ENV: &str = "RELAYER_METRICS_PORT";
-pub const BALANCE_MONITOR_INTERVAL_ENV: &str = "BALANCE_MONITOR_INTERVAL";
-pub const FEE_DESTINATION_KEY_ENV: &str = "FEE_DESTINATION_KEY";
-pub const RELAYER_SIGNING_KEYS_ENV: &str = "RELAYER_SIGNING_KEYS";
-pub const NODE_RPC_URL_ENV: &str = "NODE_RPC_URL";
-pub const SHIELDER_CONTRACT_ADDRESS_ENV: &str = "SHIELDER_CONTRACT_ADDRESS";
-pub const NONCE_POLICY_ENV: &str = "NONCE_POLICY";
-pub const DRY_RUNNING_ENV: &str = "DRY_RUNNING";
-pub const RELAY_COUNT_FOR_RECHARGE_ENV: &str = "RELAY_COUNT_FOR_RECHARGE";
-pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
-pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
-pub const PRICE_FEED_VALIDITY_ENV: &str = "PRICE_FEED_VALIDITY";
-pub const PRICE_FEED_REFRESH_INTERVAL_ENV: &str = "PRICE_FEED_REFRESH_INTERVAL";
-pub const TOKEN_CONFIG_ENV: &str = "TOKEN_CONFIG";
-pub const NATIVE_TOKEN_ENV: &str = "NATIVE_TOKEN";
-pub const SERVICE_FEE_PERCENT_ENV: &str = "SERVICE_FEE_PERCENT";
-pub const QUOTE_VALIDITY_ENV: &str = "QUOTE_VALIDITY";
-pub const MAX_POCKET_MONEY_ENV: &str = "MAX_POCKET_MONEY";
+mod environment_variables;
+pub use environment_variables::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
