@@ -45,6 +45,9 @@ fn config_resolution() {
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
     let price_feed_validity = 15;
+    let service_fee_percent = DEFAULT_SERVICE_FEE_PERCENT;
+    let quote_validity = Duration::from_secs(11);
+    let max_pocket_money = U256::from(12);
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -68,6 +71,9 @@ fn config_resolution() {
             token_config,                  // from env
             price_feed_refresh_interval,   // default
             price_feed_validity,           // from CLI
+            service_fee_percent,           // default
+            quote_validity,                // from env
+            max_pocket_money,              // from CLI
         },
         keys: KeyConfig {
             fee_destination_key: fee_destination_key.clone(), // from env
@@ -95,6 +101,9 @@ fn config_resolution() {
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
         native_token: None,
+        service_fee_percent: None,
+        quote_validity: None,
+        max_pocket_money: Some(max_pocket_money),
     };
 
     // ---- Environment variables. -----------------------------------------------------------
@@ -123,6 +132,7 @@ fn config_resolution() {
             ]",
         );
         std::env::set_var(NATIVE_TOKEN_ENV, format!("{native_token:?}"));
+        std::env::set_var(QUOTE_VALIDITY_ENV, "11");
     }
 
     // ---- Test. ------------------------------------------------------------------------------

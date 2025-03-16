@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use alloy_primitives::U256;
 use clap::Parser;
 use shielder_relayer::*;
 
@@ -178,9 +181,52 @@ pub struct CLIConfig {
     #[clap(
         long,
         help = "Token native to chain where the relayer operates.",
-        long_help = format!("Token native to chain where the relayer operates. If not provided, the value\
+        long_help = format!("Token native to chain where the relayer operates. If not provided, the value \
             from the environment variable `{NATIVE_TOKEN_ENV}` will be used. Example values: 'eth', \
             'azero', 'btc'.")
     )]
     pub native_token: Option<Coin>,
+
+    #[clap(
+        long,
+        help = "Commission fee percentage (added to the actual relay cost).",
+        long_help = format!("Commission fee percentage (added to the actual relay cost). If not \
+        provided, the value from the environment variable `{SERVICE_FEE_PERCENT_ENV}` will be used.\
+        If that is not set, the default value is `{DEFAULT_SERVICE_FEE_PERCENT}`.")
+    )]
+    pub service_fee_percent: Option<u32>,
+
+    #[clap(
+        long,
+        help = "How long the quote provided by the service is valid. In seconds.",
+        long_help = format!("How long the quote provided by the service is valid. In seconds. If not \
+            provided, the value from the environment variable `{QUOTE_VALIDITY_ENV}` will be used.\
+            If that is not set, the default value is `{}`.", DEFAULT_QUOTE_VALIDITY.as_secs()),
+        value_parser = parsing::parse_seconds
+    )]
+    pub quote_validity: Option<Duration>,
+
+    #[clap(
+        long,
+        help = "Maximum pocket money relayer can provide.",
+        long_help = format!("Maximum pocket money relayer can provide. If not provided, the value \
+            from the environment variable `{MAX_POCKET_MONEY_ENV}` will be used. If that is not set, \
+            the default value is `{DEFAULT_MAX_POCKET_MONEY}`."),
+        value_parser = parsing::parse_u256
+    )]
+    pub max_pocket_money: Option<U256>,
+}
+
+pub(super) mod parsing {
+    use std::{str::FromStr, time::Duration};
+
+    use alloy_primitives::U256;
+
+    pub fn parse_seconds(string: &str) -> anyhow::Result<Duration> {
+        Ok(Duration::from_secs(string.parse::<u64>()?))
+    }
+
+    pub fn parse_u256(string: &str) -> anyhow::Result<U256> {
+        Ok(U256::from_str(string)?)
+    }
 }

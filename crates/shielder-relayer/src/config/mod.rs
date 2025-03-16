@@ -1,8 +1,10 @@
 use std::{
     fmt::{Debug, Formatter},
     str::FromStr,
+    time::Duration,
 };
 
+use anyhow::anyhow;
 use clap::Parser;
 use cli::CLIConfig;
 use defaults::*;
@@ -11,6 +13,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::*;
+
+use crate::config::cli::parsing::{parse_seconds, parse_u256};
 
 mod cli;
 mod defaults;
@@ -75,6 +79,9 @@ pub struct OperationalConfig {
     pub token_config: Vec<TokenConfig>,
     pub price_feed_validity: u64,
     pub price_feed_refresh_interval: u64,
+    pub service_fee_percent: u32,
+    pub quote_validity: Duration,
+    pub max_pocket_money: U256,
 }
 
 #[derive(Clone, Eq, PartialEq)]
@@ -141,6 +148,9 @@ fn resolve_config_from_cli_config(
         price_feed_validity,
         price_feed_refresh_interval,
         native_token,
+        service_fee_percent,
+        quote_validity,
+        max_pocket_money,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -214,6 +224,23 @@ fn resolve_config_from_cli_config(
             PRICE_FEED_REFRESH_INTERVAL_ENV,
             Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS),
         ),
+        service_fee_percent: resolve_value(
+            service_fee_percent,
+            SERVICE_FEE_PERCENT_ENV,
+            Some(DEFAULT_SERVICE_FEE_PERCENT),
+        ),
+        quote_validity: resolve_value_map(
+            quote_validity,
+            QUOTE_VALIDITY_ENV,
+            parse_seconds,
+            Some(DEFAULT_QUOTE_VALIDITY),
+        ),
+        max_pocket_money: resolve_value_map(
+            max_pocket_money,
+            MAX_POCKET_MONEY_ENV,
+            parse_u256,
+            Some(parse_u256(DEFAULT_MAX_POCKET_MONEY).unwrap()),
+        ),
     };
 
     ServerConfig {
@@ -229,11 +256,25 @@ fn resolve_config_from_cli_config(
     }
 }
 
-fn resolve_value<T: FromStr>(value: Option<T>, env_var: &str, default: Option<T>) -> T {
+fn resolve_value<T: FromStr<Err: Debug>>(value: Option<T>, env_var: &str, default: Option<T>) -> T {
+    resolve_value_map(
+        value,
+        env_var,
+        |s| T::from_str(s).map_err(|e| anyhow!("{e:?}")),
+        default,
+    )
+}
+
+fn resolve_value_map<T, Map: Fn(&str) -> anyhow::Result<T>>(
+    value: Option<T>,
+    env_var: &str,
+    map: Map,
+    default: Option<T>,
+) -> T {
     value.unwrap_or_else(|| {
         std::env::var(env_var)
             .ok()
-            .and_then(|v| T::from_str(&v).ok())
+            .and_then(|v| map(&v).ok())
             .or(default)
             .expect("Missing required configuration")
     })

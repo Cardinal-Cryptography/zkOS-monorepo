@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::config::{enums::DryRunning, LoggingFormat, NoncePolicy};
 
 pub const DEFAULT_LOGGING_FORMAT: LoggingFormat = LoggingFormat::Text;
@@ -14,3 +15,6 @@ pub const DEFAULT_RELAY_GAS: u64 = 2_000_000; // an estimated amount of gas for 
 const ONE_MINUTE_IN_SECONDS: u64 = 60;
 pub const DEFAULT_PRICE_FEED_VALIDITY_SECS: u64 = 10 * ONE_MINUTE_IN_SECONDS;
 pub const DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS: u64 = ONE_MINUTE_IN_SECONDS;
+pub const DEFAULT_SERVICE_FEE_PERCENT: u32 = 15;
+pub const DEFAULT_QUOTE_VALIDITY: Duration = Duration::from_secs(15);
+pub const DEFAULT_MAX_POCKET_MONEY: &str = "100_000_000_000_000_000"; // 0.1 TZERO
