@@ -1,4 +1,5 @@
 use std::time::Duration;
+
 use crate::config::{enums::DryRunning, LoggingFormat, NoncePolicy};
 
 pub const DEFAULT_LOGGING_FORMAT: LoggingFormat = LoggingFormat::Text;
