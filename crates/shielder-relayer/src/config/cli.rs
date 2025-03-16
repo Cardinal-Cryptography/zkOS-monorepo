@@ -56,11 +56,12 @@ pub struct CLIConfig {
         long,
         help = "Interval (in seconds) for monitoring signers' balances.",
         long_help = format!("Interval (in seconds) for monitoring signers' balances. If not \
-            provided, the value from the environment variable `{BALANCE_MONITOR_INTERVAL_SECS_ENV}` \
+            provided, the value from the environment variable `{BALANCE_MONITOR_INTERVAL_ENV}` \
             will be used. If that is not set, the default value is \
-            `{DEFAULT_BALANCE_MONITOR_INTERVAL_SECS}`.")
+            `{}`.", DEFAULT_BALANCE_MONITOR_INTERVAL.as_secs()),
+        value_parser = parsing::parse_seconds
     )]
-    pub balance_monitor_interval_secs: Option<u64>,
+    pub balance_monitor_interval: Option<Duration>,
 
     #[clap(
         long,
@@ -131,9 +132,10 @@ pub struct CLIConfig {
         long_help = format!("The total fee, which is used as an argument for `withdraw_native` call. \
             It should be a fixed value, close to a sum of 'withdraw_native' on-chain gas cost and the intended relayer fee. \
             If not provided, the value from the environment variable `{TOTAL_FEE_ENV}` will be used. \
-            If that is not set, the default value is `{DEFAULT_TOTAL_FEE:?}`.")
+            If that is not set, the default value is `{DEFAULT_TOTAL_FEE:?}`."),
+        value_parser = parsing::parse_u256
     )]
-    pub total_fee: Option<String>,
+    pub total_fee: Option<U256>,
 
     #[clap(
         long,
@@ -165,18 +167,20 @@ pub struct CLIConfig {
         help = "Price feed refresh interval in seconds.",
         long_help = format!("Price feed refresh interval in seconds. If not provided, the value from the \
             environment variable `{PRICE_FEED_REFRESH_INTERVAL_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS:?}`.")
+            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL:?}`."),
+        value_parser = parsing::parse_seconds
     )]
-    pub price_feed_refresh_interval: Option<u64>,
+    pub price_feed_refresh_interval: Option<Duration>,
 
     #[clap(
         long,
         help = "Price feed validity in seconds.",
         long_help = format!("Price feed validity in seconds. If not provided, the value from the \
             environment variable `{PRICE_FEED_VALIDITY_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_PRICE_FEED_VALIDITY_SECS:?}`.")
+            the default value is `{DEFAULT_PRICE_FEED_VALIDITY:?}`."),
+        value_parser = parsing::parse_seconds
     )]
-    pub price_feed_validity: Option<u64>,
+    pub price_feed_validity: Option<Duration>,
 
     #[clap(
         long,
