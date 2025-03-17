@@ -12,11 +12,11 @@ use crate::monitor::Balances;
 /// Periodically check the balance of the relayer's signer addresses.
 pub async fn balance_monitor(
     node_rpc_url: &str,
-    interval_secs: u64,
+    interval_duration: Duration,
     balances: Balances,
 ) -> Result<()> {
     let provider = create_simple_provider(node_rpc_url).await?;
-    let mut interval = interval(Duration::from_secs(interval_secs));
+    let mut interval = interval(interval_duration);
 
     loop {
         interval.tick().await;

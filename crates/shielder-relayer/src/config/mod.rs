@@ -1,8 +1,10 @@
 use std::{
     fmt::{Debug, Formatter},
     str::FromStr,
+    time::Duration,
 };
 
+use anyhow::anyhow;
 use clap::Parser;
 use cli::CLIConfig;
 use defaults::*;
@@ -11,6 +13,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::*;
+
+use crate::config::cli::parsing::{parse_seconds, parse_u256};
 
 mod cli;
 mod defaults;
@@ -68,13 +72,16 @@ impl TokenConfig {
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
-    pub balance_monitor_interval_secs: u64,
+    pub balance_monitor_interval: Duration,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
     pub token_config: Vec<TokenConfig>,
-    pub price_feed_validity: u64,
-    pub price_feed_refresh_interval: u64,
+    pub price_feed_validity: Duration,
+    pub price_feed_refresh_interval: Duration,
+    pub service_fee_percent: u32,
+    pub quote_validity: Duration,
+    pub max_pocket_money: U256,
 }
 
 #[derive(Clone, Eq, PartialEq)]
@@ -127,7 +134,7 @@ fn resolve_config_from_cli_config(
         host,
         port,
         metrics_port,
-        balance_monitor_interval_secs,
+        balance_monitor_interval,
         node_rpc_url,
         shielder_contract_address,
         fee_destination_key,
@@ -141,6 +148,9 @@ fn resolve_config_from_cli_config(
         price_feed_validity,
         price_feed_refresh_interval,
         native_token,
+        service_fee_percent,
+        quote_validity,
+        max_pocket_money,
     }: CLIConfig,
 ) -> ServerConfig {
     let to_address = |s: &str| Address::from_str(s).expect("Invalid address");
@@ -175,12 +185,11 @@ fn resolve_config_from_cli_config(
             SHIELDER_CONTRACT_ADDRESS_ENV,
             None,
         )),
-        total_fee: U256::from_str(&resolve_value(
+        total_fee: resolve_value(
             total_fee,
             TOTAL_FEE_ENV,
-            Some(DEFAULT_TOTAL_FEE.to_string()),
-        ))
-        .expect("Invalid relay fee"),
+            Some(parse_u256(DEFAULT_TOTAL_FEE).unwrap()),
+        ),
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
         native_token: resolve_value(native_token, NATIVE_TOKEN_ENV, None),
     };
@@ -191,10 +200,11 @@ fn resolve_config_from_cli_config(
     let token_config = serde_json::from_str(&token_config).expect("Invalid token pricing");
 
     let operational_config = OperationalConfig {
-        balance_monitor_interval_secs: resolve_value(
-            balance_monitor_interval_secs,
-            BALANCE_MONITOR_INTERVAL_SECS_ENV,
-            Some(DEFAULT_BALANCE_MONITOR_INTERVAL_SECS),
+        balance_monitor_interval: resolve_value_map(
+            balance_monitor_interval,
+            BALANCE_MONITOR_INTERVAL_ENV,
+            parse_seconds,
+            Some(DEFAULT_BALANCE_MONITOR_INTERVAL),
         ),
         nonce_policy: resolve_value(nonce_policy, NONCE_POLICY_ENV, Some(DEFAULT_NONCE_POLICY)),
         dry_running: resolve_value(dry_running, DRY_RUNNING_ENV, Some(DEFAULT_DRY_RUNNING)),
@@ -204,15 +214,34 @@ fn resolve_config_from_cli_config(
             Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
         ),
         token_config,
-        price_feed_validity: resolve_value(
+        price_feed_validity: resolve_value_map(
             price_feed_validity,
             PRICE_FEED_VALIDITY_ENV,
-            Some(DEFAULT_PRICE_FEED_VALIDITY_SECS),
+            parse_seconds,
+            Some(DEFAULT_PRICE_FEED_VALIDITY),
         ),
-        price_feed_refresh_interval: resolve_value(
+        price_feed_refresh_interval: resolve_value_map(
             price_feed_refresh_interval,
             PRICE_FEED_REFRESH_INTERVAL_ENV,
-            Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS),
+            parse_seconds,
+            Some(DEFAULT_PRICE_FEED_REFRESH_INTERVAL),
+        ),
+        service_fee_percent: resolve_value(
+            service_fee_percent,
+            SERVICE_FEE_PERCENT_ENV,
+            Some(DEFAULT_SERVICE_FEE_PERCENT),
+        ),
+        quote_validity: resolve_value_map(
+            quote_validity,
+            QUOTE_VALIDITY_ENV,
+            parse_seconds,
+            Some(DEFAULT_QUOTE_VALIDITY),
+        ),
+        max_pocket_money: resolve_value_map(
+            max_pocket_money,
+            MAX_POCKET_MONEY_ENV,
+            parse_u256,
+            Some(parse_u256(DEFAULT_MAX_POCKET_MONEY).unwrap()),
         ),
     };
 
@@ -229,11 +258,25 @@ fn resolve_config_from_cli_config(
     }
 }
 
-fn resolve_value<T: FromStr>(value: Option<T>, env_var: &str, default: Option<T>) -> T {
+fn resolve_value<T: FromStr<Err: Debug>>(value: Option<T>, env_var: &str, default: Option<T>) -> T {
+    resolve_value_map(
+        value,
+        env_var,
+        |s| T::from_str(s).map_err(|e| anyhow!("{e:?}")),
+        default,
+    )
+}
+
+fn resolve_value_map<T, Map: Fn(&str) -> anyhow::Result<T>>(
+    value: Option<T>,
+    env_var: &str,
+    map: Map,
+    default: Option<T>,
+) -> T {
     value.unwrap_or_else(|| {
         std::env::var(env_var)
             .ok()
-            .and_then(|v| T::from_str(&v).ok())
+            .and_then(|v| map(&v).ok())
             .or(default)
             .expect("Missing required configuration")
     })
