@@ -21,7 +21,11 @@ fn main() -> Result<(), CliError> {
     info!("{:#?}", &config);
 
     match config.command {
-        cli::Command::Generate { dir, seed } => generate::run(&seed, dir)?,
+        cli::Command::Generate {
+            dir,
+            seed,
+            endianess,
+        } => generate::run(&seed, dir, endianess)?,
         cli::Command::Revoke { .. } => todo!(),
     }
 

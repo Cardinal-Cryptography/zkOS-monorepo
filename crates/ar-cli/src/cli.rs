@@ -9,6 +9,13 @@ pub struct Cli {
     pub command: Command,
 }
 
+#[derive(clap::ValueEnum, Clone, Default, Debug)]
+pub enum Endianess {
+    #[default]
+    LitteEndian,
+    BigEndian,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum Command {
     Generate {
@@ -24,6 +31,10 @@ pub enum Command {
         /// Example: --seed 3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab
         #[arg(long, value_parser = ValueParser::new(parse_hex_as_seed))]
         seed: [u8; 32],
+
+        /// Should the output be produced in the Lower Endian (the default) or Big Endian order?
+        #[clap(long, value_enum, default_value_t=Endianess::default())]
+        endianess: Endianess,
     },
 
     Revoke {
