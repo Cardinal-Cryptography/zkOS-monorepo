@@ -1,5 +1,6 @@
 use clap::Parser;
 use cli::Cli;
+use log::info;
 use thiserror::Error;
 
 mod cli;
@@ -14,9 +15,12 @@ enum CliError {
 }
 
 fn main() -> Result<(), CliError> {
-    let cli = Cli::parse();
+    let config = Cli::parse();
+    env_logger::init();
 
-    match cli.command {
+    info!("{:#?}", &config);
+
+    match config.command {
         cli::Command::Generate { dir, seed } => generate::run(&seed, dir)?,
         cli::Command::Revoke { .. } => todo!(),
     }
