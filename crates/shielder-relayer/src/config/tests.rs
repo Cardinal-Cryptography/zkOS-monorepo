@@ -74,6 +74,7 @@ fn config_resolution() {
             service_fee_percent,         // default
             quote_validity,              // from env
             max_pocket_money,            // from CLI
+            dupa: vec![],
         },
         keys: KeyConfig {
             fee_destination_key: fee_destination_key.clone(), // from env
@@ -98,6 +99,7 @@ fn config_resolution() {
         total_fee: Some(total_fee),
         relay_gas: None,
         token_config: None,
+        dupa: Some("[]".to_string()),
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
         native_token: None,

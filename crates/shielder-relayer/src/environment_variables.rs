@@ -14,7 +14,10 @@ pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
 pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 pub const PRICE_FEED_VALIDITY_ENV: &str = "PRICE_FEED_VALIDITY";
 pub const PRICE_FEED_REFRESH_INTERVAL_ENV: &str = "PRICE_FEED_REFRESH_INTERVAL";
+#[deprecated]
 pub const TOKEN_CONFIG_ENV: &str = "TOKEN_CONFIG";
+pub const DUPA_ENV: &str = "DUPA";
+#[deprecated]
 pub const NATIVE_TOKEN_ENV: &str = "NATIVE_TOKEN";
 pub const SERVICE_FEE_PERCENT_ENV: &str = "SERVICE_FEE_PERCENT";
 pub const QUOTE_VALIDITY_ENV: &str = "QUOTE_VALIDITY";

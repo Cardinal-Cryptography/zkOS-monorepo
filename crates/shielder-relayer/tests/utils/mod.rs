@@ -5,8 +5,9 @@ use std::{net::TcpListener, str::FromStr};
 use alloy_primitives::{Address, Bytes, U256};
 use rand::Rng;
 use reqwest::Response;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use shielder_relayer::{Coin, RelayQuery, TokenKind};
+use shielder_relayer::{Coin, PriceProvider, RelayQuery, Token, TokenKind};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -52,6 +53,11 @@ impl TestContext {
             FEE_DESTINATION_KEY.to_string(),
             test_config.relayer_signer.signing_key(),
             Coin::Eth,
+            vec![Token {
+                kind: TokenKind::Native,
+                decimals: 10,
+                price_provider: PriceProvider::Static(Decimal::ONE),
+            }],
         ));
 
         Self {

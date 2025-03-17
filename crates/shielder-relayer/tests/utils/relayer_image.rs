@@ -1,9 +1,6 @@
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
-use shielder_relayer::{
-    Coin, FEE_DESTINATION_KEY_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV,
-    RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV,
-};
+use shielder_relayer::{Coin, Token, DUPA_ENV, FEE_DESTINATION_KEY_ENV, NATIVE_TOKEN_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV};
 use testcontainers::{core::WaitFor, Image};
 
 /// Wrapper around `shielder-relayer` Docker image.
@@ -29,6 +26,7 @@ impl RelayerImage {
         fee_destination_key: String,
         signing_key: String,
         native_token: Coin,
+        token_config: Vec<Token>,
     ) -> Self {
         Self {
             env_vars: HashMap::from([
@@ -42,6 +40,7 @@ impl RelayerImage {
                 (FEE_DESTINATION_KEY_ENV.to_string(), fee_destination_key),
                 (RELAYER_SIGNING_KEYS_ENV.to_string(), signing_key),
                 (NATIVE_TOKEN_ENV.to_string(), format!("{native_token:?}")),
+                (DUPA_ENV.to_string(), serde_json::to_string(&token_config).unwrap()),
             ]),
         }
     }

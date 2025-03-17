@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::Address;
 use clap::ValueEnum;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
@@ -43,9 +44,26 @@ impl FromStr for Coin {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
 pub enum TokenKind {
     #[default]
     Native,
     ERC20(Address),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub enum PriceProvider {
+    Url(String),
+    Static(Decimal),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub decimals: u32,
+    pub price_provider: PriceProvider,
 }
