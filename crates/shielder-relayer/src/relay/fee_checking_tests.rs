@@ -1,14 +1,9 @@
 use alloy_primitives::address;
 use shielder_contract::{NoProvider, ShielderUser};
-use shielder_relayer::Coin;
 use tokio::{sync::mpsc::channel, time::Duration};
 
 use super::*;
-use crate::{
-    config::{DryRunning, TokenConfig},
-    price_feed::Prices,
-    relay::taskmaster::Taskmaster,
-};
+use crate::{config::DryRunning, price_feed::Prices, relay::taskmaster::Taskmaster};
 
 const NATIVE_TOTAL_FEE: u64 = 100;
 
@@ -19,7 +14,7 @@ fn app_state() -> AppState {
     let users: Vec<ShielderUser<NoProvider>> = vec![];
     AppState {
         total_fee: U256::from(NATIVE_TOTAL_FEE),
-        prices: Prices::new(Duration::from_secs(10), Duration::from_secs(1)),
+        prices: Prices::new(&[], Duration::from_secs(10), Duration::from_secs(1)),
         taskmaster: Taskmaster::new(users, DryRunning::Optimistic, recharge_send),
         node_rpc_url: Default::default(),
         balances: Default::default(),
@@ -27,7 +22,6 @@ fn app_state() -> AppState {
         token_config: Default::default(),
         signer_addresses: Default::default(),
         relay_gas: Default::default(),
-        native_token: Coin::Azero,
     }
 }
 
@@ -87,25 +81,25 @@ mod native_fee {
 
 mod erc20_fee {
     use assert2::assert;
-    use shielder_relayer::Coin;
+    use shielder_relayer::PriceProvider;
 
     use super::*;
 
     const ERC20_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
 
-    fn erc20_pricing() -> TokenConfig {
-        TokenConfig {
-            coin: Coin::Eth,
+    fn erc20() -> Token {
+        Token {
             kind: TokenKind::ERC20(ERC20_ADDRESS),
-            pricing: Pricing::Feed,
+            decimals: 18,
+            price_provider: PriceProvider::Url(String::new()),
         }
     }
 
-    fn native_pricing() -> TokenConfig {
-        TokenConfig {
-            coin: Coin::Azero,
+    fn native() -> Token {
+        Token {
             kind: TokenKind::Native,
-            pricing: Pricing::Feed,
+            decimals: 18,
+            price_provider: PriceProvider::Url(String::new()),
         }
     }
 
@@ -115,8 +109,8 @@ mod erc20_fee {
             token_config: vec![],
             ..app_state()
         };
-        app_state.prices.set_price(Coin::Eth, Decimal::new(2, 0));
-        app_state.prices.set_price(Coin::Azero, Decimal::new(4, 0));
+        app_state.prices.set_price(erc20(), Decimal::new(2, 0));
+        app_state.prices.set_price(native(), Decimal::new(4, 0));
 
         let query = RelayQuery {
             fee_token: TokenKind::ERC20(ERC20_ADDRESS),
@@ -129,11 +123,11 @@ mod erc20_fee {
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
 
         // When native is not set.
-        app_state.token_config = vec![erc20_pricing()];
+        app_state.token_config = vec![erc20()];
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
 
         // When fee token is not set.
-        app_state.token_config = vec![native_pricing()];
+        app_state.token_config = vec![native()];
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
     }
 
@@ -143,11 +137,9 @@ mod erc20_fee {
     ///   - AZERO price is $3
     fn app_state_with_pricing() -> AppState {
         let app_state = AppState {
-            token_config: vec![native_pricing(), erc20_pricing()],
+            token_config: vec![],
             ..app_state()
         };
-        app_state.prices.set_price(Coin::Eth, Decimal::new(15, 1));
-        app_state.prices.set_price(Coin::Azero, Decimal::new(3, 0));
         app_state
     }
 
