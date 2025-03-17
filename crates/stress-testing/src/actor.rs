@@ -6,7 +6,6 @@ use shielder_account::{
 };
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::FIELD_BITS,
     GrumpkinPointAffine,
 };
 use shielder_contract::{
@@ -58,7 +57,7 @@ impl Actor {
                 amount,
                 &NewAccountCallExtra {
                     anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
-                    encryption_salt: [Default::default(); FIELD_BITS],
+                    encryption_salt: U256::MAX,
                     mac_salt: U256::ZERO,
                 },
             )
