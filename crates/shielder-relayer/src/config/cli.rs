@@ -148,26 +148,9 @@ pub struct CLIConfig {
 
     #[clap(
         long,
-        help = "Token pricing configuration for tokens that are qualified as a fee token.",
-        long_help = format!("Token pricing configuration for tokens that are qualified as a fee token. \
-            If not provided, the value from the environment variable `{TOKEN_CONFIG_ENV}` will be used. \
-            If that is not set, assumed to be empty. Parsed as JSON: \
-            \
-            This example configures a token to have a constant price of 12.3 USD: \
-            [{{\"coin\":\"Eth\", \"kind\":\"Native\", \"pricing\":{{\"Fixed\":{{\"price\":\"12.3\"}}}}] \
-            \
-            This example configure a token to use the `Usdc` price feed for its pricing: \
-            [{{\"coin\":\"Usdc\", \"kind\":{{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"}},\"pricing\":\"Feed\"}}]
-            ")
-    )]
-    #[deprecated]
-    pub token_config: Option<String>,
-
-    #[clap(
-        long,
         help = "Token configuration for all coins that are qualified as a fee token.",
         long_help = format!("Token configuration for all coins that are qualified as a fee token. \
-            If not provided, the value from the environment variable `{DUPA_ENV}` will be used. \
+            If not provided, the value from the environment variable `{TOKEN_CONFIG_ENV}` will be used. \
             \
             Parsed as JSON: \
             \
@@ -178,7 +161,7 @@ pub struct CLIConfig {
             [{{\"coin\":\"Usdc\", \"kind\":{{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"}},\"pricing\":\"Feed\"}}]
             ")
     )]
-    pub dupa: Option<String>,
+    pub token_config: Option<String>,
 
     #[clap(
         long,
@@ -199,16 +182,6 @@ pub struct CLIConfig {
         value_parser = parsing::parse_seconds
     )]
     pub price_feed_validity: Option<Duration>,
-
-    #[clap(
-        long,
-        help = "Token native to chain where the relayer operates.",
-        long_help = format!("Token native to chain where the relayer operates. If not provided, the value \
-            from the environment variable `{NATIVE_TOKEN_ENV}` will be used. Example values: 'eth', \
-            'azero', 'btc'.")
-    )]
-    #[deprecated]
-    pub native_token: Option<Coin>,
 
     #[clap(
         long,

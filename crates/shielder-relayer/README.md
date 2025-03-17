@@ -62,4 +62,9 @@ defaults not provided.
 
 # API
 
-TO BE DONE, ONCE ADR IS IMPLEMENTED
+// const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
+// Coin::Azero => "/AlephZero/0x0000000000000000000000000000000000000000",
+// Coin::Eth => "/Ethereum/0x0000000000000000000000000000000000000000",
+// Coin::Btc => "/Bitcoin/0x0000000000000000000000000000000000000000",
+// Coin::Usdt => "/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7",
+// Coin::Usdc => "/Ethereum/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",

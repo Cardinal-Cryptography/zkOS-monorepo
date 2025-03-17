@@ -10,14 +10,13 @@ use shielder_contract::{
     ShielderContract::withdrawNativeCall,
 };
 use shielder_relayer::{
-    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
+    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, Token, TokenKind,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
-    config::{Pricing, TokenConfig},
     metrics::WITHDRAW_FAILURE,
     price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
@@ -156,17 +155,17 @@ fn check_erc20_fee(
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    let fee_token_config = app_state
+    let fee_token = app_state
         .token_config
         .iter()
         .find(|x| x.kind == TokenKind::ERC20(fee_token_address));
 
-    let native_config = app_state
+    let native_token = app_state
         .token_config
         .iter()
         .find(|x| x.kind == TokenKind::Native);
 
-    match (fee_token_config, native_config) {
+    match (fee_token, native_token) {
         (None, _) => {
             request_trace.record_incorrect_token_fee(fee_token_address);
             Err(bad_request(&format!(
@@ -177,12 +176,11 @@ fn check_erc20_fee(
             error!("MISSING NATIVE TOKEN PRICING!");
             Err(server_error("Server is missing native token pricing."))
         }
-        (Some(fee_token_config), Some(native_config)) => {
-            let ratio =
-                price_relative_to_native(&app_state.prices, fee_token_config, native_config)
-                    .ok_or_else(|| {
-                        temporary_failure("Verification failed temporarily, try again later.")
-                    })?;
+        (Some(fee_token), Some(native_token)) => {
+            let ratio = price_relative_to_native(&app_state.prices, fee_token, native_token)
+                .ok_or_else(|| {
+                    temporary_failure("Verification failed temporarily, try again later.")
+                })?;
 
             let expected_fee =
                 scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
@@ -198,16 +196,11 @@ fn check_erc20_fee(
 
 fn price_relative_to_native(
     prices: &Prices,
-    fee_token_config: &TokenConfig,
-    native_config: &TokenConfig,
+    fee_token: &Token,
+    native_token: &Token,
 ) -> Option<Decimal> {
-    let resolve_price = |config: &TokenConfig| match config.pricing {
-        Pricing::Fixed { price } => Some(price),
-        Pricing::Feed => prices.price(config.coin).map(|price| price.unit_price),
-    };
-    let fee_token_price = resolve_price(fee_token_config)?;
-    let native_price = resolve_price(native_config)?;
-
+    let fee_token_price = prices.price(fee_token.kind)?.unit_price;
+    let native_price = prices.price(native_token.kind)?.unit_price;
     Some(fee_token_price / native_price)
 }
 

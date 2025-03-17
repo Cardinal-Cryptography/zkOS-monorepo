@@ -10,14 +10,13 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use config::TokenConfig;
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     providers::create_provider_with_nonce_caching_signer,
     ConnectionPolicy, ShielderUser,
 };
-use shielder_relayer::Coin;
+use shielder_relayer::Token;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -33,8 +32,7 @@ use crate::{
 mod config;
 mod metrics;
 mod monitor;
-// This is only pub for now to avoid dead code warnings, make it private once we use it
-pub mod price_feed;
+mod price_feed;
 mod quote;
 mod recharge;
 mod relay;
@@ -49,8 +47,7 @@ pub struct AppState {
     pub taskmaster: Taskmaster,
     pub balances: Balances,
     pub prices: Prices,
-    pub token_config: Vec<TokenConfig>,
-    pub native_token: Coin,
+    pub token_config: Vec<Token>,
 }
 
 struct Signers {
@@ -69,6 +66,7 @@ async fn main() -> Result<()> {
 
     let signers = get_signer_info(&server_config.keys)?;
     let prices = Prices::new(
+        &server_config.operations.token_config,
         server_config.operations.price_feed_validity,
         server_config.operations.price_feed_refresh_interval,
     );
@@ -154,7 +152,6 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         ),
         token_config: config.operations.token_config.clone(),
         prices,
-        native_token: config.chain.native_token,
     };
 
     let app = Router::new()
