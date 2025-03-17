@@ -72,7 +72,7 @@ fn main() {
             withdraw_calldata(
                 &mut deployment,
                 &mut shielder_account,
-                prepare_args(token, amount, U256::from(1)),
+                prepare_args(token, amount, U256::from(1), U256::from(1)),
             )
             .0,
         );
