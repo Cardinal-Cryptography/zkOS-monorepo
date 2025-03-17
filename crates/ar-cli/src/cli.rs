@@ -46,8 +46,8 @@ pub enum Command {
 fn parse_hex_as_seed(input: &str) -> Result<[u8; 32], &'static str> {
     let mut decoded = [0u8; 32];
 
-    let sanitized_input = if input.starts_with("0x") {
-        &input[2..]
+    let sanitized_input = if let Some(stripped) = input.strip_prefix("0x") {
+        stripped
     } else {
         input
     };

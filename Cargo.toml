@@ -13,6 +13,7 @@ repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [workspace.dependencies]
 alloy-contract = { version = "0.9.1" }
+alloy-eip7702 = { version = "0.5.1" }
 alloy-network = { version = "0.9.1" }
 alloy-primitives = { version = "0.8.15" }
 alloy-provider = { version = "0.9.1" }
@@ -21,7 +22,6 @@ alloy-rpc-types-eth = { version = "0.9.1" }
 alloy-signer = { version = "0.9.1" }
 alloy-signer-local = { version = "0.9.1" }
 alloy-sol-types = { version = "0.8.15" }
-alloy-eip7702 = { version = "0.5.1" } 
 alloy-transport = { version = "0.9.1" }
 anyhow = { version = "1.0.86", default-features = false }
 askama = { version = "0.12.0", default-features = false }
@@ -31,17 +31,20 @@ axum = { version = "0.7.7" }
 byteorder = { version = "1.4.3" }
 chacha20poly1305 = { version = "0.10.1", default-features = false }
 clap = { version = "4.5.8" }
+env_logger = { version = "0.10.0" }
 getrandom = { version = "0.2" }
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", default-features = false }
 halo2curves = { version = "0.6.0", default-features = false }
 hex = { version = "0.4.3" }
 inquire = { version = "0.7.5" }
 itertools = { version = "0.13.0" }
+log = { version = "0.4.20" }
 metrics = { version = "0.24.1", default-features = false }
 metrics-exporter-prometheus = { version = "0.16.0", default-features = false }
 num-bigint = { version = "0.4.3" }
 openssl = { version = "0.10.59" }
 rand = { version = "0.8.5" }
+rand_chacha = { version = "0.3.1" }
 rayon = { version = "1.8" }
 reqwest = { version = "0.12.5" }
 revm = { version = "19.6.0", default-features = false }
@@ -54,7 +57,7 @@ serde = { version = "1.0.203" }
 serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
-# shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "bdba525" }
+#shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "bdba525" }
 shielder-circuits = { path = "/home/filip/CloudStation/aleph/zkOS-circuits/crates/shielder-circuits" }
 strum = { version = "0.27.1" }
 strum_macros = { version = "0.27.1" }
@@ -68,6 +71,7 @@ tracing-subscriber = { version = "0.3.18" }
 uniffi = { version = "0.28.3" }
 wasm-bindgen = { version = "0.2.92" }
 wasm-bindgen-rayon = { version = "1.2.1" }
+
 
 # Local dependencies
 content-encryption = { path = "crates/content-encryption", default-features = false }

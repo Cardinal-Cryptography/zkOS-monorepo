@@ -1,4 +1,8 @@
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use endianess::Endianess;
 use log::{debug, info};
@@ -83,9 +87,9 @@ mod endianess {
     }
 }
 
-fn spit(dir: &PathBuf, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> {
-    let mut private_key_file = File::create(format!("{}/{}", dir.display().to_string(), filename))?;
-    private_key_file.write_all(&bytes)?;
+fn spit(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> {
+    let mut private_key_file = File::create(format!("{}/{}", dir.display(), filename))?;
+    private_key_file.write_all(bytes)?;
     Ok(())
 }
 
