@@ -31,12 +31,12 @@ export class SecretGenerator
   deriveId(
     privateKey: `0x${string}`,
     chainId: bigint,
-    tokenAddress: `0x${string}`
+    accountNonce: number
   ): Promise<Scalar> {
     if (!this.wasmModule) {
       throw new Error("Wasm module not initialized");
     }
-    const result = this.wasmModule.derive_id(privateKey, chainId, tokenAddress);
+    const result = this.wasmModule.derive_id(privateKey, chainId, accountNonce);
     return Promise.resolve(new Scalar(result));
   }
 }

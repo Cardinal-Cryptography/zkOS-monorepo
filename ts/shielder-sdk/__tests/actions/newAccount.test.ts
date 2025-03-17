@@ -42,16 +42,18 @@ describe("NewAccountAction", () => {
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
             newNote: bigint,
-            idHash: bigint,
+            prenullifier: bigint,
             amount: bigint,
             symKeyEncryption1X: bigint,
             symKeyEncryption1Y: bigint,
             symKeyEncryption2X: bigint,
             symKeyEncryption2Y: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
-        .mockResolvedValue("0xmockedCalldata")
+        .mockResolvedValue({ calldata: "0xmockedCalldata", gas: 123n })
     } as unknown as IContract;
     action = new NewAccountAction(contract, cryptoClient);
     mockedState = {
@@ -170,19 +172,22 @@ describe("NewAccountAction", () => {
         expectedVersion,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.hNote),
-        scalarToBigint(calldata.calldata.pubInputs.hId),
+        scalarToBigint(calldata.calldata.pubInputs.prenullifier),
         amount,
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1X),
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption1Y),
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2X),
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2Y),
+        scalarToBigint(calldata.calldata.pubInputs.macSalt),
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.calldata.proof
       );
 
       expect(mockSendTransaction).toHaveBeenCalledWith({
         data: "0xmockedCalldata",
         to: mockAddress,
-        value: amount
+        value: amount,
+        gas: 123n
       });
 
       expect(txHash).toBe("0xtxHash");
@@ -205,14 +210,16 @@ describe("NewAccountAction", () => {
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
             newNote: bigint,
-            idHash: bigint,
+            prenullifier: bigint,
             amount: bigint,
             symKeyEncryption1X: bigint,
             symKeyEncryption1Y: bigint,
             symKeyEncryption2X: bigint,
             symKeyEncryption2Y: bigint,
+            macSalt: bigint,
+            macCommitment: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: "0xmockedCalldata"; gas: 123n }>
         >()
         .mockRejectedValue(mockedErr);
 

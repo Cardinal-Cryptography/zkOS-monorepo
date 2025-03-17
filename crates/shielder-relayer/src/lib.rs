@@ -1,10 +1,15 @@
+use std::str::FromStr;
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
+use clap::ValueEnum;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
+use strum_macros::EnumIter;
 
 pub const LOGGING_FORMAT_ENV: &str = "LOGGING_FORMAT";
 pub const RELAYER_HOST_ENV: &str = "RELAYER_HOST";
@@ -22,7 +27,8 @@ pub const TOTAL_FEE_ENV: &str = "TOTAL_FEE";
 pub const RELAY_GAS_ENV: &str = "RELAY_GAS";
 pub const PRICE_FEED_VALIDITY_ENV: &str = "PRICE_FEED_VALIDITY";
 pub const PRICE_FEED_REFRESH_INTERVAL_ENV: &str = "PRICE_FEED_REFRESH_INTERVAL";
-pub const TOKEN_PRICING_ENV: &str = "TOKEN_PRICING";
+pub const TOKEN_CONFIG_ENV: &str = "TOKEN_CONFIG";
+pub const NATIVE_TOKEN_ENV: &str = "NATIVE_TOKEN";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -51,42 +57,66 @@ impl RelayResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct QuoteFeeResponse {
-    /// The fee used as a contract input by the relayer. Decimal string.
-    pub total_fee: String,
-    /// The estimation of a base fee for relay call. Decimal string.
-    pub base_fee: String,
-    /// The estimation of a relay fee for relay call. Decimal string.
-    pub relay_fee: String,
+    // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON
+    /// The fee used as a contract input by the relayer.
+    pub total_fee: U256,
+    /// The estimation of a base fee for relay call.
+    pub base_fee: U256,
+    /// The estimation of a relay fee for relay call.
+    pub relay_fee: U256,
+    // 8< ----------------------------------------------------- >8
+    /// The total relay cost in native token.
+    pub total_cost_native: U256,
+    /// The total relay cost in fee token.
+    pub total_cost_fee_token: U256,
+
+    /// Current gas price (in native token).
+    pub gas_price: U256,
+    /// Gas cost for relay call (in native token).
+    pub gas_cost_native: U256,
+    /// Gas cost for relay call (in fee token).
+    pub gas_cost_fee_token: U256,
+
+    /// The commission for the relayer in native token.
+    pub commission_native: U256,
+    /// The commission for the relayer in fee token.
+    pub commission_fee_token: U256,
+
+    /// Current price of the native token (base unit, like 1 ETH or 1 BTC).
+    pub native_token_price: Decimal,
+    /// Current price of the minimal unit of the native token (like 1 wei or 1 satoshi).
+    pub native_token_unit_price: Decimal,
+    /// Current price of the fee token (base unit, like 1 ETH or 1 BTC).
+    pub fee_token_price: Decimal,
+    /// Current price of the minimal unit of the fee token (like 1 wei or 1 satoshi).
+    pub fee_token_unit_price: Decimal,
+    /// Current ratio between the native token and the fee token.
+    pub token_price_ratio: Decimal,
 }
 
-impl QuoteFeeResponse {
-    pub fn from(total_fee: U256, base_fee: U256, relay_fee: U256) -> Json<Self> {
-        Json(Self {
-            total_fee: total_fee.to_string(), // convert to decimal string
-            base_fee: base_fee.to_string(),   // convert to decimal string
-            relay_fee: relay_fee.to_string(), // convert to decimal string
-        })
-    }
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct QuoteFeeQuery {
+    pub fee_token: TokenKind,
+    pub pocket_money: U256,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct RelayQuery {
     pub expected_contract_version: FixedBytes<3>,
-    pub id_hiding: U256,
     pub amount: U256,
     pub withdraw_address: Address,
     pub merkle_root: U256,
     pub nullifier_hash: U256,
     pub new_note: U256,
     pub proof: Bytes,
-    pub fee_token: FeeToken,
+    pub fee_token: TokenKind,
     pub fee_amount: U256,
     pub mac_salt: U256,
     pub mac_commitment: U256,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
-pub enum FeeToken {
+pub enum TokenKind {
     #[default]
     Native,
     ERC20(Address),
@@ -95,4 +125,53 @@ pub enum FeeToken {
 pub fn server_error(msg: &str) -> Response {
     let code = StatusCode::INTERNAL_SERVER_ERROR;
     (code, SimpleServiceResponse::from(msg)).into_response()
+}
+
+/// A list of all supported coins across all chains. Every relayer instance will work with some
+/// subset of these coins.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumIter, Serialize, Deserialize, ValueEnum)]
+pub enum Coin {
+    Eth,
+    Azero,
+    Btc,
+    Usdt,
+    Usdc,
+}
+
+impl Coin {
+    pub fn decimals(&self) -> u32 {
+        match self {
+            Coin::Azero => 18,
+            Coin::Eth => 18,
+            Coin::Btc => 8,
+            Coin::Usdt => 6,
+            Coin::Usdc => 6,
+        }
+    }
+}
+
+impl FromStr for Coin {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "azero" => Ok(Coin::Azero),
+            "eth" => Ok(Coin::Eth),
+            "btc" => Ok(Coin::Btc),
+            "usdt" => Ok(Coin::Usdt),
+            "usdc" => Ok(Coin::Usdc),
+            _ => Err(()),
+        }
+    }
+}
+
+pub const RELATIVE_PRICE_DIGITS: u32 = 20;
+
+pub fn scale_u256(a: U256, b: Decimal) -> Result<U256, &'static str> {
+    let b = b
+        .round_sf(RELATIVE_PRICE_DIGITS)
+        .ok_or("Arithmetic error")?;
+    let mantissa: U256 = b.mantissa().try_into().map_err(|_| "Arithmetic error")?;
+    let scale = U256::pow(U256::from(10), U256::from(b.scale()));
+    Ok(a * mantissa / scale)
 }

@@ -2,15 +2,16 @@ use std::time::Instant;
 
 use alloy_provider::Provider;
 use anyhow::Result;
-use shielder_account::call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra};
+use shielder_account::call_data::{Token, WithdrawCallType, WithdrawExtra};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     withdraw::WithdrawCircuit,
 };
 use shielder_contract::{
-    alloy_primitives::U256, merkle_path::get_current_merkle_path, providers::create_simple_provider,
+    alloy_primitives::U256, merkle_path::get_current_merkle_path,
+    providers::create_simple_provider, ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery, TokenKind};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
@@ -82,8 +83,7 @@ async fn prepare_relay_queries<'actor>(
         .await?
         .json::<QuoteFeeResponse>()
         .await?
-        .total_fee
-        .parse()?;
+        .total_fee;
 
     println!("⏳ Preparing relay queries for actors...");
     for actor in actors {
@@ -108,34 +108,35 @@ async fn prepare_relay_query(
         .get_chain_id()
         .await?;
 
-    let calldata = actor.account.prepare_call::<WithdrawCallType>(
-        params,
-        pk,
-        Token::Native,
-        U256::from(WITHDRAW_AMOUNT),
-        &WithdrawExtra {
-            merkle_proof: MerkleProof {
-                root: merkle_root,
-                path: merkle_path,
+    let calldata: withdrawNativeCall = actor
+        .account
+        .prepare_call::<WithdrawCallType>(
+            params,
+            pk,
+            Token::Native,
+            U256::from(WITHDRAW_AMOUNT),
+            &WithdrawExtra {
+                merkle_path,
+                to,
+                relayer_address: config.relayer_address,
+                relayer_fee,
+                contract_version: contract_version(),
+                chain_id: U256::from(chain_id),
+                mac_salt: U256::ZERO,
             },
-            to,
-            relayer_address: config.relayer_address,
-            relayer_fee,
-            contract_version: contract_version(),
-            chain_id: U256::from(chain_id),
-        },
-    );
+        )
+        .try_into()
+        .unwrap();
 
     let query = RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
-        id_hiding: calldata.idHiding,
         amount: U256::from(WITHDRAW_AMOUNT),
         withdraw_address: to,
         merkle_root,
         nullifier_hash: calldata.oldNullifierHash,
         new_note: calldata.newNote,
         proof: calldata.proof,
-        fee_token: FeeToken::Native,
+        fee_token: TokenKind::Native,
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,

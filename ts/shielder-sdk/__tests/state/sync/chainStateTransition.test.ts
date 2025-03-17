@@ -22,6 +22,8 @@ describe("ChainStateTransition", () => {
   let mockGetNoteEventsFromBlock: any;
   let mockNewStateByEvent: any;
 
+  const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+
   beforeEach(() => {
     mockState = {
       id: Scalar.fromBigint(1n),
@@ -65,7 +67,8 @@ describe("ChainStateTransition", () => {
         newNoteIndex: 2n,
         contractVersion: "0x000100", // Use the supported version from constants
         txHash: "0x123",
-        block: 1n
+        block: 1n,
+        tokenAddress: nativeTokenAddress
       };
 
       const mockNewState: AccountStateMerkleIndexed = {
@@ -169,7 +172,8 @@ describe("ChainStateTransition", () => {
         newNoteIndex: 2n,
         contractVersion: "0xFFFFFF", // Unsupported version
         txHash: "0x123",
-        block: 1n
+        block: 1n,
+        tokenAddress: nativeTokenAddress
       };
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
@@ -210,6 +214,41 @@ describe("ChainStateTransition", () => {
       await expect(
         chainStateTransition.findStateTransition(mockState)
       ).rejects.toThrow("Unexpected number of events: 0, expected 1 event");
+    });
+
+    it("should throw error when state-changing event token does not match state token", async () => {
+      const mockNullifier = Scalar.fromBigint(123n);
+      const mockNullifierHash = Scalar.fromBigint(456n);
+
+      const mockEvent: NoteEvent = {
+        name: "Deposit",
+        amount: 50n,
+        newNote: 789n,
+        newNoteIndex: 2n,
+        contractVersion: "0x000100", // Use the supported version from constants
+        txHash: "0x123",
+        block: 1n,
+        tokenAddress: "0x123"
+      };
+
+      vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
+        nullifier: mockNullifier,
+        trapdoor: Scalar.fromBigint(0n)
+      });
+
+      vi.spyOn(mockCryptoClient.hasher, "poseidonHash").mockResolvedValue(
+        mockNullifierHash
+      );
+
+      mockNullifierBlock.mockResolvedValue(1n);
+
+      mockGetNoteEventsFromBlock.mockResolvedValue([mockEvent]);
+
+      await expect(
+        chainStateTransition.findStateTransition(mockState)
+      ).rejects.toThrow(
+        `Unexpected token address in event: ${mockEvent.tokenAddress}`
+      );
     });
   });
 });

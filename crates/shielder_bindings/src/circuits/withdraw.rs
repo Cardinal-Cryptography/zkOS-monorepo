@@ -16,7 +16,6 @@ use crate::utils::{vec_to_f, vec_to_path};
 #[cfg_attr(feature = "build-wasm", wasm_bindgen(getter_with_clone))]
 #[derive(Clone, Debug, Default)]
 pub struct WithdrawPubInputsBytes {
-    pub id_hiding: Vec<u8>,
     pub merkle_root: Vec<u8>,
     pub h_nullifier_old: Vec<u8>,
     pub h_note_new: Vec<u8>,
@@ -30,7 +29,6 @@ pub struct WithdrawPubInputsBytes {
 impl From<WithdrawProverKnowledge<Fr>> for WithdrawPubInputsBytes {
     fn from(knowledge: WithdrawProverKnowledge<Fr>) -> Self {
         WithdrawPubInputsBytes {
-            id_hiding: field_to_bytes(knowledge.compute_public_input(WithdrawInstance::IdHiding)),
             merkle_root: field_to_bytes(
                 knowledge.compute_public_input(WithdrawInstance::MerkleRoot),
             ),
@@ -75,7 +73,6 @@ impl WithdrawCircuit {
     pub fn prove(
         &self,
         id: Vec<u8>,
-        nonce: Vec<u8>,
         nullifier_old: Vec<u8>,
         trapdoor_old: Vec<u8>,
         account_balance_old: Vec<u8>,
@@ -90,7 +87,6 @@ impl WithdrawCircuit {
         self.0.prove(
             &WithdrawProverKnowledge {
                 id: vec_to_f(id),
-                nonce: vec_to_f(nonce),
                 nullifier_old: vec_to_f(nullifier_old),
                 trapdoor_old: vec_to_f(trapdoor_old),
                 account_old_balance: vec_to_f(account_balance_old),
@@ -109,7 +105,6 @@ impl WithdrawCircuit {
     #[allow(clippy::too_many_arguments)]
     pub fn verify(
         &self,
-        id_hiding: Vec<u8>,
         merkle_root: Vec<u8>,
         h_nullifier_old: Vec<u8>,
         h_note_new: Vec<u8>,
@@ -122,7 +117,6 @@ impl WithdrawCircuit {
     ) -> Result<(), VerificationError> {
         let public_input = |input: WithdrawInstance| {
             let value = match input {
-                WithdrawInstance::IdHiding => &id_hiding,
                 WithdrawInstance::MerkleRoot => &merkle_root,
                 WithdrawInstance::HashedOldNullifier => &h_nullifier_old,
                 WithdrawInstance::HashedNewNote => &h_note_new,
@@ -144,7 +138,6 @@ impl WithdrawCircuit {
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 pub fn withdraw_pub_inputs(
     id: Vec<u8>,
-    nonce: Vec<u8>,
     nullifier_old: Vec<u8>,
     trapdoor_old: Vec<u8>,
     account_balance_old: Vec<u8>,
@@ -158,7 +151,6 @@ pub fn withdraw_pub_inputs(
 ) -> WithdrawPubInputsBytes {
     let knowledge = WithdrawProverKnowledge {
         id: vec_to_f(id),
-        nonce: vec_to_f(nonce),
         nullifier_old: vec_to_f(nullifier_old),
         trapdoor_old: vec_to_f(trapdoor_old),
         account_old_balance: vec_to_f(account_balance_old),

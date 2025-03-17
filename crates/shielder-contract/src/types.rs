@@ -20,7 +20,7 @@ sol! {
     contract ShielderContract {
         event NewAccount(
             bytes3 contractVersion,
-            uint256 idHash,
+            uint256 prenullifier,
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
@@ -28,7 +28,6 @@ sol! {
         );
         event Deposit(
             bytes3 contractVersion,
-            uint256 idHiding,
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
@@ -38,7 +37,6 @@ sol! {
         );
         event Withdraw(
             bytes3 contractVersion,
-            uint256 idHiding,
             address tokenAddress,
             uint256 amount,
             address withdrawalAddress,
@@ -61,8 +59,6 @@ sol! {
         error AmountOverDepositLimit();
         error AmountTooHigh();
         error ContractBalanceLimitReached();
-        error LeafIsNotInTheTree();
-        error PrecompileCallFailed();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
 
@@ -83,11 +79,13 @@ sol! {
         function newAccountNative(
             bytes3 expectedContractVersion,
             uint256 newNote,
-            uint256 idHash,
+            uint256 prenullifier,
             uint256 symKeyEncryptionC1X,
             uint256 symKeyEncryptionC1Y,
             uint256 symKeyEncryptionC2X,
             uint256 symKeyEncryptionC2Y,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
         ) external payable whenNotPaused;
         function newAccountERC20(
@@ -95,16 +93,17 @@ sol! {
             address tokenAddress,
             uint256 amount,
             uint256 newNote,
-            uint256 idHash,
+            uint256 prenullifier,
             uint256 symKeyEncryptionC1X,
             uint256 symKeyEncryptionC1Y,
             uint256 symKeyEncryptionC2X,
             uint256 symKeyEncryptionC2Y,
+            uint256 macSalt,
+            uint256 macCommitment,
             bytes calldata proof
         ) external whenNotPaused;
         function depositNative(
             bytes3 expectedContractVersion,
-            uint256 idHiding,
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
@@ -116,7 +115,6 @@ sol! {
             bytes3 expectedContractVersion,
             address tokenAddress,
             uint256 amount,
-            uint256 idHiding,
             uint256 oldNullifierHash,
             uint256 newNote,
             uint256 merkleRoot,
@@ -126,7 +124,6 @@ sol! {
         ) external whenNotPaused;
         function withdrawNative(
             bytes3 expectedContractVersion,
-            uint256 idHiding,
             uint256 amount,
             address withdrawalAddress,
             uint256 merkleRoot,
@@ -140,7 +137,6 @@ sol! {
         ) external whenNotPaused;
         function withdrawERC20(
             bytes3 expectedContractVersion,
-            uint256 idHiding,
             address tokenAddress,
             uint256 amount,
             address withdrawalAddress,

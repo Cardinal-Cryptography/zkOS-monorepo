@@ -37,13 +37,28 @@ else
 endif
 
 .PHONY: run
+run: ## Run the Relayer service in a local detached Docker container
 run: build-image stop ## Start the Relayer service in a local Docker container
 	@DOCKER_USER=$(DOCKER_USER) \
 	RELAYER_CONTAINER_NAME=$(RELAYER_CONTAINER_NAME) \
 	RELAYER_DOCKER_IMAGE=$(RELAYER_DOCKER_IMAGE) \
+	DETACHED=true \
 	./run-relayer.sh
 
 .PHONY: stop
 stop:
 	@docker kill "${RELAYER_CONTAINER_NAME}" 1> /dev/null 2>&1 || true
 	@docker rm "${RELAYER_CONTAINER_NAME}" 1> /dev/null 2>&1 || true
+
+.PHONY: start-dummy
+start-dummy: ## Just start the relayer in a local Docker container with mocked contract addresses. Useful for debugging.
+start-dummy: build-image stop
+	@DOCKER_USER=$(DOCKER_USER) \
+	RELAYER_CONTAINER_NAME=$(RELAYER_CONTAINER_NAME) \
+	RELAYER_DOCKER_IMAGE=$(RELAYER_DOCKER_IMAGE) \
+	NODE_RPC_URL="http://localhost:8545" \
+	FEE_DESTINATION_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
+    RELAYER_SIGNING_KEYS="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" \
+    SHIELDER_CONTRACT_ADDRESS="0x1111111111111111111111111111111111111111" \
+	NATIVE_TOKEN="Eth" \
+	./run-relayer.sh

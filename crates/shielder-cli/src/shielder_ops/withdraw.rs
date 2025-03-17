@@ -5,20 +5,25 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{MerkleProof, Token, WithdrawCallType, WithdrawExtra},
+    call_data::{Token, WithdrawCallType, WithdrawExtra},
     ShielderAction,
 };
 use shielder_contract::{
-    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
+    events::get_event,
+    merkle_path::get_current_merkle_path,
+    ShielderContract::{withdrawNativeCall, Withdraw},
 };
-use shielder_relayer::{FeeToken, QuoteFeeResponse, RelayQuery, RelayResponse};
+use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
 
 use crate::{
     app_state::{AppState, RelayerRpcUrl},
-    shielder_ops::pk::{get_proving_equipment, CircuitType},
+    shielder_ops::{
+        get_mac_salt,
+        pk::{get_proving_equipment, CircuitType},
+    },
 };
 
 pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Result<()> {
@@ -55,7 +60,6 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
     app_state.account.register_action(ShielderAction::withdraw(
         amount,
         withdraw_event.newNoteIndex,
-        withdraw_event.idHiding,
         tx_hash,
         to,
     ));
@@ -78,7 +82,11 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
 
 async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
-        .get(app_state.relayer_rpc_url.fees_url())
+        .post(app_state.relayer_rpc_url.fees_url())
+        .json(&QuoteFeeQuery {
+            fee_token: TokenKind::Native,
+            pocket_money: U256::ZERO,
+        })
         .send()
         .await?;
 
@@ -89,7 +97,7 @@ async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
         );
     }
     let quoted_fees = relayer_response.json::<QuoteFeeResponse>().await?;
-    Ok(quoted_fees.total_fee.parse()?)
+    Ok(quoted_fees.total_fee)
 }
 
 async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address> {
@@ -128,34 +136,35 @@ async fn prepare_relayer_query(
         .get_chain_id()
         .await?;
 
-    let calldata = app_state.account.prepare_call::<WithdrawCallType>(
-        &params,
-        &pk,
-        Token::Native,
-        amount,
-        &WithdrawExtra {
-            merkle_proof: MerkleProof {
-                root: merkle_root,
-                path: merkle_path,
+    let calldata: withdrawNativeCall = app_state
+        .account
+        .prepare_call::<WithdrawCallType>(
+            &params,
+            &pk,
+            Token::Native,
+            amount,
+            &WithdrawExtra {
+                merkle_path,
+                to,
+                relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
+                relayer_fee,
+                contract_version: contract_version(),
+                chain_id: U256::from(chain_id),
+                mac_salt: get_mac_salt(),
             },
-            to,
-            relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
-            relayer_fee,
-            contract_version: contract_version(),
-            chain_id: U256::from(chain_id),
-        },
-    );
+        )
+        .try_into()
+        .unwrap();
 
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
-        id_hiding: calldata.idHiding,
         amount,
         withdraw_address: to,
         merkle_root,
         nullifier_hash: calldata.oldNullifierHash,
         new_note: calldata.newNote,
         proof: calldata.proof,
-        fee_token: FeeToken::Native,
+        fee_token: TokenKind::Native,
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,

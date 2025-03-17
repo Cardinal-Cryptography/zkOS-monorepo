@@ -30,8 +30,6 @@ describe("DepositAction", () => {
   const mockedPath = [0n, 1n];
   let mockedMerkleRoot: Scalar;
 
-  const mockedIdHidingNonce = 4n;
-
   beforeEach(async () => {
     cryptoClient = new MockedCryptoClient();
     // merkle tree is mocked to be of height 1, arity 2
@@ -46,22 +44,19 @@ describe("DepositAction", () => {
           (
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
-            idHiding: bigint,
             oldNoteNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
             amount: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
-        .mockResolvedValue("0xmockedCalldata"),
+        .mockResolvedValue({ calldata: "0xmockedCalldata", gas: 123n }),
       getMerklePath: vitest
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([...mockedPath, scalarToBigint(mockedMerkleRoot)])
     } as unknown as IContract;
-    action = new DepositAction(contract, cryptoClient, {
-      randomIdHidingNonce: () => Scalar.fromBigint(mockedIdHidingNonce)
-    });
+    action = new DepositAction(contract, cryptoClient);
     const id = Scalar.fromBigint(123n);
     state = {
       id,
@@ -199,7 +194,6 @@ describe("DepositAction", () => {
       expect(contract.depositNativeCalldata).toHaveBeenCalledWith(
         expectedVersion,
         mockAddress,
-        scalarToBigint(calldata.calldata.pubInputs.idHiding),
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
@@ -212,7 +206,8 @@ describe("DepositAction", () => {
       expect(mockSendTransaction).toHaveBeenCalledWith({
         data: "0xmockedCalldata",
         to: mockAddress,
-        value: amount
+        value: amount,
+        gas: 123n
       });
 
       expect(txHash).toBe("0xtxHash");
@@ -235,7 +230,6 @@ describe("DepositAction", () => {
           (
             expectedContractVersion: `0x${string}`,
             from: `0x${string}`,
-            idHiding: bigint,
             oldNoteNullifierHash: bigint,
             newNote: bigint,
             merkleRoot: bigint,
@@ -243,7 +237,7 @@ describe("DepositAction", () => {
             macSalt: bigint,
             macCommitment: bigint,
             proof: Uint8Array
-          ) => Promise<`0x${string}`>
+          ) => Promise<{ calldata: `0x${string}`; gas: bigint }>
         >()
         .mockRejectedValue(mockedErr);
 

@@ -116,12 +116,12 @@ class MockedSecretManager implements SecretManager {
   async deriveId(
     privateKey: `0x${string}`,
     chainId: bigint,
-    tokenAddress: `0x${string}`
+    accountNonce: number
   ): Promise<Scalar> {
     return await mockedHash([
       Scalar.fromBigint(hexToBigInt(privateKey)),
       Scalar.fromBigint(chainId),
-      Scalar.fromBigint(hexToBigInt(tokenAddress)),
+      Scalar.fromBigint(BigInt(accountNonce)),
       Scalar.fromBigint(2n)
     ]);
   }
@@ -153,7 +153,7 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
   ): Promise<NewAccountPubInputs<Scalar>> {
     return Promise.resolve({
       hNote: Scalar.fromBigint(0n),
-      hId: Scalar.fromBigint(0n),
+      prenullifier: Scalar.fromBigint(0n),
       initialDeposit: Scalar.fromBigint(0n),
       tokenAddress: Scalar.fromBigint(0n),
       anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
@@ -161,7 +161,9 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
       symKeyEncryption1X: Scalar.fromBigint(0n),
       symKeyEncryption1Y: Scalar.fromBigint(0n),
       symKeyEncryption2X: Scalar.fromBigint(0n),
-      symKeyEncryption2Y: Scalar.fromBigint(0n)
+      symKeyEncryption2Y: Scalar.fromBigint(0n),
+      macSalt: Scalar.fromBigint(0n),
+      macCommitment: Scalar.fromBigint(0n)
     });
   }
 
@@ -180,7 +182,6 @@ class MockedDepositCircuit implements DepositCircuit {
 
   pubInputs(values: DepositAdvice<Scalar>): Promise<DepositPubInputs<Scalar>> {
     return Promise.resolve({
-      idHiding: Scalar.fromBigint(0n),
       merkleRoot: Scalar.fromBigint(0n),
       hNullifierOld: Scalar.fromBigint(0n),
       hNoteNew: Scalar.fromBigint(0n),
@@ -208,7 +209,6 @@ class MockedWithdrawCircuit implements WithdrawCircuit {
     values: WithdrawAdvice<Scalar>
   ): Promise<WithdrawPubInputs<Scalar>> {
     return Promise.resolve({
-      idHiding: Scalar.fromBigint(0n),
       merkleRoot: Scalar.fromBigint(0n),
       hNullifierOld: Scalar.fromBigint(0n),
       hNoteNew: Scalar.fromBigint(0n),

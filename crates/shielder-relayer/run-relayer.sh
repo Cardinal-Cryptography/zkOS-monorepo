@@ -11,6 +11,7 @@ REQUIRED_RUN_VARS=(
     "FEE_DESTINATION_KEY"
     "RELAYER_SIGNING_KEYS"
     "SHIELDER_CONTRACT_ADDRESS"
+    "NATIVE_TOKEN"
     "RELAYER_DOCKER_IMAGE"
     "RELAYER_CONTAINER_NAME"
     "DOCKER_USER"
@@ -69,8 +70,16 @@ fi
 if [[ -n "${PRICE_FEED_REFRESH_INTERVAL:-}" ]]; then
   ARGS+=(-e PRICE_FEED_REFRESH_INTERVAL="${PRICE_FEED_REFRESH_INTERVAL}")
 fi
-if [[ -n "${TOKEN_PRICING:-}" ]]; then
-  ARGS+=(-e TOKEN_PRICING="${TOKEN_PRICING}")
+if [[ -n "${TOKEN_CONFIG:-}" ]]; then
+  ARGS+=(-e TOKEN_CONFIG="${TOKEN_CONFIG}")
+fi
+if [[ -n "${NATIVE_TOKEN:-}" ]]; then
+  ARGS+=(-e NATIVE_TOKEN="${NATIVE_TOKEN}")
 fi
 
-docker run --rm -d "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
+DETACHED_FLAG=""
+if [[ -n "${DETACHED:-}" ]]; then
+  DETACHED_FLAG="-d"
+fi
+
+docker run --rm ${DETACHED_FLAG} "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"

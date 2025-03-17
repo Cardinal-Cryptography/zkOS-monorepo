@@ -71,7 +71,8 @@ export class NewAccountAction extends NoteAction {
       initialDeposit: Scalar.fromBigint(amount),
       encryptionSalt: await this.randomSalt(),
       anonymityRevokerPublicKeyX: Scalar.fromBigint(anonymityRevokerPublicKeyX),
-      anonymityRevokerPublicKeyY: Scalar.fromBigint(anonymityRevokerPublicKeyY)
+      anonymityRevokerPublicKeyY: Scalar.fromBigint(anonymityRevokerPublicKeyY),
+      macSalt: await this.randomSalt()
     };
   }
 
@@ -138,12 +139,14 @@ export class NewAccountAction extends NoteAction {
             expectedContractVersion,
             from,
             scalarToBigint(pubInputs.hNote),
-            scalarToBigint(pubInputs.hId),
+            scalarToBigint(pubInputs.prenullifier),
             amount,
             scalarToBigint(pubInputs.symKeyEncryption1X),
             scalarToBigint(pubInputs.symKeyEncryption1Y),
             scalarToBigint(pubInputs.symKeyEncryption2X),
             scalarToBigint(pubInputs.symKeyEncryption2Y),
+            scalarToBigint(pubInputs.macSalt),
+            scalarToBigint(pubInputs.macCommitment),
             proof
           )
         : await this.contract.newAccountTokenCalldata(
@@ -151,18 +154,21 @@ export class NewAccountAction extends NoteAction {
             calldata.token.address,
             from,
             scalarToBigint(pubInputs.hNote),
-            scalarToBigint(pubInputs.hId),
+            scalarToBigint(pubInputs.prenullifier),
             amount,
             scalarToBigint(pubInputs.symKeyEncryption1X),
             scalarToBigint(pubInputs.symKeyEncryption1Y),
             scalarToBigint(pubInputs.symKeyEncryption2X),
             scalarToBigint(pubInputs.symKeyEncryption2Y),
+            scalarToBigint(pubInputs.macSalt),
+            scalarToBigint(pubInputs.macCommitment),
             proof
           );
     const txHash = await sendShielderTransaction({
-      data: encodedCalldata,
+      data: encodedCalldata.calldata,
       to: this.contract.getAddress(),
-      value: calldata.token.type === "native" ? amount : 0n
+      value: calldata.token.type === "native" ? amount : 0n,
+      gas: encodedCalldata.gas
     }).catch((e) => {
       if (e instanceof OutdatedSdkError) {
         throw e;

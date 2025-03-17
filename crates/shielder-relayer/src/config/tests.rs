@@ -28,18 +28,19 @@ fn config_resolution() {
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
     let total_fee = DEFAULT_TOTAL_FEE.to_string();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
-    let fee_token_config = vec![
-        TokenPricingConfig {
-            token: FeeToken::Native,
+    let native_token = Coin::Btc;
+    let token_config = vec![
+        TokenConfig {
+            coin: native_token,
+            kind: TokenKind::Native,
             pricing: Pricing::Fixed {
                 price: Decimal::from_str("1.23").unwrap(),
             },
         },
-        TokenPricingConfig {
-            token: FeeToken::ERC20(address!("2222222222222222222222222222222222222222")),
-            pricing: Pricing::Feed {
-                price_feed_coin: Coin::Eth,
-            },
+        TokenConfig {
+            coin: Coin::Eth,
+            kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
+            pricing: Pricing::Feed,
         },
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
@@ -53,21 +54,24 @@ fn config_resolution() {
             metrics_port, // from CLI
         },
         chain: ChainConfig {
-            node_rpc_url: node_rpc_url.clone(),               // from CLI
-            shielder_contract_address,                        // from CLI
-            fee_destination_key: fee_destination_key.clone(), // from env
-            signing_keys: vec![key1.clone(), key2.clone()],   // from env
-            total_fee: U256::from_str(&total_fee).unwrap(),   // from CLI
-            relay_gas,                                        // from env
+            node_rpc_url: node_rpc_url.clone(),             // from CLI
+            shielder_contract_address,                      // from CLI
+            total_fee: U256::from_str(&total_fee).unwrap(), // from CLI
+            relay_gas,                                      // from env
+            native_token,                                   // from env
         },
         operations: OperationalConfig {
-            balance_monitor_interval_secs,   // from env
-            nonce_policy,                    // default
-            dry_running,                     // from CLI
-            relay_count_for_recharge,        // default
-            token_pricing: fee_token_config, // from env
-            price_feed_refresh_interval,     // default
-            price_feed_validity,             // from CLI
+            balance_monitor_interval_secs, // from env
+            nonce_policy,                  // default
+            dry_running,                   // from CLI
+            relay_count_for_recharge,      // default
+            token_config,                  // from env
+            price_feed_refresh_interval,   // default
+            price_feed_validity,           // from CLI
+        },
+        keys: KeyConfig {
+            fee_destination_key: fee_destination_key.clone(), // from env
+            signing_keys: vec![key1.clone(), key2.clone()],   // from env
         },
     };
 
@@ -87,9 +91,10 @@ fn config_resolution() {
         relay_count_for_recharge: None,
         total_fee: Some(total_fee),
         relay_gas: None,
-        token_pricing: None,
+        token_config: None,
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
+        native_token: None,
     };
 
     // ---- Environment variables. -----------------------------------------------------------
@@ -103,18 +108,21 @@ fn config_resolution() {
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
         std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
         std::env::set_var(
-            TOKEN_PRICING_ENV,
+            TOKEN_CONFIG_ENV,
             "[
                 {
-                    \"token\":\"Native\",
+                    \"coin\":\"Btc\",
+                    \"kind\":\"Native\",
                     \"pricing\":{\"Fixed\":{\"price\":\"1.23\"}}
                 },
                 {
-                    \"token\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
-                    \"pricing\":{\"Feed\":{\"price_feed_coin\":\"Eth\"}}
+                    \"coin\":\"Eth\",
+                    \"kind\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
+                    \"pricing\":\"Feed\"
                 }
             ]",
         );
+        std::env::set_var(NATIVE_TOKEN_ENV, format!("{native_token:?}"));
     }
 
     // ---- Test. ------------------------------------------------------------------------------

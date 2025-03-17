@@ -6,7 +6,7 @@ use alloy_primitives::{Address, Bytes, U256};
 use rand::Rng;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
-use shielder_relayer::{FeeToken, RelayQuery};
+use shielder_relayer::{Coin, RelayQuery, TokenKind};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -51,6 +51,7 @@ impl TestContext {
             test_config.shielder_contract.address(),
             FEE_DESTINATION_KEY.to_string(),
             test_config.relayer_signer.signing_key(),
+            Coin::Eth,
         ));
 
         Self {
@@ -65,14 +66,13 @@ impl TestContext {
             .post(format!("{BASE_URL}:{}/relay", self.relayer_port))
             .json(&RelayQuery {
                 expected_contract_version: contract_version().to_bytes(),
-                id_hiding: U256::ZERO,
                 amount: U256::from(1),
                 withdraw_address: Address::from_str(FEE_DESTINATION).unwrap(),
                 merkle_root: U256::ZERO,
                 nullifier_hash: U256::ZERO,
                 new_note: U256::ZERO,
                 proof: Bytes::new(),
-                fee_token: FeeToken::Native,
+                fee_token: TokenKind::Native,
                 fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
                 mac_salt: U256::ZERO,
                 mac_commitment: U256::ZERO,

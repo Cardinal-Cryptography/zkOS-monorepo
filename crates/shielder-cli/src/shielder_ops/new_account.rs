@@ -17,7 +17,10 @@ use tracing::{debug, info};
 
 use crate::{
     app_state::AppState,
-    shielder_ops::pk::{get_proving_equipment, CircuitType},
+    shielder_ops::{
+        get_mac_salt,
+        pk::{get_proving_equipment, CircuitType},
+    },
 };
 
 pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
@@ -37,6 +40,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
                     &NewAccountCallExtra {
                         anonymity_revoker_public_key,
                         encryption_salt: get_encryption_salt(),
+                        mac_salt: get_mac_salt(),
                     },
                 )
                 .try_into()
@@ -58,7 +62,6 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
         .register_action(ShielderAction::new_account(
             amount,
             new_account_event.newNoteIndex,
-            new_account_event.idHash,
             tx_hash,
         ));
     info!("Created new account with {amount} tokens");

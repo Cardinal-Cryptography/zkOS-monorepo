@@ -9,7 +9,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 import { IRelayer } from "@/chain/relayer";
-import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
@@ -32,20 +32,17 @@ export interface WithdrawCalldata {
 export class WithdrawAction extends NoteAction {
   private contract: IContract;
   private relayer: IRelayer;
-  private nonceGenerator: INonceGenerator;
   private chainId: bigint;
 
   constructor(
     contract: IContract,
     relayer: IRelayer,
     cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator,
     chainId: bigint
   ) {
     super(cryptoClient);
     this.contract = contract;
     this.relayer = relayer;
-    this.nonceGenerator = nonceGenerator;
     this.chainId = chainId;
   }
 
@@ -100,16 +97,10 @@ export class WithdrawAction extends NoteAction {
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
     relayerAddress: `0x${string}`,
-    totalFee: bigint
+    totalFee: bigint,
+    merklePath: Uint8Array
   ): Promise<WithdrawAdvice<Scalar>> {
-    const lastNodeIndex = state.currentNoteIndex;
-    const [merklePath] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-
     const tokenAddress = getAddressByToken(state.token);
-
-    const idHidingNonce = this.nonceGenerator.randomIdHidingNonce();
 
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await this.cryptoClient.secretManager.getSecrets(
@@ -131,7 +122,6 @@ export class WithdrawAction extends NoteAction {
 
     return {
       id: state.id,
-      nonce: idHidingNonce,
       nullifierOld,
       trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
@@ -172,6 +162,11 @@ export class WithdrawAction extends NoteAction {
       );
     }
 
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
     const time = Date.now();
 
     const advice = await this.prepareAdvice(
@@ -180,7 +175,8 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      totalFee
+      totalFee,
+      merklePath
     );
 
     const proof = await this.cryptoClient.withdrawCircuit
@@ -226,7 +222,6 @@ export class WithdrawAction extends NoteAction {
         expectedContractVersion,
         calldata.token,
         calldata.totalFee,
-        scalarToBigint(pubInputs.idHiding),
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
@@ -264,7 +259,6 @@ export class WithdrawAction extends NoteAction {
             withdrawalAddress,
             from, // use sender as relayer
             totalFee,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -280,7 +274,6 @@ export class WithdrawAction extends NoteAction {
             withdrawalAddress,
             from, // use sender as relayer
             totalFee,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -290,9 +283,10 @@ export class WithdrawAction extends NoteAction {
             proof
           );
     const txHash = await sendShielderTransaction({
-      data: encodedCalldata,
+      data: encodedCalldata.calldata,
       to: this.contract.getAddress(),
-      value: 0n
+      value: 0n,
+      gas: encodedCalldata.gas
     }).catch((e) => {
       if (e instanceof OutdatedSdkError) {
         throw e;

@@ -14,7 +14,7 @@ use shielder_circuits::{
 use shielder_contract::{
     ShielderContract::{
         depositERC20Call, depositNativeCall, newAccountERC20Call, newAccountNativeCall,
-        withdrawNativeCall,
+        withdrawERC20Call, withdrawNativeCall,
     },
     WithdrawCommitment,
 };
@@ -24,7 +24,6 @@ use shielder_setup::{
 };
 use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
-use super::secrets::generate_id_hiding_nonce;
 use crate::ShielderAccount;
 
 struct ActionSecrets {
@@ -95,9 +94,11 @@ pub struct NewAccountCall {
     pub token: Token,
     pub expected_contract_version: FixedBytes<3>,
     pub new_note: U256,
-    pub id_hash: U256,
+    pub prenullifier: U256,
     pub sym_key_encryption_c1: GrumpkinPointAffine<U256>,
     pub sym_key_encryption_c2: GrumpkinPointAffine<U256>,
+    pub mac_salt: U256,
+    pub mac_commitment: U256,
     pub proof: Bytes,
 }
 
@@ -109,11 +110,13 @@ impl TryFrom<NewAccountCall> for newAccountNativeCall {
             Token::Native => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
                 newNote: calldata.new_note,
-                idHash: calldata.id_hash,
+                prenullifier: calldata.prenullifier,
                 symKeyEncryptionC1X: calldata.sym_key_encryption_c1.x,
                 symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
                 symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
                 symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
             }),
             Token::ERC20(_) => Err(CallTypeConversionError),
@@ -132,11 +135,13 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
                 amount: calldata.amount,
                 expectedContractVersion: calldata.expected_contract_version,
                 newNote: calldata.new_note,
-                idHash: calldata.id_hash,
+                prenullifier: calldata.prenullifier,
                 symKeyEncryptionC1X: calldata.sym_key_encryption_c1.x,
                 symKeyEncryptionC1Y: calldata.sym_key_encryption_c1.y,
                 symKeyEncryptionC2X: calldata.sym_key_encryption_c2.x,
                 symKeyEncryptionC2Y: calldata.sym_key_encryption_c2.y,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
             }),
         }
@@ -146,6 +151,7 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
 pub struct NewAccountCallExtra {
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     pub encryption_salt: [bool; FIELD_BITS],
+    pub mac_salt: U256,
 }
 
 pub enum NewAccountCallType {}
@@ -171,6 +177,7 @@ impl CallType for NewAccountCallType {
                 x: u256_to_field(extra.anonymity_revoker_public_key.x),
                 y: u256_to_field(extra.anonymity_revoker_public_key.y),
             },
+            mac_salt: u256_to_field(extra.mac_salt),
         }
     }
 
@@ -185,15 +192,17 @@ impl CallType for NewAccountCallType {
             token: field_to_address(prover_knowledge.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
-            id_hash: field_to_u256(prover_knowledge.compute_public_input(HashedId)),
+            prenullifier: field_to_u256(prover_knowledge.compute_public_input(Prenullifier)),
             sym_key_encryption_c1: GrumpkinPointAffine::<U256>::new(
-                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1X)),
-                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext1Y)),
+                field_to_u256(prover_knowledge.compute_public_input(EncryptedKeyCiphertext1X)),
+                field_to_u256(prover_knowledge.compute_public_input(EncryptedKeyCiphertext1Y)),
             ),
             sym_key_encryption_c2: GrumpkinPointAffine::<U256>::new(
-                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2X)),
-                field_to_u256(prover_knowledge.compute_public_input(SymKeyEncryptionCiphertext2Y)),
+                field_to_u256(prover_knowledge.compute_public_input(EncryptedKeyCiphertext2X)),
+                field_to_u256(prover_knowledge.compute_public_input(EncryptedKeyCiphertext2Y)),
             ),
+            mac_salt: field_to_u256(prover_knowledge.compute_public_input(MacSalt)),
+            mac_commitment: field_to_u256(prover_knowledge.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof),
         }
     }
@@ -204,7 +213,6 @@ pub struct DepositCall {
     pub amount: U256,
     pub token: Token,
     pub expected_contract_version: FixedBytes<3>,
-    pub id_hiding: U256,
     pub old_nullifier_hash: U256,
     pub new_note: U256,
     pub merkle_root: U256,
@@ -220,7 +228,6 @@ impl TryFrom<DepositCall> for depositNativeCall {
         match calldata.token {
             Token::Native => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
-                idHiding: calldata.id_hiding,
                 oldNullifierHash: calldata.old_nullifier_hash,
                 newNote: calldata.new_note,
                 merkleRoot: calldata.merkle_root,
@@ -243,7 +250,6 @@ impl TryFrom<DepositCall> for depositERC20Call {
                 expectedContractVersion: calldata.expected_contract_version,
                 tokenAddress: token_address,
                 amount: calldata.amount,
-                idHiding: calldata.id_hiding,
                 oldNullifierHash: calldata.old_nullifier_hash,
                 newNote: calldata.new_note,
                 merkleRoot: calldata.merkle_root,
@@ -255,14 +261,14 @@ impl TryFrom<DepositCall> for depositERC20Call {
     }
 }
 
-pub struct MerkleProof {
-    pub root: U256,
-    pub path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
+pub struct DepositExtra {
+    pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
+    pub mac_salt: U256,
 }
 
 pub enum DepositCallType {}
 impl CallType for DepositCallType {
-    type Extra = MerkleProof;
+    type Extra = DepositExtra;
     type ProverKnowledge = DepositProverKnowledge<Fr>;
 
     type Calldata = DepositCall;
@@ -271,7 +277,7 @@ impl CallType for DepositCallType {
         account: &ShielderAccount,
         token: Token,
         amount: U256,
-        merkle: &Self::Extra,
+        extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
         let ActionSecrets {
             nullifier_old,
@@ -281,20 +287,17 @@ impl CallType for DepositCallType {
             ..
         } = account.get_secrets();
 
-        let nonce = generate_id_hiding_nonce();
-
         DepositProverKnowledge {
             id: u256_to_field(account.id),
-            nonce: u256_to_field(nonce),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
-            path: map_path_to_field(merkle.path),
+            path: map_path_to_field(extra.merkle_path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
-            mac_salt: u256_to_field(account.mac_salt),
+            mac_salt: u256_to_field(extra.mac_salt),
         }
     }
 
@@ -308,7 +311,6 @@ impl CallType for DepositCallType {
             amount: field_to_u256(pk.deposit_value),
             token: field_to_address(pk.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
-            id_hiding: field_to_u256(pk.compute_public_input(IdHiding)),
             old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             new_note: field_to_u256(pk.compute_public_input(HashedNewNote)),
             merkle_root: field_to_u256(pk.compute_public_input(MerkleRoot)),
@@ -319,20 +321,84 @@ impl CallType for DepositCallType {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct WithdrawCall {
+    pub amount: U256,
+    pub token: Token,
+    pub expected_contract_version: FixedBytes<3>,
+    pub withdrawal_address: Address,
+    pub relayer_address: Address,
+    pub merkle_root: U256,
+    pub old_nullifier_hash: U256,
+    pub new_note: U256,
+    pub relayer_fee: U256,
+    pub mac_salt: U256,
+    pub mac_commitment: U256,
+    pub proof: Bytes,
+}
+
+impl TryFrom<WithdrawCall> for withdrawNativeCall {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: WithdrawCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                amount: calldata.amount,
+                withdrawalAddress: calldata.withdrawal_address,
+                merkleRoot: calldata.merkle_root,
+                oldNullifierHash: calldata.old_nullifier_hash,
+                newNote: calldata.new_note,
+                proof: calldata.proof,
+                relayerAddress: calldata.relayer_address,
+                relayerFee: calldata.relayer_fee,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
+            }),
+            Token::ERC20(_) => Err(CallTypeConversionError),
+        }
+    }
+}
+
+impl TryFrom<WithdrawCall> for withdrawERC20Call {
+    type Error = CallTypeConversionError;
+
+    fn try_from(calldata: WithdrawCall) -> Result<Self, Self::Error> {
+        match calldata.token {
+            Token::Native => Err(CallTypeConversionError),
+            Token::ERC20(token_address) => Ok(Self {
+                expectedContractVersion: calldata.expected_contract_version,
+                tokenAddress: token_address,
+                amount: calldata.amount,
+                withdrawalAddress: calldata.withdrawal_address,
+                merkleRoot: calldata.merkle_root,
+                oldNullifierHash: calldata.old_nullifier_hash,
+                newNote: calldata.new_note,
+                proof: calldata.proof,
+                relayerAddress: calldata.relayer_address,
+                relayerFee: calldata.relayer_fee,
+                macSalt: calldata.mac_salt,
+                macCommitment: calldata.mac_commitment,
+            }),
+        }
+    }
+}
+
 pub struct WithdrawExtra {
-    pub merkle_proof: MerkleProof,
+    pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
     pub to: Address,
     pub relayer_address: Address,
     pub relayer_fee: U256,
     pub contract_version: ContractVersion,
     pub chain_id: U256,
+    pub mac_salt: U256,
 }
 
 pub enum WithdrawCallType {}
 impl CallType for WithdrawCallType {
     type Extra = WithdrawExtra;
     type ProverKnowledge = WithdrawProverKnowledge<Fr>;
-    type Calldata = withdrawNativeCall;
+    type Calldata = WithdrawCall;
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
@@ -356,21 +422,19 @@ impl CallType for WithdrawCallType {
             chain_id: extra.chain_id,
         }
         .commitment_hash();
-        let nonce = generate_id_hiding_nonce();
 
         WithdrawProverKnowledge {
             id: u256_to_field(account.id),
-            nonce: u256_to_field(nonce),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
-            path: map_path_to_field(extra.merkle_proof.path),
+            path: map_path_to_field(extra.merkle_path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
             trapdoor_new: u256_to_field(trapdoor_new),
             commitment: u256_to_field(commitment),
-            mac_salt: u256_to_field(account.mac_salt),
+            mac_salt: u256_to_field(extra.mac_salt),
         }
     }
 
@@ -380,19 +444,19 @@ impl CallType for WithdrawCallType {
         extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::withdraw::WithdrawInstance::*;
-        withdrawNativeCall {
-            expectedContractVersion: contract_version().to_bytes(),
-            idHiding: field_to_u256(pk.compute_public_input(IdHiding)),
+        WithdrawCall {
+            expected_contract_version: contract_version().to_bytes(),
+            token: field_to_address(pk.token_address).into(),
             amount: field_to_u256(pk.compute_public_input(WithdrawalValue)),
-            withdrawalAddress: extra.to,
-            merkleRoot: field_to_u256(pk.compute_public_input(MerkleRoot)),
-            oldNullifierHash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
-            newNote: field_to_u256(pk.compute_public_input(HashedNewNote)),
+            withdrawal_address: extra.to,
+            merkle_root: field_to_u256(pk.compute_public_input(MerkleRoot)),
+            old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
+            new_note: field_to_u256(pk.compute_public_input(HashedNewNote)),
             proof: Bytes::from(proof),
-            relayerAddress: extra.relayer_address,
-            relayerFee: extra.relayer_fee,
-            macSalt: field_to_u256(pk.compute_public_input(MacSalt)),
-            macCommitment: field_to_u256(pk.compute_public_input(MacCommitment)),
+            relayer_address: extra.relayer_address,
+            relayer_fee: extra.relayer_fee,
+            mac_salt: field_to_u256(pk.compute_public_input(MacSalt)),
+            mac_commitment: field_to_u256(pk.compute_public_input(MacCommitment)),
         }
     }
 }

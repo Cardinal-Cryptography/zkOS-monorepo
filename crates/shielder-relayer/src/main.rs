@@ -10,19 +10,20 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use config::TokenPricingConfig;
+use config::TokenConfig;
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     providers::create_provider_with_nonce_caching_signer,
     ConnectionPolicy, ShielderUser,
 };
+use shielder_relayer::Coin;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 use crate::{
-    config::{resolve_config, ChainConfig, LoggingFormat, NoncePolicy, ServerConfig},
+    config::{resolve_config, ChainConfig, KeyConfig, LoggingFormat, NoncePolicy, ServerConfig},
     metrics::{prometheus_endpoint, setup_metrics_handle},
     monitor::{balance_monitor::balance_monitor, Balances},
     recharge::start_recharging_worker,
@@ -48,7 +49,8 @@ pub struct AppState {
     pub taskmaster: Taskmaster,
     pub balances: Balances,
     pub prices: Prices,
-    pub token_pricing: Vec<TokenPricingConfig>,
+    pub token_config: Vec<TokenConfig>,
+    pub native_token: Coin,
 }
 
 struct Signers {
@@ -62,7 +64,10 @@ async fn main() -> Result<()> {
     let server_config = resolve_config();
     init_logging(server_config.logging_format)?;
 
-    let signers = get_signer_info(&server_config.chain)?;
+    info!("Starting Shielder relayer.");
+    info!("Server configuration:\n{server_config:#?}",);
+
+    let signers = get_signer_info(&server_config.keys)?;
     let prices = Prices::new(
         Duration::from_secs(server_config.operations.price_feed_validity),
         Duration::from_secs(server_config.operations.price_feed_refresh_interval),
@@ -82,7 +87,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_signer_info(config: &ChainConfig) -> Result<Signers> {
+fn get_signer_info(config: &KeyConfig) -> Result<Signers> {
     let (signers, addresses) = parse_keys(&config.signing_keys)?;
     let balances = Arc::new(
         addresses
@@ -119,7 +124,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let listener = tokio::net::TcpListener::bind(address.clone()).await?;
     info!("Listening on {address}");
 
-    let fee_destination = signer(&config.chain.fee_destination_key)?;
+    let fee_destination = signer(&config.keys.fee_destination_key)?;
     let fee_destination_address = fee_destination.address();
 
     let report_for_recharge = start_recharging_worker(
@@ -147,14 +152,15 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
             config.operations.dry_running,
             report_for_recharge,
         ),
-        token_pricing: config.operations.token_pricing.clone(),
+        token_config: config.operations.token_config.clone(),
         prices,
+        native_token: config.chain.native_token,
     };
 
     let app = Router::new()
         .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
-        .route("/quote_fees", get(quote::quote_fees))
+        .route("/quote_fees", post(quote::quote_fees))
         .route("/fee_address", get(fee_address))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))

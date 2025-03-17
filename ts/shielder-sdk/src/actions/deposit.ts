@@ -8,7 +8,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Calldata } from "./types";
-import { INonceGenerator, NoteAction } from "@/actions/utils";
+import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
@@ -27,16 +27,10 @@ export interface DepositCalldata extends Calldata {
 
 export class DepositAction extends NoteAction {
   private contract: IContract;
-  private nonceGenerator: INonceGenerator;
 
-  constructor(
-    contract: IContract,
-    cryptoClient: CryptoClient,
-    nonceGenerator: INonceGenerator
-  ) {
+  constructor(contract: IContract, cryptoClient: CryptoClient) {
     super(cryptoClient);
     this.contract = contract;
-    this.nonceGenerator = nonceGenerator;
   }
 
   /**
@@ -59,16 +53,11 @@ export class DepositAction extends NoteAction {
 
   async prepareAdvice(
     state: AccountStateMerkleIndexed,
-    amount: bigint
+    amount: bigint,
+    merklePath: Uint8Array
   ): Promise<DepositAdvice<Scalar>> {
-    const lastNodeIndex = state.currentNoteIndex;
-    const [merklePath] = await this.merklePathAndRoot(
-      await this.contract.getMerklePath(lastNodeIndex)
-    );
-
     const tokenAddress = getAddressByToken(state.token);
 
-    const nonce = this.nonceGenerator.randomIdHidingNonce();
     const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
@@ -81,7 +70,6 @@ export class DepositAction extends NoteAction {
       );
     return {
       id: state.id,
-      nonce,
       nullifierOld,
       trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
@@ -105,9 +93,14 @@ export class DepositAction extends NoteAction {
     amount: bigint,
     expectedContractVersion: `0x${string}`
   ): Promise<DepositCalldata> {
+    const lastNodeIndex = state.currentNoteIndex;
+    const [merklePath] = await this.merklePathAndRoot(
+      await this.contract.getMerklePath(lastNodeIndex)
+    );
+
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount);
+    const advice = await this.prepareAdvice(state, amount, merklePath);
 
     const proof = await this.cryptoClient.depositCircuit
       .prove(advice)
@@ -154,7 +147,6 @@ export class DepositAction extends NoteAction {
         ? await this.contract.depositNativeCalldata(
             calldata.expectedContractVersion,
             from,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -167,7 +159,6 @@ export class DepositAction extends NoteAction {
             calldata.expectedContractVersion,
             calldata.token.address,
             from,
-            scalarToBigint(pubInputs.idHiding),
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -177,9 +168,10 @@ export class DepositAction extends NoteAction {
             proof
           );
     const txHash = await sendShielderTransaction({
-      data: encodedCalldata,
+      data: encodedCalldata.calldata,
       to: this.contract.getAddress(),
-      value: calldata.token.type === "native" ? amount : 0n
+      value: calldata.token.type === "native" ? amount : 0n,
+      gas: encodedCalldata.gas
     }).catch((e) => {
       if (e instanceof OutdatedSdkError) {
         throw e;
