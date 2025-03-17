@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use alloy_primitives::U256;
 use clap::Parser;
 use shielder_relayer::*;
 
@@ -53,11 +56,12 @@ pub struct CLIConfig {
         long,
         help = "Interval (in seconds) for monitoring signers' balances.",
         long_help = format!("Interval (in seconds) for monitoring signers' balances. If not \
-            provided, the value from the environment variable `{BALANCE_MONITOR_INTERVAL_SECS_ENV}` \
+            provided, the value from the environment variable `{BALANCE_MONITOR_INTERVAL_ENV}` \
             will be used. If that is not set, the default value is \
-            `{DEFAULT_BALANCE_MONITOR_INTERVAL_SECS}`.")
+            `{}`.", DEFAULT_BALANCE_MONITOR_INTERVAL.as_secs()),
+        value_parser = parsing::parse_seconds
     )]
-    pub balance_monitor_interval_secs: Option<u64>,
+    pub balance_monitor_interval: Option<Duration>,
 
     #[clap(
         long,
@@ -128,9 +132,10 @@ pub struct CLIConfig {
         long_help = format!("The total fee, which is used as an argument for `withdraw_native` call. \
             It should be a fixed value, close to a sum of 'withdraw_native' on-chain gas cost and the intended relayer fee. \
             If not provided, the value from the environment variable `{TOTAL_FEE_ENV}` will be used. \
-            If that is not set, the default value is `{DEFAULT_TOTAL_FEE:?}`.")
+            If that is not set, the default value is `{DEFAULT_TOTAL_FEE:?}`."),
+        value_parser = parsing::parse_u256
     )]
-    pub total_fee: Option<String>,
+    pub total_fee: Option<U256>,
 
     #[clap(
         long,
@@ -162,25 +167,70 @@ pub struct CLIConfig {
         help = "Price feed refresh interval in seconds.",
         long_help = format!("Price feed refresh interval in seconds. If not provided, the value from the \
             environment variable `{PRICE_FEED_REFRESH_INTERVAL_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS:?}`.")
+            the default value is `{DEFAULT_PRICE_FEED_REFRESH_INTERVAL:?}`."),
+        value_parser = parsing::parse_seconds
     )]
-    pub price_feed_refresh_interval: Option<u64>,
+    pub price_feed_refresh_interval: Option<Duration>,
 
     #[clap(
         long,
         help = "Price feed validity in seconds.",
         long_help = format!("Price feed validity in seconds. If not provided, the value from the \
             environment variable `{PRICE_FEED_VALIDITY_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_PRICE_FEED_VALIDITY_SECS:?}`.")
+            the default value is `{DEFAULT_PRICE_FEED_VALIDITY:?}`."),
+        value_parser = parsing::parse_seconds
     )]
-    pub price_feed_validity: Option<u64>,
+    pub price_feed_validity: Option<Duration>,
 
     #[clap(
         long,
         help = "Token native to chain where the relayer operates.",
-        long_help = format!("Token native to chain where the relayer operates. If not provided, the value\
+        long_help = format!("Token native to chain where the relayer operates. If not provided, the value \
             from the environment variable `{NATIVE_TOKEN_ENV}` will be used. Example values: 'eth', \
             'azero', 'btc'.")
     )]
     pub native_token: Option<Coin>,
+
+    #[clap(
+        long,
+        help = "Commission fee percentage (added to the actual relay cost).",
+        long_help = format!("Commission fee percentage (added to the actual relay cost). If not \
+        provided, the value from the environment variable `{SERVICE_FEE_PERCENT_ENV}` will be used.\
+        If that is not set, the default value is `{DEFAULT_SERVICE_FEE_PERCENT}`.")
+    )]
+    pub service_fee_percent: Option<u32>,
+
+    #[clap(
+        long,
+        help = "How long the quote provided by the service is valid. In seconds.",
+        long_help = format!("How long the quote provided by the service is valid. In seconds. If not \
+            provided, the value from the environment variable `{QUOTE_VALIDITY_ENV}` will be used.\
+            If that is not set, the default value is `{}`.", DEFAULT_QUOTE_VALIDITY.as_secs()),
+        value_parser = parsing::parse_seconds
+    )]
+    pub quote_validity: Option<Duration>,
+
+    #[clap(
+        long,
+        help = "Maximum pocket money relayer can provide.",
+        long_help = format!("Maximum pocket money relayer can provide. If not provided, the value \
+            from the environment variable `{MAX_POCKET_MONEY_ENV}` will be used. If that is not set, \
+            the default value is `{DEFAULT_MAX_POCKET_MONEY}`."),
+        value_parser = parsing::parse_u256
+    )]
+    pub max_pocket_money: Option<U256>,
+}
+
+pub(super) mod parsing {
+    use std::{str::FromStr, time::Duration};
+
+    use alloy_primitives::U256;
+
+    pub fn parse_seconds(string: &str) -> anyhow::Result<Duration> {
+        Ok(Duration::from_secs(string.parse::<u64>()?))
+    }
+
+    pub fn parse_u256(string: &str) -> anyhow::Result<U256> {
+        Ok(U256::from_str(string)?)
+    }
 }

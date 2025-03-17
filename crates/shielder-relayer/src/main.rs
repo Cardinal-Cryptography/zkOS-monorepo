@@ -1,4 +1,4 @@
-use std::{env, io, str::FromStr, sync::Arc, time::Duration};
+use std::{env, io, str::FromStr, sync::Arc};
 
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
@@ -69,14 +69,14 @@ async fn main() -> Result<()> {
 
     let signers = get_signer_info(&server_config.keys)?;
     let prices = Prices::new(
-        Duration::from_secs(server_config.operations.price_feed_validity),
-        Duration::from_secs(server_config.operations.price_feed_refresh_interval),
+        server_config.operations.price_feed_validity,
+        server_config.operations.price_feed_refresh_interval,
     );
 
     tokio::try_join!(
         balance_monitor(
             &server_config.chain.node_rpc_url,
-            server_config.operations.balance_monitor_interval_secs,
+            server_config.operations.balance_monitor_interval,
             signers.balances.clone(),
         ),
         start_metrics_server(&server_config, signers.balances.clone()),

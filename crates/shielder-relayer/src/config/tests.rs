@@ -17,7 +17,7 @@ fn config_resolution() {
     let host = DEFAULT_HOST.to_string();
     let port = 1234;
     let metrics_port = 5678;
-    let balance_monitor_interval_secs = 60;
+    let balance_monitor_interval = Duration::from_secs(60);
     let node_rpc_url = "http://localhost:8545".to_string();
     let shielder_contract_address = address!("0000000000000000000000000000000000000000");
     let fee_destination_key = "key0".to_string();
@@ -26,7 +26,7 @@ fn config_resolution() {
     let nonce_policy = DEFAULT_NONCE_POLICY;
     let dry_running = DryRunning::Always;
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
-    let total_fee = DEFAULT_TOTAL_FEE.to_string();
+    let total_fee = U256::from_str(&DEFAULT_TOTAL_FEE).unwrap();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let native_token = Coin::Btc;
     let token_config = vec![
@@ -43,8 +43,11 @@ fn config_resolution() {
             pricing: Pricing::Feed,
         },
     ];
-    let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL_SECS;
-    let price_feed_validity = 15;
+    let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL;
+    let price_feed_validity = Duration::from_secs(15);
+    let service_fee_percent = DEFAULT_SERVICE_FEE_PERCENT;
+    let quote_validity = Duration::from_secs(11);
+    let max_pocket_money = U256::from(12);
 
     let expected_config = ServerConfig {
         logging_format, // from CLI
@@ -54,20 +57,23 @@ fn config_resolution() {
             metrics_port, // from CLI
         },
         chain: ChainConfig {
-            node_rpc_url: node_rpc_url.clone(),             // from CLI
-            shielder_contract_address,                      // from CLI
-            total_fee: U256::from_str(&total_fee).unwrap(), // from CLI
-            relay_gas,                                      // from env
-            native_token,                                   // from env
+            node_rpc_url: node_rpc_url.clone(), // from CLI
+            shielder_contract_address,          // from CLI
+            total_fee,                          // from CLI
+            relay_gas,                          // from env
+            native_token,                       // from env
         },
         operations: OperationalConfig {
-            balance_monitor_interval_secs, // from env
-            nonce_policy,                  // default
-            dry_running,                   // from CLI
-            relay_count_for_recharge,      // default
-            token_config,                  // from env
-            price_feed_refresh_interval,   // default
-            price_feed_validity,           // from CLI
+            balance_monitor_interval,    // from env
+            nonce_policy,                // default
+            dry_running,                 // from CLI
+            relay_count_for_recharge,    // default
+            token_config,                // from env
+            price_feed_refresh_interval, // default
+            price_feed_validity,         // from CLI
+            service_fee_percent,         // default
+            quote_validity,              // from env
+            max_pocket_money,            // from CLI
         },
         keys: KeyConfig {
             fee_destination_key: fee_destination_key.clone(), // from env
@@ -81,7 +87,7 @@ fn config_resolution() {
         host: None,
         port: None,
         metrics_port: Some(metrics_port),
-        balance_monitor_interval_secs: None,
+        balance_monitor_interval: None,
         node_rpc_url: Some(node_rpc_url),
         shielder_contract_address: Some(shielder_contract_address.to_string()),
         fee_destination_key: None,
@@ -95,14 +101,17 @@ fn config_resolution() {
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
         native_token: None,
+        service_fee_percent: None,
+        quote_validity: None,
+        max_pocket_money: Some(max_pocket_money),
     };
 
     // ---- Environment variables. -----------------------------------------------------------
     unsafe {
         std::env::set_var(RELAYER_PORT_ENV, port.to_string());
         std::env::set_var(
-            BALANCE_MONITOR_INTERVAL_SECS_ENV,
-            balance_monitor_interval_secs.to_string(),
+            BALANCE_MONITOR_INTERVAL_ENV,
+            balance_monitor_interval.as_secs().to_string(),
         );
         std::env::set_var(FEE_DESTINATION_KEY_ENV, fee_destination_key);
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
@@ -123,6 +132,7 @@ fn config_resolution() {
             ]",
         );
         std::env::set_var(NATIVE_TOKEN_ENV, format!("{native_token:?}"));
+        std::env::set_var(QUOTE_VALIDITY_ENV, "11");
     }
 
     // ---- Test. ------------------------------------------------------------------------------
