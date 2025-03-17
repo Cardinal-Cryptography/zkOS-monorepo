@@ -346,6 +346,7 @@ describe("ShielderClient", () => {
       const mockAddress =
         "0x1234567890123456789012345678901234567890" as Address;
       const mockTxHash = "0x9876543210" as Hash;
+      const mockPocketMoney = 0n;
 
       mockShielderActions.withdraw.mockResolvedValue(mockTxHash);
 
@@ -353,7 +354,8 @@ describe("ShielderClient", () => {
         nativeToken(),
         mockAmount,
         mockTotalFee,
-        mockAddress
+        mockAddress,
+        mockPocketMoney
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -361,7 +363,8 @@ describe("ShielderClient", () => {
         nativeToken(),
         mockAmount,
         mockTotalFee,
-        mockAddress
+        mockAddress,
+        mockPocketMoney
       );
     });
   });
@@ -374,6 +377,7 @@ describe("ShielderClient", () => {
       const mockFrom = "0x1234567890123456789012345678901234567890" as const;
       const mockTxHash = "0x9876543210" as Hash;
       const mockSendTransaction = vitest.fn().mockResolvedValue(mockTxHash);
+      const mockPocketMoney = 0n;
 
       mockShielderActions.withdrawManual.mockResolvedValue(mockTxHash);
 
@@ -382,7 +386,8 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockPocketMoney
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -391,7 +396,8 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockPocketMoney
       );
     });
   });

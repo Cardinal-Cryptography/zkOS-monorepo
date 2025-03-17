@@ -171,7 +171,7 @@ export class WithdrawAction extends NoteAction {
       );
     }
     if (state.token.type === "native" && pocketMoney > 0) {
-      throw new Error("Pocket money is not supported for native token");
+      throw new Error("Pocket money is not supported for native withdrawal");
     }
 
     const lastNodeIndex = state.currentNoteIndex;
