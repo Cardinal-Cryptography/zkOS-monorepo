@@ -13,7 +13,6 @@ repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [workspace.dependencies]
 alloy-contract = { version = "0.9.1" }
-alloy-eip7702 = { version = "0.5.1" }
 alloy-network = { version = "0.9.1" }
 alloy-primitives = { version = "0.8.15" }
 alloy-provider = { version = "0.9.1" }
