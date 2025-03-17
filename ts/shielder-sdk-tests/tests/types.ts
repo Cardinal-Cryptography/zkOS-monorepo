@@ -16,6 +16,7 @@ export type WithdrawOp = {
   token: Token;
   amount: bigint;
   to: AccountNames;
+  pocketMoney: bigint;
 };
 
 export type WithdrawManualOp = {
@@ -54,13 +55,15 @@ export function shieldOp(token: Token, amount: bigint): ShieldOp {
 export function withdrawOp(
   token: Token,
   amount: bigint,
-  to: AccountNames
+  to: AccountNames,
+  pocketMoney: bigint
 ): WithdrawOp {
   return {
     type: "withdraw",
     amount,
     to,
-    token
+    token,
+    pocketMoney
   };
 }
 
@@ -89,9 +92,9 @@ export function recoverOp(): RecoverOp {
   };
 }
 
-// Shielder transaction representation, omitting the details like txHash, blockNumber, etc.
+// Shielder-related transaction representation, omitting the details like txHash, blockNumber, etc.
 export type ShortTx = {
-  type: "NewAccount" | "Deposit" | "Withdraw";
+  type: "NewAccount" | "Deposit" | "Withdraw" | "PocketMoney";
   token: Token;
   amount: bigint;
   to?: `0x${string}`;

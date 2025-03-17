@@ -377,7 +377,6 @@ describe("ShielderClient", () => {
       const mockFrom = "0x1234567890123456789012345678901234567890" as const;
       const mockTxHash = "0x9876543210" as Hash;
       const mockSendTransaction = vitest.fn().mockResolvedValue(mockTxHash);
-      const mockPocketMoney = 0n;
 
       mockShielderActions.withdrawManual.mockResolvedValue(mockTxHash);
 
@@ -386,8 +385,7 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom,
-        mockPocketMoney
+        mockFrom
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -396,8 +394,7 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom,
-        mockPocketMoney
+        mockFrom
       );
     });
   });

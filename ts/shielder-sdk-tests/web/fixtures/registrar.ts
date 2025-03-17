@@ -1,11 +1,19 @@
-import type { Token } from "@cardinal-cryptography/shielder-sdk";
+import { nativeToken, Token } from "@cardinal-cryptography/shielder-sdk";
 import type { ShortTx } from "@tests/types";
 import { setupBalanceRecorder } from "./balanceRecorder";
 
 export interface RegistrarFixture {
   registerShield(token: Token, amount: bigint): void;
-  registerWithdrawal(token: Token, to: `0x${string}`, amount: bigint): void;
+
+  registerWithdrawal(
+    token: Token,
+    to: `0x${string}`,
+    amount: bigint,
+    pocketMoney: bigint
+  ): void;
+
   recordedBalance(token: Token): bigint;
+
   recordedTxHistory(token: Token): ShortTx[];
 }
 
@@ -32,12 +40,30 @@ export const setupRegistrar = (): RegistrarFixture => {
     }
   };
 
+  const registerPocketMoneyEndowment = (to: `0x${string}`, amount: bigint) => {
+    if (amount === 0n) {
+      return;
+    }
+    if (!tokenTxHistory.has("native")) {
+      tokenTxHistory.set("native", []);
+    }
+    tokenTxHistory.get("native")!.push({
+      type: "PocketMoney",
+      to,
+      amount: amount,
+      token: nativeToken()
+    });
+  };
+
   const registerWithdrawal = (
     token: Token,
     to: `0x${string}`,
-    amount: bigint
+    amount: bigint,
+    pocketMoney: bigint
   ) => {
     balanceRecorder.add(token, -amount);
+
+    registerPocketMoneyEndowment(to, pocketMoney);
 
     const key = token.type === "native" ? "native" : token.address;
     if (!tokenTxHistory.has(key)) {

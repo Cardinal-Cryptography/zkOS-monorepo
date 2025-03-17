@@ -24,7 +24,8 @@ export interface ShielderClientFixture {
   withdraw: (
     token: Token,
     amount: bigint,
-    to: `0x${string}`
+    to: `0x${string}`,
+    pocketMoney: bigint
   ) => Promise<{
     tx: `0x${string}`;
     totalFee: bigint;
@@ -97,14 +98,15 @@ export const setupShielderClient = async (
         chainAccount.account.address
       );
     },
-    withdraw: async (token, amount, to) => {
+    withdraw: async (token, amount, to, pocketMoney) => {
       const fees = await shielderClient.getWithdrawFees();
       return {
         tx: await shielderClient.withdraw(
           token,
           amount + fees.totalFee,
           fees.totalFee,
-          to
+          to,
+          pocketMoney
         ),
         totalFee: fees.totalFee
       };

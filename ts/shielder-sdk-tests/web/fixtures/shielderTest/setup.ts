@@ -69,25 +69,30 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
         const { totalFee } = await shielderClient.withdraw(
           action.op.token,
           action.op.amount,
-          withdrawalAccounts[action.op.to].address
+          withdrawalAccounts[action.op.to].address,
+          action.op.pocketMoney
         );
         registrar.registerWithdrawal(
           action.op.token,
           withdrawalAccounts[action.op.to].address,
-          action.op.amount + totalFee
+          action.op.amount + totalFee,
+          action.op.pocketMoney
         );
         withdrawnBalance[action.op.to].add(action.op.token, action.op.amount);
         usedTokens.add(tokenToKey(action.op.token));
+        if (action.op.pocketMoney > 0n) {
+          usedTokens.add("native");
+        }
       } else if (action.op.type === "withdrawManual") {
         await shielderClient.withdrawManual(
           action.op.token,
           action.op.amount,
-          withdrawalAccounts[action.op.to].address
+          withdrawalAccounts[action.op.to].address,
         );
         registrar.registerWithdrawal(
           action.op.token,
           withdrawalAccounts[action.op.to].address,
-          action.op.amount
+          action.op.amount,
         );
         withdrawnBalance[action.op.to].add(action.op.token, action.op.amount);
         usedTokens.add(tokenToKey(action.op.token));

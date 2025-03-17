@@ -124,7 +124,6 @@ export class ShielderActions {
    * @param {`0x${string}`} withdrawalAddress - public address of the recipient
    * @param {SendShielderTransaction} sendShielderTransaction - function to send the shielder transaction to the blockchain
    * @param {`0x${string}`} from - public address of the sender
-   * @param {bigint} pocketMoney - amount of native token to be sent to the recipient by the relayer; only for ERC20 withdrawals
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
@@ -133,8 +132,7 @@ export class ShielderActions {
     amount: bigint,
     withdrawalAddress: `0x${string}`,
     sendShielderTransaction: SendShielderTransaction,
-    from: `0x${string}`,
-    pocketMoney: bigint
+    from: `0x${string}`
   ) {
     const state = await this.accountRegistry.getAccountState(token);
     if (!state) {
@@ -149,7 +147,7 @@ export class ShielderActions {
           0n, // totalFee is 0, as it is not used in this case
           withdrawalAddress,
           contractVersion,
-          pocketMoney
+          0n // pocketMoney is 0, as it is not used in this case
         ),
       (calldata) =>
         this.withdrawAction.sendCalldata(
