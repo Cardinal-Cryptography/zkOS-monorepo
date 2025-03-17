@@ -597,7 +597,8 @@ contract Shielder is
             addressToUInt256(withdrawalAddress),
             addressToUInt256(relayerAddress),
             relayerFee,
-            chainId
+            chainId,
+            pocketMoney
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[5] = uint256(keccak256(commitment)) >> 4;
