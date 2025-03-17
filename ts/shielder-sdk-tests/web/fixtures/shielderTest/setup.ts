@@ -87,12 +87,13 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
         await shielderClient.withdrawManual(
           action.op.token,
           action.op.amount,
-          withdrawalAccounts[action.op.to].address,
+          withdrawalAccounts[action.op.to].address
         );
         registrar.registerWithdrawal(
           action.op.token,
           withdrawalAccounts[action.op.to].address,
           action.op.amount,
+          0n
         );
         withdrawnBalance[action.op.to].add(action.op.token, action.op.amount);
         usedTokens.add(tokenToKey(action.op.token));
