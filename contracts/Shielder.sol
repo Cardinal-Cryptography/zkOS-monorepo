@@ -507,7 +507,7 @@ contract Shielder is
         uint256 relayerFee,
         uint256 macSalt,
         uint256 macCommitment
-    ) external whenNotPaused {
+    ) external payable whenNotPaused {
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             tokenAddress,
