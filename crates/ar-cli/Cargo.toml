@@ -19,3 +19,4 @@ rand = { workspace = true }
 rand_chacha = { workspace = true }
 shielder-circuits = { workspace = true }
 thiserror = { workspace = true }
+type-conversions = { workspace = true }
