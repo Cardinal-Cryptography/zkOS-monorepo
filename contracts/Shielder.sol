@@ -463,7 +463,8 @@ contract Shielder is
             relayerAddress,
             relayerFee,
             macSalt,
-            macCommitment
+            macCommitment,
+            0
         );
 
         // return the tokens
@@ -508,6 +509,8 @@ contract Shielder is
         uint256 macSalt,
         uint256 macCommitment
     ) external payable whenNotPaused {
+        uint256 pocketMoney = msg.value;
+
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             tokenAddress,
@@ -520,12 +523,22 @@ contract Shielder is
             relayerAddress,
             relayerFee,
             macSalt,
-            macCommitment
+            macCommitment,
+            pocketMoney
         );
 
         IERC20 token = IERC20(tokenAddress);
         token.safeTransfer(withdrawalAddress, amount - relayerFee);
         token.safeTransfer(relayerAddress, relayerFee);
+
+        // forward pocket money
+        if (pocketMoney != 0) {
+            (bool nativeTransferSuccess, ) = withdrawalAddress.call{
+                value: pocketMoney,
+                gas: GAS_LIMIT
+            }("");
+            if (!nativeTransferSuccess) revert NativeTransferFailed();
+        }
 
         emit Withdraw(
             CONTRACT_VERSION,
@@ -553,7 +566,8 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        uint256 pocketMoney
     )
         private
         restrictContractVersion(expectedContractVersion)
