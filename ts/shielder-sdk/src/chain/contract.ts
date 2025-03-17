@@ -152,6 +152,7 @@ export type IContract = {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
+    pocketMoney: bigint,
     proof: Uint8Array
   ) => Promise<CalldataWithGas>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
@@ -446,6 +447,7 @@ export class Contract implements IContract {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
+    pocketMoney: bigint,
     proof: Uint8Array
   ) => {
     const args = [
@@ -465,13 +467,15 @@ export class Contract implements IContract {
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
         this.contract.estimateGas.withdrawERC20(args, {
-          account: from
+          account: from,
+          value: pocketMoney
         })
       )
     );
     await handleWrongContractVersionError(() => {
       return this.contract.simulate.withdrawERC20(args, {
         account: from,
+        value: pocketMoney,
         gas
       });
     });
