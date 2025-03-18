@@ -1,0 +1,22 @@
+[package]
+name = "ar-cli"
+version = "0.1.0"
+description = "CLI for interacting with the zkOS Shielder contract"
+
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+clap = { workspace = true, features = ["derive", "string"] }
+env_logger = { workspace = true }
+hex = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+shielder-circuits = { workspace = true }
+thiserror = { workspace = true }
+type-conversions = { workspace = true }
