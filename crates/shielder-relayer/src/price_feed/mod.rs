@@ -7,7 +7,7 @@ pub use fetching::Price;
 use fetching::{fetch_price, PriceFetchError};
 #[cfg(test)]
 use rust_decimal::Decimal;
-use shielder_relayer::{Token, TokenKind};
+use shielder_relayer::{PriceProvider, Token, TokenKind};
 use time::OffsetDateTime;
 use tokio::time::Duration;
 
@@ -36,7 +36,13 @@ impl Prices {
             time::Duration::new(validity.as_secs() as i64, validity.subsec_nanos() as i32);
         let inner = tokens
             .iter()
-            .map(|token| (token.kind, (token.clone(), None)))
+            .map(|token| {
+                let price = match token.price_provider {
+                    PriceProvider::Url(_) => None,
+                    PriceProvider::Static(price) => Some(Price::new_now(price, token.decimals)),
+                };
+                (token.kind, (token.clone(), price))
+            })
             .collect::<HashMap<_, _>>();
 
         Self {
@@ -109,7 +115,7 @@ mod tests {
             kind: TokenKind::Native,
             decimals: 18,
             price_provider: PriceProvider::Url(
-                "/Ethereum/0x0000000000000000000000000000000000000000".to_string(),
+                "https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000".to_string(),
             ),
         }
     }

@@ -13,6 +13,16 @@ pub struct Price {
     pub(super) time: OffsetDateTime,
 }
 
+impl Price {
+    pub fn new_now(token_price: Decimal, decimals: u32) -> Self {
+        Self {
+            token_price,
+            unit_price: token_price * Decimal::from_i128_with_scale(1, decimals),
+            time: OffsetDateTime::now_utc(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 struct PriceInfoFromProvider {
     #[serde(rename = "Price")]
