@@ -216,6 +216,7 @@ mod tests {
                 fee: U256::from(1),
                 macSalt: U256::ZERO,
                 macCommitment: withdraw_calldata.mac_commitment,
+                pocketMoney: pocket_money,
             })]
         );
         assert!(actor_balance_decreased_by(
@@ -297,6 +298,7 @@ mod tests {
                 fee: U256::from(1),
                 macSalt: U256::ZERO,
                 macCommitment: withdraw_calldata.mac_commitment,
+                pocketMoney: pocket_money,
             })]
         );
         assert!(actor_balance_decreased_by(

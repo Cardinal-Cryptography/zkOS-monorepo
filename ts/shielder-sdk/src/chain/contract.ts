@@ -546,7 +546,11 @@ export class Contract implements IContract {
           event.eventName === "Withdraw"
             ? (event.args.fee as bigint)
             : undefined,
-        tokenAddress: event.args.tokenAddress!
+        tokenAddress: event.args.tokenAddress!,
+        pocketMoney:
+          event.eventName === "Withdraw"
+            ? (event.args.pocketMoney as bigint)
+            : undefined
       };
     });
     return mergedIndices;
