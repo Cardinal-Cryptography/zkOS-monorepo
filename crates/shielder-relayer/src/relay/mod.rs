@@ -4,13 +4,12 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use rust_decimal::Decimal;
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
 };
 use shielder_relayer::{
-    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, Token, TokenKind,
+    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
@@ -18,7 +17,6 @@ use tracing::{debug, error};
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
     metrics::WITHDRAW_FAILURE,
-    price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
     AppState,
 };
@@ -144,64 +142,45 @@ fn check_fee(
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        TokenKind::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
+        token @ TokenKind::ERC20(_) => check_erc20_fee(app_state, token, query, request_trace)?,
     }
     Ok(())
 }
 
 fn check_erc20_fee(
     app_state: &AppState,
-    fee_token_address: Address,
+    fee_token: TokenKind,
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    let fee_token = app_state
-        .token_config
-        .iter()
-        .find(|x| x.kind == TokenKind::ERC20(fee_token_address));
+    ensure_permissible_token(app_state, fee_token)?;
 
-    let native_token = app_state
-        .token_config
-        .iter()
-        .find(|x| x.kind == TokenKind::Native);
+    let get_price = |token| {
+        app_state
+            .prices
+            .price(token)
+            .ok_or_else(|| temporary_failure(&format!("Couldn't fetch price for {token:?}.")))
+    };
 
-    match (fee_token, native_token) {
-        (None, _) => {
-            request_trace.record_incorrect_token_fee(fee_token_address);
-            Err(bad_request(&format!(
-                "Fee token {fee_token_address} is not allowed."
-            )))
-        }
-        (Some(_), None) => {
-            error!("MISSING NATIVE TOKEN PRICING!");
-            Err(server_error("Server is missing native token pricing."))
-        }
-        (Some(fee_token), Some(native_token)) => {
-            let ratio = price_relative_to_native(&app_state.prices, fee_token, native_token)
-                .ok_or_else(|| {
-                    temporary_failure("Verification failed temporarily, try again later.")
-                })?;
+    let fee_token_price = get_price(fee_token)?.unit_price;
+    let native_price = get_price(TokenKind::Native)?.unit_price;
+    let ratio = fee_token_price / native_price;
 
-            let expected_fee =
-                scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
+    let expected_fee = scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
 
-            if add_fee_error_margin(expected_fee) < app_state.total_fee {
-                request_trace.record_insufficient_fee(query.fee_amount);
-                return Err(bad_request("Insufficient fee."));
-            }
-            Ok(())
-        }
+    if add_fee_error_margin(expected_fee) < app_state.total_fee {
+        request_trace.record_insufficient_fee(query.fee_amount);
+        return Err(bad_request("Insufficient fee."));
     }
+    Ok(())
 }
 
-fn price_relative_to_native(
-    prices: &Prices,
-    fee_token: &Token,
-    native_token: &Token,
-) -> Option<Decimal> {
-    let fee_token_price = prices.price(fee_token.kind)?.unit_price;
-    let native_price = prices.price(native_token.kind)?.unit_price;
-    Some(fee_token_price / native_price)
+fn ensure_permissible_token(app_state: &AppState, token: TokenKind) -> Result<(), Response> {
+    if !app_state.token_config.iter().any(|t| t.kind == token) {
+        error!("Requested token fee is not supported: {token:?}");
+        return Err(bad_request("Requested token fee is not supported."));
+    }
+    Ok(())
 }
 
 fn add_fee_error_margin(fee: U256) -> U256 {
