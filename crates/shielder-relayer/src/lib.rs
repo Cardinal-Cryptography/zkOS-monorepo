@@ -9,8 +9,8 @@ use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U2
 
 mod environment_variables;
 pub use environment_variables::*;
-mod currency;
-pub use currency::*;
+mod token;
+pub use token::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]

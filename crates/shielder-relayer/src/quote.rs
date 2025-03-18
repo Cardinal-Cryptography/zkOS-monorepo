@@ -1,4 +1,3 @@
-use alloy_primitives::Address;
 use alloy_provider::Provider;
 use axum::{extract::State, http::status::StatusCode, response::IntoResponse, Json};
 use rust_decimal::Decimal;
@@ -49,7 +48,7 @@ async fn _quote_fees(
                 ratio: Decimal::ONE,
             }
         }
-        TokenKind::ERC20(address) => get_token_price(&app_state, address)?,
+        erc20 @ TokenKind::ERC20 { .. } => get_token_price(&app_state, erc20)?,
     };
 
     Ok(QuoteFeeResponse {
@@ -95,21 +94,16 @@ struct Prices {
 fn get_native_token_price(app_state: &AppState) -> Result<Price, String> {
     Ok(app_state
         .prices
-        .price(app_state.native_token)
+        .price(TokenKind::Native)
         .ok_or("Native token price not available")?)
 }
 
-fn get_token_price(app_state: &AppState, address: Address) -> Result<Prices, String> {
+fn get_token_price(app_state: &AppState, token: TokenKind) -> Result<Prices, String> {
     let native_token_price = get_native_token_price(app_state)?;
 
-    let fee_token = app_state
-        .token_config
-        .iter()
-        .find(|config| config.token_address().is_some_and(|a| a == address))
-        .ok_or("Fee token not found")?;
     let fee_token_price = app_state
         .prices
-        .price(fee_token.coin)
+        .price(token)
         .ok_or("Fee token price not available")?;
 
     let ratio = native_token_price.unit_price / fee_token_price.unit_price;

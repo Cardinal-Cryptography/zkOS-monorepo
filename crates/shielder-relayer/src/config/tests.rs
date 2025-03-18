@@ -1,5 +1,6 @@
 use alloy_primitives::address;
 use assert2::assert;
+use rust_decimal::Decimal;
 use shielder_relayer::{RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV};
 
 use super::*;
@@ -28,19 +29,17 @@ fn config_resolution() {
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
     let total_fee = U256::from_str(&DEFAULT_TOTAL_FEE).unwrap();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
-    let native_token = Coin::Btc;
     let token_config = vec![
-        TokenConfig {
-            coin: native_token,
+        Token {
             kind: TokenKind::Native,
-            pricing: Pricing::Fixed {
-                price: Decimal::from_str("1.23").unwrap(),
-            },
+            price_provider: PriceProvider::Url("https://price.feed".to_string()),
         },
-        TokenConfig {
-            coin: Coin::Eth,
-            kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
-            pricing: Pricing::Feed,
+        Token {
+            kind: TokenKind::ERC20 {
+                address: address!("2222222222222222222222222222222222222222"),
+                decimals: 10,
+            },
+            price_provider: PriceProvider::Static(Decimal::new(123, 2)),
         },
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL;
@@ -61,7 +60,6 @@ fn config_resolution() {
             shielder_contract_address,          // from CLI
             total_fee,                          // from CLI
             relay_gas,                          // from env
-            native_token,                       // from env
         },
         operations: OperationalConfig {
             balance_monitor_interval,    // from env
@@ -100,7 +98,6 @@ fn config_resolution() {
         token_config: None,
         price_feed_refresh_interval: None,
         price_feed_validity: Some(price_feed_validity),
-        native_token: None,
         service_fee_percent: None,
         quote_validity: None,
         max_pocket_money: Some(max_pocket_money),
@@ -116,23 +113,26 @@ fn config_resolution() {
         std::env::set_var(FEE_DESTINATION_KEY_ENV, fee_destination_key);
         std::env::set_var(RELAYER_SIGNING_KEYS_ENV, format!("{key1},{key2}"));
         std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
+        std::env::set_var(TOKEN_CONFIG_ENV, "[]");
+        std::env::set_var(QUOTE_VALIDITY_ENV, "11");
         std::env::set_var(
             TOKEN_CONFIG_ENV,
             "[
                 {
-                    \"coin\":\"Btc\",
                     \"kind\":\"Native\",
-                    \"pricing\":{\"Fixed\":{\"price\":\"1.23\"}}
+                    \"price_provider\":{\"Url\":\"https://price.feed\"}
                 },
                 {
-                    \"coin\":\"Eth\",
-                    \"kind\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
-                    \"pricing\":\"Feed\"
+                    \"kind\":{\
+                        \"ERC20\": {
+                            \"address\": \"0x2222222222222222222222222222222222222222\",
+                            \"decimals\": 10
+                        }
+                    },
+                    \"price_provider\":{\"Static\":\"1.23\"}
                 }
             ]",
         );
-        std::env::set_var(NATIVE_TOKEN_ENV, format!("{native_token:?}"));
-        std::env::set_var(QUOTE_VALIDITY_ENV, "11");
     }
 
     // ---- Test. ------------------------------------------------------------------------------

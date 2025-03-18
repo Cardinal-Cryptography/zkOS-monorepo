@@ -96,19 +96,16 @@ deploy_erc20_tokens() {
   TOKEN_CONFIG=$(cat <<EOF
   [
     {
-      "coin": "Eth",
       "kind":"Native",
-      "pricing":{"Fixed":{"price":"1"}}
+      "price_provider":{"Static":1}
     },
     {
-      "coin": "Usdc",
-      "kind":{"ERC20":"${TT1}"},
-      "pricing":{"Fixed":{"price":"1"}}
+      "kind":{"ERC20":{"address": "${TT1}", "decimals": 18}},
+      "price_provider":{"Static":1}
     },
     {
-      "coin": "Usdt",
-      "kind":{"ERC20":"${TT2}"},
-      "pricing":{"Fixed":{"price":"1"}}
+      "kind":{"ERC20":{"address": "${TT2}", "decimals": 18}},
+      "price_provider":{"Static":1}
     }
   ]
 EOF
@@ -144,6 +141,19 @@ mint_erc20_tokens() {
 #### RELAYER #######################################################################################
 ####################################################################################################
 start_relayer() {
+  if [[ -z "${TOKEN_CONFIG:-}" ]]; then
+      TOKEN_CONFIG=$(cat <<EOF
+      [
+        {
+          "kind":"Native",
+          "price_provider":{"Static":1}
+        }
+      ]
+EOF
+      )
+    export TOKEN_CONFIG
+  fi
+
   cd "${ROOT_DIR}/crates/shielder-relayer/"
   make run &>> output.log
   cd "${ROOT_DIR}"
