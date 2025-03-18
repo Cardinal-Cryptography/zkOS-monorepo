@@ -96,19 +96,19 @@ deploy_erc20_tokens() {
   TOKEN_CONFIG=$(cat <<EOF
   [
     {
-      "coin": "Eth",
       "kind":"Native",
-      "pricing":{"Fixed":{"price":"1"}}
+      "price_provider":{"Static":"1"},
+      "decimals": 18
     },
     {
-      "coin": "Usdc",
       "kind":{"ERC20":"${TT1}"},
-      "pricing":{"Fixed":{"price":"1"}}
+      "price_provider":{"Static":"1"}
+      "decimals": 18
     },
     {
-      "coin": "Usdt",
       "kind":{"ERC20":"${TT2}"},
-      "pricing":{"Fixed":{"price":"1"}}
+      "price_provider":{"Static":"1"}
+      "decimals": 18
     }
   ]
 EOF
