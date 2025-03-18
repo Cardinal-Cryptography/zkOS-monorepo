@@ -32,12 +32,13 @@ fn config_resolution() {
     let token_config = vec![
         Token {
             kind: TokenKind::Native,
-            decimals: 18,
             price_provider: PriceProvider::Url("https://price.feed".to_string()),
         },
         Token {
-            kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
-            decimals: 10,
+            kind: TokenKind::ERC20 {
+                address: address!("2222222222222222222222222222222222222222"),
+                decimals: 10,
+            },
             price_provider: PriceProvider::Static(Decimal::new(123, 2)),
         },
     ];
@@ -119,13 +120,16 @@ fn config_resolution() {
             "[
                 {
                     \"kind\":\"Native\",
-                    \"price_provider\":{\"Url\":\"https://price.feed\"},
-                    \"decimals\":18
+                    \"price_provider\":{\"Url\":\"https://price.feed\"}
                 },
                 {
-                    \"kind\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
-                    \"price_provider\":{\"Static\":\"1.23\"},
-                    \"decimals\":10
+                    \"kind\":{\
+                        \"ERC20\": {
+                            \"address\": \"0x2222222222222222222222222222222222222222\",
+                            \"decimals\": 10
+                        }
+                    },
+                    \"price_provider\":{\"Static\":\"1.23\"}
                 }
             ]",
         );

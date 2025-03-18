@@ -64,7 +64,7 @@ pub async fn fetch_price(token: &Token) -> Result<Price, PriceFetchError> {
         },
     };
 
-    Ok(Price::from((price_info, token.decimals)))
+    Ok(Price::from((price_info, token.decimals())))
 }
 
 #[cfg(test)]
@@ -77,15 +77,16 @@ mod tests {
     fn token_with_static_price() -> Token {
         Token {
             kind: TokenKind::Native,
-            decimals: 18,
             price_provider: PriceProvider::Static(Decimal::ONE),
         }
     }
 
     fn eth_url() -> Token {
         Token {
-            kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
-            decimals: 18,
+            kind: TokenKind::ERC20 {
+                address: address!("2222222222222222222222222222222222222222"),
+                decimals: 18,
+            },
             price_provider: PriceProvider::Url(
                 "https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000".to_string(),
             ),
@@ -94,8 +95,10 @@ mod tests {
 
     fn usdt_url() -> Token {
         Token {
-            kind: TokenKind::ERC20(address!("1111111111111111111111111111111111111111")),
-            decimals: 6,
+            kind: TokenKind::ERC20 {
+                address: address!("1111111111111111111111111111111111111111"),
+                decimals: 6,
+            },
             price_provider: PriceProvider::Url(
                 "https://api.diadata.org/v1/assetQuotation/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string(),
             ),

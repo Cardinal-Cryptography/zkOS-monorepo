@@ -154,11 +154,11 @@ pub struct CLIConfig {
             \
             Parsed as JSON: \
             \
-            This example configures a token to have a constant price of 12.3 USD and 10 decimals: \
-            [{{\"kind\":\"Native\", \"price_provider\":{{\"Static\":\"12.3\"}}, \"decimals\":10}}] \
+            This example configures a token to have a constant price of 12.3 USD. Native token has 18 decimals. \
+            [{{\"kind\":\"Native\", \"price_provider\":{{\"Static\":\"12.3\"}}}}] \
             \
             This example configure a token to use URL price feed for its pricing: \
-            [{{\"kind\":{{\"ERC20\":\"0x6b175474e89094c44da98b954eedeac495271d0f\"}},\"price_provider\": {{\"Url\":\"https://price.feed\"}}, \"decimals\":18}}]
+            [{{\"kind\":{{\"ERC20\":{{\"address\": \"0x6b175474e89094c44da98b954eedeac495271d0f\", \"decimals\":18}}}},\"price_provider\": {{\"Url\":\"https://price.feed\"}}}}]
             ")
     )]
     pub token_config: Option<String>,

@@ -48,7 +48,7 @@ async fn _quote_fees(
                 ratio: Decimal::ONE,
             }
         }
-        erc20 @ TokenKind::ERC20(_) => get_token_price(&app_state, erc20)?,
+        erc20 @ TokenKind::ERC20 { .. } => get_token_price(&app_state, erc20)?,
     };
 
     Ok(QuoteFeeResponse {

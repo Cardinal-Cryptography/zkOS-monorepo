@@ -98,17 +98,14 @@ deploy_erc20_tokens() {
     {
       "kind":"Native",
       "price_provider":{"Static":1},
-      "decimals": 18
     },
     {
-      "kind":{"ERC20":"${TT1}"},
+      "kind":{"ERC20":{"address": "${TT1}", "decimals": 18},
       "price_provider":{"Static":1},
-      "decimals": 18
     },
     {
-      "kind":{"ERC20":"${TT2}"},
+      "kind":{"ERC20":{"address": "${TT2}", "decimals": 18},
       "price_provider":{"Static":1},
-      "decimals": 18
     }
   ]
 EOF
@@ -150,7 +147,6 @@ start_relayer() {
         {
           "kind":"Native",
           "price_provider":{"Static":1},
-          "decimals": 18
         }
       ]
 EOF
