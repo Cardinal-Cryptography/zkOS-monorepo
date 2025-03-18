@@ -62,7 +62,6 @@ mod tests {
     use alloy_primitives::address;
     use rust_decimal::Decimal;
     use shielder_relayer::{PriceProvider, Token, TokenKind};
-    use strum::IntoEnumIterator;
 
     use super::fetch_price;
     fn token_with_static_price() -> Token {

@@ -87,19 +87,21 @@ mod erc20_fee {
 
     const ERC20_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
 
+    /// ETH price is $1.5
     fn erc20() -> Token {
         Token {
             kind: TokenKind::ERC20(ERC20_ADDRESS),
             decimals: 18,
-            price_provider: PriceProvider::Url(String::new()),
+            price_provider: PriceProvider::Static(Decimal::new(15, 1)),
         }
     }
 
+    /// AZERO price is $3
     fn native() -> Token {
         Token {
             kind: TokenKind::Native,
             decimals: 18,
-            price_provider: PriceProvider::Url(String::new()),
+            price_provider: PriceProvider::Static(Decimal::new(3, 0)),
         }
     }
 
@@ -109,8 +111,6 @@ mod erc20_fee {
             token_config: vec![],
             ..app_state()
         };
-        app_state.prices.set_price(erc20(), Decimal::new(2, 0));
-        app_state.prices.set_price(native(), Decimal::new(4, 0));
 
         let query = RelayQuery {
             fee_token: TokenKind::ERC20(ERC20_ADDRESS),
@@ -132,12 +132,12 @@ mod erc20_fee {
     }
 
     /// Return default `AppState` with pricing set:
-    ///   - prod mode for both ETH and AZERO
+    ///   - static provider for both ETH and AZERO
     ///   - ETH price is $1.5
     ///   - AZERO price is $3
     fn app_state_with_pricing() -> AppState {
         let app_state = AppState {
-            token_config: vec![],
+            token_config: vec![erc20(), native()],
             ..app_state()
         };
         app_state
@@ -210,8 +210,17 @@ mod erc20_fee {
 
     #[test]
     fn price_feed_failure_leads_to_failure() {
-        let app_state = app_state();
-        app_state.prices.set_price(Coin::Eth, Decimal::new(15, 1));
+        let app_state = AppState {
+            token_config: vec![
+                erc20(),
+                Token {
+                    kind: TokenKind::Native,
+                    decimals: 18,
+                    price_provider: PriceProvider::Url(String::new()),
+                },
+            ],
+            ..app_state()
+        };
         // there is no way of checking AZERO price (we don't configure background
         // price fetching, nor we set the price manually)
 
@@ -224,32 +233,5 @@ mod erc20_fee {
 
         let result = check_fee(&app_state, &query, &mut request_trace);
         assert!(let Err(_) = result);
-    }
-
-    #[test]
-    fn we_dont_hardcode_native_to_azero() {
-        let app_state = AppState {
-            native_token: Coin::Btc,
-            token_config: vec![
-                erc20_pricing(),
-                TokenConfig {
-                    coin: Coin::Btc,
-                    kind: TokenKind::Native,
-                    pricing: Pricing::Feed,
-                },
-            ],
-            ..app_state()
-        };
-        app_state.prices.set_price(Coin::Btc, Decimal::new(1, 0));
-        app_state.prices.set_price(Coin::Eth, Decimal::new(1, 0));
-
-        let query = RelayQuery {
-            fee_amount: U256::from(100),
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
-            ..RelayQuery::default()
-        };
-
-        let result = check_fee(&app_state, &query, &mut RequestTrace::new(&query));
-        assert!(let Ok(_) = result);
     }
 }

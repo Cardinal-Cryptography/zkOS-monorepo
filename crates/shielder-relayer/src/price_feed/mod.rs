@@ -80,19 +80,6 @@ impl Prices {
 
         Ok(())
     }
-
-    #[cfg(test)]
-    pub fn set_price(&self, token: Token, unit_price: Decimal) {
-        let price = Price {
-            token_price: unit_price / Decimal::from_i128_with_scale(1, token.decimals),
-            unit_price,
-            time: OffsetDateTime::now_utc(),
-        };
-        self.inner
-            .lock()
-            .expect("Mutex poisoned")
-            .insert(token.kind, (token, Some(price)));
-    }
 }
 
 /// Start a price feed that updates the prices in the given `Prices` instance.
