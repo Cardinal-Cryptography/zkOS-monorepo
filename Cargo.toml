@@ -53,7 +53,7 @@ serde = { version = "1.0.203" }
 serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
-shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "b7da530" }
+shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "898c7ea" }
 strum = { version = "0.27.1" }
 strum_macros = { version = "0.27.1" }
 testcontainers = { version = "0.19.0" }
@@ -66,6 +66,11 @@ tracing-subscriber = { version = "0.3.18" }
 uniffi = { version = "0.28.3" }
 wasm-bindgen = { version = "0.2.92" }
 wasm-bindgen-rayon = { version = "1.2.1" }
+
+# AR-CLI
+rand_chacha = { version = "0.3.1" }
+log = { version = "0.4.20" }
+env_logger = { version = "0.10.0" }
 
 # Local dependencies
 content-encryption = { path = "crates/content-encryption", default-features = false }

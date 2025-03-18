@@ -5,7 +5,6 @@ use shielder_account::{
     call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAccount,
 };
-use shielder_circuits::consts::FIELD_BITS;
 use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeCall};
 
 use crate::{
@@ -29,7 +28,7 @@ pub fn prepare_call(
         amount,
         &NewAccountCallExtra {
             anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
-            encryption_salt: [true; FIELD_BITS],
+            encryption_salt: U256::MAX,
             mac_salt: U256::ZERO,
         },
     )
