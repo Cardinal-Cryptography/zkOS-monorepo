@@ -81,7 +81,8 @@ mod native_fee {
 
 mod erc20_fee {
     use assert2::assert;
-    use shielder_relayer::PriceProvider;
+    use rust_decimal::Decimal;
+    use shielder_relayer::{PriceProvider, Token};
 
     use super::*;
 
