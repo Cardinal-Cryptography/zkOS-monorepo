@@ -87,7 +87,8 @@ contract Shielder is
         address relayerAddress,
         uint256 fee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        uint256 pocketMoney
     );
 
     // -- Errors --
@@ -491,7 +492,8 @@ contract Shielder is
             relayerAddress,
             relayerFee,
             macSalt,
-            macCommitment
+            macCommitment,
+            0
         );
     }
 
@@ -550,7 +552,8 @@ contract Shielder is
             relayerAddress,
             relayerFee,
             macSalt,
-            macCommitment
+            macCommitment,
+            pocketMoney
         );
     }
 
