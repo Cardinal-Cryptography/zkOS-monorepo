@@ -40,4 +40,5 @@ export type ShielderTransaction = {
   txHash: Hex;
   block: bigint;
   token: Token;
+  pocketMoney?: bigint;
 };

@@ -104,6 +104,7 @@ const eventToTransaction = (
     relayerFee: event.relayerFee,
     txHash: event.txHash,
     block: event.block,
-    token
+    token,
+    pocketMoney: event.pocketMoney
   };
 };

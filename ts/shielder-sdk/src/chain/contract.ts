@@ -46,6 +46,7 @@ export type NoteEvent = {
   relayerFee?: bigint;
   block: bigint;
   tokenAddress: `0x${string}`;
+  pocketMoney?: bigint;
 };
 
 export type NewAccountEvent = {
