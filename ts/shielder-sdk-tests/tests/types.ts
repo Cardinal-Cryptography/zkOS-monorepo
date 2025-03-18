@@ -94,8 +94,9 @@ export function recoverOp(): RecoverOp {
 
 // Shielder-related transaction representation, omitting the details like txHash, blockNumber, etc.
 export type ShortTx = {
-  type: "NewAccount" | "Deposit" | "Withdraw" | "PocketMoney";
+  type: "NewAccount" | "Deposit" | "Withdraw";
   token: Token;
   amount: bigint;
   to?: `0x${string}`;
+  pocketMoney?: bigint;
 };
