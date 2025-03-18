@@ -125,10 +125,13 @@ mod erc20_fee {
 
         // When native is not set.
         app_state.token_config = vec![erc20()];
+        app_state.prices = Prices::new(&[erc20()], Duration::from_secs(10), Duration::from_secs(1));
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
 
         // When fee token is not set.
         app_state.token_config = vec![native()];
+        app_state.prices =
+            Prices::new(&[native()], Duration::from_secs(10), Duration::from_secs(1));
         assert!(let Err(_) = check_fee(&app_state, &query, &mut request_trace));
     }
 
@@ -137,8 +140,14 @@ mod erc20_fee {
     ///   - ETH price is $1.5
     ///   - AZERO price is $3
     fn app_state_with_pricing() -> AppState {
+        let token_config = vec![erc20(), native()];
         let app_state = AppState {
-            token_config: vec![erc20(), native()],
+            prices: Prices::new(
+                &token_config,
+                Duration::from_secs(10),
+                Duration::from_secs(1),
+            ),
+            token_config,
             ..app_state()
         };
         app_state
