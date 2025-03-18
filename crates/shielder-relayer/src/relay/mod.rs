@@ -142,7 +142,7 @@ fn check_fee(
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        token @ TokenKind::ERC20(_) => check_erc20_fee(app_state, token, query, request_trace)?,
+        token @ TokenKind::ERC20 { .. } => check_erc20_fee(app_state, token, query, request_trace)?,
     }
     Ok(())
 }

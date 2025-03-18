@@ -91,8 +91,10 @@ mod erc20_fee {
     /// ETH price is $1.5
     fn erc20() -> Token {
         Token {
-            kind: TokenKind::ERC20(ERC20_ADDRESS),
-            decimals: 18,
+            kind: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             price_provider: PriceProvider::Static(Decimal::new(15, 1)),
         }
     }
@@ -101,7 +103,6 @@ mod erc20_fee {
     fn native() -> Token {
         Token {
             kind: TokenKind::Native,
-            decimals: 18,
             price_provider: PriceProvider::Static(Decimal::new(3, 0)),
         }
     }
@@ -114,7 +115,10 @@ mod erc20_fee {
         };
 
         let query = RelayQuery {
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             fee_amount: U256::from(100000000),
             ..RelayQuery::default()
         };
@@ -157,7 +161,10 @@ mod erc20_fee {
     fn exact_fee_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(200), // total fee is AZERO 100, which is worth $300
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -170,7 +177,10 @@ mod erc20_fee {
     fn too_low_fee_fails() {
         let query = RelayQuery {
             fee_amount: U256::from(20), // total fee is AZERO 100, which is worth $300
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -183,7 +193,10 @@ mod erc20_fee {
     fn low_fee_but_within_margin_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(199), // total fee is AZERO 100, which is worth $300
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -196,7 +209,10 @@ mod erc20_fee {
     fn way_too_high_fee_passes() {
         let query = RelayQuery {
             fee_amount: U256::from(200000),
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
@@ -209,13 +225,32 @@ mod erc20_fee {
     fn unknown_fee_token_fails() {
         let query = RelayQuery {
             fee_amount: U256::from(200_000_000),
-            fee_token: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
+            fee_token: TokenKind::ERC20 {
+                address: address!("2222222222222222222222222222222222222222"),
+                decimals: 18,
+            },
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
-        assert!(let Err(_) = result);
+        assert ! ( let Err(_) = result);
+    }
+
+    #[test]
+    fn incorrect_decimals_in_fee_token_fails() {
+        let query = RelayQuery {
+            fee_amount: U256::from(200_000_000),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 17,
+            },
+            ..RelayQuery::default()
+        };
+        let mut request_trace = RequestTrace::new(&query);
+
+        let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
+        assert ! ( let Err(_) = result);
     }
 
     #[test]
@@ -225,7 +260,6 @@ mod erc20_fee {
                 erc20(),
                 Token {
                     kind: TokenKind::Native,
-                    decimals: 18,
                     price_provider: PriceProvider::Url(String::new()),
                 },
             ],
@@ -236,7 +270,10 @@ mod erc20_fee {
 
         let query = RelayQuery {
             fee_amount: U256::from(200),
-            fee_token: TokenKind::ERC20(ERC20_ADDRESS),
+            fee_token: TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
             ..RelayQuery::default()
         };
         let mut request_trace = RequestTrace::new(&query);

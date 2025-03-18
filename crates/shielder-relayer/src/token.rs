@@ -30,7 +30,7 @@ impl Token {
             // Native EVM has 18 decimals by default
             TokenKind::Native => 18,
             // ERC20 enum has configured decimals
-            TokenKind::ERC20(_, decimals) => decimals,
+            TokenKind::ERC20 { decimals, .. } => decimals,
         }
     }
 }

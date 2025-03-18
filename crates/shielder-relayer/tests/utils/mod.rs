@@ -54,7 +54,6 @@ impl TestContext {
             test_config.relayer_signer.signing_key(),
             vec![Token {
                 kind: TokenKind::Native,
-                decimals: 10,
                 price_provider: PriceProvider::Static(Decimal::ONE),
             }],
         ));

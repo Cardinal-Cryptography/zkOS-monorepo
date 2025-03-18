@@ -39,7 +39,7 @@ impl Prices {
             .map(|token| {
                 let price = match token.price_provider {
                     PriceProvider::Url(_) => None,
-                    PriceProvider::Static(price) => Some(Price::new_now(price, token.decimals)),
+                    PriceProvider::Static(price) => Some(Price::new_now(price, token.decimals())),
                 };
                 (token.kind, (token.clone(), price))
             })
@@ -105,7 +105,6 @@ mod tests {
     fn token_with_static_price() -> Token {
         Token {
             kind: TokenKind::Native,
-            decimals: 18,
             price_provider: PriceProvider::Static(Decimal::ONE),
         }
     }
@@ -113,7 +112,6 @@ mod tests {
     fn token_with_url_price() -> Token {
         Token {
             kind: TokenKind::Native,
-            decimals: 18,
             price_provider: PriceProvider::Url(
                 "https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000".to_string(),
             ),
