@@ -13,6 +13,10 @@ use std::{borrow::Borrow, str::FromStr};
 use alloy_primitives::{Address, U256};
 use halo2curves::ff::PrimeField;
 
+mod endianess;
+
+pub use endianess::Endianess;
+
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
     #[error("incorrect vec length: expected {expected}, got {actual}")]

@@ -21,3 +21,5 @@ tooling-dev/*
 
 shielder_address.txt
 shielder_block_number.txt
+
+*.bin

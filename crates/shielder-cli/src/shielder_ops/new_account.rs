@@ -1,13 +1,9 @@
-use alloy_primitives::{
-    private::rand::{rngs::OsRng, Rng},
-    U256,
-};
+use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
     call_data::{NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAction,
 };
-use shielder_circuits::consts::FIELD_BITS;
 use shielder_contract::{
     call_type::{Call, DryRun},
     events::get_event,
@@ -68,7 +64,6 @@ pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
     Ok(())
 }
 
-fn get_encryption_salt() -> [bool; FIELD_BITS] {
-    let mut rng = OsRng;
-    core::array::from_fn(|_| rng.gen_bool(0.5))
+fn get_encryption_salt() -> U256 {
+    get_mac_salt()
 }

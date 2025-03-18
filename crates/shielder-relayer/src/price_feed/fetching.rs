@@ -1,19 +1,7 @@
 use rust_decimal::Decimal;
 use serde::Deserialize;
-use shielder_relayer::Coin;
+use shielder_relayer::{PriceProvider, Token};
 use time::OffsetDateTime;
-
-const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
-
-const fn price_path(coin: Coin) -> &'static str {
-    match coin {
-        Coin::Azero => "/AlephZero/0x0000000000000000000000000000000000000000",
-        Coin::Eth => "/Ethereum/0x0000000000000000000000000000000000000000",
-        Coin::Btc => "/Bitcoin/0x0000000000000000000000000000000000000000",
-        Coin::Usdt => "/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        Coin::Usdc => "/Ethereum/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct Price {
@@ -23,6 +11,16 @@ pub struct Price {
     pub unit_price: Decimal,
     /// The time when the price has been created at the provider.
     pub(super) time: OffsetDateTime,
+}
+
+impl Price {
+    pub fn new_now(token_price: Decimal, decimals: u32) -> Self {
+        Self {
+            token_price,
+            unit_price: token_price * Decimal::from_i128_with_scale(1, decimals),
+            time: OffsetDateTime::now_utc(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -36,12 +34,11 @@ struct PriceInfoFromProvider {
     time: OffsetDateTime,
 }
 
-impl From<(Coin, PriceInfoFromProvider)> for Price {
-    fn from((coin, from_provider): (Coin, PriceInfoFromProvider)) -> Self {
+impl From<(PriceInfoFromProvider, u32)> for Price {
+    fn from((from_provider, decimals): (PriceInfoFromProvider, u32)) -> Self {
         Self {
             token_price: from_provider.token_price,
-            unit_price: from_provider.token_price
-                * Decimal::from_i128_with_scale(1, coin.decimals()),
+            unit_price: from_provider.token_price * Decimal::from_i128_with_scale(1, decimals),
             time: from_provider.time,
         }
     }
@@ -53,35 +50,79 @@ pub enum PriceFetchError {
     Reqwest(#[from] reqwest::Error),
 }
 
-pub async fn fetch_price(coin: Coin) -> Result<Price, PriceFetchError> {
-    Ok(reqwest::get(format!("{BASE_PATH}{}", price_path(coin)))
-        .await?
-        .json::<PriceInfoFromProvider>()
-        .await
-        .map(|price_info| (coin, price_info).into())?)
+pub async fn fetch_price(token: &Token) -> Result<Price, PriceFetchError> {
+    let price_info = match &token.price_provider {
+        PriceProvider::Url(url) => {
+            reqwest::get(url)
+                .await?
+                .json::<PriceInfoFromProvider>()
+                .await?
+        }
+        PriceProvider::Static(token_price) => PriceInfoFromProvider {
+            token_price: *token_price,
+            time: OffsetDateTime::now_utc(),
+        },
+    };
+
+    Ok(Price::from((price_info, token.decimals())))
 }
 
 #[cfg(test)]
 mod tests {
+    use alloy_primitives::address;
     use rust_decimal::Decimal;
-    use shielder_relayer::Coin;
-    use strum::IntoEnumIterator;
+    use shielder_relayer::{PriceProvider, Token, TokenKind};
 
     use super::fetch_price;
+    fn token_with_static_price() -> Token {
+        Token {
+            kind: TokenKind::Native,
+            price_provider: PriceProvider::Static(Decimal::ONE),
+        }
+    }
+
+    fn eth_url() -> Token {
+        Token {
+            kind: TokenKind::ERC20 {
+                address: address!("2222222222222222222222222222222222222222"),
+                decimals: 18,
+            },
+            price_provider: PriceProvider::Url(
+                "https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000".to_string(),
+            ),
+        }
+    }
+
+    fn usdt_url() -> Token {
+        Token {
+            kind: TokenKind::ERC20 {
+                address: address!("1111111111111111111111111111111111111111"),
+                decimals: 6,
+            },
+            price_provider: PriceProvider::Url(
+                "https://api.diadata.org/v1/assetQuotation/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string(),
+            ),
+        }
+    }
 
     #[tokio::test]
-    async fn can_fetch_prices() {
-        for coin in Coin::iter() {
-            fetch_price(coin)
-                .await
-                .expect("Should connect to the feed and get price");
-        }
+    async fn can_fetch_static_price() {
+        fetch_price(&token_with_static_price())
+            .await
+            .expect("Should just read the price");
+    }
+
+    #[tokio::test]
+    async fn can_fetch_price_from_url() {
+        fetch_price(&eth_url())
+            .await
+            .expect("Should connect to the feed and get price");
     }
 
     #[tokio::test]
     async fn unit_price_is_correct() {
         // ------------- ETH has 18 decimals. -------------
-        let price = fetch_price(Coin::Eth).await.unwrap();
+        let price = fetch_price(&eth_url()).await.unwrap();
         let expected_token_price = price.unit_price * Decimal::from(1_000_000_000_000_000_000u128);
 
         // Define a 1% tolerance
@@ -98,7 +139,7 @@ mod tests {
         );
 
         // ------------- USDT has 6 decimals. -------------
-        let price = fetch_price(Coin::Usdt).await.unwrap();
+        let price = fetch_price(&usdt_url()).await.unwrap();
         let expected_token_price = price.unit_price * Decimal::from(1_000_000u128);
 
         // Define a 1% tolerance

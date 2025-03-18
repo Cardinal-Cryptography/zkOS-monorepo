@@ -2,11 +2,9 @@ use alloy_primitives::{Address, Bytes, FixedBytes, U256};
 use rand::rngs::OsRng;
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
-    consts::{
-        merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
-        FIELD_BITS,
-    },
+    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
     deposit::DepositProverKnowledge,
+    field_element_to_le_bits,
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
     Field, Fr, GrumpkinPointAffine, ProverKnowledge, PublicInputProvider,
@@ -150,7 +148,7 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
 
 pub struct NewAccountCallExtra {
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
-    pub encryption_salt: [bool; FIELD_BITS],
+    pub encryption_salt: U256,
     pub mac_salt: U256,
 }
 
@@ -172,7 +170,7 @@ impl CallType for NewAccountCallType {
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
             token_address: address_to_field(token.address()),
-            encryption_salt: extra.encryption_salt.map(|b| Fr::from(b as u64)),
+            encryption_salt: field_element_to_le_bits::<Fr>(u256_to_field(extra.encryption_salt)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
                 x: u256_to_field(extra.anonymity_revoker_public_key.x),
                 y: u256_to_field(extra.anonymity_revoker_public_key.y),

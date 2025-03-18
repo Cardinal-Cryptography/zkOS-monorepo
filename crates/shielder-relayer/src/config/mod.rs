@@ -9,8 +9,6 @@ use clap::Parser;
 use cli::CLIConfig;
 use defaults::*;
 pub use enums::{DryRunning, LoggingFormat, NoncePolicy};
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::*;
 
@@ -45,29 +43,6 @@ pub struct ChainConfig {
     pub shielder_contract_address: Address,
     pub total_fee: U256,
     pub relay_gas: u64,
-    pub native_token: Coin,
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub enum Pricing {
-    Fixed { price: Decimal },
-    Feed,
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct TokenConfig {
-    pub coin: Coin,
-    pub kind: TokenKind,
-    pub pricing: Pricing,
-}
-
-impl TokenConfig {
-    pub fn token_address(&self) -> Option<Address> {
-        match self.kind {
-            TokenKind::Native => None,
-            TokenKind::ERC20(address) => Some(address),
-        }
-    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -76,7 +51,7 @@ pub struct OperationalConfig {
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
-    pub token_config: Vec<TokenConfig>,
+    pub token_config: Vec<Token>,
     pub price_feed_validity: Duration,
     pub price_feed_refresh_interval: Duration,
     pub service_fee_percent: u32,
@@ -147,7 +122,6 @@ fn resolve_config_from_cli_config(
         token_config,
         price_feed_validity,
         price_feed_refresh_interval,
-        native_token,
         service_fee_percent,
         quote_validity,
         max_pocket_money,
@@ -191,13 +165,12 @@ fn resolve_config_from_cli_config(
             Some(parse_u256(DEFAULT_TOTAL_FEE).unwrap()),
         ),
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
-        native_token: resolve_value(native_token, NATIVE_TOKEN_ENV, None),
     };
 
     let token_config = token_config
         .or_else(|| std::env::var(TOKEN_CONFIG_ENV).ok())
-        .unwrap_or_else(|| "[]".to_string());
-    let token_config = serde_json::from_str(&token_config).expect("Invalid token pricing");
+        .expect("Missing token configuration");
+    let token_config = serde_json::from_str(&token_config).expect("Invalid token configuration");
 
     let operational_config = OperationalConfig {
         balance_monitor_interval: resolve_value_map(
