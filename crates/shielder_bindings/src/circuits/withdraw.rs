@@ -14,6 +14,7 @@ use crate::utils::{vec_to_f, vec_to_path};
 #[cfg_attr(feature = "build-uniffi", derive(uniffi::Record))]
 // `getter_with_clone` is required for `Vec<u8>` struct fields
 #[cfg_attr(feature = "build-wasm", wasm_bindgen(getter_with_clone))]
+#[cfg_attr(feature = "build-server", derive(serde::Serialize))]
 #[derive(Clone, Debug, Default)]
 pub struct WithdrawPubInputsBytes {
     pub merkle_root: Vec<u8>,
@@ -62,6 +63,14 @@ pub struct WithdrawCircuit(super::WithdrawCircuit);
 
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
+#[cfg_attr(
+    feature = "build-server",
+    macros::jsonize_singleton(
+        constructor = "new_pronto",
+        params_url = "../../artifacts/withdraw/params.bin",
+        pk_url = "../../artifacts/withdraw/pk.bin"
+    )
+)]
 impl WithdrawCircuit {
     #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
@@ -136,6 +145,7 @@ impl WithdrawCircuit {
 #[allow(clippy::too_many_arguments)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
+#[cfg_attr(feature = "build-server", macros::jsonize)]
 pub fn withdraw_pub_inputs(
     id: Vec<u8>,
     nullifier_old: Vec<u8>,

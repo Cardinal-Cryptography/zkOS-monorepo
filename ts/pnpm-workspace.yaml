@@ -1,5 +1,6 @@
 packages:
   - "shielder-sdk-crypto"
+  - "shielder-sdk-crypto-server"
   - "shielder-sdk-crypto-wasm"
   - "shielder-sdk"
   - "shielder-sdk-tests"

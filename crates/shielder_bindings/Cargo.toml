@@ -11,22 +11,31 @@ categories.workspace = true
 repository.workspace = true
 
 [lib]
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["lib", "cdylib", "staticlib"]
 
 [dependencies]
 alloy-primitives = { workspace = true }
+axum = { workspace = true, optional = true }
+ctor = { workspace = true, optional = true }
 getrandom = { workspace = true, optional = true }
 halo2_proofs = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 rayon = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
 shielder-account = { workspace = true }
 shielder-circuits = { workspace = true }
 shielder-setup = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"], optional = true }
+tower-http = { workspace = true, features = ["cors"], optional = true }
 type-conversions = { workspace = true }
 uniffi = { workspace = true, features = ["cli"], optional = true }
 wasm-bindgen-rayon = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
+macros-core = { workspace = true, optional = true }
+macros = { workspace = true, optional = true }
+once_cell = { workspace = true, optional = true }
 
 [build-dependencies]
 powers-of-tau = { workspace = true }
@@ -38,6 +47,20 @@ default = ["std"]
 std = []
 build-wasm = ["wasm-bindgen", "getrandom/js"]
 build-uniffi = ["uniffi", "rayon", "shielder-circuits/multithreading"]
+build-server = [
+    "dep:axum",
+    "dep:ctor",
+    "dep:macros-core",
+    "dep:macros",
+    "dep:tokio",
+    "dep:tower-http",
+    "dep:once_cell",
+    "dep:serde",
+    "dep:serde_json",
+    "rayon",
+    "shielder-circuits/multithreading",
+    "std",
+]
 multithreading-wasm = [
     "rayon",
     "wasm-bindgen-rayon",

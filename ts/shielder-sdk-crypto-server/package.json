@@ -1,0 +1,27 @@
+{
+  "name": "@cardinal-cryptography/shielder-sdk-crypto-server",
+  "version": "0.2.0-beta.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "Cardinal",
+  "license": "Apache-2.0",
+  "files": [
+    "/dist"
+  ],
+  "type": "module",
+  "dependencies": {
+    "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.1"
+  }
+}

@@ -30,6 +30,7 @@ axum = { version = "0.7.7" }
 byteorder = { version = "1.4.3" }
 chacha20poly1305 = { version = "0.10.1", default-features = false }
 clap = { version = "4.5.8" }
+ctor = { version = "0.2.9" }
 getrandom = { version = "0.2" }
 halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2", tag = "v0.3.0", default-features = false }
 halo2curves = { version = "0.6.0", default-features = false }
@@ -39,7 +40,10 @@ itertools = { version = "0.13.0" }
 metrics = { version = "0.24.1", default-features = false }
 metrics-exporter-prometheus = { version = "0.16.0", default-features = false }
 num-bigint = { version = "0.4.3" }
+once_cell = { version = "1.20.2" }
 openssl = { version = "0.10.59" }
+proc-macro2 = { version = "1.0.93" }
+quote = { version = "1.0.38" }
 rand = { version = "0.8.5" }
 rayon = { version = "1.8" }
 reqwest = { version = "0.12.5" }
@@ -71,6 +75,8 @@ wasm-bindgen-rayon = { version = "1.2.1" }
 content-encryption = { path = "crates/content-encryption", default-features = false }
 evm-utils = { path = "crates/evm-utils" }
 halo2_solidity_verifier = { path = "crates/halo2-verifier" }
+macros-core = { path = "crates/macros-core" }
+macros = { path = "crates/macros" }
 powers-of-tau = { path = "crates/powers-of-tau" }
 shielder-account = { path = "crates/shielder-account" }
 shielder-contract = { path = "crates/shielder-contract" }

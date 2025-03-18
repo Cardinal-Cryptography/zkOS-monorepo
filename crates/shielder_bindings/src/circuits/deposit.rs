@@ -14,6 +14,7 @@ use crate::utils::{vec_to_f, vec_to_path};
 #[cfg_attr(feature = "build-uniffi", derive(uniffi::Record))]
 // `getter_with_clone` is required for `Vec<u8>` struct fields
 #[cfg_attr(feature = "build-wasm", wasm_bindgen(getter_with_clone))]
+#[cfg_attr(feature = "build-server", derive(serde::Serialize))]
 #[derive(Clone, Debug, Default)]
 pub struct DepositPubInputsBytes {
     pub merkle_root: Vec<u8>,
@@ -56,6 +57,14 @@ pub struct DepositCircuit(super::DepositCircuit);
 
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
+#[cfg_attr(
+    feature = "build-server",
+    macros::jsonize_singleton(
+        constructor = "new_pronto",
+        params_url = "../../artifacts/deposit/params.bin",
+        pk_url = "../../artifacts/deposit/pk.bin"
+    )
+)]
 impl DepositCircuit {
     #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
@@ -126,6 +135,7 @@ impl DepositCircuit {
 #[allow(clippy::too_many_arguments)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
+#[cfg_attr(feature = "build-server", macros::jsonize)]
 pub fn deposit_pub_inputs(
     id: Vec<u8>,
     nullifier_old: Vec<u8>,

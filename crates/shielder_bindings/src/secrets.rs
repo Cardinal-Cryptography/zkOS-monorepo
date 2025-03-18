@@ -13,6 +13,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[cfg_attr(feature = "build-uniffi", derive(uniffi::Record))]
 // `getter_with_clone` is required for `Vec<u8>` struct fields
 #[cfg_attr(feature = "build-wasm", wasm_bindgen(getter_with_clone))]
+#[cfg_attr(feature = "build-server", derive(serde::Serialize))]
 #[derive(Clone, Debug, Default)]
 pub struct ShielderActionSecrets {
     pub nullifier: Vec<u8>,
@@ -23,6 +24,7 @@ pub struct ShielderActionSecrets {
 /// All returned values are field elements.
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
+#[cfg_attr(feature = "build-server", macros::jsonize)]
 pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
     let id: U256 = bytes_to_u256(id).expect("Expecting a 32-byte vector");
 
@@ -34,9 +36,10 @@ pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
 
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 #[cfg_attr(feature = "build-uniffi", uniffi::export)]
-pub fn derive_id(private_key_hex: &str, chain_id: u64, account_nonce: u32) -> Vec<u8> {
+#[cfg_attr(feature = "build-server", macros::jsonize)]
+pub fn derive_id(private_key_hex: String, chain_id: u64, account_nonce: u32) -> Vec<u8> {
     let id_seed_u256 = secrets::derive_id(
-        hex_to_u256(private_key_hex).unwrap(),
+        hex_to_u256(&private_key_hex).unwrap(),
         chain_id,
         account_nonce,
     );
