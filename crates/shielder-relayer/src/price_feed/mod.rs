@@ -21,8 +21,8 @@ mod fetching;
 pub struct Prices {
     validity: time::Duration,
     refresh_interval: Duration,
-    #[allow(clippy::type_complexity)]
-    inner: Arc<Mutex<HashMap<TokenKind, (Token, Option<Price>)>>>,
+    tokens: HashMap<TokenKind, Token>,
+    inner: HashMap<TokenKind, Arc<Mutex<Option<Price>>>>,
 }
 
 impl Prices {
@@ -34,54 +34,54 @@ impl Prices {
     pub fn new(tokens: &[Token], validity: Duration, refresh_interval: Duration) -> Self {
         let validity =
             time::Duration::new(validity.as_secs() as i64, validity.subsec_nanos() as i32);
-        let inner = tokens
-            .iter()
-            .map(|token| {
-                let price = match token.price_provider {
-                    PriceProvider::Url(_) => None,
-                    PriceProvider::Static(price) => Some(Price::new_now(price, token.decimals())),
-                };
-                (token.kind, (token.clone(), price))
-            })
-            .collect::<HashMap<_, _>>();
+
+        let mut token_map = HashMap::new();
+        let mut inner = HashMap::new();
+
+        for token in tokens {
+            token_map.insert(token.kind, token.clone());
+            let price = match &token.price_provider {
+                PriceProvider::Url(_) => None,
+                // TODO in next PR: make static price non-expiring
+                PriceProvider::Static(price) => Some(Price::new_now(*price, token.decimals())),
+            };
+            inner.insert(token.kind, Arc::new(Mutex::new(price)));
+        }
 
         Self {
             validity,
             refresh_interval,
-            inner: Arc::new(Mutex::new(inner)),
+            tokens: token_map,
+            inner,
         }
     }
 
     /// Get the price of a token or `None` if the price is not available or outdated.
     pub fn price(&self, token: TokenKind) -> Option<Price> {
-        let inner = self.inner.lock().expect("Mutex poisoned");
-
-        inner.get(&token).cloned().and_then(|(_token, price)| {
-            let price = price?;
-            price
+        let price = self
+            .inner
+            .get(&token)?
+            .lock()
+            .expect("Mutex poisoned")
+            .clone();
+        match price {
+            Some(price) => price
                 .time
                 .gt(&OffsetDateTime::now_utc().saturating_sub(self.validity))
-                .then_some(price)
-        })
+                .then_some(price.clone()),
+            None => None,
+        }
     }
 
     async fn update(&self) -> Result<(), PriceFetchError> {
-        let tokens = {
-            let inner = self.inner.lock().expect("Mutex poisoned");
-            inner
-                .iter()
-                .map(|(_, (token, _))| token.clone())
-                .collect::<Vec<_>>()
-        };
-
-        for token in tokens {
-            let price = fetch_price(&token).await?;
+        for token in self.tokens.values() {
+            let price = fetch_price(token).await?;
             self.inner
+                .get(&token.kind)
+                .unwrap()
                 .lock()
                 .expect("Mutex poisoned")
-                .get_mut(&token.kind)
-                .unwrap()
-                .1 = Some(price);
+                .replace(price);
         }
 
         Ok(())
