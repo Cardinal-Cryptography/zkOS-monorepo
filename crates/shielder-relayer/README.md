@@ -38,6 +38,7 @@ defaults not provided.
 | `--shielder-contract-address`     | Address of the Shielder contract.                                                                                                                                                       | `SHIELDER_CONTRACT_ADDRESS`   |                           |
 | `--fee-destination-key`           | Signing key of the address where the fees should go.                                                                                                                                    | `FEE_DESTINATION_KEY`         |                           |
 | `--signing-keys`                  | Signing keys of the relayer.                                                                                                                                                            | `RELAYER_SIGNING_KEYS`        |                           |
+| `--token-config`                  | Token pricing configuration for tokens that are qualified as a fee token.                                                                                                               | `TOKEN_CONFIG`                |                           |
 |                                   |                                                                                                                                                                                         |                               |                           |
 | `--logging-format`                | Logging format configuration.                                                                                                                                                           | `LOGGING_FORMAT`              | `Text`                    |
 |                                   |                                                                                                                                                                                         |                               |                           |
@@ -52,7 +53,6 @@ defaults not provided.
 | `--nonce-policy`                  | Nonce management policy.                                                                                                                                                                | `NONCE_POLICY`                | `Caching`                 |
 | `--dry-running`                   | Dry running policy.                                                                                                                                                                     | `DRY_RUNNING`                 | `Always`                  |
 | `--relay-count-for-recharge`      | Relay count for recharge.                                                                                                                                                               | `RELAY_COUNT_FOR_RECHARGE`    | `20`                      |
-| `--token-config`                  | Token pricing configuration for tokens that are qualified as a fee token.                                                                                                               | `TOKEN_CONFIG`                | empty                     |
 | `--price-feed-refresh-interval`   | Price feed refresh interval in seconds.                                                                                                                                                 | `PRICE_FEED_REFRESH_INTERVAL` | 60 seconds                |
 | `--price-feed-validity`           | Price feed validity in seconds.                                                                                                                                                         | `PRICE_FEED_VALIDITY`         | 600 seconds               |
 | `--service-fee-percent`           | Commission fee percentage (added to the actual relay cost).                                                                                                                             | `SERVICE_FEE_PERCENT`         | 15%                       |
@@ -61,9 +61,4 @@ defaults not provided.
 
 # API
 
-// const BASE_PATH: &str = "https://api.diadata.org/v1/assetQuotation";
-// Coin::Azero => "/AlephZero/0x0000000000000000000000000000000000000000",
-// Coin::Eth => "/Ethereum/0x0000000000000000000000000000000000000000",
-// Coin::Btc => "/Bitcoin/0x0000000000000000000000000000000000000000",
-// Coin::Usdt => "/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7",
-// Coin::Usdc => "/Ethereum/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+TO BE DONE, ONCE ADR IS IMPLEMENTED

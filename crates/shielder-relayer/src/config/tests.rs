@@ -1,5 +1,6 @@
 use alloy_primitives::address;
 use assert2::assert;
+use rust_decimal::Decimal;
 use shielder_relayer::{RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV};
 
 use super::*;
@@ -28,7 +29,18 @@ fn config_resolution() {
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
     let total_fee = U256::from_str(&DEFAULT_TOTAL_FEE).unwrap();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
-    let token_config = vec![];
+    let token_config = vec![
+        Token {
+            kind: TokenKind::Native,
+            decimals: 18,
+            price_provider: PriceProvider::Url("https://price.feed".to_string()),
+        },
+        Token {
+            kind: TokenKind::ERC20(address!("2222222222222222222222222222222222222222")),
+            decimals: 10,
+            price_provider: PriceProvider::Static(Decimal::new(123, 2)),
+        },
+    ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL;
     let price_feed_validity = Duration::from_secs(15);
     let service_fee_percent = DEFAULT_SERVICE_FEE_PERCENT;
@@ -102,6 +114,21 @@ fn config_resolution() {
         std::env::set_var(RELAY_GAS_ENV, relay_gas.to_string());
         std::env::set_var(TOKEN_CONFIG_ENV, "[]");
         std::env::set_var(QUOTE_VALIDITY_ENV, "11");
+        std::env::set_var(
+            TOKEN_CONFIG_ENV,
+            "[
+                {
+                    \"kind\":\"Native\",
+                    \"price_provider\":{\"Url\":\"https://price.feed\"},
+                    \"decimals\":18
+                },
+                {
+                    \"kind\":{\"ERC20\":\"0x2222222222222222222222222222222222222222\"},
+                    \"price_provider\":{\"Static\":\"1.23\"},
+                    \"decimals\":10
+                }
+            ]",
+        );
     }
 
     // ---- Test. ------------------------------------------------------------------------------
