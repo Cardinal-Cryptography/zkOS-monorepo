@@ -1,5 +1,5 @@
 NETWORK ?= anvil
-PRIVATE_KEY ?= 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 # pkey of the dev account `0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E` prefunded with ETH on all networks
+PRIVATE_KEY ?= 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 # pkey of the dev account `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` prefunded with ETH on all networks
 OWNER_ADDRESS ?= $(shell cast wallet address $(PRIVATE_KEY))
 
 .PHONY: help
