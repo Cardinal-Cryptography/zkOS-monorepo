@@ -1,5 +1,6 @@
 use rust_decimal::Decimal;
 use time::{Duration, OffsetDateTime};
+
 use crate::price_feed::fetching::PriceInfoFromProvider;
 
 /// The expiration of a price.
@@ -55,5 +56,58 @@ impl Price {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rust_decimal::Decimal;
+    use time::{Duration, OffsetDateTime};
+
+    use crate::price_feed::{price::Expiration, Price};
+
+    #[test]
+    fn static_price_is_always_valid() {
+        let price = Price::static_price(Decimal::ONE, 18);
+        let now = OffsetDateTime::now_utc();
+
+        assert!(price.validate(&now).is_some());
+        assert!(price.validate(&(now + Duration::weeks(10))).is_some());
+    }
+
+    #[test]
+    fn expiring_price_is_correctly_validated() {
+        let now = OffsetDateTime::now_utc();
+        let validity = Duration::minutes(10);
+
+        let price = Price {
+            token_price: Default::default(),
+            unit_price: Default::default(),
+            expiration: Expiration::ValidUntil(now + validity),
+        };
+
+        assert!(price.validate(&now).is_some());
+        assert!(price.validate(&(now + (validity / 2))).is_some());
+        assert!(price.validate(&(now + validity)).is_none());
+        assert!(price.validate(&(now + (validity * 2))).is_none());
+    }
+
+    #[test]
+    fn unit_price_is_correct() {
+        let price = Price::static_price(Decimal::from(1000), 16);
+        let expected_token_price = price.unit_price * Decimal::from(10_000_000_000_000_000u128);
+
+        // Define a 1% tolerance for rounding errors.
+        let margin = expected_token_price * Decimal::from_i128_with_scale(1, 2);
+        let lower_bound = expected_token_price - margin;
+        let upper_bound = expected_token_price + margin;
+
+        // Assert that the actual price is within the allowed range
+        assert!(
+            price.token_price >= lower_bound && price.token_price <= upper_bound,
+            "Price out of acceptable range: expected ~{}, got {}",
+            expected_token_price,
+            price.token_price
+        );
     }
 }
