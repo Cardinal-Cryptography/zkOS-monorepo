@@ -46,6 +46,9 @@ pub enum Command {
 
         #[arg(long, default_value = "http://localhost:8545")]
         rpc_url: String,
+
+        #[arg(long)]
+        private_key_file: String,
     },
 }
 

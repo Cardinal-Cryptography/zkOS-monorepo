@@ -33,8 +33,9 @@ async fn main() -> Result<(), CliError> {
         cli::Command::Revoke {
             rpc_url,
             shielder_address,
+            private_key_file,
             ..
-        } => revoke::run(&rpc_url, shielder_address).await?,
+        } => revoke::run(&rpc_url, shielder_address, private_key_file).await?,
     }
 
     Ok(())
