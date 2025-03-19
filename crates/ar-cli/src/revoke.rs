@@ -10,7 +10,9 @@ use hex::FromHexError;
 use log::{debug, info, trace};
 use shielder_contract::{
     providers::create_simple_provider,
-    ShielderContract::{newAccountNativeCall, ShielderContractCalls::newAccountNative},
+    ShielderContract::{
+        newAccountERC20Call, newAccountNativeCall, ShielderContractCalls::newAccountNative,
+    },
     ShielderContractError,
 };
 use thiserror::Error;
@@ -81,13 +83,13 @@ pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), RevokeE
         {
             if let Some(txs) = block.transactions.as_transactions() {
                 for tx in txs {
-                    let input = tx.input();
+                    if let Ok(tx) = newAccountNativeCall::abi_decode(tx.input(), false) {
+                        debug!("Decoded newAccountNative transaction {tx:?}");
+                    }
 
-                    // let input = hex::decode(input)?;
-
-                    let decoded = newAccountNativeCall::abi_decode(&input, false);
-
-                    debug!("{decoded:?}");
+                    if let Ok(tx) = newAccountERC20Call::abi_decode(tx.input(), false) {
+                        debug!("Decoded newAccountERC20 transaction {tx:?}");
+                    }
                 }
             }
         }
@@ -95,29 +97,6 @@ pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), RevokeE
 
     Ok(())
 }
-
-// fn filter_logs(logs: Vec<Log>) -> Vec<ShielderContractEvents> {
-//     logs.into_iter()
-//         .filter_map(|log| {
-
-//             // let shielder_event = match *event.topic0()? {
-//             //     // NewAccountNative::SIGNATURE_HASH => {
-//             //     //     NewAccountNative::decode_log_data(event.data(), true)
-//             //     //         .map(ShielderContractEvents::NewAccountNative)
-//             //     // } // DepositNative::SIGNATURE_HASH => DepositNative::decode_log_data(event.data(), true)
-//             //     //     .map(ShielderContractEvents::DepositNative),
-//             //     // WithdrawNative::SIGNATURE_HASH => {
-//             //     //     WithdrawNative::decode_log_data(event.data(), true)
-//             //     //         .map(ShielderContractEvents::WithdrawNative)
-//             //     // }
-//             //     // _ => Err(Error::Overrun), // This is a placeholder error, will be ignored anyway.
-//             //     _ => todo!(),
-//             // }
-//             // .ok()?;
-//             // Some(shielder_event)
-//         })
-//         .collect()
-// }
 
 #[cfg(test)]
 mod tests {
