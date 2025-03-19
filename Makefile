@@ -49,12 +49,9 @@ compile-contracts: deps generate-contracts
 .PHONY: deploy-contracts
 deploy-contracts: # Deploy solidity contracts
 deploy-contracts:
-ifeq ($(NETWORK),anvil)
-	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
-	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
-else
-	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
-endif
+	NETWORK=$(NETWORK) \
+	PRIVATE_KEY=$(PRIVATE_KEY) \
+	./scripts/deploy-shielder.sh
 
 .PHONY: generate-poseidon-contracts
 generate-poseidon-contracts: # Generate Poseidon contract
