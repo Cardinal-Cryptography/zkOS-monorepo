@@ -1,4 +1,4 @@
-import { nativeToken, Token } from "@cardinal-cryptography/shielder-sdk";
+import { Token } from "@cardinal-cryptography/shielder-sdk";
 import type { ShortTx } from "@tests/types";
 import { setupBalanceRecorder } from "./balanceRecorder";
 
