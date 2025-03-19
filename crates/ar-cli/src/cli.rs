@@ -47,7 +47,7 @@ pub enum Command {
         #[arg(long, default_value = "http://localhost:8545")]
         rpc_url: String,
 
-        #[arg(long)]
+        #[arg(long, default_value = "./private_key.bin")]
         private_key_file: String,
     },
 }

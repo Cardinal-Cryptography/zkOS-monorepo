@@ -102,6 +102,8 @@ pub async fn run(
                                 private_key,
                             )
                             .into();
+
+                        info!("Viewing key decoding {viewing_key:?}");
                     }
 
                     if let Ok(tx) = newAccountERC20Call::abi_decode(tx.input(), false) {
@@ -135,15 +137,23 @@ fn private_key_bytes(file: &str) -> Result<[u8; 32], io::Error> {
 
 #[cfg(test)]
 mod tests {
+    use alloy_primitives::U256;
+    use type_conversions::field_to_u256;
+
     use super::*;
 
     #[test]
     fn playground() {
         // TODO
-        // id =  12149788709952380244401723958630103313911968813513728899550780481653393522559
-        // u256 from str
-        // field_element from u256
-        // get a viewing key (from id)
+        let src = "12149788709952380244401723958630103313911968813513728899550780481653393522559";
+        let id = U256::from_str_radix(src, 10).unwrap();
+        // let id: U256 = src.parse().unwrap();
+
+        let id_in_the_field: Fr = u256_to_field(id);
+        // 0x19769c8b7076367272d477448e16bb330398ebd68904a2ebcbc782d27461f61d
+        let k = shielder_circuits::derive_viewing_key(id_in_the_field);
+
+        println!("k: {k:?}");
 
         assert!(false);
     }
