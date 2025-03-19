@@ -39,9 +39,8 @@ pub enum Command {
     },
 
     Revoke {
-        #[arg(long)]
-        tx_hash: String,
-
+        // #[arg(long)]
+        // tx_hash: String,
         #[arg(long)]
         shielder_address: Address,
 
