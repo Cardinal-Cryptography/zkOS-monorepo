@@ -30,7 +30,7 @@ contract DeployShielderScript is Script {
 
         bytes memory data = abi.encodeCall(
             Shielder.initialize,
-            (owner, type(uint256).max, arPublicKeyX, arPublicKeyY) // set deposit limit to max, anonymity revoker pubkey to (0,1) - must be on a curve
+            (owner, type(uint256).max, arPublicKeyX, arPublicKeyY) // set deposit limit to max
         );
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));
