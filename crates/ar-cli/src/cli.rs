@@ -44,6 +44,9 @@ pub enum Command {
 
         #[arg(long)]
         shielder_address: Address,
+
+        #[arg(long, default_value = "http://localhost:8545")]
+        rpc_url: String,
     },
 }
 

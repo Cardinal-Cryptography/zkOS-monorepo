@@ -21,3 +21,6 @@ shielder-circuits = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }
 alloy-primitives = { workspace = true, features = ["serde", "rand"] }
+tokio = { workspace = true }
+shielder-contract = { workspace = true }
+alloy-provider = { workspace = true }

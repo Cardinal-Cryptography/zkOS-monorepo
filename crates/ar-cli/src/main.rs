@@ -17,7 +17,8 @@ enum CliError {
     Revoke(#[from] revoke::RevokeError),
 }
 
-fn main() -> Result<(), CliError> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<(), CliError> {
     let config = Cli::parse();
     env_logger::init();
 
@@ -30,8 +31,10 @@ fn main() -> Result<(), CliError> {
             endianess,
         } => generate::run(&seed, dir, endianess)?,
         cli::Command::Revoke {
-            shielder_address, ..
-        } => revoke::run(shielder_address)?,
+            rpc_url,
+            shielder_address,
+            ..
+        } => revoke::run(rpc_url, shielder_address).await?,
     }
 
     Ok(())
