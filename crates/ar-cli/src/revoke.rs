@@ -45,7 +45,7 @@ pub enum RevokeError {
     // Failed attempt to convert a little-endian byte representation of
     // a scalar into a scalar field element
     #[error("Error converting from LE byte representation to grumpkin::Fr")]
-    NotAGrumpkinScalarFieldElement,
+    NotAGrumpkinBaseFieldElement,
 }
 
 // TODO input: tx hash
@@ -93,17 +93,20 @@ pub async fn run(
                         let bytes = private_key_bytes(&private_key_file)?;
                         let private_key = grumpkin::Fr::from_bytes(&bytes)
                             .into_option()
-                            .ok_or(RevokeError::NotAGrumpkinScalarFieldElement)?;
+                            .ok_or(RevokeError::NotAGrumpkinBaseFieldElement)?;
 
-                        let decrypted_viewing_key = shielder_circuits::decrypt(
-                            ciphertext1.into(),
-                            ciphertext2.into(),
-                            private_key,
-                        );
+                        let GrumpkinPointAffine { x: viewing_key, .. } =
+                            shielder_circuits::decrypt(
+                                ciphertext1.into(),
+                                ciphertext2.into(),
+                                private_key,
+                            )
+                            .into();
                     }
 
                     if let Ok(tx) = newAccountERC20Call::abi_decode(tx.input(), false) {
                         debug!("Decoded newAccountERC20 transaction {tx:?}");
+                        todo!("")
                     }
                 }
             }
@@ -136,6 +139,12 @@ mod tests {
 
     #[test]
     fn playground() {
+        // TODO
+        // id =  12149788709952380244401723958630103313911968813513728899550780481653393522559
+        // u256 from str
+        // field_element from u256
+        // get a viewing key (from id)
+
         assert!(false);
     }
 }
