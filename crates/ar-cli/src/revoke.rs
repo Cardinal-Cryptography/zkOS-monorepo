@@ -4,10 +4,13 @@ use alloy_json_rpc::{RpcError, RpcParam, RpcReturn};
 use alloy_primitives::Address;
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, Filter, Log, TransactionTrait};
+use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
+use hex::FromHexError;
 use log::{debug, info, trace};
 use shielder_contract::{
-    providers::create_simple_provider, ShielderContract::ShielderContractCalls::newAccountNative,
+    providers::create_simple_provider,
+    ShielderContract::{newAccountNativeCall, ShielderContractCalls::newAccountNative},
     ShielderContractError,
 };
 use thiserror::Error;
@@ -23,6 +26,9 @@ pub enum RevokeError {
 
     #[error("RPC error")]
     Rpc(#[from] RpcError<TransportErrorKind>),
+
+    #[error("Hex decoding error")]
+    HexError(#[from] FromHexError),
 }
 
 // TODO input: tx hash
@@ -75,9 +81,13 @@ pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), RevokeE
         {
             if let Some(txs) = block.transactions.as_transactions() {
                 for tx in txs {
-                    let data = tx.input();
+                    let input = tx.input();
 
-                    debug!("{data:?}");
+                    // let input = hex::decode(input)?;
+
+                    let decoded = newAccountNativeCall::abi_decode(&input, false);
+
+                    debug!("{decoded:?}");
                 }
             }
         }

@@ -679,6 +679,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-provider",
  "alloy-rpc-types",
+ "alloy-sol-types",
  "alloy-transport",
  "clap",
  "env_logger",
