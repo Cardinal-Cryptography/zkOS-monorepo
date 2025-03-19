@@ -675,6 +675,7 @@ checksum = "c1fd03a028ef38ba2276dce7e33fcd6369c158a1bca17946c4b1b701891c1ff7"
 name = "ar-cli"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
  "clap",
  "env_logger",
  "hex",

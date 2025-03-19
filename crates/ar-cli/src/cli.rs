@@ -1,5 +1,6 @@
 use std::{env, ffi::OsString, path::PathBuf};
 
+use alloy_primitives::Address;
 use clap::{builder::ValueParser, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -39,7 +40,10 @@ pub enum Command {
 
     Revoke {
         #[arg(long)]
-        id: String,
+        tx_hash: String,
+
+        #[arg(long)]
+        shielder_address: Address,
     },
 }
 

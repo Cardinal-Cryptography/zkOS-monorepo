@@ -8,14 +8,14 @@ use log::{debug, info};
 use rand_chacha::{rand_core::SeedableRng, ChaCha12Rng};
 use shielder_circuits::{generate_keys, Fr, GrumpkinPointAffine};
 use thiserror::Error;
-use type_conversions::Endianess;
+use type_conversions::{field_to_u256, Endianess};
 
 use crate::cli::{self};
 
 #[derive(Debug, Error)]
 #[error(transparent)]
 #[non_exhaustive]
-pub enum GeneratorError {
+pub enum GenerateError {
     #[error("Error writing")]
     Write(#[from] std::io::Error),
 }
@@ -26,7 +26,7 @@ fn spit(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> 
     Ok(())
 }
 
-pub fn run(seed: &[u8; 32], dir: PathBuf, endianess: cli::Endianess) -> Result<(), GeneratorError> {
+pub fn run(seed: &[u8; 32], dir: PathBuf, endianess: cli::Endianess) -> Result<(), GenerateError> {
     debug!("Seeding rng with : {seed:?}");
 
     let mut rng = ChaCha12Rng::from_seed(*seed);
@@ -35,10 +35,17 @@ pub fn run(seed: &[u8; 32], dir: PathBuf, endianess: cli::Endianess) -> Result<(
 
     let (private_key, public_key) = generate_keys(&mut rng);
 
-    debug!("private key: : {private_key:?}");
+    debug!(
+        "private key: : {private_key:?} [{}]",
+        field_to_u256(private_key)
+    );
 
     let pubkey @ GrumpkinPointAffine { x, y }: GrumpkinPointAffine<Fr> = public_key.into();
-    debug!("public key: : {pubkey:?}");
+    debug!(
+        "public key: : {pubkey:?} [{},{}]",
+        field_to_u256(x),
+        field_to_u256(y)
+    );
 
     let (private_key_bytes, x_bytes, y_bytes) = match endianess {
         cli::Endianess::BigEndian => (private_key.to_bytes_be(), x.to_bytes_be(), y.to_bytes_be()),

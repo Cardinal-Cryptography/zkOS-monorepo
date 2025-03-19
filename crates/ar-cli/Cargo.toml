@@ -20,3 +20,4 @@ rand_chacha = { workspace = true }
 shielder-circuits = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }
+alloy-primitives = { workspace = true, features = ["serde", "rand"] }
