@@ -61,6 +61,8 @@ deploy_shielder_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
     PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
     OWNER_ADDRESS="$(cast wallet address ${DEPLOYER_PRIVATE_KEY})" \
+    AR_PUBLIC_KEY_X="$(cast to-uint256 0)" \
+    AR_PUBLIC_KEY_Y="$(cast to-uint256 1)" \
     forge script DeployShielderScript \
       --rpc-url "${NODE_RPC_URL}" \
       --broadcast \

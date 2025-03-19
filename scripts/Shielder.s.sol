@@ -16,6 +16,9 @@ contract DeployShielderScript is Script {
         address broadcaster = vm.addr(privateKey);
         console2.log("Using", broadcaster, "as broadcaster");
 
+        uint256 arPublicKeyX = uint256(vm.envBytes32("AR_PUBLIC_KEY_X"));
+        uint256 arPublicKeyY = uint256(vm.envBytes32("AR_PUBLIC_KEY_Y"));
+
         vm.startBroadcast(privateKey);
 
         address shielderImplementation = address(new Shielder());
@@ -27,7 +30,7 @@ contract DeployShielderScript is Script {
 
         bytes memory data = abi.encodeCall(
             Shielder.initialize,
-            (owner, type(uint256).max, 0, 1) // set deposit limit to max, anonymity revoker pubkey to (0,1) - must be on a curve
+            (owner, type(uint256).max, arPublicKeyX, arPublicKeyY) // set deposit limit to max
         );
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));
