@@ -3,8 +3,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-pub use fetching::Price;
 use fetching::{fetch_price, PriceFetchError};
+pub use price::Price;
 #[cfg(test)]
 use rust_decimal::Decimal;
 use shielder_relayer::{PriceProvider, Token, TokenKind};
@@ -12,6 +12,7 @@ use time::OffsetDateTime;
 use tokio::time::Duration;
 
 mod fetching;
+mod price;
 
 /// A collection of prices for various coins.
 ///
@@ -42,8 +43,7 @@ impl Prices {
             token_map.insert(token.kind, token.clone());
             let price = match &token.price_provider {
                 PriceProvider::Url(_) => None,
-                // TODO in next PR: make static price non-expiring
-                PriceProvider::Static(price) => Some(Price::new_now(*price, token.decimals())),
+                PriceProvider::Static(price) => Some(Price::static_price(*price, token.decimals())),
             };
             inner.insert(token.kind, Arc::new(Mutex::new(price)));
         }
@@ -58,24 +58,22 @@ impl Prices {
 
     /// Get the price of a token or `None` if the price is not available or outdated.
     pub fn price(&self, token: TokenKind) -> Option<Price> {
-        let price = self
-            .inner
+        self.inner
             .get(&token)?
             .lock()
             .expect("Mutex poisoned")
-            .clone();
-        match price {
-            Some(price) => price
-                .time
-                .gt(&OffsetDateTime::now_utc().saturating_sub(self.validity))
-                .then_some(price.clone()),
-            None => None,
-        }
+            .clone()?
+            .validate(&OffsetDateTime::now_utc())
     }
 
     async fn update(&self) -> Result<(), PriceFetchError> {
         for token in self.tokens.values() {
-            let price = fetch_price(token).await?;
+            let PriceProvider::Url(url) = &token.price_provider else {
+                continue;
+            };
+            let price_info = fetch_price(url).await?;
+            let price = Price::from_price_info(price_info, token.decimals(), self.validity);
+
             self.inner
                 .get(&token.kind)
                 .unwrap()
