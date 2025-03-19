@@ -45,6 +45,7 @@ describe("ShielderActions", () => {
   const mockTxHash = "0x9876543210" as Hash;
   const mockRelayerAddress =
     "0x1234567890123456789012345678901234567890" as Address;
+  const mockPocketMoney = 0n;
 
   const mockSendTransaction: SendShielderTransaction = vitest
     .fn()
@@ -115,7 +116,8 @@ describe("ShielderActions", () => {
     amount: mockAmount,
     withdrawalAddress: mockAddress,
     totalFee,
-    token: mockToken
+    token: mockToken,
+    pocketMoney: mockPocketMoney
   });
 
   // Helper function for testing error scenarios
@@ -482,7 +484,7 @@ describe("ShielderActions", () => {
 
   describe("withdraw", () => {
     const withdrawMethod = () =>
-      actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress);
+      actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress, mockPocketMoney);
 
     it("should throw error when account not found", async () => {
       mockAccountRegistry.getAccountState.mockResolvedValue(null);
@@ -514,7 +516,8 @@ describe("ShielderActions", () => {
         mockRelayerAddress,
         mockTotalFee,
         mockAddress,
-        contractVersion
+        contractVersion,
+        mockPocketMoney
       );
       expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
         mockCalldata,
@@ -573,7 +576,8 @@ describe("ShielderActions", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockPocketMoney
       );
 
     it("should throw error when account not found", async () => {
@@ -604,7 +608,8 @@ describe("ShielderActions", () => {
         mockFrom,
         0n, // totalFee is 0 for manual withdrawals
         mockAddress,
-        contractVersion
+        contractVersion,
+        mockPocketMoney
       );
       expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
         mockCalldata,

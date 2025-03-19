@@ -46,6 +46,7 @@ export type NoteEvent = {
   relayerFee?: bigint;
   block: bigint;
   tokenAddress: `0x${string}`;
+  pocketMoney?: bigint;
 };
 
 export type NewAccountEvent = {
@@ -152,6 +153,7 @@ export type IContract = {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
+    pocketMoney: bigint,
     proof: Uint8Array
   ) => Promise<CalldataWithGas>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
@@ -446,6 +448,7 @@ export class Contract implements IContract {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
+    pocketMoney: bigint,
     proof: Uint8Array
   ) => {
     const args = [
@@ -465,13 +468,15 @@ export class Contract implements IContract {
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
         this.contract.estimateGas.withdrawERC20(args, {
-          account: from
+          account: from,
+          value: pocketMoney
         })
       )
     );
     await handleWrongContractVersionError(() => {
       return this.contract.simulate.withdrawERC20(args, {
         account: from,
+        value: pocketMoney,
         gas
       });
     });
@@ -541,7 +546,11 @@ export class Contract implements IContract {
           event.eventName === "Withdraw"
             ? (event.args.fee as bigint)
             : undefined,
-        tokenAddress: event.args.tokenAddress!
+        tokenAddress: event.args.tokenAddress!,
+        pocketMoney:
+          event.eventName === "Withdraw"
+            ? (event.args.pocketMoney as bigint)
+            : undefined
       };
     });
     return mergedIndices;

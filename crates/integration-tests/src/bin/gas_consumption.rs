@@ -68,11 +68,15 @@ fn main() {
             &mut content,
         );
 
+        let pocket_money = match token {
+            TestToken::Native => U256::from(0),
+            TestToken::ERC20 => U256::from(1),
+        };
         let calldata = Calldata::Withdraw(
             withdraw_calldata(
                 &mut deployment,
                 &mut shielder_account,
-                prepare_args(token, amount, U256::from(1)),
+                prepare_args(token, amount, U256::from(1), pocket_money),
             )
             .0,
         );

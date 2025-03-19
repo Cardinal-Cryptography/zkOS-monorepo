@@ -27,6 +27,7 @@ export interface WithdrawCalldata {
   withdrawalAddress: Address;
   totalFee: bigint;
   token: Token;
+  pocketMoney: bigint;
 }
 
 export class WithdrawAction extends NoteAction {
@@ -68,18 +69,20 @@ export class WithdrawAction extends NoteAction {
     expectedContractVersion: `0x${string}`,
     address: `0x${string}`,
     relayerAddress: `0x${string}`,
-    relayerFee: bigint
+    relayerFee: bigint,
+    pocketMoney: bigint
   ): Scalar {
     const encodingHash = hexToBigInt(
       keccak256(
         encodePacked(
-          ["bytes3", "uint256", "uint256", "uint256", "uint256"],
+          ["bytes3", "uint256", "uint256", "uint256", "uint256", "uint256"],
           [
             expectedContractVersion,
             hexToBigInt(address),
             hexToBigInt(relayerAddress),
             relayerFee,
-            this.chainId
+            this.chainId,
+            pocketMoney
           ]
         )
       )
@@ -98,7 +101,8 @@ export class WithdrawAction extends NoteAction {
     withdrawalAddress: `0x${string}`,
     relayerAddress: `0x${string}`,
     totalFee: bigint,
-    merklePath: Uint8Array
+    merklePath: Uint8Array,
+    pocketMoney: bigint
   ): Promise<WithdrawAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
 
@@ -117,7 +121,8 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      totalFee
+      totalFee,
+      pocketMoney
     );
 
     return {
@@ -141,8 +146,11 @@ export class WithdrawAction extends NoteAction {
    * where `value` is the targeted amount to withdraw.
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
+   * @param relayerAddress relayer address
    * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
    * @param withdrawalAddress recipient address
+   * @param expectedContractVersion expected contract version
+   * @param pocketMoney pocket money that the relayer should pay to the account
    * @returns calldata for withdrawal action
    */
   async generateCalldata(
@@ -151,7 +159,8 @@ export class WithdrawAction extends NoteAction {
     relayerAddress: Address,
     totalFee: bigint,
     withdrawalAddress: Address,
-    expectedContractVersion: `0x${string}`
+    expectedContractVersion: `0x${string}`,
+    pocketMoney: bigint
   ): Promise<WithdrawCalldata> {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
@@ -160,6 +169,9 @@ export class WithdrawAction extends NoteAction {
       throw new Error(
         `Amount must be greater than the relayer fee: ${totalFee.toString()}`
       );
+    }
+    if (state.token.type === "native" && pocketMoney > 0) {
+      throw new Error("Pocket money is not supported for native withdrawal");
     }
 
     const lastNodeIndex = state.currentNoteIndex;
@@ -176,7 +188,8 @@ export class WithdrawAction extends NoteAction {
       withdrawalAddress,
       relayerAddress,
       totalFee,
-      merklePath
+      merklePath,
+      pocketMoney
     );
 
     const proof = await this.cryptoClient.withdrawCircuit
@@ -199,7 +212,8 @@ export class WithdrawAction extends NoteAction {
       amount,
       withdrawalAddress,
       totalFee,
-      token: state.token
+      token: state.token,
+      pocketMoney
     };
   }
 
@@ -249,7 +263,8 @@ export class WithdrawAction extends NoteAction {
       calldata: { pubInputs, proof },
       amount,
       withdrawalAddress,
-      totalFee
+      totalFee,
+      pocketMoney
     } = calldata;
     const encodedCalldata =
       calldata.token.type === "native"
@@ -280,6 +295,7 @@ export class WithdrawAction extends NoteAction {
             amount,
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
+            pocketMoney,
             proof
           );
     const txHash = await sendShielderTransaction({

@@ -136,6 +136,7 @@ export class ShielderClient {
    * @param {bigint} amount - amount to withdraw, in wei
    * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
    * @param {`0x${string}`} withdrawalAddress - public address of the recipient
+   * @param {bigint} pocketMoney - amount of native token to be sent to the recipient by the relayer; only for ERC20 withdrawals
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
@@ -143,13 +144,15 @@ export class ShielderClient {
     token: Token,
     amount: bigint,
     totalFee: bigint,
-    withdrawalAddress: Address
+    withdrawalAddress: Address,
+    pocketMoney: bigint
   ) {
     return this.shielderActions.withdraw(
       token,
       amount,
       totalFee,
-      withdrawalAddress
+      withdrawalAddress,
+      pocketMoney
     );
   }
 

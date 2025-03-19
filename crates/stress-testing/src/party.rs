@@ -123,6 +123,7 @@ async fn prepare_relay_query(
                 contract_version: contract_version(),
                 chain_id: U256::from(chain_id),
                 mac_salt: U256::ZERO,
+                pocket_money: U256::ZERO,
             },
         )
         .try_into()

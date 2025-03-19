@@ -151,6 +151,7 @@ async fn prepare_relayer_query(
                 contract_version: contract_version(),
                 chain_id: U256::from(chain_id),
                 mac_salt: get_mac_salt(),
+                pocket_money: U256::ZERO,
             },
         )
         .try_into()

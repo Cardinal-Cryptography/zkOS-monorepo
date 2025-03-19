@@ -19,7 +19,7 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
     actions: [
       { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
       { op: shieldOp(nativeToken(), 2n * 10n ** 17n), actor: "alice" },
-      { op: withdrawOp(nativeToken(), 10n ** 17n, "bob"), actor: "alice" },
+      { op: withdrawOp(nativeToken(), 10n ** 17n, "bob", 0n), actor: "alice" },
       {
         op: shieldOp(ercToken, 10n ** 17n),
         actor: "alice"
@@ -42,7 +42,10 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
         actor: "alice"
       },
       // withdraw again
-      { op: withdrawOp(nativeToken(), 10n ** 17n, "charlie"), actor: "alice" }
+      {
+        op: withdrawOp(nativeToken(), 10n ** 17n, "charlie", 0n),
+        actor: "alice"
+      }
     ]
   } as TestDescription
 ].forEach(({ id, actions }: TestDescription) => {

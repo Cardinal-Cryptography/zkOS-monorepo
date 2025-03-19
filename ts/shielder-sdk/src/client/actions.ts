@@ -77,6 +77,7 @@ export class ShielderActions {
    * @param {bigint} amount - amount to withdraw, in wei
    * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
    * @param {`0x${string}`} withdrawalAddress - public address of the recipient
+   * @param {bigint} pocketMoney - amount of native token to be sent to the recipient by the relayer; only for ERC20 withdrawals
    * @returns transaction hash of the withdraw transaction
    * @throws {OutdatedSdkError} if cannot call the relayer due to unsupported contract version
    */
@@ -84,7 +85,8 @@ export class ShielderActions {
     token: Token,
     amount: bigint,
     totalFee: bigint,
-    withdrawalAddress: `0x${string}`
+    withdrawalAddress: `0x${string}`,
+    pocketMoney: bigint
   ) {
     const state = await this.accountRegistry.getAccountState(token);
     if (!state) {
@@ -99,7 +101,8 @@ export class ShielderActions {
           relayerAddress,
           totalFee,
           withdrawalAddress,
-          contractVersion
+          contractVersion,
+          pocketMoney
         ),
       (calldata) => this.withdrawAction.sendCalldataWithRelayer(calldata),
       "withdraw"
@@ -143,7 +146,8 @@ export class ShielderActions {
           from,
           0n, // totalFee is 0, as it is not used in this case
           withdrawalAddress,
-          contractVersion
+          contractVersion,
+          0n // pocketMoney is 0, as it is not used in this case
         ),
       (calldata) =>
         this.withdrawAction.sendCalldata(
