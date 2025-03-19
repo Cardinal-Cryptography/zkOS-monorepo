@@ -8,6 +8,7 @@ use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
 use hex::FromHexError;
 use log::{debug, info, trace};
+use shielder_circuits::{Fr, GrumpkinPointAffine};
 use shielder_contract::{
     providers::create_simple_provider,
     ShielderContract::{
@@ -16,6 +17,7 @@ use shielder_contract::{
     ShielderContractError,
 };
 use thiserror::Error;
+use type_conversions::u256_to_field;
 
 const BATCH_SIZE: usize = 10_000;
 
@@ -85,6 +87,22 @@ pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), RevokeE
                 for tx in txs {
                     if let Ok(tx) = newAccountNativeCall::abi_decode(tx.input(), false) {
                         debug!("Decoded newAccountNative transaction {tx:?}");
+
+                        let ciphertext1 = GrumpkinPointAffine::new(
+                            u256_to_field(tx.symKeyEncryptionC1X),
+                            u256_to_field(tx.symKeyEncryptionC1Y),
+                        );
+                        let ciphertext2 = GrumpkinPointAffine::new(
+                            u256_to_field(tx.symKeyEncryptionC2X),
+                            u256_to_field(tx.symKeyEncryptionC2Y),
+                        );
+                        let private_key = todo!("");
+
+                        let decrypted_viewing_key = shielder_circuits::decrypt(
+                            ciphertext1.into(),
+                            ciphertext2.into(),
+                            private_key,
+                        );
                     }
 
                     if let Ok(tx) = newAccountERC20Call::abi_decode(tx.input(), false) {
