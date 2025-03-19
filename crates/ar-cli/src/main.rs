@@ -34,7 +34,7 @@ async fn main() -> Result<(), CliError> {
             rpc_url,
             shielder_address,
             ..
-        } => revoke::run(rpc_url, shielder_address).await?,
+        } => revoke::run(&rpc_url, shielder_address).await?,
     }
 
     Ok(())
