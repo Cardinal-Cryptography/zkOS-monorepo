@@ -94,7 +94,7 @@ if [[ -n "${MAX_POCKET_MONEY:-}" ]]; then
 fi
 
 DETACHED_FLAG=""
-if [[ -n "${DETACHED:-}" ]]; then
+if [[ "${DETACHED:-}" == "true" ]]; then
   DETACHED_FLAG="-d"
 fi
 

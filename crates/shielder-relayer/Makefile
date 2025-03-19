@@ -4,6 +4,7 @@ CARGO_FILES = ../../Cargo.toml ../../Cargo.lock Cargo.toml
 
 BUILD ?= client
 DOCKER_USER = "$(id -u):$(id -g)"
+DETACHED ?= true
 
 RELAYER_CONTAINER_NAME = shielder-relayer
 RELAYER_DOCKER_IMAGE = shielder-relayer
@@ -42,7 +43,7 @@ run: build-image stop ## Start the Relayer service in a local Docker container
 	@DOCKER_USER=$(DOCKER_USER) \
 	RELAYER_CONTAINER_NAME=$(RELAYER_CONTAINER_NAME) \
 	RELAYER_DOCKER_IMAGE=$(RELAYER_DOCKER_IMAGE) \
-	DETACHED=true \
+	DETACHED=$(DETACHED) \
 	./run-relayer.sh
 
 .PHONY: stop
