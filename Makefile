@@ -1,6 +1,5 @@
 NETWORK ?= anvil
 PRIVATE_KEY ?= 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 # pkey of the dev account `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` prefunded with ETH on all networks
-OWNER_ADDRESS ?= $(shell cast wallet address $(PRIVATE_KEY))
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
