@@ -3,8 +3,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-pub use fetching::Price;
 use fetching::{fetch_price, PriceFetchError};
+pub use price::Price;
 #[cfg(test)]
 use rust_decimal::Decimal;
 use shielder_relayer::{PriceProvider, Token, TokenKind};
@@ -12,6 +12,7 @@ use time::OffsetDateTime;
 use tokio::time::Duration;
 
 mod fetching;
+mod price;
 
 /// A collection of prices for various coins.
 ///
