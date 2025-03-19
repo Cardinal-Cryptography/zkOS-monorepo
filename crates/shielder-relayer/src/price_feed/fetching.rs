@@ -1,7 +1,15 @@
 use rust_decimal::Decimal;
 use serde::Deserialize;
-use shielder_relayer::{PriceProvider, Token};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
+
+/// The expiration of a price.
+#[derive(Clone, Debug)]
+pub enum Expiration {
+    /// The price is eternal and never expires.
+    Eternal,
+    /// The price is valid until the given time.
+    ValidUntil(OffsetDateTime),
+}
 
 #[derive(Clone, Debug)]
 pub struct Price {
@@ -9,16 +17,43 @@ pub struct Price {
     pub token_price: Decimal,
     /// Price for the minimal unit of the token, like 1 wei or 1 satoshi.
     pub unit_price: Decimal,
-    /// The time when the price has been created at the provider.
-    pub(super) time: OffsetDateTime,
+    /// Price expiration.
+    pub(super) expiration: Expiration,
 }
 
 impl Price {
-    pub fn new_now(token_price: Decimal, decimals: u32) -> Self {
+    /// Create a new eternal price.
+    pub fn static_price(token_price: Decimal, decimals: u32) -> Self {
         Self {
             token_price,
             unit_price: token_price * Decimal::from_i128_with_scale(1, decimals),
-            time: OffsetDateTime::now_utc(),
+            expiration: Expiration::Eternal,
+        }
+    }
+
+    pub fn from_price_info(
+        price_info: PriceInfoFromProvider,
+        decimals: u32,
+        validity: Duration,
+    ) -> Self {
+        Self {
+            token_price: price_info.token_price,
+            unit_price: price_info.token_price * Decimal::from_i128_with_scale(1, decimals),
+            expiration: Expiration::ValidUntil(price_info.time + validity),
+        }
+    }
+
+    /// Check if the price is still valid. If so, return a clone of the price.
+    pub fn validate(&self, now: &OffsetDateTime) -> Option<Self> {
+        match self.expiration {
+            Expiration::Eternal => Some(self.clone()),
+            Expiration::ValidUntil(expiration) => {
+                if now < &expiration {
+                    Some(self.clone())
+                } else {
+                    None
+                }
+            }
         }
     }
 }
@@ -34,37 +69,17 @@ struct PriceInfoFromProvider {
     time: OffsetDateTime,
 }
 
-impl From<(PriceInfoFromProvider, u32)> for Price {
-    fn from((from_provider, decimals): (PriceInfoFromProvider, u32)) -> Self {
-        Self {
-            token_price: from_provider.token_price,
-            unit_price: from_provider.token_price * Decimal::from_i128_with_scale(1, decimals),
-            time: from_provider.time,
-        }
-    }
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum PriceFetchError {
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
 }
 
-pub async fn fetch_price(token: &Token) -> Result<Price, PriceFetchError> {
-    let price_info = match &token.price_provider {
-        PriceProvider::Url(url) => {
-            reqwest::get(url)
-                .await?
-                .json::<PriceInfoFromProvider>()
-                .await?
-        }
-        PriceProvider::Static(token_price) => PriceInfoFromProvider {
-            token_price: *token_price,
-            time: OffsetDateTime::now_utc(),
-        },
-    };
-
-    Ok(Price::from((price_info, token.decimals())))
+pub async fn fetch_price(url: &str) -> Result<PriceInfoFromProvider, PriceFetchError> {
+    Ok(reqwest::get(url)
+        .await?
+        .json::<PriceInfoFromProvider>()
+        .await?)
 }
 
 #[cfg(test)]
