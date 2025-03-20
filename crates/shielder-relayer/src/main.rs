@@ -25,7 +25,7 @@ use crate::{
     config::{resolve_config, ChainConfig, KeyConfig, LoggingFormat, NoncePolicy, ServerConfig},
     metrics::{prometheus_endpoint, setup_metrics_handle},
     monitor::{balance_monitor::balance_monitor, Balances},
-    quote_cache::QuoteCache,
+    quote_cache::{garbage_collector_worker, QuoteCache},
     recharge::start_recharging_worker,
     relay::Taskmaster,
 };
@@ -137,6 +137,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     );
 
     let quote_cache = QuoteCache::new(config.operations.quote_validity);
+    tokio::spawn(garbage_collector_worker(quote_cache.clone()));
 
     let state = AppState {
         node_rpc_url: config.chain.node_rpc_url.clone(),

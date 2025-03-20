@@ -31,17 +31,12 @@ pub struct QuoteCache {
 }
 
 impl QuoteCache {
-    /// Creates a new quote cache with given validity. ALSO: Spawns a background garbage
-    /// collector worker, responsible for removing expired quotes.
+    /// Creates a new quote cache with given validity.
     pub fn new(quote_validity: Duration) -> Self {
-        let newborn = Self {
+        Self {
             cache: Default::default(),
             validity: quote_validity,
-        };
-
-        tokio::spawn(garbage_collector_worker(newborn.clone()));
-
-        newborn
+        }
     }
 
     /// Register a new quote `quote`. Its validity starts at `at` and lasts for `self.validity`.
@@ -80,11 +75,17 @@ impl QuoteCache {
     }
 }
 
-/// Every `10 * validity` run garbage collection.
-async fn garbage_collector_worker(quote_cache: QuoteCache) {
+/// Spawns a background garbage collector worker, responsible for removing expired quotes.
+pub async fn garbage_collector_worker(quote_cache: QuoteCache) {
     let mut interval = interval(quote_cache.validity * 10);
     loop {
         interval.tick().await;
         quote_cache.collect_garbage().await;
     }
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn nothing() {}
 }
