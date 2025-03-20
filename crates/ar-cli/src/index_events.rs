@@ -7,6 +7,7 @@ use alloy_rpc_types::{Filter, Log};
 use alloy_sol_types::{Error as SolError, SolEvent};
 use alloy_transport::TransportErrorKind;
 use log::{debug, info};
+use rusqlite::Connection;
 use shielder_contract::{
     providers::create_simple_provider,
     ShielderContract::{Deposit, NewAccount, ShielderContractEvents, Withdraw},
@@ -27,7 +28,11 @@ pub enum IndexEventsError {
     Rpc(#[from] RpcError<TransportErrorKind>),
 }
 
-pub async fn run(rpc_url: &str, shielder_address: &Address) -> Result<(), IndexEventsError> {
+pub async fn run(
+    rpc_url: &str,
+    shielder_address: &Address,
+    connection: Connection,
+) -> Result<(), IndexEventsError> {
     let provider = create_simple_provider(rpc_url).await?;
     let current_height = provider.get_block_number().await?;
     let base_filter = Filter::new().address(*shielder_address);
@@ -46,40 +51,57 @@ pub async fn run(rpc_url: &str, shielder_address: &Address) -> Result<(), IndexE
             raw_logs.len()
         );
 
-        let filtered_logs = filter_logs(raw_logs);
+        process_logs(raw_logs)?;
 
-        info!(
-            "Found {} filtered Shielder event logs in the block range {block_number} : {last_batch_block}",
-            filtered_logs.len()
-        );
+        // info!(
+        //     "Found {} filtered Shielder event logs in the block range {block_number} : {last_batch_block}",
+        //     filtered_logs.len()
+        // );
 
-        // TODO persist
-        for event in filtered_logs {
-            println!("{event:?}");
-        }
+        // // TODO persist
+        // for event in filtered_logs {
+        //     println!("{event:?}");
+        // }
     }
 
     Ok(())
 }
 
-fn filter_logs(logs: Vec<Log>) -> Vec<ShielderContractEvents> {
-    logs.into_iter()
-        .filter_map(|event| {
-            let shielder_event = match *event.topic0()? {
-                NewAccount::SIGNATURE_HASH => NewAccount::decode_log_data(event.data(), true)
-                    .map(ShielderContractEvents::NewAccount),
+// TODO persist
+fn process_logs(logs: Vec<Log>) -> Result<(), IndexEventsError> {
+    for log in logs {
+        let transaction_hash = log.transaction_hash;
+        let block_number = log.block_number;
 
-                Deposit::SIGNATURE_HASH => Deposit::decode_log_data(event.data(), true)
-                    .map(ShielderContractEvents::Deposit),
+        match log.topic0() {
+            Some(&NewAccount::SIGNATURE_HASH) => {}
+            Some(&Deposit::SIGNATURE_HASH) => {}
+            Some(&Withdraw::SIGNATURE_HASH) => {}
+            _ => {}
+        };
+    }
 
-                Withdraw::SIGNATURE_HASH => Withdraw::decode_log_data(event.data(), true)
-                    .map(ShielderContractEvents::Withdraw),
+    // logs.into_iter()
+    //     .filter_map(|event| {
+    //         let _ = event.transaction_hash;
+    //         let _ = event.block_number;
 
-                _ => Err(SolError::Other(Cow::Borrowed("should not get here"))),
-            }
-            .ok()?;
+    //         let shielder_event = match *event.topic0()? {
+    //             NewAccount::SIGNATURE_HASH => NewAccount::decode_log_data(event.data(), true)
+    //                 .map(ShielderContractEvents::NewAccount),
 
-            Some(shielder_event)
-        })
-        .collect()
+    //             Deposit::SIGNATURE_HASH => Deposit::decode_log_data(event.data(), true)
+    //                 .map(ShielderContractEvents::Deposit),
+
+    //             Withdraw::SIGNATURE_HASH => Withdraw::decode_log_data(event.data(), true)
+    //                 .map(ShielderContractEvents::Withdraw),
+
+    //             _ => Err(SolError::Other(Cow::Borrowed("should not get here"))),
+    //         }
+    //         .ok()?;
+
+    //         Some(shielder_event)
+    //     })
+    //     .collect()
+    Ok(())
 }
