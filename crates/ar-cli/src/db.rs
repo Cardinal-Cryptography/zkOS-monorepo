@@ -44,6 +44,21 @@ pub fn upsert_event(connection: &Connection, event: Event) -> Result<(), rusqlit
     Ok(())
 }
 
+pub fn query_event(connection: &Connection, tx_hash: &[u8; 32]) -> Result<Event, rusqlite::Error> {
+    connection.query_row(
+        "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM preferences WHERE tx_hash=?1",
+        [*tx_hash],
+        |row|  {
+            Ok(Event {
+                tx_hash: row.get(0)?,
+                block_number: row.get(1)?,
+                mac_salt: row.get(2)?,
+                mac_commitment: row.get(3)?,
+                viewing_key: row.get(4)?,
+            })
+        })
+}
+
 #[derive(Debug)]
 pub struct ViewingKey {
     pub viewing_key: Vec<u8>,
