@@ -1,7 +1,7 @@
 use std::{env, ffi::OsString, path::PathBuf};
 
 use alloy_primitives::Address;
-use clap::{builder::ValueParser, Arg, Args, Parser, Subcommand};
+use clap::{builder::ValueParser, Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(name = "ar-cli", version)]

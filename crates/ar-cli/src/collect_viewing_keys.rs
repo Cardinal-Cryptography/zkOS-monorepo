@@ -1,33 +1,27 @@
 use std::{
-    cmp::min,
     fs::File,
     io::{self, Read},
-    path::PathBuf,
 };
 
-use alloy_json_rpc::{RpcError, RpcParam, RpcReturn};
+use alloy_json_rpc::RpcError;
 use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, Filter, Log, TransactionTrait};
 use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
 use hex::FromHexError;
-use log::{debug, info, trace};
+use log::{debug, info};
 use rusqlite::Connection;
-use shielder_circuits::{grumpkin, Fr, GrumpkinPointAffine};
+use shielder_circuits::{grumpkin, GrumpkinPointAffine};
 use shielder_contract::{
     providers::create_simple_provider,
-    ShielderContract::{
-        newAccountERC20Call, newAccountNativeCall, ShielderContractCalls::newAccountNative,
-    },
+    ShielderContract::{newAccountERC20Call, newAccountNativeCall},
     ShielderContractError,
 };
 use thiserror::Error;
 use type_conversions::u256_to_field;
 
 use crate::db::{self, ViewingKey};
-
-const BATCH_SIZE: usize = 10_000;
 
 #[derive(Debug, Error)]
 #[error(transparent)]
@@ -52,11 +46,11 @@ pub enum CollectKeysError {
     Db(#[from] rusqlite::Error),
 }
 
-// Goes back in transaction history and collects all viewing keys
-// - look for new_account txs
-// - read c1,c2
-// - decrypt message  => k (viewing key)
-// - record k
+/// Goes back in transaction history and collects all viewing keys
+/// - look for new_account txs
+/// - read c1,c2
+/// - decrypt message  => k (viewing key)
+/// - record k
 pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
@@ -177,42 +171,46 @@ fn private_key_bytes(file: &str) -> Result<[u8; 32], io::Error> {
 #[cfg(test)]
 mod tests {
     use alloy_primitives::U256;
-    use shielder_circuits::poseidon::off_circuit::hash;
-    use type_conversions::field_to_u256;
-
-    use super::*;
+    use shielder_circuits::{poseidon::off_circuit::hash, Fr};
+    use type_conversions::u256_to_field;
 
     #[test]
     fn playground() {
-        // TODO
-        let src = "12149788709952380244401723958630103313911968813513728899550780481653393522559";
-        let id = U256::from_str_radix(src, 10).unwrap();
-        let id_in_the_field: Fr = u256_to_field(id);
+        let id: Fr = u256_to_field(
+            U256::from_str_radix(
+                "12149788709952380244401723958630103313911968813513728899550780481653393522559",
+                10,
+            )
+            .unwrap(),
+        );
 
-        // let repr = id_in_the_field.to_bytes();
-        // let he = hex::encode(repr);
+        let k = shielder_circuits::derive_viewing_key(id);
 
-        let k = shielder_circuits::derive_viewing_key(id_in_the_field);
-
-        // 0x19769c8b7076367272d477448e16bb330398ebd68904a2ebcbc782d27461f61d
-        println!("k: {k:?}");
+        assert_eq!(
+            "19769c8b7076367272d477448e16bb330398ebd68904a2ebcbc782d27461f61d",
+            hex::encode(id.to_bytes())
+        );
 
         // newAccountNativeCall { symKeyEncryptionC1X: 19420033340183974863144988685323206788530552163083436857825862470755451934532, symKeyEncryptionC1Y: 15788464705421795072282783992186344413433971611145706070618513891721409271871, symKeyEncryptionC2X: 20083755851364125692828215190025172084304637180713324842416894918800519417467, symKeyEncryptionC2Y: 21229363339025922855435477269821411877449531256069498533077213133643924118931,
         // macSalt: 6512694175196441965640539212879785744519546946999241152607882120108494685819
         // macCommitment: 17576897625927668035492046051895902740322805365345371972136249012400181210767
 
-        let mac_salt =
-            "6512694175196441965640539212879785744519546946999241152607882120108494685819";
-        let mac_salt = U256::from_str_radix(mac_salt, 10).unwrap();
-        let mac_salt: Fr = u256_to_field(mac_salt);
+        let mac_salt: Fr = u256_to_field(
+            U256::from_str_radix(
+                "6512694175196441965640539212879785744519546946999241152607882120108494685819",
+                10,
+            )
+            .unwrap(),
+        );
 
-        let mac_commitment =
-            "17576897625927668035492046051895902740322805365345371972136249012400181210767";
-        let mac_commitment = U256::from_str_radix(mac_commitment, 10).unwrap();
-        let mac_commitment: Fr = u256_to_field(mac_commitment);
+        let mac_commitment: Fr = u256_to_field(
+            U256::from_str_radix(
+                "17576897625927668035492046051895902740322805365345371972136249012400181210767",
+                10,
+            )
+            .unwrap(),
+        );
 
-        let com = hash(&[mac_salt, k]);
-
-        assert_eq!(com, mac_commitment);
+        assert_eq!(hash(&[mac_salt, k]), mac_commitment);
     }
 }
