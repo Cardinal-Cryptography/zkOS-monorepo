@@ -41,11 +41,15 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
     if let Err(response) = check_fee(&app_state, &query, &mut request_trace) {
         return response;
     }
+    if let Err(response) = check_pocket_money(&app_state, &query, &mut request_trace) {
+        return response;
+    }
 
-    let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
+    let (pocket_money, withdraw_call) =
+        create_call(query, app_state.fee_destination, app_state.total_fee);
     let Ok(rx) = app_state
         .taskmaster
-        .register_new_task(withdraw_call, request_trace)
+        .register_new_task(withdraw_call, pocket_money, request_trace)
         .await
     else {
         error!("Failed to register new task");
@@ -95,20 +99,27 @@ fn internal_server_error(msg: &str) -> Response {
         .into_response()
 }
 
-fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawNativeCall {
-    withdrawNativeCall {
-        expectedContractVersion: q.expected_contract_version,
-        withdrawalAddress: q.withdraw_address,
-        relayerAddress: relayer_address,
-        relayerFee: relayer_fee,
-        amount: q.amount,
-        merkleRoot: q.merkle_root,
-        oldNullifierHash: q.nullifier_hash,
-        newNote: q.new_note,
-        proof: q.proof,
-        macSalt: q.mac_salt,
-        macCommitment: q.mac_commitment,
-    }
+fn create_call(
+    q: RelayQuery,
+    relayer_address: Address,
+    relayer_fee: U256,
+) -> (U256, withdrawNativeCall) {
+    (
+        q.pocket_money,
+        withdrawNativeCall {
+            expectedContractVersion: q.expected_contract_version,
+            withdrawalAddress: q.withdraw_address,
+            relayerAddress: relayer_address,
+            relayerFee: relayer_fee,
+            amount: q.amount,
+            merkleRoot: q.merkle_root,
+            oldNullifierHash: q.nullifier_hash,
+            newNote: q.new_note,
+            proof: q.proof,
+            macSalt: q.mac_salt,
+            macCommitment: q.mac_commitment,
+        },
+    )
 }
 
 fn check_expected_version(
@@ -185,4 +196,22 @@ fn ensure_permissible_token(app_state: &AppState, token: TokenKind) -> Result<()
 
 fn add_fee_error_margin(fee: U256) -> U256 {
     fee * U256::from(100 + FEE_MARGIN_PERCENT) / U256::from(100)
+}
+
+fn check_pocket_money(
+    app_state: &AppState,
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    if query.fee_token == TokenKind::Native && query.pocket_money != U256::ZERO {
+        request_trace.record_pocket_money_native_withdrawal();
+        return Err(bad_request(
+            "Pocket money is not supported for native token withdrawals.",
+        ));
+    }
+    if app_state.max_pocket_money < query.pocket_money {
+        request_trace.record_pocket_money_too_high(app_state.max_pocket_money, query.pocket_money);
+        return Err(bad_request("Pocket money too high."));
+    }
+    Ok(())
 }

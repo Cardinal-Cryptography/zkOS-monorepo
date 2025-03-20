@@ -51,6 +51,7 @@ pub struct AppState {
     pub prices: Prices,
     pub token_config: Vec<Token>,
     pub quote_cache: QuoteCache,
+    pub max_pocket_money: U256,
 }
 
 struct Signers {
@@ -159,6 +160,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         token_config: config.operations.token_config.clone(),
         prices,
         quote_cache,
+        max_pocket_money: config.operations.max_pocket_money,
     };
 
     let app = Router::new()
