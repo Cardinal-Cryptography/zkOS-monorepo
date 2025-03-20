@@ -29,9 +29,9 @@ pub enum Command {
 
         /// 32-byte hex seed.
         ///
-        /// Can contain `0x` prefix, which will be stripped.
+        /// if it contains `0x` prefix it will be stripped.
         /// Example: --seed 3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab
-        #[arg(long, value_parser = ValueParser::new(parse_hex_as_seed))]
+        #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
         seed: [u8; 32],
 
         /// Should the output be produced in the Lower Endian (the default) or Big Endian order?
@@ -59,6 +59,12 @@ pub enum Command {
         #[arg(long, default_value = "./private_key.bin")]
         private_key_file: String,
     },
+
+    /// Returns everything we have in the db about the identity of this transaction
+    Revoke {
+        #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
+        tx_hash: [u8; 32],
+    },
 }
 
 #[derive(Debug, Args)]
@@ -76,18 +82,18 @@ pub struct Common {
     pub rpc_url: String,
 }
 
-fn parse_hex_as_seed(input: &str) -> Result<[u8; 32], &'static str> {
-    let mut decoded = [0u8; 32];
-
+fn parse_32byte_array(input: &str) -> Result<[u8; 32], &'static str> {
     let sanitized_input = if let Some(stripped) = input.strip_prefix("0x") {
         stripped
     } else {
         input
     };
 
+    let mut decoded = [0u8; 32];
     if let Err(_why) = hex::decode_to_slice(sanitized_input, &mut decoded) {
         return Err("Error when parsing seed value");
     }
+
     Ok(decoded)
 }
 

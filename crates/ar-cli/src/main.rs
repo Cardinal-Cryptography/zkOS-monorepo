@@ -64,6 +64,7 @@ async fn main() -> Result<(), CliError> {
             let connection = db::init(&db.path)?;
             index_events::run(rpc_url, shielder_address, connection).await?
         }
+        cli::Command::Revoke { tx_hash } => todo!(),
     }
 
     Ok(())
