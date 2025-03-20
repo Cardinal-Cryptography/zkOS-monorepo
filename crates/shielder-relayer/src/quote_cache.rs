@@ -86,6 +86,59 @@ pub async fn garbage_collector_worker(quote_cache: QuoteCache) {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
+    use alloy_primitives::U256;
+    use rust_decimal::Decimal;
+    use shielder_relayer::TokenKind;
+    use time::OffsetDateTime;
+    use tokio::time::sleep;
+
+    use crate::quote_cache::{CachedQuote, QuoteCache};
+
+    const VALIDITY: Duration = Duration::from_millis(500);
+
+    fn quote_cache() -> QuoteCache {
+        QuoteCache::new(VALIDITY)
+    }
+
+    fn quote() -> CachedQuote {
+        CachedQuote {
+            fee_token: TokenKind::Native,
+            gas_price: U256::from(1),
+            native_token_price: Decimal::ONE,
+            token_price_ratio: Decimal::ONE,
+        }
+    }
+
     #[tokio::test]
-    async fn nothing() {}
+    async fn empty_cache_has_no_valid_quotes() {
+        assert!(!quote_cache().is_quote_valid(&quote()).await);
+    }
+
+    #[tokio::test]
+    async fn quote_is_valid_right_after_being_cached() {
+        let cache = quote_cache();
+        let quote = quote();
+
+        cache
+            .store_quote_response(quote, OffsetDateTime::now_utc())
+            .await;
+
+        assert!(cache.is_quote_valid(&quote).await)
+    }
+
+    #[tokio::test]
+    async fn quote_is_invalid_after_validity_period() {
+        let cache = quote_cache();
+        let quote = quote();
+
+        cache
+            .store_quote_response(quote, OffsetDateTime::now_utc())
+            .await;
+
+        sleep(VALIDITY * 2).await;
+
+        assert!(!cache.is_quote_valid(&quote).await)
+    }
 }
