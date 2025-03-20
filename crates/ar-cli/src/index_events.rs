@@ -79,12 +79,6 @@ fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), IndexEven
 
         match log.topic0() {
             Some(&NewAccount::SIGNATURE_HASH) => {
-                // let NewAccount {
-                //     macSalt,
-                //     macCommitment,
-                //     ..
-                // } =
-
                 persist_event(
                     connection,
                     ShielderContractEvents::NewAccount(NewAccount::decode_log_data(
@@ -95,8 +89,22 @@ fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), IndexEven
                     block_number,
                 )?;
             }
-            Some(&Deposit::SIGNATURE_HASH) => {}
-            Some(&Withdraw::SIGNATURE_HASH) => {}
+            Some(&Deposit::SIGNATURE_HASH) => {
+                persist_event(
+                    connection,
+                    ShielderContractEvents::Deposit(Deposit::decode_log_data(log.data(), true)?),
+                    &tx_hash,
+                    block_number,
+                )?;
+            }
+            Some(&Withdraw::SIGNATURE_HASH) => {
+                persist_event(
+                    connection,
+                    ShielderContractEvents::Withdraw(Withdraw::decode_log_data(log.data(), true)?),
+                    &tx_hash,
+                    block_number,
+                )?;
+            }
             _ => debug!("Skipping log with an unknown topic {:?}", log.topic0()),
         };
     }

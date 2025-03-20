@@ -6,7 +6,7 @@ use std::{
 };
 
 use alloy_json_rpc::{RpcError, RpcParam, RpcReturn};
-use alloy_primitives::Address;
+use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, Filter, Log, TransactionTrait};
 use alloy_sol_types::SolCall;
@@ -46,21 +46,24 @@ pub enum CollectKeysError {
     NotAGrumpkinBaseFieldElement,
 }
 
-// TODO: build DB view of history
+// Goes back in transaction history and collects all viewing keys
+// - look for new_account txs
+// - read c1,c2
+// - decrypt message  => k (viewing key)
+// - record k
 pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
     private_key_file: &str,
 ) -> Result<(), CollectKeysError> {
-    // 1) TODO: go back in history and collect ALL viewing keys
-    //       - look for new_account txs
-    //       - read c1,c2 and decrypt it => k (viewing key)
-    // record ks
-
     let provider = create_simple_provider(rpc_url).await?;
-    let last_block_number = provider.get_block_number().await?;
+    let last_finalized_block_number = provider.get_block_number().await?;
 
-    for block_number in 0..=last_block_number {
+    let private_key = grumpkin::Fr::from_bytes(&private_key_bytes(private_key_file)?)
+        .into_option()
+        .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
+
+    for block_number in 0..=last_finalized_block_number {
         if let Some(block) = provider
             .get_block_by_number(
                 BlockNumberOrTag::Number(block_number),
@@ -71,44 +74,72 @@ pub async fn run(
             if let Some(txs) = block.transactions.as_transactions() {
                 for tx in txs {
                     if tx.to().eq(&Some(*shielder_address)) {
-                        if let Ok(tx) = newAccountNativeCall::abi_decode(tx.input(), false) {
-                            debug!("Decoded newAccountNative transaction {tx:?}");
+                        if let Ok(newAccountNativeCall {
+                            symKeyEncryptionC1X,
+                            symKeyEncryptionC1Y,
+                            symKeyEncryptionC2X,
+                            symKeyEncryptionC2Y,
+                            ..
+                        }) = newAccountNativeCall::abi_decode(tx.input(), false)
+                        {
+                            debug!("Processing newAccountNative transaction {tx:?}");
 
-                            let ciphertext1 = GrumpkinPointAffine::new(
-                                u256_to_field(tx.symKeyEncryptionC1X),
-                                u256_to_field(tx.symKeyEncryptionC1Y),
-                            );
-                            let ciphertext2 = GrumpkinPointAffine::new(
-                                u256_to_field(tx.symKeyEncryptionC2X),
-                                u256_to_field(tx.symKeyEncryptionC2Y),
-                            );
-
-                            let bytes = private_key_bytes(&private_key_file)?;
-                            let private_key = grumpkin::Fr::from_bytes(&bytes)
-                                .into_option()
-                                .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
-
-                            let GrumpkinPointAffine { x: viewing_key, .. } =
-                                shielder_circuits::decrypt(
-                                    ciphertext1.into(),
-                                    ciphertext2.into(),
-                                    private_key,
-                                )
-                                .into();
-
-                            // TODO: persist
-                            info!("Viewing key decoding {viewing_key:?}");
+                            decode_and_persist(
+                                symKeyEncryptionC1X,
+                                symKeyEncryptionC1Y,
+                                symKeyEncryptionC2X,
+                                symKeyEncryptionC2Y,
+                                private_key,
+                            )?;
                         }
 
-                        if let Ok(tx) = newAccountERC20Call::abi_decode(tx.input(), false) {
-                            debug!("Decoded newAccountERC20 transaction {tx:?}");
-                            todo!("")
+                        if let Ok(newAccountERC20Call {
+                            symKeyEncryptionC1X,
+                            symKeyEncryptionC1Y,
+                            symKeyEncryptionC2X,
+                            symKeyEncryptionC2Y,
+                            ..
+                        }) = newAccountERC20Call::abi_decode(tx.input(), false)
+                        {
+                            debug!("Processing newAccountERC20 transaction {tx:?}");
+                            decode_and_persist(
+                                symKeyEncryptionC1X,
+                                symKeyEncryptionC1Y,
+                                symKeyEncryptionC2X,
+                                symKeyEncryptionC2Y,
+                                private_key,
+                            )?;
                         }
                     }
                 }
             }
         }
     }
+
+    Ok(())
+}
+
+fn decode_and_persist(
+    symKeyEncryptionC1X: U256,
+    symKeyEncryptionC1Y: U256,
+    symKeyEncryptionC2X: U256,
+    symKeyEncryptionC2Y: U256,
+    private_key: grumpkin::Fr,
+) -> Result<(), CollectKeysError> {
+    let ciphertext1 = GrumpkinPointAffine::new(
+        u256_to_field(symKeyEncryptionC1X),
+        u256_to_field(symKeyEncryptionC1Y),
+    );
+    let ciphertext2 = GrumpkinPointAffine::new(
+        u256_to_field(symKeyEncryptionC2X),
+        u256_to_field(symKeyEncryptionC2Y),
+    );
+
+    let GrumpkinPointAffine { x: viewing_key, .. } =
+        shielder_circuits::decrypt(ciphertext1.into(), ciphertext2.into(), private_key).into();
+
+    // TODO: persist
+    info!("Viewing key decoding {viewing_key:?}");
 
     Ok(())
 }
