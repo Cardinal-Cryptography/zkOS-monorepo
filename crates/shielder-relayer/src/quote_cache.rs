@@ -6,10 +6,6 @@ use shielder_relayer::TokenKind;
 use time::OffsetDateTime;
 use tokio::{sync::Mutex, time::interval};
 
-/// Once the cache reaches this size, a one-shot garbage collection will be triggered to remove
-/// expired quotes.
-const CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION: usize = 1000;
-
 /// Quote data that was presented to a user and should be referenced to during relay request.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CachedQuote {
@@ -43,25 +39,14 @@ impl QuoteCache {
     pub async fn store_quote_response(&self, quote: CachedQuote, at: OffsetDateTime) {
         let expiration = at + self.validity;
 
-        // Do the main action.
-        let cache_len = {
-            let mut cache = self.cache.lock().await;
-
-            cache
-                .entry(quote)
-                .and_modify(|previous_expiration| {
-                    // If, for some reason, there is already a quote with longer expiration, we will keep it.
-                    *previous_expiration = expiration.max(*previous_expiration);
-                })
-                .or_insert(expiration);
-
-            cache.len()
-        };
-
-        // Once the storage reaches certain size, we try to run single garbage collection.
-        if cache_len >= CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION {
-            self.collect_garbage().await;
-        }
+        let mut cache = self.cache.lock().await;
+        cache
+            .entry(quote)
+            .and_modify(|previous_expiration| {
+                // If, for some reason, there is already a quote with longer expiration, we will keep it.
+                *previous_expiration = expiration.max(*previous_expiration);
+            })
+            .or_insert(expiration);
     }
 
     /// Check whether `quote` was recently stored.
@@ -100,10 +85,7 @@ mod tests {
     use time::OffsetDateTime;
     use tokio::time::sleep;
 
-    use crate::quote_cache::{
-        garbage_collector_worker, CachedQuote, QuoteCache,
-        CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION,
-    };
+    use crate::quote_cache::{garbage_collector_worker, CachedQuote, QuoteCache};
 
     const VALIDITY: Duration = Duration::from_millis(100);
 
@@ -171,38 +153,6 @@ mod tests {
 
         assert!(cache.is_quote_valid(&quote1).await);
         assert!(!cache.is_quote_valid(&quote2).await);
-    }
-
-    #[tokio::test]
-    async fn when_cache_grows_it_will_trigger_garbage_collection() {
-        let now = OffsetDateTime::now_utc();
-        let cache = quote_cache();
-
-        for i in 0..(CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION - 1) {
-            cache.store_quote_response(ith_quote(i), now).await;
-        }
-        // Garbage collection is not triggered yet.
-        assert_eq!(
-            cache.cache.lock().await.len(),
-            CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION - 1
-        );
-
-        // Invalidate all quotes.
-        sleep(VALIDITY * 2).await;
-
-        // Garbage collection is still not triggered yet.
-        assert_eq!(
-            cache.cache.lock().await.len(),
-            CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION - 1
-        );
-
-        // New entry should trigger garbage collection.
-        cache
-            .store_quote_response(ith_quote(CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION), now)
-            .await;
-
-        // Garbage collection was triggered.
-        assert_eq!(cache.cache.lock().await.len(), 0);
     }
 
     #[tokio::test(flavor = "multi_thread")]
