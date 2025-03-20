@@ -25,6 +25,7 @@ use crate::{
     config::{resolve_config, ChainConfig, KeyConfig, LoggingFormat, NoncePolicy, ServerConfig},
     metrics::{prometheus_endpoint, setup_metrics_handle},
     monitor::{balance_monitor::balance_monitor, Balances},
+    quote_cache::{garbage_collector_worker, QuoteCache},
     recharge::start_recharging_worker,
     relay::Taskmaster,
 };
@@ -34,6 +35,7 @@ mod metrics;
 mod monitor;
 mod price_feed;
 mod quote;
+mod quote_cache;
 mod recharge;
 mod relay;
 
@@ -48,6 +50,7 @@ pub struct AppState {
     pub balances: Balances,
     pub prices: Prices,
     pub token_config: Vec<Token>,
+    pub quote_cache: QuoteCache,
 }
 
 struct Signers {
@@ -133,6 +136,9 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         config.chain.total_fee,
     );
 
+    let quote_cache = QuoteCache::new(config.operations.quote_validity);
+    tokio::spawn(garbage_collector_worker(quote_cache.clone()));
+
     let state = AppState {
         node_rpc_url: config.chain.node_rpc_url.clone(),
         fee_destination: fee_destination_address,
@@ -152,6 +158,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         ),
         token_config: config.operations.token_config.clone(),
         prices,
+        quote_cache,
     };
 
     let app = Router::new()
