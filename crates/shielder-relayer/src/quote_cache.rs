@@ -1,0 +1,90 @@
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
+use alloy_primitives::U256;
+use rust_decimal::Decimal;
+use shielder_relayer::TokenKind;
+use time::OffsetDateTime;
+use tokio::{sync::Mutex, time::interval};
+
+/// Once the cache reaches this size, a one-shot garbage collection will be triggered to remove
+/// expired quotes.
+const CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION: usize = 1000;
+
+/// Quote data that was presented to a user and should be referenced to during relay request.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct CachedQuote {
+    /// Requested fee token.
+    pub fee_token: TokenKind,
+    /// Gas price (in native token) at the quotation moment.
+    pub gas_price: U256,
+    /// Price of the native token (base unit, like 1 ETH or 1 BTC) at the quotation moment.
+    pub native_token_price: Decimal,
+    /// Ratio between the native token and the fee token at the quotation moment.
+    pub token_price_ratio: Decimal,
+}
+
+/// Service storing quotations with a certain validity.
+#[derive(Clone)]
+pub struct QuoteCache {
+    validity: Duration,
+    cache: Arc<Mutex<HashMap<CachedQuote, OffsetDateTime>>>,
+}
+
+impl QuoteCache {
+    /// Creates a new quote cache with given validity. ALSO: Spawns a background garbage
+    /// collector worker, responsible for removing expired quotes.
+    pub fn new(quote_validity: Duration) -> Self {
+        let newborn = Self {
+            cache: Default::default(),
+            validity: quote_validity,
+        };
+
+        tokio::spawn(garbage_collector_worker(newborn.clone()));
+
+        newborn
+    }
+
+    /// Register a new quote `quote`. Its validity starts at `at` and lasts for `self.validity`.
+    pub async fn store_quote_response(&self, quote: CachedQuote, at: OffsetDateTime) {
+        let expiration = at + self.validity;
+        let mut cache = self.cache.lock().await;
+
+        cache
+            .entry(quote)
+            .and_modify(|previous_expiration| {
+                // If, for some reason, there is already a quote with longer expiration, we will keep it.
+                *previous_expiration = expiration.max(*previous_expiration);
+            })
+            .or_insert(expiration);
+
+        // Once the storage reaches certain size, we try to run single garbage collection.
+        if cache.len() >= CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION {
+            self.collect_garbage().await;
+        }
+    }
+
+    /// Check whether `quote` was recently stored.
+    pub async fn is_quote_valid(&self, quote: &CachedQuote) -> bool {
+        let now = OffsetDateTime::now_utc();
+        match self.cache.lock().await.get(quote) {
+            Some(expiration) => *expiration > now,
+            None => false,
+        }
+    }
+
+    /// Single sweep over cache.
+    async fn collect_garbage(&self) {
+        let now = OffsetDateTime::now_utc();
+        let mut cache = self.cache.lock().await;
+        cache.retain(|_, valid_until| *valid_until > now)
+    }
+}
+
+/// Every `10 * validity` run garbage collection.
+async fn garbage_collector_worker(quote_cache: QuoteCache) {
+    let mut interval = interval(quote_cache.validity * 10);
+    loop {
+        interval.tick().await;
+        quote_cache.collect_garbage().await;
+    }
+}
