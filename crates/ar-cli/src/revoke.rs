@@ -14,13 +14,17 @@ pub enum RevokeError {
 /// Given tx-hash find all the matching txs
 ///   - for every k: look if mac matches: mac_commitmet = h(k, r), r = mac_salt from the tx
 pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), RevokeError> {
-    let keys = db::query_viewing_keys(&connection)?;
+    // let keys = db::query_viewing_keys(&connection)?;
 
-    println!("{keys:?}");
+    // println!("{keys:?}");
 
-    let evt = db::query_event(&connection, tx_hash)?;
+    // let evt = db::query_event(&connection, tx_hash)?;
 
-    println!("{evt:?}");
+    // println!("{evt:?}");
+
+    let events = db::query_events(&connection)?;
+
+    println!("{events:?}");
 
     Ok(())
 }
