@@ -85,6 +85,18 @@ impl RequestTrace {
         self.finish("❌ FEE AMOUNT FAILURE");
     }
 
+    pub fn record_pocket_money_too_high(&mut self, max: U256, requested: U256) {
+        metrics::counter!(WITHDRAW_FAILURE).increment(1);
+        error!("Pocket money too high: {requested} > {max}");
+        self.finish("❌ POCKET MONEY FAILURE");
+    }
+
+    pub fn record_pocket_money_native_withdrawal(&mut self) {
+        metrics::counter!(WITHDRAW_FAILURE).increment(1);
+        error!("Pocket money is not supported for native token withdrawal");
+        self.finish("❌ POCKET MONEY FAILURE");
+    }
+
     pub fn record_failure(&mut self, err: ShielderContractError) {
         metrics::counter!(WITHDRAW_FAILURE).increment(1);
         error!("Relay failed: {err}");

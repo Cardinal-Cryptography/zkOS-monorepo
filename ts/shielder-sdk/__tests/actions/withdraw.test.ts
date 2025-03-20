@@ -298,7 +298,8 @@ describe("WithdrawAction", () => {
         calldata.calldata.proof,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.macSalt),
-        scalarToBigint(calldata.calldata.pubInputs.macCommitment)
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
+        calldata.pocketMoney
       );
 
       expect(txHash).toBe("0xtxHash");

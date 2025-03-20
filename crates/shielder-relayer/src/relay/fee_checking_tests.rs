@@ -25,6 +25,7 @@ fn app_state() -> AppState {
         signer_addresses: Default::default(),
         relay_gas: Default::default(),
         quote_cache: QuoteCache::new(Default::default()),
+        max_pocket_money: Default::default(),
     }
 }
 
