@@ -6,7 +6,7 @@ use alloy_provider::Provider;
 use alloy_rpc_types::{Filter, Log};
 use alloy_sol_types::{Error as SolError, SolEvent};
 use alloy_transport::TransportErrorKind;
-use log::info;
+use log::{debug, info};
 use shielder_contract::{
     providers::create_simple_provider,
     ShielderContract::{Deposit, NewAccount, ShielderContractEvents, Withdraw},
@@ -25,8 +25,6 @@ pub enum IndexEventsError {
 
     #[error("RPC error")]
     Rpc(#[from] RpcError<TransportErrorKind>),
-    // #[error("error")]
-    // Overrun,
 }
 
 pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), IndexEventsError> {
@@ -43,12 +41,22 @@ pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), IndexEv
 
         let raw_logs = provider.get_logs(&filter).await?;
 
-        info!(
-            "Found {} logs in the block range {block_number} : {last_batch_block}",
+        debug!(
+            "Found {} raw Shielder event logs in the block range {block_number} : {last_batch_block}",
             raw_logs.len()
         );
 
         let filtered_logs = filter_logs(raw_logs);
+
+        info!(
+            "Found {} filtered Shielder event logs in the block range {block_number} : {last_batch_block}",
+            filtered_logs.len()
+        );
+
+        // TODO persist
+        for event in filtered_logs {
+            println!("{event:?}");
+        }
     }
 
     Ok(())

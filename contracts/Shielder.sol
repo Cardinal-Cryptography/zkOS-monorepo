@@ -66,7 +66,9 @@ contract Shielder is
         address tokenAddress,
         uint256 amount,
         uint256 newNote,
-        uint256 newNoteIndex
+        uint256 newNoteIndex,
+        uint256 macSalt,
+        uint256 macCommitment
     );
     event Deposit(
         bytes3 contractVersion,
@@ -192,7 +194,9 @@ contract Shielder is
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
             newNote,
-            newNoteIndex
+            newNoteIndex,
+            macSalt,
+            macCommitment
         );
     }
 
@@ -246,7 +250,9 @@ contract Shielder is
             tokenAddress,
             amount,
             newNote,
-            newNoteIndex
+            newNoteIndex,
+            macSalt,
+            macCommitment
         );
     }
 
