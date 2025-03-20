@@ -151,10 +151,12 @@ mod tests {
             vec![ShielderContractEvents::NewAccount(NewAccount {
                 contractVersion: FixedBytes([0, 1, 0]),
                 prenullifier: calldata.prenullifier,
-                tokenAddress: token.address(&mut deployment),
+                tokenAddress: token.address(&deployment),
                 amount,
                 newNote: calldata.new_note,
                 newNoteIndex: U256::ZERO,
+                macSalt: U256::ZERO,
+                macCommitment: calldata.mac_commitment,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, token, amount));
