@@ -1,3 +1,4 @@
+use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;
 use async_channel::{Receiver as MPMCReceiver, Sender as MPMCSender};
@@ -32,6 +33,8 @@ pub enum TaskResult {
 pub struct Task {
     report: OneshotSender<(RequestTrace, TaskResult)>,
     payload: withdrawNativeCall,
+    #[allow(unused)]
+    pocket_money: U256,
     request_trace: RequestTrace,
 }
 
@@ -91,6 +94,7 @@ impl Taskmaster {
     pub async fn register_new_task(
         &self,
         payload: withdrawNativeCall,
+        pocket_money: U256,
         mut request_trace: RequestTrace,
     ) -> Result<OneshotReceiver<(RequestTrace, TaskResult)>> {
         let (report_sender, report_receiver) = oneshot::channel();
@@ -99,6 +103,7 @@ impl Taskmaster {
         let task = Task {
             report: report_sender,
             payload,
+            pocket_money,
             request_trace,
         };
         self.task_sender

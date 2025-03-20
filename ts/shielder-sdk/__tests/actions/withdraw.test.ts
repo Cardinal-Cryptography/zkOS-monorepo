@@ -138,13 +138,15 @@ describe("WithdrawAction", () => {
       const address =
         "0x1234567890123456789012345678901234567890" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
       const calldata = await action.generateCalldata(
         state,
         amount,
         mockRelayerAddress,
         totalFee,
         address,
-        expectedVersion
+        expectedVersion,
+        pocketMoney
       );
 
       // Verify the proof
@@ -165,6 +167,7 @@ describe("WithdrawAction", () => {
       const amount = 6n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
       await expect(
         action.generateCalldata(
           state,
@@ -172,15 +175,35 @@ describe("WithdrawAction", () => {
           mockRelayerAddress,
           totalFee,
           mockAddress,
-          expectedVersion
+          expectedVersion,
+          pocketMoney
         )
       ).rejects.toThrow("Insufficient funds");
+    });
+
+    it("should throw on non-zero pocket money for native withdrawal", async () => {
+      const amount = 2n;
+      const expectedVersion = "0xversio" as `0x${string}`;
+      const totalFee = 1n;
+      const pocketMoney = 1n;
+      await expect(
+        action.generateCalldata(
+          state,
+          amount,
+          mockRelayerAddress,
+          totalFee,
+          mockAddress,
+          expectedVersion,
+          pocketMoney
+        )
+      ).rejects.toThrow("Pocket money is not supported for native withdrawal");
     });
 
     it("should throw on amount less than fee", async () => {
       const amount = 1n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 2n;
+      const pocketMoney = 0n;
       await expect(
         action.generateCalldata(
           state,
@@ -188,7 +211,8 @@ describe("WithdrawAction", () => {
           mockRelayerAddress,
           totalFee,
           mockAddress,
-          expectedVersion
+          expectedVersion,
+          pocketMoney
         )
       ).rejects.toThrow("Amount must be greater than the relayer fee: 2");
     });
@@ -197,6 +221,7 @@ describe("WithdrawAction", () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
 
       cryptoClient.withdrawCircuit.prove = vitest
         .fn<(values: WithdrawAdvice<Scalar>) => Promise<Uint8Array>>()
@@ -209,7 +234,8 @@ describe("WithdrawAction", () => {
           mockRelayerAddress,
           totalFee,
           mockAddress,
-          expectedVersion
+          expectedVersion,
+          pocketMoney
         )
       ).rejects.toThrow("Failed to prove withdrawal:");
     });
@@ -218,6 +244,7 @@ describe("WithdrawAction", () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
 
       cryptoClient.withdrawCircuit.verify = vitest
         .fn<
@@ -235,7 +262,8 @@ describe("WithdrawAction", () => {
           mockRelayerAddress,
           totalFee,
           mockAddress,
-          expectedVersion
+          expectedVersion,
+          pocketMoney
         )
       ).rejects.toThrow("Withdrawal proof verification failed");
     });
@@ -246,13 +274,15 @@ describe("WithdrawAction", () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
       const calldata = await action.generateCalldata(
         state,
         amount,
         mockRelayerAddress,
         totalFee,
         mockAddress,
-        expectedVersion
+        expectedVersion,
+        pocketMoney
       );
 
       const txHash = await action.sendCalldataWithRelayer(calldata);
@@ -268,7 +298,8 @@ describe("WithdrawAction", () => {
         calldata.calldata.proof,
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.macSalt),
-        scalarToBigint(calldata.calldata.pubInputs.macCommitment)
+        scalarToBigint(calldata.calldata.pubInputs.macCommitment),
+        calldata.pocketMoney
       );
 
       expect(txHash).toBe("0xtxHash");
@@ -278,13 +309,15 @@ describe("WithdrawAction", () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
       const calldata = await action.generateCalldata(
         state,
         amount,
         mockRelayerAddress,
         totalFee,
         mockAddress,
-        expectedVersion
+        expectedVersion,
+        pocketMoney
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -316,13 +349,15 @@ describe("WithdrawAction", () => {
       const amount = 2n;
       const expectedVersion = "0xversio" as `0x${string}`;
       const totalFee = 1n;
+      const pocketMoney = 0n;
       const calldata = await action.generateCalldata(
         state,
         amount,
         mockRelayerAddress,
         totalFee,
         mockAddress,
-        expectedVersion
+        expectedVersion,
+        pocketMoney
       );
 
       relayer.withdraw = vitest

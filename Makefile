@@ -1,6 +1,5 @@
 NETWORK ?= anvil
-PRIVATE_KEY ?= 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659 # pkey of the dev account `0x3f1Eae7D46d88F08fc2F8ed27FCb2AB183EB2d0E` prefunded with ETH on all networks
-OWNER_ADDRESS ?= $(shell cast wallet address $(PRIVATE_KEY))
+PRIVATE_KEY ?= 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 # pkey of the dev account `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` prefunded with ETH on all networks
 
 .PHONY: help
 help: # Show help for each of the Makefile recipes.
@@ -49,12 +48,9 @@ compile-contracts: deps generate-contracts
 .PHONY: deploy-contracts
 deploy-contracts: # Deploy solidity contracts
 deploy-contracts:
-ifeq ($(NETWORK),anvil)
-	$(eval PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) \
-	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url anvil --sender $(shell cast wallet address $(PRIVATE_KEY))
-else
-	PRIVATE_KEY=$(PRIVATE_KEY) OWNER_ADDRESS=$(OWNER_ADDRESS) forge script DeployShielderScript --broadcast --rpc-url $(NETWORK) --sender $(shell cast wallet address $(PRIVATE_KEY))
-endif
+	NETWORK=$(NETWORK) \
+	PRIVATE_KEY=$(PRIVATE_KEY) \
+	./scripts/deploy-shielder.sh
 
 .PHONY: generate-poseidon-contracts
 generate-poseidon-contracts: # Generate Poseidon contract

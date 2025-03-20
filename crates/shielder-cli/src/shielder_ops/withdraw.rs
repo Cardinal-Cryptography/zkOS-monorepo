@@ -151,6 +151,7 @@ async fn prepare_relayer_query(
                 contract_version: contract_version(),
                 chain_id: U256::from(chain_id),
                 mac_salt: get_mac_salt(),
+                pocket_money: U256::ZERO,
             },
         )
         .try_into()
@@ -168,5 +169,6 @@ async fn prepare_relayer_query(
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,
+        pocket_money: U256::ZERO,
     })
 }

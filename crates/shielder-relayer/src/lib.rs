@@ -9,8 +9,8 @@ use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U2
 
 mod environment_variables;
 pub use environment_variables::*;
-mod currency;
-pub use currency::*;
+mod token;
+pub use token::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -95,6 +95,7 @@ pub struct RelayQuery {
     pub fee_amount: U256,
     pub mac_salt: U256,
     pub mac_commitment: U256,
+    pub pocket_money: U256,
 }
 
 pub fn server_error(msg: &str) -> Response {

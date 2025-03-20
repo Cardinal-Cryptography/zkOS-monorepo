@@ -48,6 +48,7 @@ sol! {
             uint256 fee,
             uint256 macSalt,
             uint256 macCommitment,
+            uint256 pocketMoney,
         );
 
         error DepositVerificationFailed();

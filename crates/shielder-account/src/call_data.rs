@@ -333,6 +333,7 @@ pub struct WithdrawCall {
     pub mac_salt: U256,
     pub mac_commitment: U256,
     pub proof: Bytes,
+    pub pocket_money: U256,
 }
 
 impl TryFrom<WithdrawCall> for withdrawNativeCall {
@@ -390,6 +391,7 @@ pub struct WithdrawExtra {
     pub contract_version: ContractVersion,
     pub chain_id: U256,
     pub mac_salt: U256,
+    pub pocket_money: U256,
 }
 
 pub enum WithdrawCallType {}
@@ -418,6 +420,7 @@ impl CallType for WithdrawCallType {
             relayer_address: extra.relayer_address,
             relayer_fee: extra.relayer_fee,
             chain_id: extra.chain_id,
+            pocket_money: extra.pocket_money,
         }
         .commitment_hash();
 
@@ -455,6 +458,7 @@ impl CallType for WithdrawCallType {
             relayer_fee: extra.relayer_fee,
             mac_salt: field_to_u256(pk.compute_public_input(MacSalt)),
             mac_commitment: field_to_u256(pk.compute_public_input(MacCommitment)),
+            pocket_money: extra.pocket_money,
         }
     }
 }

@@ -39,7 +39,8 @@ export type IRelayer = {
     proof: Uint8Array,
     withdrawalAddress: `0x${string}`,
     macSalt: bigint,
-    macCommitment: bigint
+    macCommitment: bigint,
+    pocketMoney: bigint
   ) => Promise<WithdrawResponse>;
   quoteFees: () => Promise<QuoteFeesResponse>;
 };
@@ -62,7 +63,8 @@ export class Relayer implements IRelayer {
     proof: Uint8Array,
     withdrawalAddress: `0x${string}`,
     macSalt: bigint,
-    macCommitment: bigint
+    macCommitment: bigint,
+    pocketMoney: bigint
   ): Promise<WithdrawResponse> => {
     let response;
     try {
@@ -88,7 +90,8 @@ export class Relayer implements IRelayer {
                     ERC20: token.address
                   },
             fee_amount: feeAmount,
-            proof: Array.from(proof)
+            proof: Array.from(proof),
+            pocket_money: pocketMoney
           },
           (_, value: unknown) =>
             typeof value === "bigint" ? value.toString() : value

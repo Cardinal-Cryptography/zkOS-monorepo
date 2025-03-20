@@ -4,7 +4,6 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use rust_decimal::Decimal;
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     ShielderContract::withdrawNativeCall,
@@ -17,9 +16,7 @@ use tracing::{debug, error};
 
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
-    config::{Pricing, TokenConfig},
     metrics::WITHDRAW_FAILURE,
-    price_feed::Prices,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
     AppState,
 };
@@ -44,11 +41,15 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
     if let Err(response) = check_fee(&app_state, &query, &mut request_trace) {
         return response;
     }
+    if let Err(response) = check_pocket_money(&app_state, &query, &mut request_trace) {
+        return response;
+    }
 
-    let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
+    let (pocket_money, withdraw_call) =
+        create_call(query, app_state.fee_destination, app_state.total_fee);
     let Ok(rx) = app_state
         .taskmaster
-        .register_new_task(withdraw_call, request_trace)
+        .register_new_task(withdraw_call, pocket_money, request_trace)
         .await
     else {
         error!("Failed to register new task");
@@ -98,20 +99,27 @@ fn internal_server_error(msg: &str) -> Response {
         .into_response()
 }
 
-fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> withdrawNativeCall {
-    withdrawNativeCall {
-        expectedContractVersion: q.expected_contract_version,
-        withdrawalAddress: q.withdraw_address,
-        relayerAddress: relayer_address,
-        relayerFee: relayer_fee,
-        amount: q.amount,
-        merkleRoot: q.merkle_root,
-        oldNullifierHash: q.nullifier_hash,
-        newNote: q.new_note,
-        proof: q.proof,
-        macSalt: q.mac_salt,
-        macCommitment: q.mac_commitment,
-    }
+fn create_call(
+    q: RelayQuery,
+    relayer_address: Address,
+    relayer_fee: U256,
+) -> (U256, withdrawNativeCall) {
+    (
+        q.pocket_money,
+        withdrawNativeCall {
+            expectedContractVersion: q.expected_contract_version,
+            withdrawalAddress: q.withdraw_address,
+            relayerAddress: relayer_address,
+            relayerFee: relayer_fee,
+            amount: q.amount,
+            merkleRoot: q.merkle_root,
+            oldNullifierHash: q.nullifier_hash,
+            newNote: q.new_note,
+            proof: q.proof,
+            macSalt: q.mac_salt,
+            macCommitment: q.mac_commitment,
+        },
+    )
 }
 
 fn check_expected_version(
@@ -145,72 +153,65 @@ fn check_fee(
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        TokenKind::ERC20(address) => check_erc20_fee(app_state, address, query, request_trace)?,
+        token @ TokenKind::ERC20 { .. } => check_erc20_fee(app_state, token, query, request_trace)?,
     }
     Ok(())
 }
 
 fn check_erc20_fee(
     app_state: &AppState,
-    fee_token_address: Address,
+    fee_token: TokenKind,
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    let fee_token_config = app_state
-        .token_config
-        .iter()
-        .find(|x| x.kind == TokenKind::ERC20(fee_token_address));
+    ensure_permissible_token(app_state, fee_token)?;
 
-    let native_config = app_state
-        .token_config
-        .iter()
-        .find(|x| x.kind == TokenKind::Native);
+    let get_price = |token| {
+        app_state
+            .prices
+            .price(token)
+            .ok_or_else(|| temporary_failure(&format!("Couldn't fetch price for {token:?}.")))
+    };
 
-    match (fee_token_config, native_config) {
-        (None, _) => {
-            request_trace.record_incorrect_token_fee(fee_token_address);
-            Err(bad_request(&format!(
-                "Fee token {fee_token_address} is not allowed."
-            )))
-        }
-        (Some(_), None) => {
-            error!("MISSING NATIVE TOKEN PRICING!");
-            Err(server_error("Server is missing native token pricing."))
-        }
-        (Some(fee_token_config), Some(native_config)) => {
-            let ratio =
-                price_relative_to_native(&app_state.prices, fee_token_config, native_config)
-                    .ok_or_else(|| {
-                        temporary_failure("Verification failed temporarily, try again later.")
-                    })?;
+    let fee_token_price = get_price(fee_token)?.unit_price;
+    let native_price = get_price(TokenKind::Native)?.unit_price;
+    let ratio = fee_token_price / native_price;
 
-            let expected_fee =
-                scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
+    let expected_fee = scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
 
-            if add_fee_error_margin(expected_fee) < app_state.total_fee {
-                request_trace.record_insufficient_fee(query.fee_amount);
-                return Err(bad_request("Insufficient fee."));
-            }
-            Ok(())
-        }
+    if add_fee_error_margin(expected_fee) < app_state.total_fee {
+        request_trace.record_insufficient_fee(query.fee_amount);
+        return Err(bad_request("Insufficient fee."));
     }
+    Ok(())
 }
 
-fn price_relative_to_native(
-    prices: &Prices,
-    fee_token_config: &TokenConfig,
-    native_config: &TokenConfig,
-) -> Option<Decimal> {
-    let resolve_price = |config: &TokenConfig| match config.pricing {
-        Pricing::Fixed { price } => Some(price),
-        Pricing::Feed => prices.price(config.coin).map(|price| price.unit_price),
-    };
-    let fee_token_price = resolve_price(fee_token_config)?;
-    let native_price = resolve_price(native_config)?;
-
-    Some(fee_token_price / native_price)
+fn ensure_permissible_token(app_state: &AppState, token: TokenKind) -> Result<(), Response> {
+    if !app_state.token_config.iter().any(|t| t.kind == token) {
+        error!("Requested token fee is not supported: {token:?}");
+        return Err(bad_request("Requested token fee is not supported."));
+    }
+    Ok(())
 }
 
 fn add_fee_error_margin(fee: U256) -> U256 {
     fee * U256::from(100 + FEE_MARGIN_PERCENT) / U256::from(100)
+}
+
+fn check_pocket_money(
+    app_state: &AppState,
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    if query.fee_token == TokenKind::Native && query.pocket_money != U256::ZERO {
+        request_trace.record_pocket_money_native_withdrawal();
+        return Err(bad_request(
+            "Pocket money is not supported for native token withdrawals.",
+        ));
+    }
+    if app_state.max_pocket_money < query.pocket_money {
+        request_trace.record_pocket_money_too_high(app_state.max_pocket_money, query.pocket_money);
+        return Err(bad_request("Pocket money too high."));
+    }
+    Ok(())
 }

@@ -10,14 +10,13 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use config::TokenConfig;
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     providers::create_provider_with_nonce_caching_signer,
     ConnectionPolicy, ShielderUser,
 };
-use shielder_relayer::Coin;
+use shielder_relayer::Token;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -26,6 +25,7 @@ use crate::{
     config::{resolve_config, ChainConfig, KeyConfig, LoggingFormat, NoncePolicy, ServerConfig},
     metrics::{prometheus_endpoint, setup_metrics_handle},
     monitor::{balance_monitor::balance_monitor, Balances},
+    quote_cache::{garbage_collector_worker, QuoteCache},
     recharge::start_recharging_worker,
     relay::Taskmaster,
 };
@@ -33,9 +33,9 @@ use crate::{
 mod config;
 mod metrics;
 mod monitor;
-// This is only pub for now to avoid dead code warnings, make it private once we use it
-pub mod price_feed;
+mod price_feed;
 mod quote;
+mod quote_cache;
 mod recharge;
 mod relay;
 
@@ -49,8 +49,9 @@ pub struct AppState {
     pub taskmaster: Taskmaster,
     pub balances: Balances,
     pub prices: Prices,
-    pub token_config: Vec<TokenConfig>,
-    pub native_token: Coin,
+    pub token_config: Vec<Token>,
+    pub quote_cache: QuoteCache,
+    pub max_pocket_money: U256,
 }
 
 struct Signers {
@@ -69,6 +70,7 @@ async fn main() -> Result<()> {
 
     let signers = get_signer_info(&server_config.keys)?;
     let prices = Prices::new(
+        &server_config.operations.token_config,
         server_config.operations.price_feed_validity,
         server_config.operations.price_feed_refresh_interval,
     );
@@ -135,6 +137,9 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         config.chain.total_fee,
     );
 
+    let quote_cache = QuoteCache::new(config.operations.quote_validity);
+    tokio::spawn(garbage_collector_worker(quote_cache.clone()));
+
     let state = AppState {
         node_rpc_url: config.chain.node_rpc_url.clone(),
         fee_destination: fee_destination_address,
@@ -154,7 +159,8 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         ),
         token_config: config.operations.token_config.clone(),
         prices,
-        native_token: config.chain.native_token,
+        quote_cache,
+        max_pocket_money: config.operations.max_pocket_money,
     };
 
     let app = Router::new()
