@@ -60,8 +60,14 @@ pub enum Command {
         private_key_file: String,
     },
 
-    /// Returns everything we have in the db about the identity of this transaction
+    /// Matches everything we have in the db about the identity of the transactions
     Revoke {
+        #[clap(flatten)]
+        db: Db,
+    },
+
+    /// Given a tx-hash reveal all the txs with the same viewing_key
+    Reveal {
         #[clap(flatten)]
         db: Db,
 

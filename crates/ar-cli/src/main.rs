@@ -8,6 +8,7 @@ mod collect_viewing_keys;
 mod db;
 mod generate;
 mod index_events;
+mod reveal;
 mod revoke;
 
 #[derive(Debug, Error)]
@@ -23,8 +24,11 @@ enum CliError {
     #[error("Error indexing events")]
     Index(#[from] index_events::IndexEventsError),
 
-    #[error("Error revoking anonymous tx")]
+    #[error("Error revoking txs")]
     Revoke(#[from] revoke::RevokeError),
+
+    #[error("Error revealing tx")]
+    Reveal(#[from] reveal::RevealError),
 
     #[error("Db Error")]
     Db(#[from] rusqlite::Error),
@@ -67,9 +71,13 @@ async fn main() -> Result<(), CliError> {
             let connection = db::init(&db.path)?;
             index_events::run(rpc_url, shielder_address, connection).await?
         }
-        cli::Command::Revoke { db, tx_hash } => {
+        cli::Command::Revoke { db } => {
             let connection = db::init(&db.path)?;
-            revoke::run(tx_hash, connection).await?
+            revoke::run(connection).await?
+        }
+        cli::Command::Reveal { db, tx_hash } => {
+            let connection = db::init(&db.path)?;
+            reveal::run(connection, tx_hash).await?
         }
     }
 

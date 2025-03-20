@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, Row};
 use thiserror::Error;
 
 pub fn init(path: &PathBuf) -> Result<Connection, rusqlite::Error> {
@@ -39,9 +39,10 @@ pub fn upsert_event(connection: &Connection, event: Event) -> Result<(), rusqlit
     Ok(())
 }
 
+/// Query event by it's tx_hash
 pub fn query_event(connection: &Connection, tx_hash: &[u8; 32]) -> Result<Event, rusqlite::Error> {
     connection.query_row(
-        "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events WHERE tx_hash=?1",
+        "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events WHERE tx_hash = ?1",
         [tx_hash],
         |row|  {
             Ok(Event {
@@ -54,11 +55,19 @@ pub fn query_event(connection: &Connection, tx_hash: &[u8; 32]) -> Result<Event,
         })
 }
 
-pub fn query_events(connection: &Connection) -> Result<Vec<Event>, rusqlite::Error> {
-    let mut query = connection.prepare(
-        "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events",
-    )?;
-    let result = query.query_map([], |row| {
+/// Query events by optional viewing_key
+pub fn query_events(
+    connection: &Connection,
+    viewing_key: Option<Vec<u8>>,
+) -> Result<Vec<Event>, rusqlite::Error> {
+    let statement = match viewing_key {
+        Some(_) => "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events where viewing_key = ?1", 
+        None => "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events", 
+    };
+
+    let mut query = connection.prepare(statement)?;
+
+    let f = |row: &Row| -> Result<Event, rusqlite::Error> {
         Ok(Event {
             tx_hash: row.get(0)?,
             block_number: row.get(1)?,
@@ -66,10 +75,15 @@ pub fn query_events(connection: &Connection) -> Result<Vec<Event>, rusqlite::Err
             mac_commitment: row.get(3)?,
             viewing_key: row.get(4)?,
         })
-    })?;
+    };
+
+    let results = match viewing_key {
+        Some(key) => query.query_map([key], f)?,
+        None => query.query_map([], f)?,
+    };
 
     let mut events = vec![];
-    for r in result {
+    for r in results {
         events.push(r?);
     }
 

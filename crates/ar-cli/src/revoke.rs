@@ -1,3 +1,4 @@
+use log::info;
 use rusqlite::Connection;
 use shielder_circuits::{poseidon::off_circuit::hash, Fr};
 use thiserror::Error;
@@ -21,9 +22,9 @@ pub enum RevokeError {
 /// where:
 /// - r = mac_salt from the tx
 /// - k \in keys
-pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), RevokeError> {
+pub async fn run(connection: Connection) -> Result<(), RevokeError> {
     let keys = db::query_viewing_keys(&connection)?;
-    let events = db::query_events(&connection)?;
+    let events = db::query_events(&connection, None)?;
 
     for Event {
         mac_commitment,
@@ -55,6 +56,7 @@ pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), Revok
         }
     }
 
+    info!("Done");
     Ok(())
 }
 
