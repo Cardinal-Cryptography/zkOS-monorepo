@@ -101,10 +101,11 @@ mod tests {
     use tokio::time::sleep;
 
     use crate::quote_cache::{
-        CachedQuote, QuoteCache, CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION,
+        garbage_collector_worker, CachedQuote, QuoteCache,
+        CACHE_SIZE_THAT_TRIGGERS_GARBAGE_COLLECTION,
     };
 
-    const VALIDITY: Duration = Duration::from_millis(500);
+    const VALIDITY: Duration = Duration::from_millis(100);
 
     fn quote_cache() -> QuoteCache {
         QuoteCache::new(VALIDITY)
@@ -201,6 +202,26 @@ mod tests {
             .await;
 
         // Garbage collection was triggered.
+        assert_eq!(cache.cache.lock().await.len(), 0);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn garbage_collection_worker_works() {
+        let cache = quote_cache();
+        tokio::spawn(garbage_collector_worker(cache.clone()));
+
+        let now = OffsetDateTime::now_utc();
+
+        cache.store_quote_response(ith_quote(1), now).await;
+        cache.store_quote_response(ith_quote(2), now).await;
+
+        // Both quotes are valid.
+        assert_eq!(cache.cache.lock().await.len(), 2);
+
+        // Garbage collection should be triggered after 10x validity.
+        sleep(VALIDITY * 12).await;
+
+        // Both quotes should have been reaped.
         assert_eq!(cache.cache.lock().await.len(), 0);
     }
 }
