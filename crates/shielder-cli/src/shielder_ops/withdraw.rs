@@ -169,5 +169,6 @@ async fn prepare_relayer_query(
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,
+        pocket_money: U256::ZERO,
     })
 }
