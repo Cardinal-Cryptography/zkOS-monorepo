@@ -20,28 +20,41 @@ pub enum RevokeError {
 pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), RevokeError> {
     let keys = db::query_viewing_keys(&connection)?;
     let events = db::query_events(&connection)?;
+    println!("@1 {events:?}");
 
     for Event {
         mac_commitment,
         mac_salt,
         viewing_key,
-        ..
+        tx_hash,
+        block_number,
     } in events
     {
         if viewing_key.is_none() {
             let commitment = blob_to_field(&mac_commitment)?;
 
-            for ViewingKey { viewing_key } in &keys {
-                let maybe_commitment =
-                    hash(&[blob_to_field(&mac_salt)?, blob_to_field(&viewing_key)?]);
+            for ViewingKey { viewing_key: key } in &keys {
+                let maybe_commitment = hash(&[blob_to_field(&mac_salt)?, blob_to_field(key)?]);
 
                 if commitment.eq(&maybe_commitment) {
-                    // TODO: upsert key
+                    db::upsert_event(
+                        &connection,
+                        Event {
+                            tx_hash,
+                            block_number,
+                            mac_salt,
+                            mac_commitment,
+                            viewing_key: Some(key.clone()),
+                        },
+                    )?;
                     break;
                 }
             }
         }
     }
+
+    let events = db::query_events(&connection)?;
+    println!("@2 {events:?}");
 
     Ok(())
 }
