@@ -8,7 +8,7 @@ mod collect_viewing_keys;
 mod db;
 mod generate;
 mod index_events;
-mod reveal;
+mod revoke;
 
 #[derive(Debug, Error)]
 #[error(transparent)]
