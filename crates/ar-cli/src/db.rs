@@ -46,7 +46,7 @@ pub fn upsert_event(connection: &Connection, event: Event) -> Result<(), rusqlit
 
 #[derive(Debug)]
 pub struct ViewingKey {
-    viewing_key: Vec<u8>,
+    pub viewing_key: Vec<u8>,
 }
 
 pub fn create_viewing_keys_table(connection: &Connection) -> Result<(), rusqlite::Error> {

@@ -34,12 +34,6 @@ async fn main() -> Result<(), CliError> {
 
     info!("{:#?}", &config);
 
-    // if let cli::Command::IndexEvents { db, .. } | cli::Command::CollectKeys { db, .. } =
-    //     &config.command
-    // {
-    //     db::init(&db.path)?;
-    // }
-
     match &config.command {
         cli::Command::Generate {
             dir,
@@ -56,7 +50,8 @@ async fn main() -> Result<(), CliError> {
             db,
         } => {
             let connection = db::init(&db.path)?;
-            collect_viewing_keys::run(rpc_url, shielder_address, private_key_file).await?
+            collect_viewing_keys::run(rpc_url, shielder_address, private_key_file, connection)
+                .await?
         }
         cli::Command::IndexEvents {
             common:

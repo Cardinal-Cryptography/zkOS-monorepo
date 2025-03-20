@@ -13,6 +13,7 @@ use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
 use hex::FromHexError;
 use log::{debug, info, trace};
+use rusqlite::Connection;
 use shielder_circuits::{grumpkin, Fr, GrumpkinPointAffine};
 use shielder_contract::{
     providers::create_simple_provider,
@@ -23,6 +24,8 @@ use shielder_contract::{
 };
 use thiserror::Error;
 use type_conversions::u256_to_field;
+
+use crate::db::{self, ViewingKey};
 
 const BATCH_SIZE: usize = 10_000;
 
@@ -44,6 +47,9 @@ pub enum CollectKeysError {
 
     #[error("Error converting from a little-endian byte representation to grumpkin::Fr")]
     NotAGrumpkinBaseFieldElement,
+
+    #[error("Error while persisting data")]
+    Db(#[from] rusqlite::Error),
 }
 
 // Goes back in transaction history and collects all viewing keys
@@ -55,6 +61,7 @@ pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
     private_key_file: &str,
+    connection: Connection,
 ) -> Result<(), CollectKeysError> {
     let provider = create_simple_provider(rpc_url).await?;
     let last_finalized_block_number = provider.get_block_number().await?;
@@ -62,6 +69,8 @@ pub async fn run(
     let private_key = grumpkin::Fr::from_bytes(&private_key_bytes(private_key_file)?)
         .into_option()
         .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
+
+    db::create_viewing_keys_table(&connection)?;
 
     for block_number in 0..=last_finalized_block_number {
         if let Some(block) = provider
@@ -85,6 +94,7 @@ pub async fn run(
                             debug!("Processing newAccountNative transaction {tx:?}");
 
                             decode_and_persist(
+                                &connection,
                                 symKeyEncryptionC1X,
                                 symKeyEncryptionC1Y,
                                 symKeyEncryptionC2X,
@@ -103,6 +113,7 @@ pub async fn run(
                         {
                             debug!("Processing newAccountERC20 transaction {tx:?}");
                             decode_and_persist(
+                                &connection,
                                 symKeyEncryptionC1X,
                                 symKeyEncryptionC1Y,
                                 symKeyEncryptionC2X,
@@ -120,26 +131,27 @@ pub async fn run(
 }
 
 fn decode_and_persist(
-    symKeyEncryptionC1X: U256,
-    symKeyEncryptionC1Y: U256,
-    symKeyEncryptionC2X: U256,
-    symKeyEncryptionC2Y: U256,
+    connection: &Connection,
+    c1x: U256,
+    c1y: U256,
+    c2x: U256,
+    c2y: U256,
     private_key: grumpkin::Fr,
 ) -> Result<(), CollectKeysError> {
-    let ciphertext1 = GrumpkinPointAffine::new(
-        u256_to_field(symKeyEncryptionC1X),
-        u256_to_field(symKeyEncryptionC1Y),
-    );
-    let ciphertext2 = GrumpkinPointAffine::new(
-        u256_to_field(symKeyEncryptionC2X),
-        u256_to_field(symKeyEncryptionC2Y),
-    );
+    let ciphertext1 = GrumpkinPointAffine::new(u256_to_field(c1x), u256_to_field(c1y));
+    let ciphertext2 = GrumpkinPointAffine::new(u256_to_field(c2x), u256_to_field(c2y));
 
-    let GrumpkinPointAffine { x: viewing_key, .. } =
+    let GrumpkinPointAffine { x, .. } =
         shielder_circuits::decrypt(ciphertext1.into(), ciphertext2.into(), private_key).into();
 
-    // TODO: persist
-    info!("Viewing key decoding {viewing_key:?}");
+    info!("Viewing key decoding {x:?}");
+
+    db::upsert_viewing_key(
+        connection,
+        ViewingKey {
+            viewing_key: x.to_bytes().to_vec(),
+        },
+    )?;
 
     Ok(())
 }
