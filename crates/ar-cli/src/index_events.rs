@@ -109,6 +109,8 @@ fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), IndexEven
         };
     }
 
+    info!("Done");
+
     Ok(())
 }
 

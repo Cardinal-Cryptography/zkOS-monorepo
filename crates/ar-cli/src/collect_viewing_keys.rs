@@ -127,6 +127,8 @@ pub async fn run(
         }
     }
 
+    info!("Done");
+
     Ok(())
 }
 

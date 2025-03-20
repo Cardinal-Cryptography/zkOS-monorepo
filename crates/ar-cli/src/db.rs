@@ -64,7 +64,7 @@ pub fn upsert_viewing_key(
     viewing_key: ViewingKey,
 ) -> Result<(), rusqlite::Error> {
     connection.execute(
-        "REPLACE INTO viewing_key (viewing_key) VALUES (?1)",
+        "REPLACE INTO viewing_keys (viewing_key) VALUES (?1)",
         (viewing_key.viewing_key,),
     )?;
 
