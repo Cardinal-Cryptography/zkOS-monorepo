@@ -189,8 +189,8 @@ mod tests {
         let id = U256::from_str_radix(src, 10).unwrap();
         let id_in_the_field: Fr = u256_to_field(id);
 
-        let repr = id_in_the_field.to_bytes();
-        let he = hex::encode(repr);
+        // let repr = id_in_the_field.to_bytes();
+        // let he = hex::encode(repr);
 
         let k = shielder_circuits::derive_viewing_key(id_in_the_field);
 
