@@ -15,12 +15,15 @@ pub enum RevokeError {
     FieldConversion(String),
 }
 
-/// Given tx-hash find all the matching txs
-///   - for every k: look if mac matches: mac_commitment = h(k, r), where r = mac_salt from the tx
+/// Revoke known txs
+///
+/// For every event look if mac_commitment matches h(k, r),
+/// where:
+/// - r = mac_salt from the tx
+/// - k \in keys
 pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), RevokeError> {
     let keys = db::query_viewing_keys(&connection)?;
     let events = db::query_events(&connection)?;
-    println!("@1 {events:?}");
 
     for Event {
         mac_commitment,
@@ -35,7 +38,6 @@ pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), Revok
 
             for ViewingKey { viewing_key: key } in &keys {
                 let maybe_commitment = hash(&[blob_to_field(&mac_salt)?, blob_to_field(key)?]);
-
                 if commitment.eq(&maybe_commitment) {
                     db::upsert_event(
                         &connection,
@@ -52,9 +54,6 @@ pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), Revok
             }
         }
     }
-
-    let events = db::query_events(&connection)?;
-    println!("@2 {events:?}");
 
     Ok(())
 }
