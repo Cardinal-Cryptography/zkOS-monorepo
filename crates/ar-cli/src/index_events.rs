@@ -7,7 +7,7 @@ use alloy_rpc_types::{Filter, Log};
 use alloy_sol_types::{Error as SolError, SolEvent};
 use alloy_transport::TransportErrorKind;
 use log::{debug, info};
-use rusqlite::Connection;
+use rusqlite::{ffi::sqlite3_changegroup, Connection};
 use shielder_circuits::Fr;
 use shielder_contract::{
     providers::create_simple_provider,
@@ -17,7 +17,7 @@ use shielder_contract::{
 use thiserror::Error;
 use type_conversions::u256_to_field;
 
-use crate::db::Event;
+use crate::db::{self, Event};
 
 const BATCH_SIZE: usize = 10_000;
 
@@ -36,6 +36,9 @@ pub enum IndexEventsError {
 
     #[error("Event is missing some data")]
     MissingData,
+
+    #[error("Error while persisting data")]
+    Db(#[from] rusqlite::Error),
 }
 
 pub async fn run(
@@ -47,7 +50,7 @@ pub async fn run(
     let current_height = provider.get_block_number().await?;
     let base_filter = Filter::new().address(*shielder_address);
 
-    let connection = Arc::new(connection);
+    db::create_events_table(&connection)?;
 
     for block_number in (0..=current_height).step_by(BATCH_SIZE) {
         let last_batch_block = min(block_number + BATCH_SIZE as u64 - 1, current_height);
@@ -63,64 +66,79 @@ pub async fn run(
             raw_logs.len()
         );
 
-        process_logs(raw_logs, Arc::clone(&connection))?;
+        process_logs(raw_logs, &connection)?;
     }
 
     Ok(())
 }
 
-// TODO persist
-fn process_logs(logs: Vec<Log>, connection: Arc<Connection>) -> Result<(), IndexEventsError> {
+fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), IndexEventsError> {
     for log in logs {
         let tx_hash = log.transaction_hash.ok_or(IndexEventsError::MissingData)?.0;
         let block_number = log.block_number.ok_or(IndexEventsError::MissingData)?;
 
         match log.topic0() {
             Some(&NewAccount::SIGNATURE_HASH) => {
-                let NewAccount {
-                    macSalt,
-                    macCommitment,
-                    ..
-                } = NewAccount::decode_log_data(log.data(), true)?;
+                // let NewAccount {
+                //     macSalt,
+                //     macCommitment,
+                //     ..
+                // } =
 
-                let mac_salt = u256_to_field::<Fr>(macSalt).to_bytes();
-                let mac_commitment = u256_to_field::<Fr>(macCommitment).to_bytes();
-
-                let event = Event {
-                    tx_hash: tx_hash.to_vec(),
+                persist_event(
+                    connection,
+                    ShielderContractEvents::NewAccount(NewAccount::decode_log_data(
+                        log.data(),
+                        true,
+                    )?),
+                    &tx_hash,
                     block_number,
-                    mac_salt: mac_salt.to_vec(),
-                    mac_commitment: mac_commitment.to_vec(),
-                    viewing_key: None,
-                };
+                )?;
             }
             Some(&Deposit::SIGNATURE_HASH) => {}
             Some(&Withdraw::SIGNATURE_HASH) => {}
-            _ => {}
+            _ => debug!("Skipping log with an unknown topic {:?}", log.topic0()),
         };
     }
 
-    // logs.into_iter()
-    //     .filter_map(|event| {
-    //         let _ = event.transaction_hash;
-    //         let _ = event.block_number;
+    Ok(())
+}
 
-    //         let shielder_event = match *event.topic0()? {
-    //             NewAccount::SIGNATURE_HASH => NewAccount::decode_log_data(event.data(), true)
-    //                 .map(ShielderContractEvents::NewAccount),
+fn persist_event(
+    connection: &Connection,
+    event: ShielderContractEvents,
+    tx_hash: &[u8; 32],
+    block_number: u64,
+) -> Result<(), rusqlite::Error> {
+    if let ShielderContractEvents::NewAccount(NewAccount {
+        macSalt,
+        macCommitment,
+        ..
+    })
+    | ShielderContractEvents::Deposit(Deposit {
+        macSalt,
+        macCommitment,
+        ..
+    })
+    | ShielderContractEvents::Withdraw(Withdraw {
+        macSalt,
+        macCommitment,
+        ..
+    }) = event
+    {
+        let mac_salt = u256_to_field::<Fr>(macSalt).to_bytes();
+        let mac_commitment = u256_to_field::<Fr>(macCommitment).to_bytes();
 
-    //             Deposit::SIGNATURE_HASH => Deposit::decode_log_data(event.data(), true)
-    //                 .map(ShielderContractEvents::Deposit),
+        let event = Event {
+            tx_hash: tx_hash.to_vec(),
+            block_number,
+            mac_salt: mac_salt.to_vec(),
+            mac_commitment: mac_commitment.to_vec(),
+            viewing_key: None,
+        };
+        info!("Persisting event {event:?}");
+        return db::upsert_event(connection, event);
+    }
 
-    //             Withdraw::SIGNATURE_HASH => Withdraw::decode_log_data(event.data(), true)
-    //                 .map(ShielderContractEvents::Withdraw),
-
-    //             _ => Err(SolError::Other(Cow::Borrowed("should not get here"))),
-    //         }
-    //         .ok()?;
-
-    //         Some(shielder_event)
-    //     })
-    //     .collect()
     Ok(())
 }
