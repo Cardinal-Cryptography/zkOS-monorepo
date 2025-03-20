@@ -62,6 +62,9 @@ pub enum Command {
 
     /// Returns everything we have in the db about the identity of this transaction
     Revoke {
+        #[clap(flatten)]
+        db: Db,
+
         #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
         tx_hash: [u8; 32],
     },

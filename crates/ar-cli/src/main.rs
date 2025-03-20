@@ -17,11 +17,14 @@ enum CliError {
     #[error("Error generating keys")]
     Generate(#[from] generate::GenerateError),
 
-    #[error("Error revoking anonymity")]
-    Revoke(#[from] collect_viewing_keys::CollectKeysError),
+    #[error("Error collecting viewing keys")]
+    CollectKeys(#[from] collect_viewing_keys::CollectKeysError),
 
     #[error("Error indexing events")]
     Index(#[from] index_events::IndexEventsError),
+
+    #[error("Error revoking anonymous tx")]
+    Revoke(#[from] revoke::RevokeError),
 
     #[error("Db Error")]
     Db(#[from] rusqlite::Error),
@@ -64,7 +67,10 @@ async fn main() -> Result<(), CliError> {
             let connection = db::init(&db.path)?;
             index_events::run(rpc_url, shielder_address, connection).await?
         }
-        cli::Command::Revoke { tx_hash } => todo!(),
+        cli::Command::Revoke { db, tx_hash } => {
+            let connection = db::init(&db.path)?;
+            revoke::run(tx_hash, connection).await?
+        }
     }
 
     Ok(())

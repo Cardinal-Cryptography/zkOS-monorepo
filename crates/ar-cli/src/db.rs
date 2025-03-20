@@ -70,3 +70,19 @@ pub fn upsert_viewing_key(
 
     Ok(())
 }
+
+pub fn query_viewing_keys(connection: &Connection) -> Result<Vec<ViewingKey>, rusqlite::Error> {
+    let mut query = connection.prepare("SELECT viewing_key FROM viewing_keys")?;
+    let result = query.query_map([], |row| {
+        Ok(ViewingKey {
+            viewing_key: row.get(0)?,
+        })
+    })?;
+
+    let mut keys = vec![];
+    for r in result {
+        keys.push(r?);
+    }
+
+    Ok(keys)
+}
