@@ -46,8 +46,8 @@ pub fn upsert_event(connection: &Connection, event: Event) -> Result<(), rusqlit
 
 pub fn query_event(connection: &Connection, tx_hash: &[u8; 32]) -> Result<Event, rusqlite::Error> {
     connection.query_row(
-        "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM preferences WHERE tx_hash=?1",
-        [*tx_hash],
+        "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events WHERE tx_hash=?1",
+        [tx_hash],
         |row|  {
             Ok(Event {
                 tx_hash: row.get(0)?,
@@ -57,6 +57,22 @@ pub fn query_event(connection: &Connection, tx_hash: &[u8; 32]) -> Result<Event,
                 viewing_key: row.get(4)?,
             })
         })
+}
+
+pub fn query_events(connection: &Connection) -> Result<Vec<Event>, rusqlite::Error> {
+    // let mut query = connection.prepare("SELECT viewing_key FROM viewing_keys")?;
+    // let result = query.query_map([], |row| {
+    //     Ok(ViewingKey {
+    //         viewing_key: row.get(0)?,
+    //     })
+    // })?;
+
+    // let mut keys = vec![];
+    // for r in result {
+    //     keys.push(r?);
+    // }
+
+    // Ok(keys)
 }
 
 #[derive(Debug)]

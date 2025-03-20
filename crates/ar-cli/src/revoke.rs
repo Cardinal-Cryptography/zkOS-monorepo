@@ -18,5 +18,9 @@ pub async fn run(tx_hash: &[u8; 32], connection: Connection) -> Result<(), Revok
 
     println!("{keys:?}");
 
+    let evt = db::query_event(&connection, tx_hash)?;
+
+    println!("{evt:?}");
+
     Ok(())
 }
