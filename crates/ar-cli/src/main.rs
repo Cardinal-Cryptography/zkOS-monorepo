@@ -16,10 +16,15 @@ mod reveal;
 enum CliError {
     #[error("Error generating keys")]
     Generate(#[from] generate::GenerateError),
+
     #[error("Error revoking anonymity")]
     Revoke(#[from] collect_viewing_keys::CollectKeysError),
+
     #[error("Error indexing events")]
     Index(#[from] index_events::IndexEventsError),
+
+    #[error("Db Error")]
+    Db(#[from] rusqlite::Error),
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -29,12 +34,18 @@ async fn main() -> Result<(), CliError> {
 
     info!("{:#?}", &config);
 
-    match config.command {
+    if let cli::Command::IndexEvents { db, .. } | cli::Command::CollectKeys { db, .. } =
+        &config.command
+    {
+        db::init(&db.path)?;
+    }
+
+    match &config.command {
         cli::Command::Generate {
             dir,
             seed,
             endianess,
-        } => generate::run(&seed, dir, endianess)?,
+        } => generate::run(seed, dir, endianess)?,
         cli::Command::CollectKeys {
             private_key_file,
             common:
@@ -42,14 +53,16 @@ async fn main() -> Result<(), CliError> {
                     rpc_url,
                     shielder_address,
                 },
-        } => collect_viewing_keys::run(&rpc_url, shielder_address, private_key_file).await?,
+            ..
+        } => collect_viewing_keys::run(rpc_url, shielder_address, private_key_file).await?,
         cli::Command::IndexEvents {
             common:
                 Common {
                     rpc_url,
                     shielder_address,
                 },
-        } => index_events::run(&rpc_url, shielder_address).await?,
+            ..
+        } => index_events::run(rpc_url, shielder_address).await?,
     }
 
     Ok(())

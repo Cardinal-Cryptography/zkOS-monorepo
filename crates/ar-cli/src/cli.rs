@@ -21,7 +21,7 @@ pub enum Endianess {
 pub enum Command {
     /// Generate symmetric encryption keys
     Generate {
-        /// Directory where the generates keys are to be written to.
+        /// Directory where the generated keys are to be written to.
         ///
         /// Existing files will be overwritten!
         #[arg(long, default_value=get_default_dir())]
@@ -43,6 +43,9 @@ pub enum Command {
     IndexEvents {
         #[clap(flatten)]
         common: Common,
+
+        #[clap(flatten)]
+        db: Db,
     },
 
     /// Read newAccount on-chain transactions and collect viewing keys
@@ -50,9 +53,18 @@ pub enum Command {
         #[clap(flatten)]
         common: Common,
 
+        #[clap(flatten)]
+        db: Db,
+
         #[arg(long, default_value = "./private_key.bin")]
         private_key_file: String,
     },
+}
+
+#[derive(Debug, Args)]
+pub struct Db {
+    #[arg(long, default_value = "./ar_db.db3")]
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Args)]

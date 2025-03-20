@@ -27,10 +27,10 @@ pub enum IndexEventsError {
     Rpc(#[from] RpcError<TransportErrorKind>),
 }
 
-pub async fn run(rpc_url: &str, shielder_address: Address) -> Result<(), IndexEventsError> {
+pub async fn run(rpc_url: &str, shielder_address: &Address) -> Result<(), IndexEventsError> {
     let provider = create_simple_provider(rpc_url).await?;
     let current_height = provider.get_block_number().await?;
-    let base_filter = Filter::new().address(shielder_address);
+    let base_filter = Filter::new().address(*shielder_address);
 
     for block_number in (0..=current_height).step_by(BATCH_SIZE) {
         let last_batch_block = min(block_number + BATCH_SIZE as u64 - 1, current_height);

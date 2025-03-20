@@ -26,7 +26,11 @@ fn spit(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> 
     Ok(())
 }
 
-pub fn run(seed: &[u8; 32], dir: PathBuf, endianess: cli::Endianess) -> Result<(), GenerateError> {
+pub fn run(
+    seed: &[u8; 32],
+    dir: &PathBuf,
+    endianess: &cli::Endianess,
+) -> Result<(), GenerateError> {
     debug!("Seeding rng with : {seed:?}");
 
     let mut rng = ChaCha12Rng::from_seed(*seed);

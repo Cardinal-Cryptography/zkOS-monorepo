@@ -49,8 +49,8 @@ pub enum CollectKeysError {
 // TODO: build DB view of history
 pub async fn run(
     rpc_url: &str,
-    shielder_address: Address,
-    private_key_file: String,
+    shielder_address: &Address,
+    private_key_file: &str,
 ) -> Result<(), CollectKeysError> {
     // 1) TODO: go back in history and collect ALL viewing keys
     //       - look for new_account txs
@@ -70,7 +70,7 @@ pub async fn run(
         {
             if let Some(txs) = block.transactions.as_transactions() {
                 for tx in txs {
-                    if tx.to().eq(&Some(shielder_address)) {
+                    if tx.to().eq(&Some(*shielder_address)) {
                         if let Ok(tx) = newAccountNativeCall::abi_decode(tx.input(), false) {
                             debug!("Decoded newAccountNative transaction {tx:?}");
 

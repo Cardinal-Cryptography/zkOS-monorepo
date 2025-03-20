@@ -8,6 +8,6 @@ use thiserror::Error;
 // #[non_exhaustive]
 // pub enum DbError {}
 
-pub fn init(path: PathBuf) -> Result<Connection, rusqlite::Error> {
+pub fn init(path: &PathBuf) -> Result<Connection, rusqlite::Error> {
     Connection::open(path)
 }
