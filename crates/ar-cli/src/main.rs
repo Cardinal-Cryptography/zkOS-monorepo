@@ -5,6 +5,7 @@ use thiserror::Error;
 
 mod cli;
 mod collect_viewing_keys;
+mod db;
 mod generate;
 mod index_events;
 mod reveal;
