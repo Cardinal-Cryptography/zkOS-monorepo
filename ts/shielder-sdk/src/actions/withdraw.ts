@@ -229,7 +229,8 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       calldata: { pubInputs, proof },
       amount,
-      withdrawalAddress
+      withdrawalAddress,
+      pocketMoney
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
@@ -243,7 +244,8 @@ export class WithdrawAction extends NoteAction {
         proof,
         withdrawalAddress,
         scalarToBigint(pubInputs.macSalt),
-        scalarToBigint(pubInputs.macCommitment)
+        scalarToBigint(pubInputs.macCommitment),
+        pocketMoney
       )
       .catch((e) => {
         if (e instanceof OutdatedSdkError) {

@@ -80,6 +80,7 @@ impl TestContext {
                 fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
                 mac_salt: U256::ZERO,
                 mac_commitment: U256::ZERO,
+                pocket_money: U256::ZERO,
             })
             .send()
             .await
