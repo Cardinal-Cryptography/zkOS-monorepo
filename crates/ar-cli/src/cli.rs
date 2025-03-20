@@ -1,7 +1,7 @@
 use std::{env, ffi::OsString, path::PathBuf};
 
 use alloy_primitives::Address;
-use clap::{builder::ValueParser, Parser, Subcommand};
+use clap::{builder::ValueParser, Arg, Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(name = "ar-cli", version)]
@@ -19,6 +19,7 @@ pub enum Endianess {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Generate symmetric encryption keys
     Generate {
         /// Directory where the generates keys are to be written to.
         ///
@@ -38,18 +39,29 @@ pub enum Command {
         endianess: Endianess,
     },
 
-    Revoke {
-        // #[arg(long)]
-        // tx_hash: String,
-        #[arg(long)]
-        shielder_address: Address,
+    /// Read newAccount on-chain transactions and collect viewing keys
+    IndexEvents {
+        #[clap(flatten)]
+        common: Common,
+    },
 
-        #[arg(long, default_value = "http://localhost:8545")]
-        rpc_url: String,
+    /// Read newAccount on-chain transactions and collect viewing keys
+    CollectKeys {
+        #[clap(flatten)]
+        common: Common,
 
         #[arg(long, default_value = "./private_key.bin")]
         private_key_file: String,
     },
+}
+
+#[derive(Debug, Args)]
+pub struct Common {
+    #[arg(long)]
+    pub shielder_address: Address,
+
+    #[arg(long, default_value = "http://localhost:8545")]
+    pub rpc_url: String,
 }
 
 fn parse_hex_as_seed(input: &str) -> Result<[u8; 32], &'static str> {

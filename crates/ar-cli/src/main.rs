@@ -1,20 +1,24 @@
 use clap::Parser;
-use cli::Cli;
+use cli::{Cli, Common};
 use log::info;
 use thiserror::Error;
 
 mod cli;
+mod collect_viewing_keys;
 mod generate;
-mod revoke;
+mod index_events;
+mod reveal;
 
 #[derive(Debug, Error)]
 #[error(transparent)]
 #[non_exhaustive]
 enum CliError {
     #[error("Error generating keys")]
-    Generator(#[from] generate::GenerateError),
+    Generate(#[from] generate::GenerateError),
     #[error("Error revoking anonymity")]
-    Revoke(#[from] revoke::RevokeError),
+    Revoke(#[from] collect_viewing_keys::CollectKeysError),
+    #[error("Error indexing events")]
+    Index(#[from] index_events::IndexEventsError),
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -30,12 +34,21 @@ async fn main() -> Result<(), CliError> {
             seed,
             endianess,
         } => generate::run(&seed, dir, endianess)?,
-        cli::Command::Revoke {
-            rpc_url,
-            shielder_address,
+        cli::Command::CollectKeys {
             private_key_file,
-            ..
-        } => revoke::run(&rpc_url, shielder_address, private_key_file).await?,
+            common:
+                Common {
+                    rpc_url,
+                    shielder_address,
+                },
+        } => collect_viewing_keys::run(&rpc_url, shielder_address, private_key_file).await?,
+        cli::Command::IndexEvents {
+            common:
+                Common {
+                    rpc_url,
+                    shielder_address,
+                },
+        } => index_events::run(&rpc_url, shielder_address).await?,
     }
 
     Ok(())
