@@ -124,7 +124,8 @@ contract Shielder is
         address initialOwner,
         uint256 _depositLimit,
         uint256 _anonymityRevokerPublicKeyX,
-        uint256 _anonymityRevokerPublicKeyY
+        uint256 _anonymityRevokerPublicKeyY,
+        bool _isArbitrumChain
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
@@ -134,6 +135,7 @@ contract Shielder is
             _anonymityRevokerPublicKeyX,
             _anonymityRevokerPublicKeyY
         );
+        __Nullifiers_init(_isArbitrumChain);
         _pause();
     }
 
