@@ -35,7 +35,7 @@ pub async fn withdraw(
 
     let total_fee = get_relayer_total_fee(app_state, token).await?;
     let amount = U256::from(amount) + total_fee;
-    let shielded_amount = app_state.account.shielded_amount[&token];
+    let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
     if amount > shielded_amount {
         bail!("Not enough funds to withdraw");
@@ -62,13 +62,17 @@ pub async fn withdraw(
     let withdraw_event = get_event::<Withdraw>(&provider, tx_hash, block_hash).await?;
     debug!("Withdraw event: {withdraw_event:?}");
 
-    app_state.account.register_action(ShielderAction::withdraw(
-        amount,
-        withdraw_event.newNoteIndex,
-        tx_hash,
-        to,
-        token,
-    ));
+    app_state
+        .accounts
+        .get_mut(&token.address())
+        .unwrap()
+        .register_action(ShielderAction::withdraw(
+            amount,
+            withdraw_event.newNoteIndex,
+            tx_hash,
+            to,
+            token,
+        ));
     info!("Withdrawn {amount} tokens");
     Ok(())
 }
@@ -132,8 +136,7 @@ async fn prepare_relayer_query(
     relayer_fee: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
-    let leaf_index = app_state
-        .account
+    let leaf_index = app_state.accounts[&token.address()]
         .current_leaf_index()
         .expect("Deposit mustn't be the first action");
     let (merkle_root, merkle_path) =
@@ -145,7 +148,7 @@ async fn prepare_relayer_query(
         .get_chain_id()
         .await?;
 
-    let calldata = app_state.account.prepare_call::<WithdrawCallType>(
+    let calldata = app_state.accounts[&token.address()].prepare_call::<WithdrawCallType>(
         &params,
         &pk,
         token,

@@ -1,15 +1,20 @@
-use std::str::FromStr;
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    str::FromStr,
+};
 
 use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
-use shielder_account::ShielderAccount;
+use shielder_account::{ShielderAccount, Token};
+use shielder_circuits::poseidon::off_circuit::hash;
 use shielder_contract::{
     providers::create_simple_provider, ConnectionPolicy, ShielderContractError, ShielderUser,
 };
 use tracing::{debug, warn};
+use type_conversions::{address_to_field, field_to_u256, u256_to_field};
 
 /// The URL of the relayer RPC.
 #[derive(Clone, Eq, PartialEq, Debug, Default, Deserialize, Serialize)]
@@ -56,7 +61,7 @@ impl RelayerRpcUrl {
 /// zero, which is insecure and might get in conflict with other accounts (similarly set up)
 #[derive(Clone, Eq, PartialEq, Debug, Default, Deserialize, Serialize)]
 pub struct AppState {
-    pub account: ShielderAccount,
+    pub accounts: HashMap<Address, ShielderAccount>,
     pub node_rpc_url: String,
     pub contract_address: Address,
     pub relayer_rpc_url: RelayerRpcUrl,
@@ -70,11 +75,19 @@ impl AppState {
     /// Note: You SHOULD prefer using `Self::new` instead of `Default::default()`, unless you are
     /// writing single-actor tests.
     pub fn new(signing_key: &str) -> Self {
-        let seed = U256::from_str(signing_key).expect("Invalid key format - cannot cast to U256");
         Self {
-            account: ShielderAccount::new(seed),
+            accounts: HashMap::new(),
             signing_key: signing_key.into(),
             ..Default::default()
+        }
+    }
+
+    pub fn ensure_account_exist(&mut self, token: Token) {
+        if let Entry::Vacant(e) = self.accounts.entry(token.address()) {
+            let seed = U256::from_str(&self.signing_key)
+                .expect("Invalid key format - cannot cast to U256");
+            let id_per_token = hash(&[u256_to_field(seed), address_to_field(token.address())]);
+            e.insert(ShielderAccount::new(field_to_u256(id_per_token), token));
         }
     }
 

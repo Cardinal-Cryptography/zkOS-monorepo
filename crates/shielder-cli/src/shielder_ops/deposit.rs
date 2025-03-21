@@ -21,8 +21,7 @@ use crate::{
 
 pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
     let amount = U256::from(amount);
-    let leaf_index = app_state
-        .account
+    let leaf_index = app_state.accounts[&token.address()]
         .current_leaf_index()
         .expect("Deposit mustn't be the first action");
     let shielder_user = app_state.create_shielder_user();
@@ -50,12 +49,16 @@ pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Re
     .await?;
     debug!("Deposit event: {deposit_event:?}");
 
-    app_state.account.register_action(ShielderAction::deposit(
-        amount,
-        deposit_event.newNoteIndex,
-        tx_hash,
-        token,
-    ));
+    app_state
+        .accounts
+        .get_mut(&token.address())
+        .unwrap()
+        .register_action(ShielderAction::deposit(
+            amount,
+            deposit_event.newNoteIndex,
+            tx_hash,
+            token,
+        ));
     info!("Deposited {amount} tokens");
     Ok(())
 }
@@ -72,7 +75,6 @@ fn prepare_call(
         mac_salt: get_mac_salt(),
     };
 
-    Ok(app_state
-        .account
+    Ok(app_state.accounts[&token.address()]
         .prepare_call::<DepositCallType>(&params, &pk, token, amount, &extra))
 }

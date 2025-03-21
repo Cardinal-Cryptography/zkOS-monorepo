@@ -4,6 +4,7 @@ use alloy_primitives::Address;
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use inquire::Password;
+use shielder_account::Token;
 
 #[derive(Clone, Eq, PartialEq, Debug, Parser)]
 pub struct CliConfig {
@@ -51,6 +52,15 @@ pub enum Command {
     StateRead(StateReadCommand),
     #[clap(flatten)]
     ContractInteraction(ContractInteractionCommand),
+}
+
+impl Command {
+    pub fn token(&self) -> Option<Token> {
+        match self {
+            Command::ContractInteraction(cmd) => Some(cmd.token()),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Subcommand)]
@@ -104,6 +114,18 @@ pub enum ContractInteractionCommand {
     Withdraw(WithdrawCmd),
     /// Unshield some ERC20 tokens.
     WithdrawERC20(WithdrawERC20Cmd),
+}
+
+impl ContractInteractionCommand {
+    pub fn token(&self) -> Token {
+        use ContractInteractionCommand::*;
+        match self {
+            NewAccount(_) | Deposit(_) | Withdraw(_) => Token::Native,
+            NewAccountERC20(NewAccountERC20Cmd { token_address, .. })
+            | DepositERC20(DepositERC20Cmd { token_address, .. })
+            | WithdrawERC20(WithdrawERC20Cmd { token_address, .. }) => Token::ERC20(*token_address),
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]

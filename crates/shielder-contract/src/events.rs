@@ -12,15 +12,18 @@ pub async fn get_event<Event: SolEvent>(
     block_hash: BlockHash,
 ) -> ContractResult<Event> {
     let filter = Filter::new().at_block_hash(block_hash);
-    let log_data = provider
+    provider
         .get_logs(&filter)
         .await
         .map_err(ShielderContractError::ProviderError)?
         .iter()
-        .find(|log| log.transaction_hash == Some(tx_hash))
-        .ok_or(ShielderContractError::EventNotFound)?
-        .data()
-        .clone();
-
-    Event::decode_log_data(&log_data, true).map_err(|_| ShielderContractError::EventNotFound)
+        .filter_map(|log| {
+            if log.transaction_hash != Some(tx_hash) {
+                return None;
+            }
+            let log_data = log.data().clone();
+            Event::decode_log_data(&log_data, true).ok()
+        })
+        .next()
+        .ok_or(ShielderContractError::EventNotFound)
 }
