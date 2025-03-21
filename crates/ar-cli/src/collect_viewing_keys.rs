@@ -140,7 +140,7 @@ fn decode_and_persist(
     let GrumpkinPointAffine { x, .. } =
         shielder_circuits::decrypt(ciphertext1.into(), ciphertext2.into(), private_key).into();
 
-    info!("Viewing key decoding {x:?}");
+    debug!("Viewing key decoding {x:?}");
 
     db::upsert_viewing_key(
         connection,
