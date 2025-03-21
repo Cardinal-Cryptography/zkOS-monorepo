@@ -54,8 +54,7 @@ serde = { version = "1.0.203" }
 serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
-# shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "898c7ea" }
-shielder-circuits = { path = "/home/filip/CloudStation/aleph/zkOS-circuits/crates/shielder-circuits" }
+shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "491a0dd" }
 strum = { version = "0.27.1" }
 strum_macros = { version = "0.27.1" }
 testcontainers = { version = "0.19.0" }
