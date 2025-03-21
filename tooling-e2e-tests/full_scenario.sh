@@ -22,6 +22,7 @@ scenario() {
   alice deposit $(mtzero 100)
 
   alice new-account-erc20 $(mtzero 200) "${ERC20_CONTRACT_ADDRESS_1}"
+  alice deposit-erc20 $(mtzero 100) "${ERC20_CONTRACT_ADDRESS_1}"
 
   log_progress "✅ Some deposits made"
   alice display-account
