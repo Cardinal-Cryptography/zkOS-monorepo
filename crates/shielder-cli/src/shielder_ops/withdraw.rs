@@ -6,7 +6,7 @@ use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
     call_data::{
-        DepositCall, DepositCallType, DepositExtra, Token, WithdrawCall, WithdrawCallType,
+         Token, WithdrawCallType,
         WithdrawExtra,
     },
     ShielderAction,
@@ -18,7 +18,6 @@ use shielder_contract::{
 };
 use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
 use shielder_setup::{
-    consts::{ARITY, TREE_HEIGHT},
     version::contract_version,
 };
 use tokio::time::sleep;
