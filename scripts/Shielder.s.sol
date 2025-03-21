@@ -38,7 +38,7 @@ contract DeployShielderScript is Script {
                 arPublicKeyX,
                 arPublicKeyY,
                 isArbitrumChain
-            ) // set deposit limit to max
+            )
         );
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));
