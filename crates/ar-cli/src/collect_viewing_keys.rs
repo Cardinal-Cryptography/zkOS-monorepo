@@ -55,6 +55,7 @@ pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
     private_key_file: &str,
+    from_block: u64,
     connection: Connection,
 ) -> Result<(), CollectKeysError> {
     let provider = create_simple_provider(rpc_url).await?;
@@ -65,8 +66,9 @@ pub async fn run(
         .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
 
     db::create_viewing_keys_table(&connection)?;
+    // TODO: checkpoint tx blocks
 
-    for block_number in 0..=last_finalized_block_number {
+    for block_number in from_block..=last_finalized_block_number {
         if let Some(block) = provider
             .get_block_by_number(
                 BlockNumberOrTag::Number(block_number),

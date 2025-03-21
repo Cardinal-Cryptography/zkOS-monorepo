@@ -92,6 +92,9 @@ pub struct Common {
 
     #[arg(long, default_value = "http://localhost:8545")]
     pub rpc_url: String,
+
+    #[arg(long, default_value = "0")]
+    pub from_block: u64,
 }
 
 fn parse_32byte_array(input: &str) -> Result<[u8; 32], &'static str> {

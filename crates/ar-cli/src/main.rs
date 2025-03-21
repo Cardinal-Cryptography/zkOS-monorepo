@@ -53,24 +53,39 @@ async fn main() -> Result<(), CliError> {
                 Common {
                     rpc_url,
                     shielder_address,
+                    from_block,
                 },
             db,
         } => {
             let connection = db::init(&db.path)?;
-            collect_viewing_keys::run(rpc_url, shielder_address, private_key_file, connection)
-                .await?
+            collect_viewing_keys::run(
+                rpc_url,
+                shielder_address,
+                private_key_file,
+                *from_block,
+                connection,
+            )
+            .await?
         }
         cli::Command::IndexEvents {
             common:
                 Common {
                     rpc_url,
                     shielder_address,
+                    from_block,
                 },
             db,
             batch_size,
         } => {
             let connection = db::init(&db.path)?;
-            index_events::run(rpc_url, shielder_address, *batch_size, connection).await?
+            index_events::run(
+                rpc_url,
+                shielder_address,
+                *from_block,
+                *batch_size,
+                connection,
+            )
+            .await?
         }
         cli::Command::Revoke { db } => {
             let connection = db::init(&db.path)?;

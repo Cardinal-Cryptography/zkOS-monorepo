@@ -42,6 +42,7 @@ pub enum IndexEventsError {
 pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
+    from_block: u64,
     batch_size: usize,
     connection: Connection,
 ) -> Result<(), IndexEventsError> {
@@ -50,8 +51,9 @@ pub async fn run(
     let base_filter = Filter::new().address(*shielder_address);
 
     db::create_events_table(&connection)?;
+    // TODO: checkpoint event blocks
 
-    for block_number in (0..=current_height).step_by(batch_size) {
+    for block_number in (from_block..=current_height).step_by(batch_size) {
         let last_batch_block = min(block_number + batch_size as u64 - 1, current_height);
         let filter = base_filter
             .clone()
