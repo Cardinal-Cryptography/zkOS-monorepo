@@ -6,53 +6,11 @@ pub mod consts {
 }
 
 pub mod native_token {
-    use alloy_primitives::Address;
-    use serde::{Deserialize, Serialize};
     use shielder_circuits::{Field, Fr};
-    use type_conversions::{address_to_field, field_to_address};
 
     pub const NATIVE_TOKEN_ADDRESS: Fr = Fr::ZERO;
-    pub const NATIVE_TOKEN_DECIMALS: u32 = 18;
+    pub const NATIVE_TOKEN_DECIMALS: u8 = 18;
     pub const ONE_TZERO: u128 = 1_000_000_000_000_000_000;
-
-    #[derive(
-        Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize,
-    )]
-    pub enum TokenKind {
-        #[default]
-        Native,
-        ERC20 {
-            address: Address,
-            decimals: u32,
-        },
-    }
-
-    impl TokenKind {
-        pub fn decimals(&self) -> u32 {
-            match self {
-                TokenKind::Native => NATIVE_TOKEN_DECIMALS,
-                TokenKind::ERC20 { decimals, .. } => *decimals,
-            }
-        }
-
-        pub fn address(&self) -> Address {
-            match self {
-                TokenKind::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
-                TokenKind::ERC20 { address, .. } => *address,
-            }
-        }
-
-        pub fn from_address_ignore_decimals(address: Address) -> Self {
-            if address_to_field::<Fr>(address) == NATIVE_TOKEN_ADDRESS {
-                Self::Native
-            } else {
-                Self::ERC20 {
-                    address,
-                    decimals: 0,
-                }
-            }
-        }
-    }
 }
 
 pub mod parameter_generation {

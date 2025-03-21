@@ -2,7 +2,7 @@ use std::{env, io};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use shielder_account::call_data::TokenKind;
+use shielder_account::call_data::Token;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -96,29 +96,29 @@ async fn perform_contract_action(
 ) -> Result<()> {
     match command {
         ContractInteractionCommand::NewAccount(NewAccountCmd { amount }) => {
-            new_account(app_state, amount, TokenKind::Native).await
+            new_account(app_state, amount, Token::Native).await
         }
         ContractInteractionCommand::NewAccountERC20(NewAccountERC20Cmd {
             amount,
             token_address,
-        }) => new_account(app_state, amount, TokenKind::ERC20(token_address)).await,
+        }) => new_account(app_state, amount, Token::ERC20(token_address)).await,
 
         ContractInteractionCommand::Deposit(DepositCmd { amount }) => {
-            deposit(app_state, amount, TokenKind::Native).await
+            deposit(app_state, amount, Token::Native).await
         }
         ContractInteractionCommand::DepositERC20(DepositERC20Cmd {
             amount,
             token_address,
-        }) => deposit(app_state, amount, TokenKind::ERC20(token_address)).await,
+        }) => deposit(app_state, amount, Token::ERC20(token_address)).await,
 
         ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
-            withdraw(app_state, amount, to, TokenKind::Native).await
+            withdraw(app_state, amount, to, Token::Native).await
         }
         ContractInteractionCommand::WithdrawERC20(WithdrawERC20Cmd {
             amount,
             to,
             token_address,
-        }) => withdraw(app_state, amount, to, TokenKind::ERC20(token_address)).await,
+        }) => withdraw(app_state, amount, to, Token::ERC20(token_address)).await,
     }
 }
 

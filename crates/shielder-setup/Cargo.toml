@@ -12,8 +12,6 @@ repository.workspace = true
 path = "lib.rs"
 
 [dependencies]
-alloy-primitives = { workspace = true, features = ["serde"] }
+alloy-primitives = { workspace = true }
 rand = { workspace = true }
-serde = { workspace = true }
 shielder-circuits = { workspace = true }
-type-conversions = { workspace = true }

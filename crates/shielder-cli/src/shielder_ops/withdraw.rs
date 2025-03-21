@@ -5,7 +5,7 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{TokenKind, WithdrawCallType, WithdrawExtra},
+    call_data::{Token, WithdrawCallType, WithdrawExtra},
     ShielderAction,
 };
 use shielder_contract::{
@@ -28,7 +28,7 @@ pub async fn withdraw(
     app_state: &mut AppState,
     amount: u128,
     to: Address,
-    token: TokenKind,
+    token: Token,
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
@@ -86,7 +86,7 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
 }
 
 // todo: use _token, once relayer actually supports ERC20 in quotes
-async fn get_relayer_total_fee(app_state: &mut AppState, _token: TokenKind) -> Result<U256> {
+async fn get_relayer_total_fee(app_state: &mut AppState, _token: Token) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {
@@ -126,7 +126,7 @@ async fn prepare_relayer_query(
     app_state: &AppState,
     amount: U256,
     to: Address,
-    token: TokenKind,
+    token: Token,
     relayer_fee: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;

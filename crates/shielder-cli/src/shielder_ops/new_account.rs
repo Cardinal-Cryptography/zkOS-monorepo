@@ -1,7 +1,7 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, TokenKind},
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAction,
 };
 use shielder_circuits::GrumpkinPointAffine;
@@ -20,18 +20,18 @@ use crate::{
     },
 };
 
-pub async fn new_account(app_state: &mut AppState, amount: u128, token: TokenKind) -> Result<()> {
+pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
     let amount = U256::from(amount);
     let user = app_state.create_shielder_user();
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
     let call = prepare_call(app_state, amount, token, anonymity_revoker_public_key)?;
 
     let (tx_hash, block_hash) = match token {
-        TokenKind::Native => {
+        Token::Native => {
             user.new_account_native::<Call>(call.try_into().unwrap(), amount)
                 .await?
         }
-        TokenKind::ERC20(_) => {
+        Token::ERC20(_) => {
             user.new_account_erc20::<Call>(call.try_into().unwrap())
                 .await?
         }
@@ -64,7 +64,7 @@ fn get_encryption_salt() -> U256 {
 fn prepare_call(
     app_state: &AppState,
     amount: U256,
-    token: TokenKind,
+    token: Token,
     anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
 ) -> Result<NewAccountCall> {
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, TokenKind},
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAccount,
 };
 use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeCall};
@@ -40,12 +40,12 @@ pub fn invoke_call(
     calldata: &NewAccountCall,
 ) -> CallResult {
     let call_result = match calldata.token {
-        TokenKind::Native => {
+        Token::Native => {
             let amount = Some(calldata.amount);
             let calldata: newAccountNativeCall = calldata.clone().try_into().unwrap();
             invoke_shielder_call(deployment, &calldata, amount)
         }
-        TokenKind::ERC20(_) => {
+        Token::ERC20(_) => {
             deployment
                 .test_erc20
                 .approve(
