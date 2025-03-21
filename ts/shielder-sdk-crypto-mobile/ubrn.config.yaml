@@ -1,0 +1,23 @@
+---
+rust:
+  directory: ../../crates/shielder_bindings
+
+bindings:
+  ts: src/gen/bindings
+
+turboModule:
+  ts: src/gen
+
+ios:
+  cargoExtras:
+    - --features
+    - build-uniffi
+  frameworkName: build/RustFramework
+
+android:
+  targets:
+    - arm64-v8a
+    - armeabi-v7a
+  cargoExtras:
+    - --features
+    - build-uniffi

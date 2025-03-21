@@ -1,0 +1,173 @@
+{
+  "name": "@cardinal-cryptography/shielder-sdk-crypto-mobile",
+  "version": "0.2.0-beta.1",
+  "description": "shielder-sdk cryptography bindings for react native",
+  "main": "./lib/commonjs/index.js",
+  "module": "./lib/module/index.js",
+  "type": "commonjs",
+  "types": "./lib/typescript/commonjs/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/typescript/module/src/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      }
+    }
+  },
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "cpp",
+    "build",
+    "*.podspec",
+    "react-native.config.js",
+    "!ios/build",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
+  "scripts": {
+    "ubrn:ios": "ubrn build ios -r --config ubrn.config.yaml --and-generate",
+    "ubrn:android": "ubrn build android -r --config ubrn.config.yaml --and-generate",
+    "ubrn:clean": "rm -Rf cpp/ android/ ios/ src/gen build/",
+    "typecheck": "tsc",
+    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "clean": "del-cli android/build lib",
+    "prepare": "bob build"
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "android"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cardinal-Cryptography/shielder-sdk-crypto-mobile.git"
+  },
+  "author": "Cardinal <hi@cardinals.cc> (https://cardinal.co/)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Cardinal-Cryptography/shielder-sdk-crypto-mobile/issues"
+  },
+  "homepage": "https://github.com/Cardinal-Cryptography/shielder-sdk-crypto-mobile#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "15.0.1",
+    "@react-native/eslint-config": "^0.73.1",
+    "@types/react": "^18.2.44",
+    "del-cli": "^5.1.0",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.0.3",
+    "react": "19.0.0",
+    "react-native": "0.78.1",
+    "react-native-builder-bob": "^0.38.0",
+    "turbo": "^1.10.7",
+    "typescript": "5.4.5"
+  },
+  "resolutions": {
+    "@types/react": "^18.2.44"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "workspaces": [
+    "example"
+  ],
+  "packageManager": "yarn@3.6.1",
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@react-native",
+      "prettier"
+    ],
+    "rules": {
+      "react/react-in-jsx-scope": "off",
+      "prettier/prettier": [
+        "error",
+        {
+          "quoteProps": "consistent",
+          "singleQuote": true,
+          "tabWidth": 2,
+          "trailingComma": "es5",
+          "useTabs": false
+        }
+      ]
+    }
+  },
+  "eslintIgnore": [
+    "node_modules/",
+    "lib/"
+  ],
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "codegen",
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json",
+          "esm": true
+        }
+      ]
+    ]
+  },
+  "codegenConfig": {
+    "name": "RNShielderSdkCryptoMobileSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "outputDir": {
+      "ios": "ios/generated",
+      "android": "android/generated"
+    },
+    "android": {
+      "javaPackageName": "com.cardinalcryptography.shieldersdkcryptomobile"
+    },
+    "includesGeneratedCode": true
+  },
+  "create-react-native-library": {
+    "type": "turbo-module",
+    "languages": "cpp",
+    "version": "0.48.5"
+  },
+  "dependencies": {
+    "@cardinal-cryptography/shielder-sdk-crypto": "0.2.0-beta.2",
+    "uniffi-bindgen-react-native": "0.28.3-5"
+  }
+}
