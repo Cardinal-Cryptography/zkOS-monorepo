@@ -2,6 +2,7 @@ use std::{env, io};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use shielder_account::call_data::Token;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -10,8 +11,8 @@ use crate::{
     config::{
         CliConfig,
         Command::{ContractInteraction, StateRead, StateWrite},
-        ContractInteractionCommand, DepositCmd, LoggingFormat, NewAccountCmd, StateReadCommand,
-        StateWriteCommand, WithdrawCmd,
+        ContractInteractionCommand, DepositCmd, DepositERC20Cmd, LoggingFormat, NewAccountCmd,
+        NewAccountERC20Cmd, StateReadCommand, StateWriteCommand, WithdrawCmd, WithdrawERC20Cmd,
     },
     recovery::recover_state,
     shielder_ops::{deposit, new_account, withdraw},
@@ -94,15 +95,30 @@ async fn perform_contract_action(
     command: ContractInteractionCommand,
 ) -> Result<()> {
     match command {
-        ContractInteractionCommand::Deposit(DepositCmd { amount }) => {
-            deposit(app_state, amount).await
-        }
-        ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
-            withdraw(app_state, amount, to).await
-        }
         ContractInteractionCommand::NewAccount(NewAccountCmd { amount }) => {
-            new_account(app_state, amount).await
+            new_account(app_state, amount, Token::Native).await
         }
+        ContractInteractionCommand::NewAccountERC20(NewAccountERC20Cmd {
+            amount,
+            token_address,
+        }) => new_account(app_state, amount, Token::ERC20(token_address)).await,
+
+        ContractInteractionCommand::Deposit(DepositCmd { amount }) => {
+            deposit(app_state, amount, Token::Native).await
+        }
+        ContractInteractionCommand::DepositERC20(DepositERC20Cmd {
+            amount,
+            token_address,
+        }) => deposit(app_state, amount, Token::ERC20(token_address)).await,
+
+        ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
+            withdraw(app_state, amount, to, Token::Native).await
+        }
+        ContractInteractionCommand::WithdrawERC20(WithdrawERC20Cmd {
+            amount,
+            to,
+            token_address,
+        }) => withdraw(app_state, amount, to, Token::ERC20(token_address)).await,
     }
 }
 

@@ -26,7 +26,12 @@ use crate::{
     },
 };
 
-pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Result<()> {
+pub async fn withdraw(
+    app_state: &mut AppState,
+    amount: u128,
+    to: Address,
+    _token: Token,
+) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
     let total_fee = get_relayer_total_fee(app_state).await?;

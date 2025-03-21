@@ -19,7 +19,7 @@ use crate::{
     },
 };
 
-pub async fn new_account(app_state: &mut AppState, amount: u128) -> Result<()> {
+pub async fn new_account(app_state: &mut AppState, amount: u128, _token: Token) -> Result<()> {
     let amount = U256::from(amount);
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
     let user = app_state.create_shielder_user();
