@@ -14,7 +14,7 @@ pub enum RevealError {
 
 /// If the tx has a known viewing key return other txs made from the account with the same id
 ///
-/// Human readable output
+/// Events are printed to stdout in a human readable output
 pub async fn run(connection: Connection, tx_hash: &[u8; 32]) -> Result<(), RevealError> {
     let Event { viewing_key, .. } = db::query_event(&connection, tx_hash)?;
 

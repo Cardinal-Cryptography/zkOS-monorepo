@@ -120,35 +120,35 @@ fn persist_event(
     tx_hash: &[u8; 32],
     block_number: u64,
 ) -> Result<(), rusqlite::Error> {
-    if let ShielderContractEvents::NewAccount(NewAccount {
-        macSalt,
-        macCommitment,
-        ..
-    })
-    | ShielderContractEvents::Deposit(Deposit {
-        macSalt,
-        macCommitment,
-        ..
-    })
-    | ShielderContractEvents::Withdraw(Withdraw {
-        macSalt,
-        macCommitment,
-        ..
-    }) = event
-    {
-        let mac_salt = u256_to_field::<Fr>(macSalt).to_bytes();
-        let mac_commitment = u256_to_field::<Fr>(macCommitment).to_bytes();
+    let (mac_salt, mac_commitment) = match event {
+        ShielderContractEvents::NewAccount(NewAccount {
+            macSalt,
+            macCommitment,
+            ..
+        })
+        | ShielderContractEvents::Deposit(Deposit {
+            macSalt,
+            macCommitment,
+            ..
+        })
+        | ShielderContractEvents::Withdraw(Withdraw {
+            macSalt,
+            macCommitment,
+            ..
+        }) => (macSalt, macCommitment),
+    };
 
-        let event = Event {
-            tx_hash: tx_hash.to_vec(),
-            block_number,
-            mac_salt: mac_salt.to_vec(),
-            mac_commitment: mac_commitment.to_vec(),
-            viewing_key: None,
-        };
-        info!("Persisting event {event:?}");
-        return db::upsert_event(connection, event);
-    }
+    let mac_salt = u256_to_field::<Fr>(mac_salt).to_bytes();
+    let mac_commitment = u256_to_field::<Fr>(mac_commitment).to_bytes();
 
-    Ok(())
+    let event = Event {
+        tx_hash: tx_hash.to_vec(),
+        block_number,
+        mac_salt: mac_salt.to_vec(),
+        mac_commitment: mac_commitment.to_vec(),
+        viewing_key: None,
+    };
+
+    info!("Persisting event {event:?}");
+    db::upsert_event(connection, event)
 }

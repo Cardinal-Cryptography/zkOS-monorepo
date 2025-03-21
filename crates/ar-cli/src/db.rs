@@ -25,7 +25,7 @@ impl fmt::Display for Event {
         let viewing_key_hex = self
             .viewing_key
             .as_ref()
-            .map_or("None".to_string(), |key| hex::encode(key));
+            .map_or("None".to_string(), hex::encode);
         write!(
             f,
             "Event {{\n  tx_hash: 0x{},\n  block_number: {},\n  mac_salt: 0x{},\n  mac_commitment: 0x{},\n  viewing_key: 0x{}\n}}",

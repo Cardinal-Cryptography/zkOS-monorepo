@@ -58,9 +58,9 @@ pub fn run(
         }
     };
 
-    spit(&dir, "private_key.bin", &private_key_bytes)?;
-    spit(&dir, "public_key_x_coord.bin", &x_bytes)?;
-    spit(&dir, "public_key_y_coord.bin", &y_bytes)?;
+    spit(dir, "private_key.bin", &private_key_bytes)?;
+    spit(dir, "public_key_x_coord.bin", &x_bytes)?;
+    spit(dir, "public_key_y_coord.bin", &y_bytes)?;
 
     info!("key pair files written to {dir:?}");
 
