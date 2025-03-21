@@ -21,7 +21,10 @@ use shielder_contract::{
 use thiserror::Error;
 use type_conversions::u256_to_field;
 
-use crate::db::{self, ViewingKey};
+use crate::{
+    cli::Endianess,
+    db::{self, ViewingKey},
+};
 
 #[derive(Debug, Error)]
 #[error(transparent)]
@@ -55,13 +58,23 @@ pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
     private_key_file: &str,
+    endianess: Endianess,
     from_block: u64,
     connection: Connection,
 ) -> Result<(), CollectKeysError> {
     let provider = create_simple_provider(rpc_url).await?;
     let last_finalized_block_number = provider.get_block_number().await?;
 
-    let private_key = grumpkin::Fr::from_bytes(&private_key_bytes(private_key_file)?)
+    let bytes = match endianess {
+        Endianess::LitteEndian => private_key_bytes(private_key_file)?,
+        Endianess::BigEndian => {
+            let mut bytes = private_key_bytes(private_key_file)?;
+            bytes.reverse();
+            bytes
+        }
+    };
+
+    let private_key = grumpkin::Fr::from_bytes(&bytes)
         .into_option()
         .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
 

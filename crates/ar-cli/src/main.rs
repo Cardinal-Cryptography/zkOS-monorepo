@@ -49,6 +49,7 @@ async fn main() -> Result<(), CliError> {
         } => generate::run(seed, dir, endianess)?,
         cli::Command::CollectKeys {
             private_key_file,
+            endianess,
             common:
                 Common {
                     rpc_url,
@@ -62,6 +63,7 @@ async fn main() -> Result<(), CliError> {
                 rpc_url,
                 shielder_address,
                 private_key_file,
+                endianess.clone(),
                 *from_block,
                 connection,
             )

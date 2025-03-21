@@ -61,6 +61,10 @@ pub enum Command {
 
         #[arg(long, default_value = "./private_key.bin")]
         private_key_file: String,
+
+        /// is the key in the Lower Endian (the default) or Big Endian order?
+        #[clap(long, value_enum, default_value_t=Endianess::default())]
+        endianess: Endianess,
     },
 
     /// Matches everything we have in the db about the identity of the transactions
