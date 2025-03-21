@@ -1,8 +1,8 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{DepositCall, DepositCallType, DepositExtra, Token},
-    ShielderAction,
+    call_data::{DepositCall, DepositCallType, DepositExtra},
+    ShielderAction, Token,
 };
 use shielder_contract::{
     call_type::Call, events::get_event, merkle_path::get_current_merkle_path,

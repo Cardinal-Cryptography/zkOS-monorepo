@@ -1,8 +1,8 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
-    ShielderAction,
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType},
+    ShielderAction, Token,
 };
 use shielder_circuits::GrumpkinPointAffine;
 use shielder_contract::{

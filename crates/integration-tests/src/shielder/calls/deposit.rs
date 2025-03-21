@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{DepositCall, DepositCallType, DepositExtra, Token},
-    ShielderAccount,
+    call_data::{DepositCall, DepositCallType, DepositExtra},
+    ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{depositERC20Call, depositNativeCall};
 

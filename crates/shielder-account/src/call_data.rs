@@ -1,6 +1,5 @@
 use alloy_primitives::{Address, Bytes, FixedBytes, U256};
 use rand::rngs::OsRng;
-use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
@@ -17,44 +16,16 @@ use shielder_contract::{
     },
     WithdrawCommitment,
 };
-use shielder_setup::{
-    native_token::NATIVE_TOKEN_ADDRESS,
-    version::{contract_version, ContractVersion},
-};
+use shielder_setup::version::{contract_version, ContractVersion};
 use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
-use crate::ShielderAccount;
+use crate::{ShielderAccount, Token};
 
 struct ActionSecrets {
     nullifier_old: U256,
     trapdoor_old: U256,
     nullifier_new: U256,
     trapdoor_new: U256,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub enum Token {
-    Native,
-    ERC20(Address),
-}
-
-impl Token {
-    pub fn address(&self) -> Address {
-        match self {
-            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
-            Token::ERC20(address) => *address,
-        }
-    }
-}
-
-impl From<Address> for Token {
-    fn from(address: Address) -> Self {
-        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
-            Token::Native
-        } else {
-            Token::ERC20(address)
-        }
-    }
 }
 
 #[derive(Clone, Debug)]

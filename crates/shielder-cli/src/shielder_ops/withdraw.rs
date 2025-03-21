@@ -5,8 +5,8 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{Token, WithdrawCallType, WithdrawExtra},
-    ShielderAction,
+    call_data::{WithdrawCallType, WithdrawExtra},
+    ShielderAction, Token,
 };
 use shielder_contract::{
     events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,

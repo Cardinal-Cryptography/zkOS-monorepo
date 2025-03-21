@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "contract")]
 use shielder_contract::ShielderContract::{Deposit, NewAccount, ShielderContractEvents, Withdraw};
 
-use crate::call_data::Token;
+use crate::Token;
 
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
 pub enum ShielderAction {

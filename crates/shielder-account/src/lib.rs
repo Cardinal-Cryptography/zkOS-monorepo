@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt::Display};
 
-use alloy_primitives::U256;
+use alloy_primitives::{Address, U256};
 use halo2curves::bn256::Fr;
 use serde::{Deserialize, Serialize};
 
@@ -11,10 +11,8 @@ mod shielder_action;
 
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{generate_user_id, note_hash, Note};
-use shielder_setup::version::contract_version;
-use type_conversions::{address_to_field, field_to_u256, u256_to_field};
-
-use crate::call_data::Token;
+use shielder_setup::{native_token::NATIVE_TOKEN_ADDRESS, version::contract_version};
+use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {
@@ -138,5 +136,30 @@ impl ShielderAccount {
         self.nonce
             .checked_sub(1)
             .map(|nonce| secrets::nonced::derive_trapdoor(self.id, nonce))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
+pub enum Token {
+    Native,
+    ERC20(Address),
+}
+
+impl Token {
+    pub fn address(&self) -> Address {
+        match self {
+            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
+            Token::ERC20(address) => *address,
+        }
+    }
+}
+
+impl From<Address> for Token {
+    fn from(address: Address) -> Self {
+        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
+            Token::Native
+        } else {
+            Token::ERC20(address)
+        }
     }
 }

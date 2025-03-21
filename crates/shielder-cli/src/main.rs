@@ -2,7 +2,7 @@ use std::{env, io};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use shielder_account::call_data::Token;
+use shielder_account::Token;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 use tracing::info;
 use tracing_subscriber::EnvFilter;

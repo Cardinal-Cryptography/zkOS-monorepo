@@ -10,7 +10,7 @@ use deploy::{
     RELAYER_INITIAL_NATIVE_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
-use shielder_account::call_data::Token;
+use shielder_account::Token;
 use shielder_contract::ShielderContract::{unpauseCall, ShielderContractEvents};
 
 pub mod address_conversion;
