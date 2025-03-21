@@ -54,14 +54,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Cardinal-Cryptography/shielder-sdk-crypto-mobile.git"
+    "url": "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo"
   },
   "author": "Cardinal <hi@cardinals.cc> (https://cardinal.co/)",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/Cardinal-Cryptography/shielder-sdk-crypto-mobile/issues"
+    "url": "https://github.com/Cardinal-Cryptography/zkOS-monorepo/issues"
   },
-  "homepage": "https://github.com/Cardinal-Cryptography/shielder-sdk-crypto-mobile#readme",
+  "homepage": "https://github.com/Cardinal-Cryptography/zkOS-monorepo#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
