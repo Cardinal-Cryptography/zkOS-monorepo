@@ -60,7 +60,7 @@ mtzero() {
 deploy_shielder_contracts() {
   SHIELDER_CONTRACT_ADDRESS=$(
     PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
-	  ./scripts/deploy-shielder.sh
+	  ./scripts/deploy-shielder.sh \
       2> output.log \
     | grep 'Shielder deployed at:' | awk '{print $NF}')
   export SHIELDER_CONTRACT_ADDRESS
