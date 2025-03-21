@@ -3,7 +3,9 @@ use shielder_contract::{NoProvider, ShielderUser};
 use tokio::{sync::mpsc::channel, time::Duration};
 
 use super::*;
-use crate::{config::DryRunning, price_feed::Prices, relay::taskmaster::Taskmaster};
+use crate::{
+    config::DryRunning, price_feed::Prices, quote_cache::QuoteCache, relay::taskmaster::Taskmaster,
+};
 
 const NATIVE_TOTAL_FEE: u64 = 100;
 
@@ -22,6 +24,8 @@ fn app_state() -> AppState {
         token_config: Default::default(),
         signer_addresses: Default::default(),
         relay_gas: Default::default(),
+        quote_cache: QuoteCache::new(Default::default()),
+        max_pocket_money: Default::default(),
     }
 }
 

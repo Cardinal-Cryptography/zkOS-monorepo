@@ -3,9 +3,10 @@ use axum::{extract::State, http::status::StatusCode, response::IntoResponse, Jso
 use rust_decimal::Decimal;
 use shielder_contract::{alloy_primitives::U256, providers::create_simple_provider};
 use shielder_relayer::{scale_u256, server_error, QuoteFeeQuery, QuoteFeeResponse, TokenKind};
+use time::OffsetDateTime;
 use tracing::error;
 
-use crate::{price_feed::Price, AppState};
+use crate::{price_feed::Price, quote_cache::CachedQuote, AppState};
 
 pub async fn quote_fees(
     State(app_state): State<AppState>,
@@ -50,6 +51,17 @@ async fn _quote_fees(
         }
         erc20 @ TokenKind::ERC20 { .. } => get_token_price(&app_state, erc20)?,
     };
+
+    let cached_quote = CachedQuote {
+        fee_token: query.fee_token,
+        gas_price,
+        native_token_price: prices.native_token_price.token_price,
+        token_price_ratio: prices.ratio,
+    };
+    app_state
+        .quote_cache
+        .store_quote_response(cached_quote, OffsetDateTime::now_utc())
+        .await;
 
     Ok(QuoteFeeResponse {
         total_fee: app_state.total_fee,
