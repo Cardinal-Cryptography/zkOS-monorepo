@@ -12,15 +12,19 @@ pub enum RevealError {
     Db(#[from] rusqlite::Error),
 }
 
+/// If the tx has a known viewing key return other txs made from the account with the same id
+///
+/// Human readable output
 pub async fn run(connection: Connection, tx_hash: &[u8; 32]) -> Result<(), RevealError> {
     let Event { viewing_key, .. } = db::query_event(&connection, tx_hash)?;
 
     if let Some(key) = viewing_key {
-        info!("This tx matches the viewing key {key:?}");
+        info!("This tx matches the key 0x{}", hex::encode(&key));
         let events = db::query_events(&connection, Some(key))?;
 
-        // TODO : human readable output
-        info!("Other txs matching the key {events:?}");
+        for event in events {
+            info!("{event}");
+        }
     } else {
         warn!("No viewing key matching this tx could be found. Run `index-events` and `collect-keys` commands to populate the db.");
     }

@@ -1,3 +1,4 @@
+use core::fmt;
 use std::path::PathBuf;
 
 use rusqlite::{Connection, Result, Row};
@@ -14,6 +15,23 @@ pub struct Event {
     pub mac_salt: Vec<u8>,
     pub mac_commitment: Vec<u8>,
     pub viewing_key: Option<Vec<u8>>,
+}
+
+impl fmt::Display for Event {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let tx_hash_hex = hex::encode(&self.tx_hash);
+        let mac_salt_hex = hex::encode(&self.mac_salt);
+        let mac_commitment_hex = hex::encode(&self.mac_commitment);
+        let viewing_key_hex = self
+            .viewing_key
+            .as_ref()
+            .map_or("None".to_string(), |key| hex::encode(key));
+        write!(
+            f,
+            "Event {{\n  tx_hash: 0x{},\n  block_number: {},\n  mac_salt: 0x{},\n  mac_commitment: 0x{},\n  viewing_key: 0x{}\n}}",
+            tx_hash_hex, self.block_number, mac_salt_hex, mac_commitment_hex, viewing_key_hex
+        )
+    }
 }
 
 pub fn create_events_table(connection: &Connection) -> Result<(), rusqlite::Error> {
