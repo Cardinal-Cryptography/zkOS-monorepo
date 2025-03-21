@@ -14,6 +14,7 @@ function show_help {
     echo "Environment Variables:"
     echo "  NETWORK              Target network (default: anvil)"
     echo "  PRIVATE_KEY          Private key for deployment"
+    echo "  IS_ARBITRUM_CHAIN    Flag to indicate if the target network is Arbitrum (default: true)"
     echo "  AR_PUBLIC_KEY        Anonymity Revoker public key as a CSV pair 'x,y'"
     echo "  AR_SEED              Seed to generate Anonymity Revoker key pair"
     echo ""
@@ -34,6 +35,7 @@ done
 
 NETWORK=${NETWORK:-anvil}
 OWNER_ADDRESS=$(cast wallet address ${PRIVATE_KEY})
+IS_ARBITRUM_CHAIN=${IS_ARBITRUM_CHAIN:-true}
 
 # Handle AR public key
 if [ -n "${AR_PUBLIC_KEY:-}" ]; then
@@ -62,4 +64,5 @@ PRIVATE_KEY=${PRIVATE_KEY} \
 OWNER_ADDRESS=${OWNER_ADDRESS} \
 AR_PUBLIC_KEY_X=${AR_PUBLIC_KEY_X} \
 AR_PUBLIC_KEY_Y=${AR_PUBLIC_KEY_Y} \
+IS_ARBITRUM_CHAIN=${IS_ARBITRUM_CHAIN} \
 forge script DeployShielderScript --broadcast --rpc-url ${NETWORK} --sender $(cast wallet address ${PRIVATE_KEY})
