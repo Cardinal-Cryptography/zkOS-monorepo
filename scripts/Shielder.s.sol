@@ -19,6 +19,8 @@ contract DeployShielderScript is Script {
         uint256 arPublicKeyX = uint256(vm.envBytes32("AR_PUBLIC_KEY_X"));
         uint256 arPublicKeyY = uint256(vm.envBytes32("AR_PUBLIC_KEY_Y"));
 
+        bool isArbitrumChain = vm.envBool("IS_ARBITRUM_CHAIN");
+
         vm.startBroadcast(privateKey);
 
         address shielderImplementation = address(new Shielder());
@@ -30,7 +32,13 @@ contract DeployShielderScript is Script {
 
         bytes memory data = abi.encodeCall(
             Shielder.initialize,
-            (owner, type(uint256).max, arPublicKeyX, arPublicKeyY) // set deposit limit to max
+            (
+                owner,
+                type(uint256).max,
+                arPublicKeyX,
+                arPublicKeyY,
+                isArbitrumChain
+            )
         );
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));
