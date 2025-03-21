@@ -18,6 +18,7 @@ abstract contract Nullifiers is Initializable {
         // Mapping from nullifier hash to the block at which it was revealed. Actually, the value will be the block number + 1,
         // so that the default value 0 can be used to indicate that the nullifier has not been revealed.
         mapping(uint256 => uint256) nullifiers;
+        bool isArbitrumChain;
     }
 
     function _getNullifiersStorage()
@@ -30,6 +31,15 @@ abstract contract Nullifiers is Initializable {
         }
     }
 
+    /*
+     * Initialize the tree.
+     */
+    // solhint-disable func-name-mixedcase
+    function __Nullifiers_init(bool isArbitrumChain) internal onlyInitializing {
+        NullifiersStorage storage $ = _getNullifiersStorage();
+        $.isArbitrumChain = isArbitrumChain;
+    }
+
     function nullifiers(uint256 nullifier) public view returns (uint256) {
         NullifiersStorage storage $ = _getNullifiersStorage();
         return $.nullifiers[nullifier];
@@ -37,7 +47,13 @@ abstract contract Nullifiers is Initializable {
 
     function _registerNullifier(uint256 nullifier) internal {
         NullifiersStorage storage $ = _getNullifiersStorage();
-        uint256 blockNumber = ARB_SYS_PRECOMPILE.arbBlockNumber();
+
+        uint256 blockNumber = block.number;
+
+        // Arbitrum chains use the system precompile to get the block number.
+        if ($.isArbitrumChain) {
+            blockNumber = ARB_SYS_PRECOMPILE.arbBlockNumber();
+        }
         $.nullifiers[nullifier] = blockNumber + 1;
     }
 }

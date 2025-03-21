@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{Token, WithdrawCall, WithdrawCallType, WithdrawExtra},
-    ShielderAccount,
+    call_data::{WithdrawCall, WithdrawCallType, WithdrawExtra},
+    ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
 use shielder_setup::version::ContractVersion;
@@ -247,7 +247,10 @@ mod tests {
             token,
             U256::from(1)
         ));
-        assert_eq!(shielder_account.shielded_amount, U256::from(15))
+        assert_eq!(
+            shielder_account.shielded_amount[&token.token(&deployment)],
+            U256::from(15)
+        )
     }
 
     #[rstest]
@@ -328,7 +331,10 @@ mod tests {
             token,
             U256::from(1)
         ));
-        assert_eq!(shielder_account.shielded_amount, U256::from(25))
+        assert_eq!(
+            shielder_account.shielded_amount[&token.token(&deployment)],
+            U256::from(25)
+        )
     }
 
     #[rstest]

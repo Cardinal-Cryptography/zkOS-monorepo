@@ -80,7 +80,8 @@ contract ShielderUpgrade is Test {
                     owner,
                     depositLimit,
                     anonymityRevokerPubkeyX,
-                    anonymityRevokerPubkeyY
+                    anonymityRevokerPubkeyY,
+                    false
                 )
             )
         );

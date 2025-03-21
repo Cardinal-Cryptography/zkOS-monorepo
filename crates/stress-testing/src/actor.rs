@@ -1,8 +1,8 @@
 use alloy_signer_local::PrivateKeySigner;
 use rand::{rngs::StdRng, SeedableRng};
 use shielder_account::{
-    call_data::{NewAccountCallExtra, NewAccountCallType, Token},
-    ShielderAccount,
+    call_data::{NewAccountCallExtra, NewAccountCallType},
+    ShielderAccount, Token,
 };
 use shielder_circuits::{
     circuits::{Params, ProvingKey},

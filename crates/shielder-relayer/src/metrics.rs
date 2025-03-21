@@ -35,7 +35,7 @@ async fn render_signer_balances(balances: Balances) {
     for (signer, balance) in balances.iter() {
         let balance = balance.read().await.unwrap_or_default();
         let tzero_balance = balance
-            .div(U256::from(10u128.pow(NATIVE_TOKEN_DECIMALS as u32)))
+            .div(U256::from(10u128.pow(NATIVE_TOKEN_DECIMALS)))
             .to_string()
             .parse::<f64>()
             .unwrap_or(f64::NAN);
