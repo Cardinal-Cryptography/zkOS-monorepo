@@ -124,7 +124,7 @@ impl<'a> SolidityGenerator<'a> {
     }
 }
 
-impl<'a> SolidityGenerator<'a> {
+impl SolidityGenerator {
     /// Render `Halo2Verifier.sol` with verifying key embedded into writer.
     pub fn render_into(&self, verifier_writer: &mut impl fmt::Write) -> Result<(), fmt::Error> {
         self.generate_verifier(false).render(verifier_writer)
