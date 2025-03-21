@@ -13,7 +13,9 @@ use alloy_transport::{Transport, TransportResult};
 
 use crate::{ContractResult, ShielderContractError};
 
-/// Creates a provider for the given RPC URL. This is a simple provider, without any fillers or
+/// Creates a provider for the given RPC URL.
+///
+/// This is a simple provider, without any fillers or
 /// signer configuration (apart from some devnet-specific defaults). It is suitable for doing
 /// read-only operations.
 pub async fn create_simple_provider(rpc_url: &str) -> ContractResult<impl Provider> {

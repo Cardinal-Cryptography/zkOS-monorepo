@@ -20,3 +20,13 @@ rand_chacha = { workspace = true }
 shielder-circuits = { workspace = true }
 thiserror = { workspace = true }
 type-conversions = { workspace = true }
+alloy-primitives = { workspace = true, features = ["serde", "rand"] }
+tokio = { workspace = true }
+shielder-contract = { workspace = true }
+alloy-provider = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-json-rpc = { workspace = true }
+alloy-transport = { workspace = true }
+alloy-sol-types = { workspace = true }
+rusqlite = { workspace = true, features = ["bundled"] }
+alloy-network = { workspace = true }
