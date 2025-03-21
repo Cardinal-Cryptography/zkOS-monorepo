@@ -20,24 +20,6 @@ use crate::{
     },
 };
 
-fn prepare_call(
-    app_state: &AppState,
-    amount: U256,
-    token: Token,
-    anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
-) -> Result<NewAccountCall> {
-    let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
-    let extra = NewAccountCallExtra {
-        anonymity_revoker_public_key,
-        encryption_salt: get_encryption_salt(),
-        mac_salt: get_mac_salt(),
-    };
-
-    Ok(app_state
-        .account
-        .prepare_call::<NewAccountCallType>(&params, &pk, token, amount, &extra))
-}
-
 pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
     let amount = U256::from(amount);
     let user = app_state.create_shielder_user();
@@ -77,4 +59,22 @@ pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -
 
 fn get_encryption_salt() -> U256 {
     get_mac_salt()
+}
+
+fn prepare_call(
+    app_state: &AppState,
+    amount: U256,
+    token: Token,
+    anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
+) -> Result<NewAccountCall> {
+    let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
+    let extra = NewAccountCallExtra {
+        anonymity_revoker_public_key,
+        encryption_salt: get_encryption_salt(),
+        mac_salt: get_mac_salt(),
+    };
+
+    Ok(app_state
+        .account
+        .prepare_call::<NewAccountCallType>(&params, &pk, token, amount, &extra))
 }

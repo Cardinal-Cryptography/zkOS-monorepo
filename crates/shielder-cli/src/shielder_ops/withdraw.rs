@@ -5,7 +5,10 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{Token, WithdrawCallType, WithdrawExtra},
+    call_data::{
+        DepositCall, DepositCallType, DepositExtra, Token, WithdrawCall, WithdrawCallType,
+        WithdrawExtra,
+    },
     ShielderAction,
 };
 use shielder_contract::{
@@ -14,7 +17,10 @@ use shielder_contract::{
     ShielderContract::{withdrawNativeCall, Withdraw},
 };
 use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
-use shielder_setup::version::contract_version;
+use shielder_setup::{
+    consts::{ARITY, TREE_HEIGHT},
+    version::contract_version,
+};
 use tokio::time::sleep;
 use tracing::{debug, info};
 
