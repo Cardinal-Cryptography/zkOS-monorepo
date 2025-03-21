@@ -119,10 +119,7 @@ mod tests {
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
-    use shielder_account::{
-        call_data::{Token::Native, WithdrawCall},
-        ShielderAccount,
-    };
+    use shielder_account::{call_data::WithdrawCall, ShielderAccount};
     use shielder_circuits::Fr;
     use shielder_contract::ShielderContract::{
         ShielderContractEvents, Withdraw, WrongContractVersion,
@@ -250,7 +247,10 @@ mod tests {
             token,
             U256::from(1)
         ));
-        assert_eq!(shielder_account.shielded_amount[&Native], U256::from(15))
+        assert_eq!(
+            shielder_account.shielded_amount[&token.token(&deployment)],
+            U256::from(15)
+        )
     }
 
     #[rstest]
@@ -331,7 +331,10 @@ mod tests {
             token,
             U256::from(1)
         ));
-        assert_eq!(shielder_account.shielded_amount[&Native], U256::from(25))
+        assert_eq!(
+            shielder_account.shielded_amount[&token.token(&deployment)],
+            U256::from(25)
+        )
     }
 
     #[rstest]

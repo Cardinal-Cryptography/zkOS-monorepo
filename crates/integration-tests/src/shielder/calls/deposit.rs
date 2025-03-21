@@ -81,7 +81,6 @@ pub fn invoke_call(
 
 #[cfg(test)]
 mod tests {
-
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Bytes, FixedBytes, U256};
@@ -89,7 +88,6 @@ mod tests {
     use rstest::rstest;
     use shielder_account::{call_data::DepositCall, ShielderAccount};
     use shielder_circuits::Fr;
-    use shielder_account::call_data::Token::Native;
     use shielder_contract::ShielderContract::{
         Deposit, ShielderContractEvents, WrongContractVersion,
     };
@@ -176,7 +174,10 @@ mod tests {
             token,
             U256::from(15)
         ));
-        assert_eq!(shielder_account.shielded_amount[&Native], U256::from(15))
+        assert_eq!(
+            shielder_account.shielded_amount[&token.token(&deployment)],
+            U256::from(15)
+        )
     }
 
     #[rstest]
