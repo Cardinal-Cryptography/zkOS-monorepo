@@ -64,7 +64,8 @@ impl ShielderAccount {
                 self.shielded_amount
                     .entry(data.token)
                     .and_modify(|old| {
-                        old.checked_add(data.amount)
+                        *old = old
+                            .checked_add(data.amount)
                             .expect("shielded amount overflow");
                     })
                     .or_insert(data.amount);

@@ -3,9 +3,10 @@ use std::{env, io};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use shielder_account::call_data::Token;
+use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
-use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
+
 use crate::{
     app_state::{AppState, RelayerRpcUrl},
     config::{
@@ -118,7 +119,7 @@ async fn perform_contract_action(
             amount,
             to,
             token_address,
-            decimals
+            decimals,
         }) => withdraw(app_state, amount, to, Token::ERC20(token_address), decimals).await,
     }
 }
