@@ -59,19 +59,16 @@ sol! {
         error WithdrawVerificationFailed();
         error NewAccountVerificationFailed();
         error ZeroAmount();
-        error AmountOverDepositLimit();
         error AmountTooHigh();
         error ContractBalanceLimitReached();
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
 
-        function depositLimit() external view returns (uint256);
-
         function initialize(
             address initialOwner,
-            uint256 _depositLimit,
             uint256 _anonymityRevokerPublicKeyX,
             uint256 _anonymityRevokerPublicKeyY,
+            bool _isArbitrumChain
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
@@ -157,7 +154,6 @@ sol! {
             uint256 id
         ) external view returns (uint256[] memory);
 
-        function setDepositLimit(uint256 _depositLimit) external;
         function anonymityRevokerPubkey() public view returns (uint256, uint256);
     }
 }

@@ -296,38 +296,4 @@ mod tests {
         );
         assert!(actor_balance_decreased_by(&deployment, token, U256::ZERO))
     }
-
-    #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn fails_if_over_deposit_limit(mut deployment: Deployment, #[case] token: TestToken) {
-        use crate::limits::{get_deposit_limit, set_deposit_limit};
-
-        let mut shielder_account = ShielderAccount::default();
-        let amount = U256::from(101);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-
-        assert!(result.is_ok());
-
-        let old_limit = get_deposit_limit(&mut deployment);
-
-        assert_eq!(old_limit, U256::MAX);
-
-        let new_limit = U256::from(100);
-        set_deposit_limit(&mut deployment, new_limit);
-
-        let returned_new_limit = get_deposit_limit(&mut deployment);
-
-        assert_eq!(returned_new_limit, new_limit);
-
-        let mut shielder_account = ShielderAccount::default();
-        let amount = U256::from(101);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-
-        assert_matches!(result, Err(ShielderCallErrors::AmountOverDepositLimit(_)))
-    }
 }
