@@ -150,6 +150,8 @@ pub struct WithdrawERC20Cmd {
     pub to: Address,
     /// Address of the token.
     pub token_address: Address,
+    /// ERC20 token decimals.
+    pub decimals: u32,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, ValueEnum)]

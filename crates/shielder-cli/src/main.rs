@@ -5,7 +5,7 @@ use clap::Parser;
 use shielder_account::call_data::Token;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
-
+use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 use crate::{
     app_state::{AppState, RelayerRpcUrl},
     config::{
@@ -112,13 +112,14 @@ async fn perform_contract_action(
         }) => deposit(app_state, amount, Token::ERC20(token_address)).await,
 
         ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
-            withdraw(app_state, amount, to, Token::Native).await
+            withdraw(app_state, amount, to, Token::Native, NATIVE_TOKEN_DECIMALS).await
         }
         ContractInteractionCommand::WithdrawERC20(WithdrawERC20Cmd {
             amount,
             to,
             token_address,
-        }) => withdraw(app_state, amount, to, Token::ERC20(token_address)).await,
+            decimals
+        }) => withdraw(app_state, amount, to, Token::ERC20(token_address), decimals).await,
     }
 }
 

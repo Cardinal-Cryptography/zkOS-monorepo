@@ -29,6 +29,7 @@ pub async fn withdraw(
     amount: u128,
     to: Address,
     token: Token,
+    decimals: u32,
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
@@ -42,7 +43,7 @@ pub async fn withdraw(
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to, token, total_fee).await?)
+        .json(&prepare_relayer_query(app_state, amount, to, token, decimals, total_fee).await?)
         .send()
         .await?;
 
@@ -127,6 +128,7 @@ async fn prepare_relayer_query(
     amount: U256,
     to: Address,
     token: Token,
+    decimals: u32,
     relayer_fee: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
@@ -160,6 +162,11 @@ async fn prepare_relayer_query(
         },
     );
 
+    let fee_token = match token {
+        Token::Native => TokenKind::Native,
+        Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
+    };
+
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
         amount,
@@ -168,7 +175,7 @@ async fn prepare_relayer_query(
         nullifier_hash: calldata.old_nullifier_hash,
         new_note: calldata.new_note,
         proof: calldata.proof,
-        fee_token: todo!(),
+        fee_token,
         fee_amount: calldata.relayer_fee,
         mac_salt: calldata.mac_salt,
         mac_commitment: calldata.mac_commitment,
