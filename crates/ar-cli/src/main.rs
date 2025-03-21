@@ -67,9 +67,10 @@ async fn main() -> Result<(), CliError> {
                     shielder_address,
                 },
             db,
+            batch_size,
         } => {
             let connection = db::init(&db.path)?;
-            index_events::run(rpc_url, shielder_address, connection).await?
+            index_events::run(rpc_url, shielder_address, *batch_size, connection).await?
         }
         cli::Command::Revoke { db } => {
             let connection = db::init(&db.path)?;

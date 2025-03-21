@@ -19,8 +19,6 @@ use type_conversions::u256_to_field;
 
 use crate::db::{self, Event};
 
-const BATCH_SIZE: usize = 10_000;
-
 #[derive(Debug, Error)]
 #[error(transparent)]
 #[non_exhaustive]
@@ -44,6 +42,7 @@ pub enum IndexEventsError {
 pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
+    batch_size: usize,
     connection: Connection,
 ) -> Result<(), IndexEventsError> {
     let provider = create_simple_provider(rpc_url).await?;
@@ -52,8 +51,8 @@ pub async fn run(
 
     db::create_events_table(&connection)?;
 
-    for block_number in (0..=current_height).step_by(BATCH_SIZE) {
-        let last_batch_block = min(block_number + BATCH_SIZE as u64 - 1, current_height);
+    for block_number in (0..=current_height).step_by(batch_size) {
+        let last_batch_block = min(block_number + batch_size as u64 - 1, current_height);
         let filter = base_filter
             .clone()
             .from_block(block_number)

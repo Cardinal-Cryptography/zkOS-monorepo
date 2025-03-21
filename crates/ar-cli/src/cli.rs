@@ -44,6 +44,9 @@ pub enum Command {
         #[clap(flatten)]
         common: Common,
 
+        #[clap(long, default_value = "10000")]
+        batch_size: usize,
+
         #[clap(flatten)]
         db: Db,
     },
