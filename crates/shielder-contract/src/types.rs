@@ -72,6 +72,7 @@ sol! {
             uint256 _depositLimit,
             uint256 _anonymityRevokerPublicKeyX,
             uint256 _anonymityRevokerPublicKeyY,
+            bool _isArbitrumChain
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);

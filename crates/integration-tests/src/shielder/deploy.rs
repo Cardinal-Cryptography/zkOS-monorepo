@@ -245,6 +245,7 @@ pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address 
         _depositLimit: INITIAL_DEPOSIT_LIMIT,
         _anonymityRevokerPublicKeyX: ANONYMITY_REVOKER_PKEY.x,
         _anonymityRevokerPublicKeyY: ANONYMITY_REVOKER_PKEY.y,
+        _isArbitrumChain: false,
     }
     .abi_encode();
 
