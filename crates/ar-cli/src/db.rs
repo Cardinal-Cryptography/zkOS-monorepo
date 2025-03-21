@@ -2,7 +2,6 @@ use core::fmt;
 use std::path::PathBuf;
 
 use rusqlite::{Connection, Result, Row};
-use thiserror::Error;
 
 pub fn init(path: &PathBuf) -> Result<Connection, rusqlite::Error> {
     Connection::open(path)

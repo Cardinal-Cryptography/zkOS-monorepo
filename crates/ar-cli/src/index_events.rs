@@ -1,13 +1,13 @@
-use std::{borrow::Cow, cmp::min, sync::Arc};
+use std::cmp::min;
 
-use alloy_json_rpc::{RpcError, RpcParam, RpcReturn};
+use alloy_json_rpc::RpcError;
 use alloy_primitives::Address;
 use alloy_provider::Provider;
 use alloy_rpc_types::{Filter, Log};
-use alloy_sol_types::{Error as SolError, SolEvent};
+use alloy_sol_types::SolEvent;
 use alloy_transport::TransportErrorKind;
 use log::{debug, info};
-use rusqlite::{ffi::sqlite3_changegroup, Connection};
+use rusqlite::Connection;
 use shielder_circuits::Fr;
 use shielder_contract::{
     providers::create_simple_provider,

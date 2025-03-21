@@ -6,7 +6,7 @@ use std::{
 use alloy_json_rpc::RpcError;
 use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
-use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, Filter, Log, TransactionTrait};
+use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, TransactionTrait};
 use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
 use hex::FromHexError;
