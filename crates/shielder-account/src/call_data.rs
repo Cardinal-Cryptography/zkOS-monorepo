@@ -1,5 +1,6 @@
 use alloy_primitives::{Address, Bytes, FixedBytes, U256};
 use rand::rngs::OsRng;
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
@@ -31,7 +32,7 @@ struct ActionSecrets {
     trapdoor_new: U256,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub enum Token {
     Native,
     ERC20(Address),

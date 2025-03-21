@@ -1,9 +1,10 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{NewAccountCallExtra, NewAccountCallType, Token},
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
     ShielderAction,
 };
+use shielder_circuits::GrumpkinPointAffine;
 use shielder_contract::{
     call_type::{Call, DryRun},
     events::get_event,
@@ -19,31 +20,40 @@ use crate::{
     },
 };
 
-pub async fn new_account(app_state: &mut AppState, amount: u128, _token: Token) -> Result<()> {
-    let amount = U256::from(amount);
+fn prepare_call(
+    app_state: &AppState,
+    amount: U256,
+    token: Token,
+    anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
+) -> Result<NewAccountCall> {
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
+    let extra = NewAccountCallExtra {
+        anonymity_revoker_public_key,
+        encryption_salt: get_encryption_salt(),
+        mac_salt: get_mac_salt(),
+    };
+
+    Ok(app_state
+        .account
+        .prepare_call::<NewAccountCallType>(&params, &pk, token, amount, &extra))
+}
+
+pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
+    let amount = U256::from(amount);
     let user = app_state.create_shielder_user();
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
-    let (tx_hash, block_hash) = user
-        .create_new_account_native::<Call>(
-            app_state
-                .account
-                .prepare_call::<NewAccountCallType>(
-                    &params,
-                    &pk,
-                    Token::Native,
-                    amount,
-                    &NewAccountCallExtra {
-                        anonymity_revoker_public_key,
-                        encryption_salt: get_encryption_salt(),
-                        mac_salt: get_mac_salt(),
-                    },
-                )
-                .try_into()
-                .unwrap(),
-            amount,
-        )
-        .await?;
+    let call = prepare_call(app_state, amount, token, anonymity_revoker_public_key)?;
+
+    let (tx_hash, block_hash) = match token {
+        Token::Native => {
+            user.new_account_native::<Call>(call.try_into().unwrap(), amount)
+                .await?
+        }
+        Token::ERC20(_) => {
+            user.new_account_erc20::<Call>(call.try_into().unwrap())
+                .await?
+        }
+    };
 
     let new_account_event = get_event::<NewAccount>(
         &app_state.create_simple_provider().await?,
@@ -59,6 +69,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128, _token: Token) 
             amount,
             new_account_event.newNoteIndex,
             tx_hash,
+            token,
         ));
     info!("Created new account with {amount} tokens");
     Ok(())

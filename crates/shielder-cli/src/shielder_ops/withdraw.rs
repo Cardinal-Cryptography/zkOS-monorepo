@@ -30,7 +30,7 @@ pub async fn withdraw(
     app_state: &mut AppState,
     amount: u128,
     to: Address,
-    _token: Token,
+    token: Token,
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
@@ -67,6 +67,7 @@ pub async fn withdraw(
         withdraw_event.newNoteIndex,
         tx_hash,
         to,
+        token,
     ));
     info!("Withdrawn {amount} tokens");
     Ok(())

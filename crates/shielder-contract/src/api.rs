@@ -36,7 +36,7 @@ impl<P: Provider + Clone> ShielderUser<P> {
     }
 
     /// Create new account.
-    pub async fn create_new_account_native<C: CallType<newAccountNativeCall>>(
+    pub async fn new_account_native<C: CallType<newAccountNativeCall>>(
         &self,
         call: newAccountNativeCall,
         value: U256,
@@ -45,7 +45,7 @@ impl<P: Provider + Clone> ShielderUser<P> {
     }
 
     /// Create new account with ERC20 token.
-    pub async fn create_new_account_erc20<C: CallType<newAccountERC20Call>>(
+    pub async fn new_account_erc20<C: CallType<newAccountERC20Call>>(
         &self,
         call: newAccountERC20Call,
     ) -> ContractResult<C::Result> {
