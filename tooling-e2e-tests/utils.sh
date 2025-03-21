@@ -114,7 +114,7 @@ EOF
 mint_erc20_tokens() {
   AMOUNT=$(mtzero 100000)
 
-  keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}")
+  keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}" "${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}")
 
   for key in "${keys[@]}"; do
     for token in $(echo ${TOKEN_CONTRACT_ADDRESSES} | sed "s/,/ /g"); do
@@ -130,7 +130,27 @@ mint_erc20_tokens() {
   done
 
   log_progress "✅ Tokens minted"
+}
 
+approve_erc20_tokens() {
+  AMOUNT=$(mtzero 100000)
+
+  keys=("${ALICE_PRIVATE_KEY}" "${BOB_PRIVATE_KEY}" "${CHARLIE_PRIVATE_KEY}")
+
+  for key in "${keys[@]}"; do
+    for token in $(echo ${TOKEN_CONTRACT_ADDRESSES} | sed "s/,/ /g"); do
+      cast send \
+        --rpc-url "${NODE_RPC_URL}" \
+        --private-key "${key}" \
+        ${token} \
+        "approve(address,uint256)" \
+        ${SHIELDER_CONTRACT_ADDRESS} \
+        ${AMOUNT} \
+        &>> output.log
+    done
+  done
+
+  log_progress "✅ Tokens approved for spending by the shielder contract"
 }
 
 ####################################################################################################
@@ -215,6 +235,10 @@ setup() {
   clear_local_cli_state
 
   deploy_shielder_contracts
+  deploy_erc20_tokens
+  mint_erc20_tokens
+  approve_erc20_tokens
+
   start_relayer
 }
 
@@ -227,6 +251,7 @@ setup_shielder_sdk() {
   deploy_shielder_contracts
   deploy_erc20_tokens
   mint_erc20_tokens
+
   start_relayer
 }
 
