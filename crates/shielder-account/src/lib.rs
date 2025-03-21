@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::BTreeMap, fmt::Display};
 
 use alloy_primitives::U256;
 use halo2curves::bn256::Fr;
@@ -11,8 +11,10 @@ mod shielder_action;
 
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{generate_user_id, note_hash, Note};
-use shielder_setup::{native_token::NATIVE_TOKEN_ADDRESS, version::contract_version};
-use type_conversions::{field_to_u256, u256_to_field};
+use shielder_setup::version::contract_version;
+use type_conversions::{address_to_field, field_to_u256, u256_to_field};
+
+use crate::call_data::Token;
 
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {
@@ -25,7 +27,7 @@ pub struct ShielderAccount {
     /// The nonce used to generate nullifiers and trapdoors. It is incremented after each action.
     pub nonce: u32,
     /// The total current amount of tokens shielded by the account.
-    pub shielded_amount: U256,
+    pub shielded_amount: BTreeMap<Token, U256>,
     /// The history of actions performed by the account.
     pub history: Vec<ShielderAction>,
 }
@@ -59,16 +61,23 @@ impl ShielderAccount {
         let action = action.into();
         match &action {
             ShielderAction::Deposit(data) | ShielderAction::NewAccount(data) => {
-                self.shielded_amount = self
-                    .shielded_amount
-                    .checked_add(data.amount)
-                    .expect("shielded amount overflow");
+                self.shielded_amount
+                    .entry(data.token)
+                    .and_modify(|old| {
+                        old.checked_add(data.amount)
+                            .expect("shielded amount overflow");
+                    })
+                    .or_insert(data.amount);
             }
             ShielderAction::Withdraw { data, .. } => {
-                self.shielded_amount = self
-                    .shielded_amount
-                    .checked_sub(data.amount)
-                    .expect("shielded amount underflow");
+                self.shielded_amount
+                    .entry(data.token)
+                    .and_modify(|old| {
+                        *old = old
+                            .checked_sub(data.amount)
+                            .expect("shielded amount underflow");
+                    })
+                    .or_insert(data.amount);
             }
         }
         self.nonce += 1;
@@ -85,17 +94,22 @@ impl ShielderAccount {
     }
 
     /// Compute note representing current state. `None` if no operations have been performed.
-    pub fn note(&self) -> Option<U256> {
+    pub fn note(&self, token: Token) -> Option<U256> {
         if self.nonce == 0 {
             return None;
         }
+        let amount = self
+            .shielded_amount
+            .get(&token)
+            .cloned()
+            .unwrap_or_default();
         let raw_note: Fr = note_hash(&Note {
             version: contract_version().note_version(),
             id: u256_to_field(self.id),
             nullifier: u256_to_field(self.previous_nullifier()),
             trapdoor: u256_to_field(self.previous_trapdoor().unwrap()), // safe unwrap
-            account_balance: u256_to_field(self.shielded_amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            account_balance: u256_to_field(amount),
+            token_address: address_to_field(token.address()),
         });
         Some(field_to_u256(raw_note))
     }

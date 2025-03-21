@@ -81,6 +81,14 @@ impl ShielderAction {
             },
         }
     }
+
+    pub fn token(&self) -> Token {
+        match self {
+            Self::NewAccount(data) | Self::Deposit(data) | Self::Withdraw { data, .. } => {
+                data.token
+            }
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]

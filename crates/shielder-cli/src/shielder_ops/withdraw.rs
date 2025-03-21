@@ -5,10 +5,7 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{
-         Token, WithdrawCallType,
-        WithdrawExtra,
-    },
+    call_data::{Token, WithdrawCallType, WithdrawExtra},
     ShielderAction,
 };
 use shielder_contract::{
@@ -17,9 +14,7 @@ use shielder_contract::{
     ShielderContract::{withdrawNativeCall, Withdraw},
 };
 use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
-use shielder_setup::{
-    version::contract_version,
-};
+use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
 
@@ -39,10 +34,11 @@ pub async fn withdraw(
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
-    let total_fee = get_relayer_total_fee(app_state).await?;
+    let total_fee = get_relayer_total_fee(app_state, token).await?;
     let amount = U256::from(amount) + total_fee;
+    let shielded_amount = app_state.account.shielded_amount[&token];
 
-    if amount > app_state.account.shielded_amount {
+    if amount > shielded_amount {
         bail!("Not enough funds to withdraw");
     }
 
@@ -91,7 +87,8 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
     bail!("Couldn't fetch transaction receipt")
 }
 
-async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
+// todo: use _token, once relayer actually supports ERC20 in quotes
+async fn get_relayer_total_fee(app_state: &mut AppState, _token: Token) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {

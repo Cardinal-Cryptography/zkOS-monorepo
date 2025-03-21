@@ -97,7 +97,7 @@ mod tests {
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
-    use shielder_account::ShielderAccount;
+    use shielder_account::{call_data::Token::Native, ShielderAccount};
     use shielder_circuits::Fr;
     use shielder_contract::ShielderContract::{
         NewAccount, ShielderContractEvents, WrongContractVersion,
@@ -160,7 +160,10 @@ mod tests {
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, token, amount));
-        assert_eq!(shielder_account.shielded_amount, U256::from(amount))
+        assert_eq!(
+            shielder_account.shielded_amount[&Native],
+            U256::from(amount)
+        )
     }
 
     #[rstest]
