@@ -9,7 +9,7 @@ pub mod native_token {
     use shielder_circuits::{Field, Fr};
 
     pub const NATIVE_TOKEN_ADDRESS: Fr = Fr::ZERO;
-    pub const NATIVE_TOKEN_DECIMALS: u8 = 18;
+    pub const NATIVE_TOKEN_DECIMALS: u32 = 18;
     pub const ONE_TZERO: u128 = 1_000_000_000_000_000_000;
 }
 

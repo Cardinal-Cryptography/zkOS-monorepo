@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{DepositCall, DepositCallType, DepositExtra, Token},
-    ShielderAccount,
+    call_data::{DepositCall, DepositCallType, DepositExtra},
+    ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{depositERC20Call, depositNativeCall};
 
@@ -81,7 +81,6 @@ pub fn invoke_call(
 
 #[cfg(test)]
 mod tests {
-
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Bytes, FixedBytes, U256};
@@ -175,7 +174,10 @@ mod tests {
             token,
             U256::from(15)
         ));
-        assert_eq!(shielder_account.shielded_amount, U256::from(15))
+        assert_eq!(
+            shielder_account.shielded_amount[&token.token(&deployment)],
+            U256::from(15)
+        )
     }
 
     #[rstest]

@@ -6,7 +6,7 @@ use alloy_provider::{
 use alloy_rpc_types::TransactionRequest;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, Result};
-use shielder_account::ShielderAction;
+use shielder_account::{ShielderAction, Token};
 use shielder_circuits::new_account::NewAccountCircuit;
 use shielder_contract::{
     alloy_primitives::U256, call_type::Call, events::get_event, providers::create_simple_provider,
@@ -73,7 +73,7 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
 
         let (tx_hash, block_hash) = actor
             .shielder_user
-            .create_new_account_native::<Call>(call, shielded_amount)
+            .new_account_native::<Call>(call, shielded_amount)
             .await?;
 
         let new_account_event = get_event::<NewAccount>(&provider, tx_hash, block_hash).await?;
@@ -82,6 +82,7 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
             shielded_amount,
             new_account_event.newNoteIndex,
             tx_hash,
+            Token::Native,
         ));
 
         println!("  ✅ Shielded tokens for address {}", actor.address());

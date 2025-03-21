@@ -94,10 +94,16 @@ pub enum StateReadCommand {
 pub enum ContractInteractionCommand {
     /// Create new shielder account.
     NewAccount(NewAccountCmd),
+    /// Create new shielder ERC20 account.
+    NewAccountERC20(NewAccountERC20Cmd),
     /// Shield some tokens.
     Deposit(DepositCmd),
+    /// Shield some ERC20 tokens.
+    DepositERC20(DepositERC20Cmd),
     /// Unshield some tokens.
     Withdraw(WithdrawCmd),
+    /// Unshield some ERC20 tokens.
+    WithdrawERC20(WithdrawERC20Cmd),
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -107,17 +113,45 @@ pub struct NewAccountCmd {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
+pub struct NewAccountERC20Cmd {
+    /// Amount of the ERC20 token to be shielded.
+    pub amount: u128,
+    /// Address of the token.
+    pub token_address: Address,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Args)]
 pub struct DepositCmd {
     /// Amount of the token to be shielded.
     pub amount: u128,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
-pub struct WithdrawCmd {
+pub struct DepositERC20Cmd {
     /// Amount of the token to be shielded.
+    pub amount: u128,
+    /// Address of the token.
+    pub token_address: Address,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Args)]
+pub struct WithdrawCmd {
+    /// Amount of the token to be unshielded.
     pub amount: u128,
     /// Address to which the tokens should be sent.
     pub to: Address,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Args)]
+pub struct WithdrawERC20Cmd {
+    /// Amount of the token to be unshielded.
+    pub amount: u128,
+    /// Address to which the tokens should be sent.
+    pub to: Address,
+    /// Address of the token.
+    pub token_address: Address,
+    /// ERC20 token decimals.
+    pub decimals: u32,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, ValueEnum)]

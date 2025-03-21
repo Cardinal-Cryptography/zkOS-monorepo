@@ -16,44 +16,16 @@ use shielder_contract::{
     },
     WithdrawCommitment,
 };
-use shielder_setup::{
-    native_token::NATIVE_TOKEN_ADDRESS,
-    version::{contract_version, ContractVersion},
-};
+use shielder_setup::version::{contract_version, ContractVersion};
 use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
-use crate::ShielderAccount;
+use crate::{ShielderAccount, Token};
 
 struct ActionSecrets {
     nullifier_old: U256,
     trapdoor_old: U256,
     nullifier_new: U256,
     trapdoor_new: U256,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum Token {
-    Native,
-    ERC20(Address),
-}
-
-impl Token {
-    pub fn address(&self) -> Address {
-        match self {
-            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
-            Token::ERC20(address) => *address,
-        }
-    }
-}
-
-impl From<Address> for Token {
-    fn from(address: Address) -> Self {
-        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
-            Token::Native
-        } else {
-            Token::ERC20(address)
-        }
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -285,11 +257,17 @@ impl CallType for DepositCallType {
             ..
         } = account.get_secrets();
 
+        let shielded_amount = account
+            .shielded_amount
+            .get(&token)
+            .cloned()
+            .unwrap_or_default();
+
         DepositProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
-            account_old_balance: u256_to_field(account.shielded_amount),
+            account_old_balance: u256_to_field(shielded_amount),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             deposit_value: u256_to_field(amount),
@@ -424,11 +402,13 @@ impl CallType for WithdrawCallType {
         }
         .commitment_hash();
 
+        let shielded_amount = account.shielded_amount[&token];
+
         WithdrawProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
-            account_old_balance: u256_to_field(account.shielded_amount),
+            account_old_balance: u256_to_field(shielded_amount),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             withdrawal_value: u256_to_field(amount),

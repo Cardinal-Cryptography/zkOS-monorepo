@@ -101,7 +101,7 @@ async fn find_shielder_transaction(
         let mut hypothetical_account = account.clone();
         hypothetical_account.register_action(action.clone());
         let expected_note = hypothetical_account
-            .note()
+            .note(action.token())
             .expect("We have just made an action");
 
         if expected_note == event_note {
