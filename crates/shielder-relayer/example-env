@@ -3,73 +3,37 @@
 ########################################################################################################################
 
 NODE_RPC_URL="https://rpc.alephzero-testnet.gelato.digital"
-export NODE_RPC_URL
 
 SHIELDER_CONTRACT_ADDRESS="0x1111111111111111111111111111111111111111"
-export SHIELDER_CONTRACT_ADDRESS
 
 ####################################################
 #### THESE SHOULD BE KEPT SECRET (PRIVATE KEYS) ####
 ####################################################
 FEE_DESTINATION_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 RELAYER_SIGNING_KEYS="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d,0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a,0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"
-export FEE_DESTINATION_KEY
-export RELAYER_SIGNING_KEYS
 
-TOKEN_CONFIG=$(cat <<EOF
-[
-{
-  "kind":"Native",
-  "price_provider":{"Url":"https://api.diadata.org/v1/assetQuotation/AlephZero/0x0000000000000000000000000000000000000000"}
-},
-{
-  "kind":{"ERC20":{"address": "0x2222222222222222222222222222222222222222", "decimals": 18}},
-  "price_provider":{"Url":"https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000"}
-},
-{
-  "kind":{"ERC20":{"address": "0x3333333333333333333333333333333333333333", "decimals": 6}},
-  "price_provider":{"Url":"https://api.diadata.org/v1/assetQuotation/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7"}
-}
-]
-EOF
-)
-export TOKEN_CONFIG
+TOKEN_CONFIG="[{\"kind\":\"Native\",\"price_provider\":{\"Url\":\"https://api.diadata.org/v1/assetQuotation/AlephZero/0x0000000000000000000000000000000000000000\"}},{\"kind\":{\"ERC20\":{\"address\": \"0x2222222222222222222222222222222222222222\", \"decimals\": 18}},\"price_provider\":{\"Url\":\"https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000\"}},{\"kind\":{\"ERC20\":{\"address\": \"0x3333333333333333333333333333333333333333\", \"decimals\": 6}},\"price_provider\":{\"Url\":\"https://api.diadata.org/v1/assetQuotation/Ethereum/0xdAC17F958D2ee523a2206206994597C13D831ec7\"}}]"
 
 ########################################################################################################################
 ##### CHAIN-AGNOSTIC CONFIGURATION #####################################################################################
 ########################################################################################################################
 
 LOGGING_FORMAT=text
-export LOGGING_FORMAT
 
 RELAYER_HOST="0.0.0.0"
 RELAYER_PORT="4141"
 RELAYER_METRICS_PORT="9615"
-export RELAYER_HOST
-export RELAYER_PORT
-export RELAYER_METRICS_PORT
 
 TOTAL_FEE="100000000000000000"
 RELAY_GAS="2000000"
-export TOTAL_FEE
-export RELAY_GAS
 
 BALANCE_MONITOR_INTERVAL="900"
 NONCE_POLICY="Caching"
 DRY_RUNNING="Always"
 RELAY_COUNT_FOR_RECHARGE="20"
-export BALANCE_MONITOR_INTERVAL
-export NONCE_POLICY
-export DRY_RUNNING
-export RELAY_COUNT_FOR_RECHARGE
 
 PRICE_FEED_REFRESH_INTERVAL="60"
 PRICE_FEED_VALIDITY="300"
 SERVICE_FEE_PERCENT="15"
 QUOTE_VALIDITY="15"
 MAX_POCKET_MONEY="100000000000000000"
-export PRICE_FEED_REFRESH_INTERVAL
-export PRICE_FEED_VALIDITY
-export SERVICE_FEE_PERCENT
-export QUOTE_VALIDITY
-export MAX_POCKET_MONEY
