@@ -38,8 +38,8 @@ pub async fn run(connection: Connection) -> Result<(), RevokeError> {
             let commitment = blob_to_field(&mac_commitment)?;
 
             for ViewingKey { viewing_key: key } in &keys {
-                let maybe_commitment = hash(&[blob_to_field(&mac_salt)?, blob_to_field(key)?]);
-                if commitment.eq(&maybe_commitment) {
+                let expected_commitment = hash(&[blob_to_field(&mac_salt)?, blob_to_field(key)?]);
+                if commitment.eq(&expected_commitment) {
                     db::upsert_event(
                         &connection,
                         Event {
