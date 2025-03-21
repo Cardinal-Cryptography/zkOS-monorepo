@@ -20,7 +20,6 @@ pub mod deploy;
 pub mod erc1967proxy;
 pub mod erc20;
 pub mod ierc20;
-pub mod limits;
 pub mod merkle;
 
 fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
