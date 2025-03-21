@@ -227,7 +227,7 @@ setup_shielder_sdk() {
   deploy_shielder_contracts
   deploy_erc20_tokens
   mint_erc20_tokens
-  # start_relayer
+  start_relayer
 }
 
 cleanup() {
