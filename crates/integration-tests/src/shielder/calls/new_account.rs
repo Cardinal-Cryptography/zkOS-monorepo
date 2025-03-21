@@ -78,7 +78,7 @@ pub fn create_account_and_call(
     id: U256,
     initial_amount: U256,
 ) -> Result<ShielderAccount, ShielderCallErrors> {
-    let mut shielder_account = ShielderAccount::new(id);
+    let mut shielder_account = ShielderAccount::new(id, token.token(deployment));
 
     let calldata = prepare_call(deployment, &mut shielder_account, token, initial_amount);
     let result = invoke_call(deployment, &mut shielder_account, &calldata);

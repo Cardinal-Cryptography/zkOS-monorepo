@@ -46,7 +46,9 @@ pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -
     debug!("New account event: {new_account_event:?}");
 
     app_state
-        .account
+        .accounts
+        .get_mut(&token.address())
+        .unwrap()
         .register_action(ShielderAction::new_account(
             amount,
             new_account_event.newNoteIndex,
@@ -74,7 +76,6 @@ fn prepare_call(
         mac_salt: get_mac_salt(),
     };
 
-    Ok(app_state
-        .account
+    Ok(app_state.accounts[&token.address()]
         .prepare_call::<NewAccountCallType>(&params, &pk, token, amount, &extra))
 }

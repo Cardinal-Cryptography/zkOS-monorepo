@@ -31,7 +31,7 @@ impl Actor {
         let signer = PrivateKeySigner::random_with(&mut StdRng::from_seed(seed(id)));
         let shielder_user =
             ShielderUser::new(shielder, ConnectionPolicy::OnDemand { rpc_url, signer });
-        let account = ShielderAccount::new(U256::from(id));
+        let account = ShielderAccount::new(U256::from(id), Token::Native);
         Self {
             id,
             shielder_user,

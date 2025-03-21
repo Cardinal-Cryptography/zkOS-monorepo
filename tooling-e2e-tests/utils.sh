@@ -82,10 +82,12 @@ deploy_erc20_token() {
 }
 
 deploy_erc20_tokens() {
-  TT1=$(deploy_erc20_token "TestToken1" "TT1")
-  TT2=$(deploy_erc20_token "TestToken2" "TT2")
+  ERC20_CONTRACT_ADDRESS_1=$(deploy_erc20_token "TestToken1" "TT1")
+  export ERC20_CONTRACT_ADDRESS_1
+  ERC20_CONTRACT_ADDRESS_2=$(deploy_erc20_token "TestToken2" "TT2")
+  export ERC20_CONTRACT_ADDRESS_2
 
-  TOKEN_CONTRACT_ADDRESSES=$TT1","$TT2
+  TOKEN_CONTRACT_ADDRESSES=$ERC20_CONTRACT_ADDRESS_1","$ERC20_CONTRACT_ADDRESS_2
   export TOKEN_CONTRACT_ADDRESSES
 
   # set pricing for relayer
@@ -96,11 +98,11 @@ deploy_erc20_tokens() {
       "price_provider":{"Static":1}
     },
     {
-      "kind":{"ERC20":{"address": "${TT1}", "decimals": 18}},
+      "kind":{"ERC20":{"address": "${ERC20_CONTRACT_ADDRESS_1}", "decimals": 18}},
       "price_provider":{"Static":1}
     },
     {
-      "kind":{"ERC20":{"address": "${TT2}", "decimals": 18}},
+      "kind":{"ERC20":{"address": "${ERC20_CONTRACT_ADDRESS_2}", "decimals": 18}},
       "price_provider":{"Static":1}
     }
   ]
