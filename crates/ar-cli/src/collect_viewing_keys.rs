@@ -4,8 +4,9 @@ use std::{
 };
 
 use alloy_json_rpc::RpcError;
+use alloy_network::AnyNetwork;
 use alloy_primitives::{Address, U256};
-use alloy_provider::Provider;
+use alloy_provider::{Provider, ProviderBuilder};
 use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, TransactionTrait};
 use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
@@ -14,7 +15,6 @@ use log::{debug, info};
 use rusqlite::Connection;
 use shielder_circuits::{grumpkin, GrumpkinPointAffine};
 use shielder_contract::{
-    providers::create_simple_provider,
     ShielderContract::{newAccountERC20Call, newAccountNativeCall},
     ShielderContractError,
 };
@@ -62,7 +62,11 @@ pub async fn run(
     from_block: u64,
     connection: Connection,
 ) -> Result<(), CollectKeysError> {
-    let provider = create_simple_provider(rpc_url).await?;
+    let provider = ProviderBuilder::new()
+        .network::<AnyNetwork>()
+        .on_builtin(rpc_url)
+        .await?;
+
     let last_finalized_block_number = provider.get_block_number().await?;
 
     let bytes = match endianess {

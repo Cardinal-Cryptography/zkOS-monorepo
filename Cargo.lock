@@ -676,6 +676,7 @@ name = "ar-cli"
 version = "0.1.0"
 dependencies = [
  "alloy-json-rpc",
+ "alloy-network",
  "alloy-primitives",
  "alloy-provider",
  "alloy-rpc-types",
