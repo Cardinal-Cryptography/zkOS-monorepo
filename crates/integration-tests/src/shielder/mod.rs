@@ -10,7 +10,7 @@ use deploy::{
     RELAYER_INITIAL_NATIVE_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
-use shielder_account::call_data::Token;
+use shielder_account::call_data::TokenKind;
 use shielder_contract::ShielderContract::{unpauseCall, ShielderContractEvents};
 
 pub mod address_conversion;
@@ -91,10 +91,10 @@ impl TestToken {
         }
     }
 
-    pub fn token(self, deployment: &Deployment) -> Token {
+    pub fn token(self, deployment: &Deployment) -> TokenKind {
         match self {
-            TestToken::Native => Token::Native,
-            TestToken::ERC20 => Token::ERC20(deployment.test_erc20.contract_address),
+            TestToken::Native => TokenKind::Native,
+            TestToken::ERC20 => TokenKind::ERC20(deployment.test_erc20.contract_address),
         }
     }
 }

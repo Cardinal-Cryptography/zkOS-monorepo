@@ -11,10 +11,9 @@ mod shielder_action;
 
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{generate_user_id, note_hash, Note};
+use shielder_setup::native_token::TokenKind;
 use shielder_setup::version::contract_version;
 use type_conversions::{address_to_field, field_to_u256, u256_to_field};
-
-use crate::call_data::Token;
 
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {
@@ -27,7 +26,7 @@ pub struct ShielderAccount {
     /// The nonce used to generate nullifiers and trapdoors. It is incremented after each action.
     pub nonce: u32,
     /// The total current amount of tokens shielded by the account.
-    pub shielded_amount: BTreeMap<Token, U256>,
+    pub shielded_amount: BTreeMap<TokenKind, U256>,
     /// The history of actions performed by the account.
     pub history: Vec<ShielderAction>,
 }
@@ -94,7 +93,7 @@ impl ShielderAccount {
     }
 
     /// Compute note representing current state. `None` if no operations have been performed.
-    pub fn note(&self, token: Token) -> Option<U256> {
+    pub fn note(&self, token: TokenKind) -> Option<U256> {
         if self.nonce == 0 {
             return None;
         }

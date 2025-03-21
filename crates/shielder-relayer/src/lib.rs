@@ -9,8 +9,19 @@ use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U2
 
 mod environment_variables;
 pub use environment_variables::*;
-mod token;
-pub use token::*;
+use shielder_setup::native_token::TokenKind;
+
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub enum PriceProvider {
+    Url(String),
+    Static(Decimal),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub price_provider: PriceProvider,
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(transparent)]

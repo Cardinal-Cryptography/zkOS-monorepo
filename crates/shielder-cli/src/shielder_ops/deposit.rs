@@ -1,7 +1,7 @@
 use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::{
-    call_data::{DepositCall, DepositCallType, DepositExtra, Token},
+    call_data::{DepositCall, DepositCallType, DepositExtra, TokenKind},
     ShielderAction,
 };
 use shielder_contract::{
@@ -19,7 +19,7 @@ use crate::{
     },
 };
 
-pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
+pub async fn deposit(app_state: &mut AppState, amount: u128, token: TokenKind) -> Result<()> {
     let amount = U256::from(amount);
     let leaf_index = app_state
         .account
@@ -30,12 +30,12 @@ pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Re
 
     let call = prepare_call(app_state, amount, token, merkle_path)?;
     let (tx_hash, block_hash) = match token {
-        Token::Native => {
+        TokenKind::Native => {
             shielder_user
                 .deposit_native::<Call>(call.try_into().unwrap(), amount)
                 .await?
         }
-        Token::ERC20(_) => {
+        TokenKind::ERC20(_) => {
             shielder_user
                 .deposit_erc20::<Call>(call.try_into().unwrap())
                 .await?
@@ -63,7 +63,7 @@ pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Re
 fn prepare_call(
     app_state: &AppState,
     amount: U256,
-    token: Token,
+    token: TokenKind,
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
 ) -> Result<DepositCall> {
     let (params, pk) = get_proving_equipment(CircuitType::Deposit)?;

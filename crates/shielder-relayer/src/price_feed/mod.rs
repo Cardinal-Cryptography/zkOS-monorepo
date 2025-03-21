@@ -43,7 +43,9 @@ impl Prices {
             token_map.insert(token.kind, token.clone());
             let price = match &token.price_provider {
                 PriceProvider::Url(_) => None,
-                PriceProvider::Static(price) => Some(Price::static_price(*price, token.decimals())),
+                PriceProvider::Static(price) => {
+                    Some(Price::static_price(*price, token.kind.decimals()))
+                }
             };
             inner.insert(token.kind, Arc::new(Mutex::new(price)));
         }
@@ -71,7 +73,7 @@ impl Prices {
             let PriceProvider::Url(url) = &token.price_provider else {
                 continue;
             };
-            let price_info = fetch_price(url).await?;
+            let price_info = fetch_price(&url).await?;
             let price = Price::from_price_info(price_info, token.decimals(), self.validity);
 
             self.inner
@@ -97,7 +99,7 @@ pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
 #[cfg(test)]
 mod tests {
     use shielder_relayer::PriceProvider;
-
+    use shielder_setup::native_token::TokenKind;
     use super::*;
 
     fn token_with_static_price() -> Token {

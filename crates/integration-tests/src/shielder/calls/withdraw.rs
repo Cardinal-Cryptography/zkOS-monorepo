@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{Token, WithdrawCall, WithdrawCallType, WithdrawExtra},
+    call_data::{TokenKind, WithdrawCall, WithdrawCallType, WithdrawExtra},
     ShielderAccount,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
@@ -89,11 +89,11 @@ pub fn invoke_call(
     calldata: &WithdrawCall,
 ) -> CallResult {
     let call_result = match calldata.token {
-        Token::Native => {
+        TokenKind::Native => {
             let calldata: withdrawNativeCall = calldata.clone().try_into().unwrap();
             invoke_shielder_call(deployment, &calldata, None)
         }
-        Token::ERC20(_) => {
+        TokenKind::ERC20(_) => {
             let pocket_money = calldata.pocket_money;
             let calldata: withdrawERC20Call = calldata.clone().try_into().unwrap();
             invoke_shielder_call(deployment, &calldata, Some(pocket_money))

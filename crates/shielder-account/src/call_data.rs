@@ -1,6 +1,5 @@
 use alloy_primitives::{Address, Bytes, FixedBytes, U256};
 use rand::rngs::OsRng;
-use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
@@ -18,7 +17,7 @@ use shielder_contract::{
     WithdrawCommitment,
 };
 use shielder_setup::{
-    native_token::NATIVE_TOKEN_ADDRESS,
+    native_token::TokenKind,
     version::{contract_version, ContractVersion},
 };
 use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
@@ -30,31 +29,6 @@ struct ActionSecrets {
     trapdoor_old: U256,
     nullifier_new: U256,
     trapdoor_new: U256,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub enum Token {
-    Native,
-    ERC20(Address),
-}
-
-impl Token {
-    pub fn address(&self) -> Address {
-        match self {
-            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
-            Token::ERC20(address) => *address,
-        }
-    }
-}
-
-impl From<Address> for Token {
-    fn from(address: Address) -> Self {
-        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
-            Token::Native
-        } else {
-            Token::ERC20(address)
-        }
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -74,7 +48,7 @@ pub trait CallType {
     /// Prepare the prover knowledge for the call.
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
-        token: Token,
+        token: TokenKind,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge;
@@ -90,7 +64,7 @@ pub trait CallType {
 #[derive(Clone, Debug)]
 pub struct NewAccountCall {
     pub amount: U256,
-    pub token: Token,
+    pub token: TokenKind,
     pub expected_contract_version: FixedBytes<3>,
     pub new_note: U256,
     pub prenullifier: U256,
@@ -106,7 +80,7 @@ impl TryFrom<NewAccountCall> for newAccountNativeCall {
 
     fn try_from(calldata: NewAccountCall) -> Result<Self, Self::Error> {
         match calldata.token {
-            Token::Native => Ok(Self {
+            TokenKind::Native => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
                 newNote: calldata.new_note,
                 prenullifier: calldata.prenullifier,
@@ -118,7 +92,7 @@ impl TryFrom<NewAccountCall> for newAccountNativeCall {
                 macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
             }),
-            Token::ERC20(_) => Err(CallTypeConversionError),
+            TokenKind::ERC20 { .. } => Err(CallTypeConversionError),
         }
     }
 }
@@ -128,9 +102,9 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
 
     fn try_from(calldata: NewAccountCall) -> Result<Self, Self::Error> {
         match calldata.token {
-            Token::Native => Err(CallTypeConversionError),
-            Token::ERC20(token_address) => Ok(Self {
-                tokenAddress: token_address,
+            TokenKind::Native => Err(CallTypeConversionError),
+            TokenKind::ERC20 { address, .. } => Ok(Self {
+                tokenAddress: address,
                 amount: calldata.amount,
                 expectedContractVersion: calldata.expected_contract_version,
                 newNote: calldata.new_note,
@@ -161,7 +135,7 @@ impl CallType for NewAccountCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
-        token: Token,
+        token: TokenKind,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -188,7 +162,9 @@ impl CallType for NewAccountCallType {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
         NewAccountCall {
             amount: field_to_u256(prover_knowledge.initial_deposit),
-            token: field_to_address(prover_knowledge.token_address).into(),
+            token: TokenKind::from_address_ignore_decimals(field_to_address(
+                prover_knowledge.token_address,
+            )),
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
             prenullifier: field_to_u256(prover_knowledge.compute_public_input(Prenullifier)),
@@ -210,7 +186,7 @@ impl CallType for NewAccountCallType {
 #[derive(Clone, Debug)]
 pub struct DepositCall {
     pub amount: U256,
-    pub token: Token,
+    pub token: TokenKind,
     pub expected_contract_version: FixedBytes<3>,
     pub old_nullifier_hash: U256,
     pub new_note: U256,
@@ -225,7 +201,7 @@ impl TryFrom<DepositCall> for depositNativeCall {
 
     fn try_from(calldata: DepositCall) -> Result<Self, Self::Error> {
         match calldata.token {
-            Token::Native => Ok(Self {
+            TokenKind::Native => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
                 oldNullifierHash: calldata.old_nullifier_hash,
                 newNote: calldata.new_note,
@@ -234,7 +210,7 @@ impl TryFrom<DepositCall> for depositNativeCall {
                 macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
             }),
-            Token::ERC20(_) => Err(CallTypeConversionError),
+            TokenKind::ERC20 { .. } => Err(CallTypeConversionError),
         }
     }
 }
@@ -244,10 +220,10 @@ impl TryFrom<DepositCall> for depositERC20Call {
 
     fn try_from(calldata: DepositCall) -> Result<Self, Self::Error> {
         match calldata.token {
-            Token::Native => Err(CallTypeConversionError),
-            Token::ERC20(token_address) => Ok(Self {
+            TokenKind::Native => Err(CallTypeConversionError),
+            TokenKind::ERC20 { address, .. } => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
-                tokenAddress: token_address,
+                tokenAddress: address,
                 amount: calldata.amount,
                 oldNullifierHash: calldata.old_nullifier_hash,
                 newNote: calldata.new_note,
@@ -274,7 +250,7 @@ impl CallType for DepositCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
-        token: Token,
+        token: TokenKind,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -314,7 +290,7 @@ impl CallType for DepositCallType {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
         DepositCall {
             amount: field_to_u256(pk.deposit_value),
-            token: field_to_address(pk.token_address).into(),
+            token: TokenKind::from_address_ignore_decimals(field_to_address(pk.token_address)),
             expected_contract_version: contract_version().to_bytes(),
             old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
             new_note: field_to_u256(pk.compute_public_input(HashedNewNote)),
@@ -329,7 +305,7 @@ impl CallType for DepositCallType {
 #[derive(Clone, Debug)]
 pub struct WithdrawCall {
     pub amount: U256,
-    pub token: Token,
+    pub token: TokenKind,
     pub expected_contract_version: FixedBytes<3>,
     pub withdrawal_address: Address,
     pub relayer_address: Address,
@@ -348,7 +324,7 @@ impl TryFrom<WithdrawCall> for withdrawNativeCall {
 
     fn try_from(calldata: WithdrawCall) -> Result<Self, Self::Error> {
         match calldata.token {
-            Token::Native => Ok(Self {
+            TokenKind::Native => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
                 amount: calldata.amount,
                 withdrawalAddress: calldata.withdrawal_address,
@@ -361,7 +337,7 @@ impl TryFrom<WithdrawCall> for withdrawNativeCall {
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
             }),
-            Token::ERC20(_) => Err(CallTypeConversionError),
+            TokenKind::ERC20 { .. } => Err(CallTypeConversionError),
         }
     }
 }
@@ -371,10 +347,10 @@ impl TryFrom<WithdrawCall> for withdrawERC20Call {
 
     fn try_from(calldata: WithdrawCall) -> Result<Self, Self::Error> {
         match calldata.token {
-            Token::Native => Err(CallTypeConversionError),
-            Token::ERC20(token_address) => Ok(Self {
+            TokenKind::Native => Err(CallTypeConversionError),
+            TokenKind::ERC20 { address, .. } => Ok(Self {
                 expectedContractVersion: calldata.expected_contract_version,
-                tokenAddress: token_address,
+                tokenAddress: address,
                 amount: calldata.amount,
                 withdrawalAddress: calldata.withdrawal_address,
                 merkleRoot: calldata.merkle_root,
@@ -409,7 +385,7 @@ impl CallType for WithdrawCallType {
 
     fn prepare_prover_knowledge(
         account: &ShielderAccount,
-        token: Token,
+        token: TokenKind,
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
@@ -477,7 +453,7 @@ impl ShielderAccount {
         &self,
         params: &Params,
         pk: &ProvingKey,
-        token: Token,
+        token: TokenKind,
         amount: U256,
         extra: &CT::Extra,
     ) -> CT::Calldata {

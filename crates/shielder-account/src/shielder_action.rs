@@ -2,9 +2,7 @@ use alloy_primitives::{Address, TxHash, U256};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "contract")]
 use shielder_contract::ShielderContract::{Deposit, NewAccount, ShielderContractEvents, Withdraw};
-
-use crate::call_data::Token;
-
+use shielder_setup::native_token::TokenKind;
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
 pub enum ShielderAction {
     NewAccount(ShielderTxData),
@@ -46,7 +44,7 @@ impl From<(TxHash, ShielderContractEvents)> for ShielderAction {
 }
 
 impl ShielderAction {
-    pub fn new_account(amount: U256, note_index: U256, tx_hash: TxHash, token: Token) -> Self {
+    pub fn new_account(amount: U256, note_index: U256, tx_hash: TxHash, token: TokenKind) -> Self {
         Self::NewAccount(ShielderTxData {
             amount,
             note_index,
@@ -55,7 +53,7 @@ impl ShielderAction {
         })
     }
 
-    pub fn deposit(amount: U256, note_index: U256, tx_hash: TxHash, token: Token) -> Self {
+    pub fn deposit(amount: U256, note_index: U256, tx_hash: TxHash, token: TokenKind) -> Self {
         Self::Deposit(ShielderTxData {
             amount,
             note_index,
@@ -69,7 +67,7 @@ impl ShielderAction {
         note_index: U256,
         tx_hash: TxHash,
         to: Address,
-        token: Token,
+        token: TokenKind,
     ) -> Self {
         Self::Withdraw {
             to,
@@ -82,7 +80,7 @@ impl ShielderAction {
         }
     }
 
-    pub fn token(&self) -> Token {
+    pub fn token(&self) -> TokenKind {
         match self {
             Self::NewAccount(data) | Self::Deposit(data) | Self::Withdraw { data, .. } => {
                 data.token
@@ -96,5 +94,5 @@ pub struct ShielderTxData {
     pub amount: U256,
     pub note_index: U256,
     pub tx_hash: TxHash,
-    pub token: Token,
+    pub token: TokenKind,
 }
