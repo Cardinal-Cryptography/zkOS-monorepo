@@ -60,30 +60,15 @@ impl From<WithdrawProverKnowledge<Fr>> for WithdrawPubInputsBytes {
 #[derive(Clone, Debug)]
 pub struct WithdrawCircuit(super::WithdrawCircuit);
 
-#[cfg(feature = "build-wasm")]
+#[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 impl WithdrawCircuit {
+    #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
     pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
         WithdrawCircuit(super::WithdrawCircuit::new_pronto(params_buf, pk_buf))
     }
-}
 
-#[cfg(not(feature = "build-wasm"))]
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-impl WithdrawCircuit {
-    #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
-    pub fn new_pronto() -> Self {
-        WithdrawCircuit(super::WithdrawCircuit::new_pronto(
-            include_bytes!("../../artifacts/withdraw/params.bin"),
-            include_bytes!("../../artifacts/withdraw/pk.bin"),
-        ))
-    }
-}
-
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-#[cfg_attr(feature = "build-wasm", wasm_bindgen)]
-impl WithdrawCircuit {
     #[allow(clippy::too_many_arguments)]
     pub fn prove(
         &self,

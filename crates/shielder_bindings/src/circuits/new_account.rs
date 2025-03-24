@@ -77,30 +77,15 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
 #[derive(Clone, Debug)]
 pub struct NewAccountCircuit(super::NewAccountCircuit);
 
-#[cfg(feature = "build-wasm")]
+#[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 impl NewAccountCircuit {
+    #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
     pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
         NewAccountCircuit(super::NewAccountCircuit::new_pronto(params_buf, pk_buf))
     }
-}
 
-#[cfg(not(feature = "build-wasm"))]
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-impl NewAccountCircuit {
-    #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
-    pub fn new_pronto() -> Self {
-        NewAccountCircuit(super::NewAccountCircuit::new_pronto(
-            include_bytes!("../../artifacts/new_account/params.bin"),
-            include_bytes!("../../artifacts/new_account/pk.bin"),
-        ))
-    }
-}
-
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-#[cfg_attr(feature = "build-wasm", wasm_bindgen)]
-impl NewAccountCircuit {
     #[allow(clippy::too_many_arguments)]
     pub fn prove(
         &self,

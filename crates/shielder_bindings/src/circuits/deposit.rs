@@ -54,30 +54,15 @@ impl From<DepositProverKnowledge<Fr>> for DepositPubInputsBytes {
 #[derive(Clone, Debug)]
 pub struct DepositCircuit(super::DepositCircuit);
 
-#[cfg(feature = "build-wasm")]
+#[cfg_attr(feature = "build-uniffi", uniffi::export)]
 #[cfg_attr(feature = "build-wasm", wasm_bindgen)]
 impl DepositCircuit {
+    #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
     #[cfg_attr(feature = "build-wasm", wasm_bindgen(constructor))]
     pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
         DepositCircuit(super::DepositCircuit::new_pronto(params_buf, pk_buf))
     }
-}
 
-#[cfg(not(feature = "build-wasm"))]
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-impl DepositCircuit {
-    #[cfg_attr(feature = "build-uniffi", uniffi::constructor)]
-    pub fn new_pronto() -> Self {
-        DepositCircuit(super::DepositCircuit::new_pronto(
-            include_bytes!("../../artifacts/deposit/params.bin"),
-            include_bytes!("../../artifacts/deposit/pk.bin"),
-        ))
-    }
-}
-
-#[cfg_attr(feature = "build-uniffi", uniffi::export)]
-#[cfg_attr(feature = "build-wasm", wasm_bindgen)]
-impl DepositCircuit {
     #[allow(clippy::too_many_arguments)]
     pub fn prove(
         &self,
