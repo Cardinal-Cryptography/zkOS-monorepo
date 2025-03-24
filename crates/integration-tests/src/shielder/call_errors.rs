@@ -13,7 +13,6 @@ pub enum ShielderCallErrors {
     WithdrawVerificationFailed(ShielderContract::WithdrawVerificationFailed),
     NewAccountVerificationFailed(ShielderContract::NewAccountVerificationFailed),
     ZeroAmount(ShielderContract::ZeroAmount),
-    AmountOverDepositLimit(ShielderContract::AmountOverDepositLimit),
     AmountTooHigh(ShielderContract::AmountTooHigh),
     ContractBalanceLimitReached(ShielderContract::ContractBalanceLimitReached),
     WrongContractVersion(ShielderContract::WrongContractVersion),
@@ -47,9 +46,6 @@ impl From<ShielderContractErrors> for ShielderCallErrors {
                 ShielderCallErrors::NewAccountVerificationFailed(e)
             }
             ShielderContractErrors::ZeroAmount(e) => ShielderCallErrors::ZeroAmount(e),
-            ShielderContractErrors::AmountOverDepositLimit(e) => {
-                ShielderCallErrors::AmountOverDepositLimit(e)
-            }
             ShielderContractErrors::AmountTooHigh(e) => ShielderCallErrors::AmountTooHigh(e),
             ShielderContractErrors::ContractBalanceLimitReached(e) => {
                 ShielderCallErrors::ContractBalanceLimitReached(e)

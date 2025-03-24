@@ -32,13 +32,7 @@ contract DeployShielderScript is Script {
 
         bytes memory data = abi.encodeCall(
             Shielder.initialize,
-            (
-                owner,
-                type(uint256).max,
-                arPublicKeyX,
-                arPublicKeyY,
-                isArbitrumChain
-            )
+            (owner, arPublicKeyX, arPublicKeyY, isArbitrumChain)
         );
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));
