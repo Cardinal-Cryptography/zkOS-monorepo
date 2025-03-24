@@ -117,7 +117,7 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn gas_consumption_regression(mut deployment: Deployment, #[case] token: TestToken) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -138,7 +138,7 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn succeeds(mut deployment: Deployment, #[case] token: TestToken) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -246,7 +246,7 @@ mod tests {
         mut deployment: Deployment,
         #[case] token: TestToken,
     ) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from((1u128 << 112) - 1);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
