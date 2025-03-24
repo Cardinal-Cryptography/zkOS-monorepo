@@ -43,16 +43,3 @@ remove-unused-files-wasm:
 .PHONY: test
 test:
 	cargo test --release
-
-.PHONY: ios
-ios: # Build iOS bindings
-ios:
-	rm -rf ios-bindings
-# currently build for aarch64-apple-ios-sim
-	cargo build --release --features build-uniffi --target aarch64-apple-ios-sim
-# generate bindings for Swift
-	cargo run --features build-uniffi \
-		--bin uniffi-bindgen generate \
-		--library ../../target/aarch64-apple-ios-sim/release/libshielder_bindings.a \
-		--language swift \
-		--out-dir ios-bindings
