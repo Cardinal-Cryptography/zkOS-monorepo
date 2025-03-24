@@ -247,10 +247,7 @@ mod tests {
             token,
             U256::from(1)
         ));
-        assert_eq!(
-            shielder_account.shielded_amount[&token.token(&deployment)],
-            U256::from(15)
-        )
+        assert_eq!(shielder_account.shielded_amount, U256::from(15))
     }
 
     #[rstest]
@@ -331,10 +328,7 @@ mod tests {
             token,
             U256::from(1)
         ));
-        assert_eq!(
-            shielder_account.shielded_amount[&token.token(&deployment)],
-            U256::from(25)
-        )
+        assert_eq!(shielder_account.shielded_amount, U256::from(25))
     }
 
     #[rstest]
