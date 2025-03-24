@@ -27,6 +27,7 @@ export class RNCryptoClient implements CryptoClient {
       return Promise.resolve().then(() => poseidonRate());
     },
   };
+  // TODO: implement the rest of the methods
   secretManager: SecretManager = {} as SecretManager;
   noteTreeConfig: NoteTreeConfig = {} as NoteTreeConfig;
   converter: Converter = {} as Converter;
