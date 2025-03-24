@@ -160,10 +160,7 @@ mod tests {
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, token, amount));
-        assert_eq!(
-            shielder_account.shielded_amount[&token.token(&deployment)],
-            U256::from(amount)
-        )
+        assert_eq!(shielder_account.shielded_amount, U256::from(amount))
     }
 
     #[rstest]
@@ -214,7 +211,7 @@ mod tests {
         mut deployment: Deployment,
         #[case] token: TestToken,
     ) {
-        let mut shielder_account = ShielderAccount::new(U256::from(1));
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
 
         let initial_amount = U256::from(10);
         let mut calldata = prepare_call(
