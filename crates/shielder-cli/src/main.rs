@@ -69,8 +69,9 @@ async fn perform_state_write_action(
             info!("Setting relayer url to {url}");
             app_state.relayer_rpc_url = relayer_rpc_url;
         }
+        // for now we support only native recovery
         StateWriteCommand::RecoverState => {
-            recover_state(app_state).await?;
+            recover_state(app_state, Token::Native).await?;
         }
     };
     Ok(())
@@ -79,10 +80,14 @@ async fn perform_state_write_action(
 fn perform_state_read_action(app_state: &AppState, command: StateReadCommand) -> Result<()> {
     match command {
         StateReadCommand::DisplayAccount => {
-            println!("{}", app_state.account)
+            for account in app_state.accounts.values() {
+                println!("{}", account)
+            }
         }
         StateReadCommand::History => {
-            println!("{:#?}", app_state.account.history)
+            for account in app_state.accounts.values() {
+                println!("{:#?}", account.history)
+            }
         }
         StateReadCommand::AppConfig => {
             println!("{}", app_state.display_app_config())
@@ -135,6 +140,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         create_and_save_new_state(&cli_config.state_file, &password, &private_key)?;
     } else {
         let mut app_state = get_app_state(&cli_config.state_file, &password)?;
+
+        if let Some(token) = cli_config.command.token() {
+            app_state.ensure_account_exist(token);
+        }
 
         match cli_config.command {
             StateWrite(cmd) => {

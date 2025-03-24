@@ -257,17 +257,11 @@ impl CallType for DepositCallType {
             ..
         } = account.get_secrets();
 
-        let shielded_amount = account
-            .shielded_amount
-            .get(&token)
-            .cloned()
-            .unwrap_or_default();
-
         DepositProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
-            account_old_balance: u256_to_field(shielded_amount),
+            account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             deposit_value: u256_to_field(amount),
@@ -402,13 +396,11 @@ impl CallType for WithdrawCallType {
         }
         .commitment_hash();
 
-        let shielded_amount = account.shielded_amount[&token];
-
         WithdrawProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
-            account_old_balance: u256_to_field(shielded_amount),
+            account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             withdrawal_value: u256_to_field(amount),

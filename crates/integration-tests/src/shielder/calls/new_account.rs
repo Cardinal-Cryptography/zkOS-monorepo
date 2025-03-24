@@ -78,7 +78,7 @@ pub fn create_account_and_call(
     id: U256,
     initial_amount: U256,
 ) -> Result<ShielderAccount, ShielderCallErrors> {
-    let mut shielder_account = ShielderAccount::new(id);
+    let mut shielder_account = ShielderAccount::new(id, token.token(deployment));
 
     let calldata = prepare_call(deployment, &mut shielder_account, token, initial_amount);
     let result = invoke_call(deployment, &mut shielder_account, &calldata);
@@ -117,7 +117,7 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn gas_consumption_regression(mut deployment: Deployment, #[case] token: TestToken) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -138,7 +138,7 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn succeeds(mut deployment: Deployment, #[case] token: TestToken) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -160,10 +160,7 @@ mod tests {
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, token, amount));
-        assert_eq!(
-            shielder_account.shielded_amount[&token.token(&deployment)],
-            U256::from(amount)
-        )
+        assert_eq!(shielder_account.shielded_amount, U256::from(amount))
     }
 
     #[rstest]
@@ -214,7 +211,7 @@ mod tests {
         mut deployment: Deployment,
         #[case] token: TestToken,
     ) {
-        let mut shielder_account = ShielderAccount::new(U256::from(1));
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
 
         let initial_amount = U256::from(10);
         let mut calldata = prepare_call(
@@ -249,7 +246,7 @@ mod tests {
         mut deployment: Deployment,
         #[case] token: TestToken,
     ) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from((1u128 << 112) - 1);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
