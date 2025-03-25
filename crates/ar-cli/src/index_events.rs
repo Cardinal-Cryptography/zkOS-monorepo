@@ -6,7 +6,7 @@ use alloy_provider::Provider;
 use alloy_rpc_types::{Filter, Log};
 use alloy_sol_types::SolEvent;
 use alloy_transport::TransportErrorKind;
-use log::{debug, info};
+use log::{debug, info, trace};
 use rusqlite::Connection;
 use shielder_circuits::Fr;
 use shielder_contract::{
@@ -72,6 +72,7 @@ pub async fn run(
         );
 
         process_logs(raw_logs, &connection)?;
+        trace!("Updating last seen block: {last_batch_block}");
         db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, last_batch_block)?;
     }
 

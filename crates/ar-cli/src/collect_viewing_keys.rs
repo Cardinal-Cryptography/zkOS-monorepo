@@ -13,7 +13,7 @@ use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, TransactionTrait}
 use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
 use hex::FromHexError;
-use log::{debug, info};
+use log::{debug, info, trace};
 use rusqlite::Connection;
 use shielder_circuits::{grumpkin, GrumpkinPointAffine};
 use shielder_contract::{
@@ -92,6 +92,8 @@ pub async fn run(
 
     let last_seen_block = db::query_checkpoint(&connection, CHECKPOINT_TABLE_NAME)?;
 
+    info!("last seen block: {last_seen_block}");
+
     for block_number in max(from_block, last_seen_block)..=last_finalized_block_number {
         if let Some(block) = provider
             .get_block_by_number(
@@ -147,6 +149,9 @@ pub async fn run(
                 }
             }
         }
+
+        trace!("Updating last seen block: {block_number}");
+        db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, block_number)?;
     }
 
     info!("Done");
