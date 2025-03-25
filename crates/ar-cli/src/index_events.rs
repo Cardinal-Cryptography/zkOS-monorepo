@@ -17,7 +17,10 @@ use shielder_contract::{
 use thiserror::Error;
 use type_conversions::u256_to_field;
 
-use crate::db::{self, Event};
+use crate::{
+    collect_viewing_keys::CollectKeysError,
+    db::{self, Event},
+};
 
 const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
 

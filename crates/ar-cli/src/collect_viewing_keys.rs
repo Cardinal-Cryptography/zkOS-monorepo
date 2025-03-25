@@ -73,6 +73,7 @@ pub async fn run(
         .await?;
 
     let last_finalized_block_number = provider.get_block_number().await?;
+    info!("last finalized block number: {last_finalized_block_number}");
 
     let bytes = match endianess {
         Endianess::LitteEndian => private_key_bytes(private_key_file)?,
@@ -150,7 +151,7 @@ pub async fn run(
             }
         }
 
-        trace!("Updating last seen block: {block_number}");
+        info!("Updating last seen block: {block_number}");
         db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, block_number)?;
     }
 
@@ -207,7 +208,6 @@ fn private_key_bytes(file: &PathBuf) -> Result<[u8; 32], io::Error> {
 
 mod logging {
 
-    use rand::{seq::SliceRandom, thread_rng};
     use shielder_circuits::Fr;
     use type_conversions::Endianess;
 
@@ -220,12 +220,10 @@ mod logging {
         let mut chars: Vec<char> = input.chars().collect();
         let total_chars = chars.len();
 
-        // redact half of the content
+        // redact first half of the content
         let chars_to_redact = (total_chars as f32 * 0.5).ceil() as usize;
 
-        let mut rng = thread_rng();
-        let mut indices: Vec<usize> = (0..total_chars).collect();
-        indices.shuffle(&mut rng);
+        let indices: Vec<usize> = (0..total_chars).collect();
 
         for &idx in indices.iter().take(chars_to_redact) {
             chars[idx] = '*';
