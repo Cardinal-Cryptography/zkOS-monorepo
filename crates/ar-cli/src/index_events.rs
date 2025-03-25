@@ -17,10 +17,7 @@ use shielder_contract::{
 use thiserror::Error;
 use type_conversions::u256_to_field;
 
-use crate::{
-    collect_viewing_keys::CollectKeysError,
-    db::{self, Event},
-};
+use crate::db::{self, Event};
 
 const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
 
@@ -59,6 +56,7 @@ pub async fn run(
     db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
 
     let last_seen_block = db::query_checkpoint(&connection, CHECKPOINT_TABLE_NAME)?;
+    info!("last seen block: {last_seen_block}");
 
     for block_number in (max(from_block, last_seen_block)..=current_height).step_by(batch_size) {
         let last_batch_block = min(block_number + batch_size as u64 - 1, current_height);

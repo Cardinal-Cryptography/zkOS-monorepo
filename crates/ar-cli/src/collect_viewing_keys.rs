@@ -151,7 +151,7 @@ pub async fn run(
             }
         }
 
-        info!("Updating last seen block: {block_number}");
+        trace!("Updating last seen block: {block_number}");
         db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, block_number)?;
     }
 
