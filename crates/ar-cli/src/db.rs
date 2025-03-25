@@ -102,6 +102,37 @@ pub fn query_events(
     results.into_iter().collect()
 }
 
+pub fn create_events_checkpoint_table(connection: &Connection) -> Result<(), rusqlite::Error> {
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS events_checkpoint (
+            id INTEGER NOT NULL,
+            last_block_number INTEGER NOT NULL,
+        )",
+        (),
+    )?;
+    Ok(())
+}
+
+pub fn update_events_checkpoint(
+    connection: &Connection,
+    last_block_number: u64,
+) -> Result<(), rusqlite::Error> {
+    connection.execute(
+        "UPDATE events_checkpoint SET block_number = ?1 WHERE id=0",
+        (&last_block_number,),
+    )?;
+
+    Ok(())
+}
+
+pub fn query_events_checkpoint(connection: &Connection) -> Result<u64, rusqlite::Error> {
+    connection.query_row(
+        "SELECT last_block_number FROM events_checkpoint WHERE id = 0",
+        [],
+        |row| row.get(0),
+    )
+}
+
 #[derive(Debug)]
 pub struct ViewingKey {
     pub viewing_key: Vec<u8>,

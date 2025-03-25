@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 
 use alloy_json_rpc::RpcError;
 use alloy_primitives::Address;
@@ -51,9 +51,11 @@ pub async fn run(
     let base_filter = Filter::new().address(*shielder_address);
 
     db::create_events_table(&connection)?;
-    // TODO: checkpoint event blocks
+    db::create_events_checkpoint_table(&connection)?;
 
-    for block_number in (from_block..=current_height).step_by(batch_size) {
+    let last_seen_block = db::query_events_checkpoint(&connection)?;
+
+    for block_number in (max(from_block, last_seen_block)..=current_height).step_by(batch_size) {
         let last_batch_block = min(block_number + batch_size as u64 - 1, current_height);
         let filter = base_filter
             .clone()
@@ -68,6 +70,7 @@ pub async fn run(
         );
 
         process_logs(raw_logs, &connection)?;
+        db::update_events_checkpoint(&connection, last_batch_block)?;
     }
 
     Ok(())
