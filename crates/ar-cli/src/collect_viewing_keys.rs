@@ -1,4 +1,5 @@
 use std::{
+    cmp::max,
     fs::File,
     io::{self, Read},
     path::PathBuf,
@@ -26,6 +27,8 @@ use crate::{
     cli::Endianess,
     db::{self, ViewingKey},
 };
+
+const CHECKPOINT_TABLE_NAME: &str = "last_keys_block";
 
 #[derive(Debug, Error)]
 #[error(transparent)]
@@ -85,9 +88,11 @@ pub async fn run(
         .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
 
     db::create_viewing_keys_table(&connection)?;
-    // TODO: checkpoint tx blocks
+    db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
 
-    for block_number in from_block..=last_finalized_block_number {
+    let last_seen_block = db::query_checkpoint(&connection, CHECKPOINT_TABLE_NAME)?;
+
+    for block_number in max(from_block, last_seen_block)..=last_finalized_block_number {
         if let Some(block) = provider
             .get_block_by_number(
                 BlockNumberOrTag::Number(block_number),

@@ -19,6 +19,8 @@ use type_conversions::u256_to_field;
 
 use crate::db::{self, Event};
 
+const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
+
 #[derive(Debug, Error)]
 #[error(transparent)]
 #[non_exhaustive]
@@ -51,9 +53,9 @@ pub async fn run(
     let base_filter = Filter::new().address(*shielder_address);
 
     db::create_events_table(&connection)?;
-    db::create_events_checkpoint_table(&connection)?;
+    db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
 
-    let last_seen_block = db::query_events_checkpoint(&connection)?;
+    let last_seen_block = db::query_checkpoint(&connection, CHECKPOINT_TABLE_NAME)?;
 
     for block_number in (max(from_block, last_seen_block)..=current_height).step_by(batch_size) {
         let last_batch_block = min(block_number + batch_size as u64 - 1, current_height);
@@ -70,7 +72,7 @@ pub async fn run(
         );
 
         process_logs(raw_logs, &connection)?;
-        db::update_events_checkpoint(&connection, last_batch_block)?;
+        db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, last_batch_block)?;
     }
 
     Ok(())

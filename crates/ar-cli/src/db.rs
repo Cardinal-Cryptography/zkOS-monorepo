@@ -102,32 +102,38 @@ pub fn query_events(
     results.into_iter().collect()
 }
 
-pub fn create_events_checkpoint_table(connection: &Connection) -> Result<(), rusqlite::Error> {
+pub fn create_checkpoint_table(
+    connection: &Connection,
+    table: &str,
+) -> Result<(), rusqlite::Error> {
     connection.execute(
-        "CREATE TABLE IF NOT EXISTS events_checkpoint (
+        &format!(
+            "CREATE TABLE IF NOT EXISTS {table} (
             id INTEGER NOT NULL,
             last_block_number INTEGER NOT NULL,
-        )",
+        )"
+        ),
         (),
     )?;
     Ok(())
 }
 
-pub fn update_events_checkpoint(
+pub fn update_checkpoint(
     connection: &Connection,
+    table: &str,
     last_block_number: u64,
 ) -> Result<(), rusqlite::Error> {
     connection.execute(
-        "UPDATE events_checkpoint SET block_number = ?1 WHERE id=0",
+        &format!("UPDATE {table} SET block_number = ?1 WHERE id=0"),
         (&last_block_number,),
     )?;
 
     Ok(())
 }
 
-pub fn query_events_checkpoint(connection: &Connection) -> Result<u64, rusqlite::Error> {
+pub fn query_checkpoint(connection: &Connection, table: &str) -> Result<u64, rusqlite::Error> {
     connection.query_row(
-        "SELECT last_block_number FROM events_checkpoint WHERE id = 0",
+        &format!("SELECT last_block_number FROM {table} WHERE id = 0"),
         [],
         |row| row.get(0),
     )
