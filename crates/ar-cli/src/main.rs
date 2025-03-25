@@ -1,5 +1,5 @@
 use clap::Parser;
-use cli::{Cli, Common};
+use cli::{ChainConfig, Cli};
 use log::info;
 use thiserror::Error;
 
@@ -50,8 +50,9 @@ async fn main() -> Result<(), CliError> {
         cli::Command::CollectKeys {
             private_key_file,
             endianess,
+            redact_sensitive_data,
             common:
-                Common {
+                ChainConfig {
                     rpc_url,
                     shielder_address,
                     from_block,
@@ -66,12 +67,13 @@ async fn main() -> Result<(), CliError> {
                 endianess.clone(),
                 *from_block,
                 connection,
+                *redact_sensitive_data,
             )
             .await?
         }
         cli::Command::IndexEvents {
             common:
-                Common {
+                ChainConfig {
                     rpc_url,
                     shielder_address,
                     from_block,

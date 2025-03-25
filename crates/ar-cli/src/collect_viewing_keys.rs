@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::{self, Read},
+    path::PathBuf,
 };
 
 use alloy_json_rpc::RpcError;
@@ -57,10 +58,11 @@ pub enum CollectKeysError {
 pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
-    private_key_file: &str,
+    private_key_file: &PathBuf,
     endianess: Endianess,
     from_block: u64,
     connection: Connection,
+    redact_sensitive_data: bool,
 ) -> Result<(), CollectKeysError> {
     let provider = ProviderBuilder::new()
         .network::<AnyNetwork>()
@@ -113,6 +115,7 @@ pub async fn run(
                                 symKeyEncryptionC2X,
                                 symKeyEncryptionC2Y,
                                 private_key,
+                                redact_sensitive_data,
                             )?;
                         }
 
@@ -132,6 +135,7 @@ pub async fn run(
                                 symKeyEncryptionC2X,
                                 symKeyEncryptionC2Y,
                                 private_key,
+                                redact_sensitive_data,
                             )?;
                         }
                     }
@@ -152,6 +156,7 @@ fn decode_and_persist(
     c2x: U256,
     c2y: U256,
     private_key: grumpkin::Fr,
+    redact_sensitive_data: bool,
 ) -> Result<(), CollectKeysError> {
     let ciphertext1 = GrumpkinPointAffine::new(u256_to_field(c1x), u256_to_field(c1y));
     let ciphertext2 = GrumpkinPointAffine::new(u256_to_field(c2x), u256_to_field(c2y));
@@ -159,7 +164,10 @@ fn decode_and_persist(
     let GrumpkinPointAffine { x, .. } =
         shielder_circuits::decrypt(ciphertext1.into(), ciphertext2.into(), private_key).into();
 
-    debug!("Viewing key decoding {x:?}");
+    debug!(
+        "Viewing key decoding {}",
+        logging::redact_private_key(&x, redact_sensitive_data)
+    );
 
     db::upsert_viewing_key(
         connection,
@@ -171,7 +179,7 @@ fn decode_and_persist(
     Ok(())
 }
 
-fn private_key_bytes(file: &str) -> Result<[u8; 32], io::Error> {
+fn private_key_bytes(file: &PathBuf) -> Result<[u8; 32], io::Error> {
     let mut file = File::open(file)?;
     let mut buffer = [0u8; 32];
     file.read_exact(&mut buffer)?;
@@ -187,49 +195,37 @@ fn private_key_bytes(file: &str) -> Result<[u8; 32], io::Error> {
     Ok(buffer)
 }
 
-#[cfg(test)]
-mod tests {
-    use alloy_primitives::U256;
-    use shielder_circuits::{poseidon::off_circuit::hash, Fr};
-    use type_conversions::u256_to_field;
+mod logging {
 
-    #[test]
-    fn playground() {
-        let id: Fr = u256_to_field(
-            U256::from_str_radix(
-                "12149788709952380244401723958630103313911968813513728899550780481653393522559",
-                10,
-            )
-            .unwrap(),
-        );
+    use rand::{seq::SliceRandom, thread_rng};
+    use shielder_circuits::Fr;
+    use type_conversions::Endianess;
 
-        let k = shielder_circuits::derive_viewing_key(id);
+    /// replaces half of the content with *
+    pub fn redacted(input: &str, redact: bool) -> String {
+        if input.is_empty() || !redact {
+            return input.to_string();
+        }
 
-        assert_eq!(
-            "19769c8b7076367272d477448e16bb330398ebd68904a2ebcbc782d27461f61d",
-            hex::encode(id.to_bytes())
-        );
+        let mut chars: Vec<char> = input.chars().collect();
+        let total_chars = chars.len();
 
-        // newAccountNativeCall { symKeyEncryptionC1X: 19420033340183974863144988685323206788530552163083436857825862470755451934532, symKeyEncryptionC1Y: 15788464705421795072282783992186344413433971611145706070618513891721409271871, symKeyEncryptionC2X: 20083755851364125692828215190025172084304637180713324842416894918800519417467, symKeyEncryptionC2Y: 21229363339025922855435477269821411877449531256069498533077213133643924118931,
-        // macSalt: 6512694175196441965640539212879785744519546946999241152607882120108494685819
-        // macCommitment: 17576897625927668035492046051895902740322805365345371972136249012400181210767
+        // redact half of the content
+        let chars_to_redact = (total_chars as f32 * 0.5).ceil() as usize;
 
-        let mac_salt: Fr = u256_to_field(
-            U256::from_str_radix(
-                "6512694175196441965640539212879785744519546946999241152607882120108494685819",
-                10,
-            )
-            .unwrap(),
-        );
+        let mut rng = thread_rng();
+        let mut indices: Vec<usize> = (0..total_chars).collect();
+        indices.shuffle(&mut rng);
 
-        let mac_commitment: Fr = u256_to_field(
-            U256::from_str_radix(
-                "17576897625927668035492046051895902740322805365345371972136249012400181210767",
-                10,
-            )
-            .unwrap(),
-        );
+        for &idx in indices.iter().take(chars_to_redact) {
+            chars[idx] = '*';
+        }
 
-        assert_eq!(hash(&[mac_salt, k]), mac_commitment);
+        chars.into_iter().collect()
+    }
+
+    pub fn redact_private_key(private_key: &Fr, redact: bool) -> String {
+        let hex_encoding = hex::encode(private_key.to_bytes_le());
+        redacted(&hex_encoding, redact)
     }
 }

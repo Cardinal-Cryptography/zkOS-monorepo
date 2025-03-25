@@ -42,7 +42,7 @@ pub enum Command {
     /// Read newAccount on-chain transactions and collect viewing keys
     IndexEvents {
         #[clap(flatten)]
-        common: Common,
+        common: ChainConfig,
 
         #[clap(long, default_value = "10000")]
         batch_size: usize,
@@ -54,17 +54,20 @@ pub enum Command {
     /// Read newAccount on-chain transactions and collect viewing keys
     CollectKeys {
         #[clap(flatten)]
-        common: Common,
+        common: ChainConfig,
 
         #[clap(flatten)]
         db: Db,
 
         #[arg(long, default_value = "./private_key.bin")]
-        private_key_file: String,
+        private_key_file: PathBuf,
 
         /// is the key in the Lower Endian (the default) or Big Endian order?
         #[clap(long, value_enum, default_value_t=Endianess::default())]
         endianess: Endianess,
+
+        #[arg(long, default_value = "true")]
+        redact_sensitive_data: bool,
     },
 
     /// Matches everything we have in the db about the identity of the transactions
@@ -90,7 +93,7 @@ pub struct Db {
 }
 
 #[derive(Debug, Args)]
-pub struct Common {
+pub struct ChainConfig {
     #[arg(long)]
     pub shielder_address: Address,
 
@@ -102,11 +105,7 @@ pub struct Common {
 }
 
 fn parse_32byte_array(input: &str) -> Result<[u8; 32], &'static str> {
-    let sanitized_input = if let Some(stripped) = input.strip_prefix("0x") {
-        stripped
-    } else {
-        input
-    };
+    let sanitized_input = input.strip_prefix("0x").unwrap_or(input);
 
     let mut decoded = [0u8; 32];
     if let Err(_why) = hex::decode_to_slice(sanitized_input, &mut decoded) {

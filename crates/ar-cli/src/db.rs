@@ -99,12 +99,7 @@ pub fn query_events(
         None => query.query_map([], f)?,
     };
 
-    let mut events = vec![];
-    for r in results {
-        events.push(r?);
-    }
-
-    Ok(events)
+    results.into_iter().collect()
 }
 
 #[derive(Debug)]
