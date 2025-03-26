@@ -12,6 +12,7 @@ on:
           - shielder-sdk
           - shielder-sdk-crypto
           - shielder-sdk-crypto-wasm
+          - shielder-sdk-crypto-mobile
       tag:
         description: "NPM tag"
         required: true
@@ -23,6 +24,10 @@ on:
 jobs:
   publish:
     name: Build and push ${{ github.event.inputs.package }}
+    if: |
+      github.event.inputs.package == 'shielder-sdk' ||
+      github.event.inputs.package == 'shielder-sdk-crypto' ||
+      github.event.inputs.package == 'shielder-sdk-crypto-wasm'
     runs-on: [self-hosted, Linux, X64, medium]
     steps:
       - name: GIT | Checkout
@@ -89,3 +94,66 @@ jobs:
       - name: Publish package
         run: pnpm publish --access restricted --no-git-checks --tag ${{ github.event.inputs.tag }}
         working-directory: ts/${{ github.event.inputs.package }}
+
+  publish-mobile:
+    name: Build and push shielder-sdk-crypto-mobile
+    if: github.event.inputs.package == 'shielder-sdk-crypto-mobile'
+    runs-on: macos-14
+    steps:
+      - name: GIT | Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Rust env
+        uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install C++ tooling
+        run: brew install cmake ninja clang-format
+
+      - name: Install Android rust toolchain
+        run: |
+          rustup target add \
+            aarch64-linux-android \
+            armv7-linux-androideabi \
+            i686-linux-android \
+            x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Ensure xcodebuild is available
+        run: xcode-select --install
+
+      - name: Install iOS rust toolchain
+        run: |
+          rustup target add \
+            aarch64-apple-ios \
+            aarch64-apple-ios-sim \
+            x86_64-apple-ios
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.0
+
+      - name: Install dependencies
+        run: yarn
+        working-directory: ts/shielder-sdk-crypto-mobile
+
+      - name: Build android
+        run: yarn ubrn:android
+        working-directory: ts/shielder-sdk-crypto-mobile
+
+      - name: Build ios
+        run: yarn ubrn:ios
+        working-directory: ts/shielder-sdk-crypto-mobile
+
+      - name: Pack
+        run: npm pack --dry-run
+        working-directory: ts/shielder-sdk-crypto-mobile
