@@ -64,9 +64,11 @@ pub async fn run(
     private_key_file: &PathBuf,
     endianess: Endianess,
     from_block: u64,
-    connection: Connection,
+    db_path: &PathBuf,
     redact_sensitive_data: bool,
 ) -> Result<(), CollectKeysError> {
+    let connection = db::init(db_path)?;
+
     let provider = ProviderBuilder::new()
         .network::<AnyNetwork>()
         .on_builtin(rpc_url)

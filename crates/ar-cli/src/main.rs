@@ -1,5 +1,9 @@
+use std::{cmp::min, thread::sleep, time::Duration};
+
+use alloy_transport::TransportErrorKind;
 use clap::Parser;
 use cli::{ChainConfig, Cli};
+use collect_viewing_keys::CollectKeysError;
 use log::info;
 use thiserror::Error;
 
@@ -59,17 +63,29 @@ async fn main() -> Result<(), CliError> {
                 },
             db,
         } => {
-            let connection = db::init(&db.path)?;
-            collect_viewing_keys::run(
-                rpc_url,
-                shielder_address,
-                private_key_file,
-                endianess.clone(),
-                *from_block,
-                connection,
-                *redact_sensitive_data,
-            )
-            .await?
+            let mut delay = Duration::from_millis(2000);
+
+            loop {
+                if let Err(CollectKeysError::Rpc(alloy_json_rpc::RpcError::Transport(
+                    TransportErrorKind::HttpError(http_err),
+                ))) = collect_viewing_keys::run(
+                    rpc_url,
+                    shielder_address,
+                    private_key_file,
+                    endianess.clone(),
+                    *from_block,
+                    &db.path,
+                    *redact_sensitive_data,
+                )
+                .await
+                {
+                    if http_err.is_rate_limit_err() {
+                        delay = min(Duration::from_millis(600000), 2 * delay);
+                        info!("Waiting {delay:?} before retrying.");
+                        sleep(delay);
+                    }
+                }
+            }
         }
         cli::Command::IndexEvents {
             common:
