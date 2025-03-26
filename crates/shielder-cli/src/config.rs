@@ -174,6 +174,8 @@ pub struct WithdrawERC20Cmd {
     pub token_address: Address,
     /// ERC20 token decimals.
     pub decimals: u32,
+    /// Pocket money to be sent to the withdrawal address.
+    pub pocket_money: u128,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, ValueEnum)]
