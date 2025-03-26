@@ -29,11 +29,10 @@ reqwest.workspace = true
 rust_decimal = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+shielder-account = { workspace = true, features = ["contract"] }
 shielder-contract = { workspace = true }
 shielder-setup = { workspace = true }
-strum = { workspace = true }
-strum_macros = { workspace = true }
-thiserror.workspace = true
+thiserror = { workspace = true }
 time = { workspace = true, features = ["serde-human-readable"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 tower-http = { workspace = true, features = ["cors"] }

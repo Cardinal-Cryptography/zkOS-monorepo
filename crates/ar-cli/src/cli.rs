@@ -1,6 +1,7 @@
 use std::{env, ffi::OsString, path::PathBuf};
 
-use clap::{builder::ValueParser, Parser, Subcommand};
+use alloy_primitives::Address;
+use clap::{builder::ValueParser, Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(name = "ar-cli", version)]
@@ -18,8 +19,9 @@ pub enum Endianess {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Generate symmetric encryption keys
     Generate {
-        /// Directory where the generates keys are to be written to.
+        /// Directory where the generated keys are to be written to.
         ///
         /// Existing files will be overwritten!
         #[arg(long, default_value=get_default_dir())]
@@ -27,9 +29,9 @@ pub enum Command {
 
         /// 32-byte hex seed.
         ///
-        /// Can contain `0x` prefix, which will be stripped.
+        /// if it contains `0x` prefix it will be stripped.
         /// Example: --seed 3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab
-        #[arg(long, value_parser = ValueParser::new(parse_hex_as_seed))]
+        #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
         seed: [u8; 32],
 
         /// Should the output be produced in the Lower Endian (the default) or Big Endian order?
@@ -37,24 +39,79 @@ pub enum Command {
         endianess: Endianess,
     },
 
+    /// Read newAccount on-chain transactions and collect viewing keys
+    IndexEvents {
+        #[clap(flatten)]
+        common: ChainConfig,
+
+        #[clap(long, default_value = "10000")]
+        batch_size: usize,
+
+        #[clap(flatten)]
+        db: Db,
+    },
+
+    /// Read newAccount on-chain transactions and collect viewing keys
+    CollectKeys {
+        #[clap(flatten)]
+        common: ChainConfig,
+
+        #[clap(flatten)]
+        db: Db,
+
+        #[arg(long, default_value = "./private_key.bin")]
+        private_key_file: PathBuf,
+
+        /// is the key in the Lower Endian (the default) or Big Endian order?
+        #[clap(long, value_enum, default_value_t=Endianess::default())]
+        endianess: Endianess,
+
+        #[arg(long, default_value = "true")]
+        redact_sensitive_data: bool,
+    },
+
+    /// Matches everything we have in the db about the identity of the transactions
     Revoke {
-        #[arg(long)]
-        id: String,
+        #[clap(flatten)]
+        db: Db,
+    },
+
+    /// Given a tx-hash reveal all the txs with the same viewing_key
+    Reveal {
+        #[clap(flatten)]
+        db: Db,
+
+        #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
+        tx_hash: [u8; 32],
     },
 }
 
-fn parse_hex_as_seed(input: &str) -> Result<[u8; 32], &'static str> {
+#[derive(Debug, Args)]
+pub struct Db {
+    #[arg(long, default_value = "./ar_db.db3")]
+    pub path: PathBuf,
+}
+
+#[derive(Debug, Args)]
+pub struct ChainConfig {
+    #[arg(long)]
+    pub shielder_address: Address,
+
+    #[arg(long, default_value = "http://localhost:8545")]
+    pub rpc_url: String,
+
+    #[arg(long, default_value = "0")]
+    pub from_block: u64,
+}
+
+fn parse_32byte_array(input: &str) -> Result<[u8; 32], &'static str> {
+    let sanitized_input = input.strip_prefix("0x").unwrap_or(input);
+
     let mut decoded = [0u8; 32];
-
-    let sanitized_input = if let Some(stripped) = input.strip_prefix("0x") {
-        stripped
-    } else {
-        input
-    };
-
     if let Err(_why) = hex::decode_to_slice(sanitized_input, &mut decoded) {
         return Err("Error when parsing seed value");
     }
+
     Ok(decoded)
 }
 

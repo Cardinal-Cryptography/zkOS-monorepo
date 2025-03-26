@@ -58,8 +58,6 @@ pub const REVERTING_ADDRESS: &str = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 pub const REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
 pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 DUP1 REVERT
 
-pub const INITIAL_DEPOSIT_LIMIT: U256 = U256::MAX;
-
 pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
     x: U256::from_limbs([65, 78, 79, 78]), // ANON
     y: U256::from_limbs([89, 77, 73, 84]), // YMIT
@@ -242,7 +240,6 @@ pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address 
     let implementation_address = deploy_shielder_implementation(evm);
     let initialization_data = initializeCall {
         initialOwner: owner,
-        _depositLimit: INITIAL_DEPOSIT_LIMIT,
         _anonymityRevokerPublicKeyX: ANONYMITY_REVOKER_PKEY.x,
         _anonymityRevokerPublicKeyY: ANONYMITY_REVOKER_PKEY.y,
         _isArbitrumChain: false,

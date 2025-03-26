@@ -4,6 +4,7 @@ use alloy_primitives::Address;
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use inquire::Password;
+use shielder_account::Token;
 
 #[derive(Clone, Eq, PartialEq, Debug, Parser)]
 pub struct CliConfig {
@@ -53,6 +54,15 @@ pub enum Command {
     ContractInteraction(ContractInteractionCommand),
 }
 
+impl Command {
+    pub fn token(&self) -> Option<Token> {
+        match self {
+            Command::ContractInteraction(cmd) => Some(cmd.token()),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Debug, Subcommand)]
 pub enum StateWriteCommand {
     /// Initialize local state using ETH private key for both signing on-chain transactions and
@@ -94,10 +104,28 @@ pub enum StateReadCommand {
 pub enum ContractInteractionCommand {
     /// Create new shielder account.
     NewAccount(NewAccountCmd),
+    /// Create new shielder ERC20 account.
+    NewAccountERC20(NewAccountERC20Cmd),
     /// Shield some tokens.
     Deposit(DepositCmd),
+    /// Shield some ERC20 tokens.
+    DepositERC20(DepositERC20Cmd),
     /// Unshield some tokens.
     Withdraw(WithdrawCmd),
+    /// Unshield some ERC20 tokens.
+    WithdrawERC20(WithdrawERC20Cmd),
+}
+
+impl ContractInteractionCommand {
+    pub fn token(&self) -> Token {
+        use ContractInteractionCommand::*;
+        match self {
+            NewAccount(_) | Deposit(_) | Withdraw(_) => Token::Native,
+            NewAccountERC20(NewAccountERC20Cmd { token_address, .. })
+            | DepositERC20(DepositERC20Cmd { token_address, .. })
+            | WithdrawERC20(WithdrawERC20Cmd { token_address, .. }) => Token::ERC20(*token_address),
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -107,17 +135,47 @@ pub struct NewAccountCmd {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
+pub struct NewAccountERC20Cmd {
+    /// Amount of the ERC20 token to be shielded.
+    pub amount: u128,
+    /// Address of the token.
+    pub token_address: Address,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Args)]
 pub struct DepositCmd {
     /// Amount of the token to be shielded.
     pub amount: u128,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
-pub struct WithdrawCmd {
+pub struct DepositERC20Cmd {
     /// Amount of the token to be shielded.
+    pub amount: u128,
+    /// Address of the token.
+    pub token_address: Address,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Args)]
+pub struct WithdrawCmd {
+    /// Amount of the token to be unshielded.
     pub amount: u128,
     /// Address to which the tokens should be sent.
     pub to: Address,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Args)]
+pub struct WithdrawERC20Cmd {
+    /// Amount of the token to be unshielded.
+    pub amount: u128,
+    /// Address to which the tokens should be sent.
+    pub to: Address,
+    /// Address of the token.
+    pub token_address: Address,
+    /// ERC20 token decimals.
+    pub decimals: u32,
+    /// Pocket money to be sent to the withdrawal address.
+    pub pocket_money: u128,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, ValueEnum)]

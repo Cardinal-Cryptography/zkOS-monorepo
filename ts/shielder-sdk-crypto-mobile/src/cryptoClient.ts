@@ -52,7 +52,7 @@ export class RNCryptoClient implements CryptoClient {
       return Promise.resolve().then(() => poseidonRate());
     },
   };
-  // TODO: implement the rest of the methods
+
   secretManager: SecretManager = {
     getSecrets: async (id, nonce) => {
       return Promise.resolve().then(() => {

@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{DepositCall, DepositCallType, DepositExtra, Token},
-    ShielderAccount,
+    call_data::{DepositCall, DepositCallType, DepositExtra},
+    ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{depositERC20Call, depositNativeCall};
 
@@ -81,7 +81,6 @@ pub fn invoke_call(
 
 #[cfg(test)]
 mod tests {
-
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
     use alloy_primitives::{Bytes, FixedBytes, U256};
@@ -101,7 +100,6 @@ mod tests {
         shielder::{
             calls::new_account,
             deploy::{deployment, Deployment},
-            limits::{get_deposit_limit, set_deposit_limit},
         },
         TestToken,
     };
@@ -409,51 +407,5 @@ mod tests {
             token,
             U256::from(10)
         ))
-    }
-
-    #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn fails_if_over_deposit_limit(mut deployment: Deployment, #[case] token: TestToken) {
-        let initial_amount = U256::from(101);
-        let mut shielder_account = new_account::create_account_and_call(
-            &mut deployment,
-            token,
-            U256::from(1),
-            initial_amount,
-        )
-        .unwrap();
-
-        let amount = U256::from(1);
-        let (calldata, _) = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-
-        assert!(result.is_ok());
-
-        let old_limit = get_deposit_limit(&mut deployment);
-
-        assert_eq!(old_limit, U256::MAX);
-
-        let new_limit = U256::from(100);
-        set_deposit_limit(&mut deployment, new_limit);
-
-        let returned_new_limit = get_deposit_limit(&mut deployment);
-
-        assert_eq!(returned_new_limit, U256::from(100));
-
-        let initial_amount = U256::from(10);
-        let mut shielder_account = new_account::create_account_and_call(
-            &mut deployment,
-            token,
-            U256::from(2),
-            initial_amount,
-        )
-        .unwrap();
-
-        let amount = U256::from(101);
-        let (calldata, _) = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-
-        assert_matches!(result, Err(ShielderCallErrors::AmountOverDepositLimit(_)))
     }
 }
