@@ -1,4 +1,7 @@
-use std::cmp::{max, min};
+use std::{
+    cmp::{max, min},
+    path::PathBuf,
+};
 
 use alloy_json_rpc::RpcError;
 use alloy_primitives::Address;
@@ -46,8 +49,9 @@ pub async fn run(
     shielder_address: &Address,
     from_block: u64,
     batch_size: usize,
-    connection: Connection,
+    db_path: &PathBuf,
 ) -> Result<(), IndexEventsError> {
+    let connection = db::init(db_path)?;
     let provider = create_simple_provider(rpc_url).await?;
     let current_height = provider.get_block_number().await?;
     let base_filter = Filter::new().address(*shielder_address);
@@ -116,8 +120,6 @@ fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), IndexEven
             _ => debug!("Skipping log with an unknown topic {:?}", log.topic0()),
         };
     }
-
-    info!("Done");
 
     Ok(())
 }

@@ -4,7 +4,8 @@ use alloy_transport::TransportErrorKind;
 use clap::Parser;
 use cli::{ChainConfig, Cli};
 use collect_viewing_keys::CollectKeysError;
-use log::info;
+use index_events::IndexEventsError;
+use log::{error, info};
 use thiserror::Error;
 
 mod cli;
@@ -14,6 +15,9 @@ mod generate;
 mod index_events;
 mod reveal;
 mod revoke;
+
+const DEFAULT_BACKOFF: Duration = Duration::from_millis(2000); // 2 seconds
+const MAX_BACKOFF: Duration = Duration::from_millis(600000); // 10 minutes
 
 #[derive(Debug, Error)]
 #[error(transparent)]
@@ -63,7 +67,7 @@ async fn main() -> Result<(), CliError> {
                 },
             db,
         } => {
-            let mut delay = Duration::from_millis(2000);
+            let mut delay = DEFAULT_BACKOFF;
 
             loop {
                 if let Err(CollectKeysError::Rpc(alloy_json_rpc::RpcError::Transport(
@@ -80,7 +84,7 @@ async fn main() -> Result<(), CliError> {
                 .await
                 {
                     if http_err.is_rate_limit_err() {
-                        delay = min(Duration::from_millis(600000), 2 * delay);
+                        delay = min(MAX_BACKOFF, 2 * delay);
                         info!("Waiting {delay:?} before retrying.");
                         sleep(delay);
                     }
@@ -96,17 +100,36 @@ async fn main() -> Result<(), CliError> {
                 },
             db,
             batch_size,
-        } => {
-            let connection = db::init(&db.path)?;
-            index_events::run(
+        } => loop {
+            let mut delay = DEFAULT_BACKOFF;
+
+            match index_events::run(
                 rpc_url,
                 shielder_address,
                 *from_block,
                 *batch_size,
-                connection,
+                &db.path,
             )
-            .await?
-        }
+            .await
+            {
+                Ok(_) => {
+                    info!("Done");
+                    break;
+                }
+                Err(IndexEventsError::Rpc(alloy_json_rpc::RpcError::Transport(
+                    TransportErrorKind::HttpError(http_err),
+                ))) => {
+                    if http_err.is_rate_limit_err() {
+                        delay = min(MAX_BACKOFF, 2 * delay);
+                        info!("Waiting {delay:?} before retrying.");
+                        sleep(delay);
+                    }
+                }
+                Err(why) => {
+                    error!("{why:?}");
+                }
+            }
+        },
         cli::Command::Revoke { db } => {
             let connection = db::init(&db.path)?;
             revoke::run(connection).await?
