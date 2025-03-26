@@ -12,6 +12,15 @@ pub enum TokenKind {
     },
 }
 
+impl From<TokenKind> for shielder_account::Token {
+    fn from(token_kind: TokenKind) -> Self {
+        match token_kind {
+            TokenKind::Native => shielder_account::Token::Native,
+            TokenKind::ERC20 { address, .. } => shielder_account::Token::ERC20(address),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub enum PriceProvider {
     Url(String),

@@ -7,8 +7,9 @@ use crate::{
     connection::{Connection, ConnectionPolicy, NoProvider},
     ContractResult,
     ShielderContract::{
-        anonymityRevokerPubkeyCall, depositNativeCall, getMerklePathCall, newAccountNativeCall,
-        nullifiersCall, withdrawNativeCall,
+        anonymityRevokerPubkeyCall, depositERC20Call, depositNativeCall, getMerklePathCall,
+        newAccountERC20Call, newAccountNativeCall, nullifiersCall, withdrawERC20Call,
+        withdrawNativeCall,
     },
 };
 
@@ -35,12 +36,20 @@ impl<P: Provider + Clone> ShielderUser<P> {
     }
 
     /// Create new account.
-    pub async fn create_new_account_native<C: CallType<newAccountNativeCall>>(
+    pub async fn new_account_native<C: CallType<newAccountNativeCall>>(
         &self,
         call: newAccountNativeCall,
         value: U256,
     ) -> ContractResult<C::Result> {
         self.connection.call_with_value::<C, _>(call, value).await
+    }
+
+    /// Create new account with ERC20 token.
+    pub async fn new_account_erc20<C: CallType<newAccountERC20Call>>(
+        &self,
+        call: newAccountERC20Call,
+    ) -> ContractResult<C::Result> {
+        self.connection.call::<C, _>(call).await
     }
 
     /// Deposit native currency into the contract.
@@ -52,12 +61,31 @@ impl<P: Provider + Clone> ShielderUser<P> {
         self.connection.call_with_value::<C, _>(call, value).await
     }
 
+    /// Deposit ERC20 token into the contract.
+    pub async fn deposit_erc20<C: CallType<depositERC20Call>>(
+        &self,
+        call: depositERC20Call,
+    ) -> ContractResult<C::Result> {
+        self.connection.call::<C, _>(call).await
+    }
+
     /// Withdraw native currency from the contract.
     pub async fn withdraw_native<C: CallType<withdrawNativeCall>>(
         &self,
         call: withdrawNativeCall,
     ) -> ContractResult<C::Result> {
         self.connection.call::<C, _>(call).await
+    }
+
+    /// Withdraw ERC20 token from the contract.
+    pub async fn withdraw_erc20<C: CallType<withdrawERC20Call>>(
+        &self,
+        call: withdrawERC20Call,
+        pocket_money: U256,
+    ) -> ContractResult<C::Result> {
+        self.connection
+            .call_with_value::<C, _>(call, pocket_money)
+            .await
     }
 
     /// Get the block number for the `nullifierHash`. `0` means that the nullifier hasn't been used

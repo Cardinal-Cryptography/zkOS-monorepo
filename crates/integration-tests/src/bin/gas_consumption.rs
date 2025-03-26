@@ -39,7 +39,7 @@ fn main() {
         // Ensure separate ids for each token.
         let account_id = U256::from(token as u64);
 
-        let mut shielder_account = ShielderAccount::new(account_id);
+        let mut shielder_account = ShielderAccount::new(account_id, token.token(&deployment));
         let amount = U256::from(10);
         let calldata = Calldata::NewAccount(new_account_calldata(
             &mut deployment,

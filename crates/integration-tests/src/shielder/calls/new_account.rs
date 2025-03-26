@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, TxHash, U256};
 use shielder_account::{
-    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType, Token},
-    ShielderAccount,
+    call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType},
+    ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeCall};
 
@@ -78,7 +78,7 @@ pub fn create_account_and_call(
     id: U256,
     initial_amount: U256,
 ) -> Result<ShielderAccount, ShielderCallErrors> {
-    let mut shielder_account = ShielderAccount::new(id);
+    let mut shielder_account = ShielderAccount::new(id, token.token(deployment));
 
     let calldata = prepare_call(deployment, &mut shielder_account, token, initial_amount);
     let result = invoke_call(deployment, &mut shielder_account, &calldata);
@@ -117,7 +117,7 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn gas_consumption_regression(mut deployment: Deployment, #[case] token: TestToken) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -138,7 +138,7 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn succeeds(mut deployment: Deployment, #[case] token: TestToken) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -211,7 +211,7 @@ mod tests {
         mut deployment: Deployment,
         #[case] token: TestToken,
     ) {
-        let mut shielder_account = ShielderAccount::new(U256::from(1));
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
 
         let initial_amount = U256::from(10);
         let mut calldata = prepare_call(
@@ -246,7 +246,7 @@ mod tests {
         mut deployment: Deployment,
         #[case] token: TestToken,
     ) {
-        let mut shielder_account = ShielderAccount::default();
+        let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from((1u128 << 112) - 1);
         let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
 
@@ -295,39 +295,5 @@ mod tests {
             Err(ShielderCallErrors::NewAccountVerificationFailed(_))
         );
         assert!(actor_balance_decreased_by(&deployment, token, U256::ZERO))
-    }
-
-    #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn fails_if_over_deposit_limit(mut deployment: Deployment, #[case] token: TestToken) {
-        use crate::limits::{get_deposit_limit, set_deposit_limit};
-
-        let mut shielder_account = ShielderAccount::default();
-        let amount = U256::from(101);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-
-        assert!(result.is_ok());
-
-        let old_limit = get_deposit_limit(&mut deployment);
-
-        assert_eq!(old_limit, U256::MAX);
-
-        let new_limit = U256::from(100);
-        set_deposit_limit(&mut deployment, new_limit);
-
-        let returned_new_limit = get_deposit_limit(&mut deployment);
-
-        assert_eq!(returned_new_limit, new_limit);
-
-        let mut shielder_account = ShielderAccount::default();
-        let amount = U256::from(101);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
-
-        let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
-
-        assert_matches!(result, Err(ShielderCallErrors::AmountOverDepositLimit(_)))
     }
 }

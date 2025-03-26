@@ -82,10 +82,12 @@ deploy_erc20_token() {
 }
 
 deploy_erc20_tokens() {
-  TT1=$(deploy_erc20_token "TestToken1" "TT1")
-  TT2=$(deploy_erc20_token "TestToken2" "TT2")
+  ERC20_CONTRACT_ADDRESS_1=$(deploy_erc20_token "TestToken1" "TT1")
+  export ERC20_CONTRACT_ADDRESS_1
+  ERC20_CONTRACT_ADDRESS_2=$(deploy_erc20_token "TestToken2" "TT2")
+  export ERC20_CONTRACT_ADDRESS_2
 
-  TOKEN_CONTRACT_ADDRESSES=$TT1","$TT2
+  TOKEN_CONTRACT_ADDRESSES=$ERC20_CONTRACT_ADDRESS_1","$ERC20_CONTRACT_ADDRESS_2
   export TOKEN_CONTRACT_ADDRESSES
 
   # set pricing for relayer
@@ -96,11 +98,11 @@ deploy_erc20_tokens() {
       "price_provider":{"Static":1}
     },
     {
-      "kind":{"ERC20":{"address": "${TT1}", "decimals": 18}},
+      "kind":{"ERC20":{"address": "${ERC20_CONTRACT_ADDRESS_1}", "decimals": 18}},
       "price_provider":{"Static":1}
     },
     {
-      "kind":{"ERC20":{"address": "${TT2}", "decimals": 18}},
+      "kind":{"ERC20":{"address": "${ERC20_CONTRACT_ADDRESS_2}", "decimals": 18}},
       "price_provider":{"Static":1}
     }
   ]
@@ -114,7 +116,7 @@ EOF
 mint_erc20_tokens() {
   AMOUNT=$(mtzero 100000)
 
-  keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}")
+  keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}" "${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}")
 
   for key in "${keys[@]}"; do
     for token in $(echo ${TOKEN_CONTRACT_ADDRESSES} | sed "s/,/ /g"); do
@@ -130,7 +132,32 @@ mint_erc20_tokens() {
   done
 
   log_progress "✅ Tokens minted"
+}
 
+approve_erc20_tokens() {
+  AMOUNT=$(mtzero 100000)
+
+  keys=("${ALICE_PRIVATE_KEY}" "${BOB_PRIVATE_KEY}" "${CHARLIE_PRIVATE_KEY}")
+
+  for key in "${keys[@]}"; do
+    for token in $(echo ${TOKEN_CONTRACT_ADDRESSES} | sed "s/,/ /g"); do
+      cast send \
+        --rpc-url "${NODE_RPC_URL}" \
+        --private-key "${key}" \
+        ${token} \
+        "approve(address,uint256)" \
+        ${SHIELDER_CONTRACT_ADDRESS} \
+        ${AMOUNT} \
+        &>> output.log
+    done
+  done
+
+  log_progress "✅ Tokens approved for spending by the shielder contract"
+}
+
+erc20_balance() {
+  full_answer=$(cast call -r "${NODE_RPC_URL}" "${1}" "balanceOf(address)(uint256)" "${2}")
+  echo "${full_answer}" | awk '{print $1;}'
 }
 
 ####################################################################################################
@@ -215,6 +242,10 @@ setup() {
   clear_local_cli_state
 
   deploy_shielder_contracts
+  deploy_erc20_tokens
+  mint_erc20_tokens
+  approve_erc20_tokens
+
   start_relayer
 }
 
@@ -227,6 +258,7 @@ setup_shielder_sdk() {
   deploy_shielder_contracts
   deploy_erc20_tokens
   mint_erc20_tokens
+
   start_relayer
 }
 

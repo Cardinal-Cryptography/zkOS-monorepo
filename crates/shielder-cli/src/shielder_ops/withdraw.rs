@@ -5,13 +5,11 @@ use alloy_provider::Provider;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
-    call_data::{Token, WithdrawCallType, WithdrawExtra},
-    ShielderAction,
+    call_data::{WithdrawCallType, WithdrawExtra},
+    ShielderAction, Token,
 };
 use shielder_contract::{
-    events::get_event,
-    merkle_path::get_current_merkle_path,
-    ShielderContract::{withdrawNativeCall, Withdraw},
+    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
 use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
 use shielder_setup::version::contract_version;
@@ -26,19 +24,39 @@ use crate::{
     },
 };
 
-pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Result<()> {
+pub async fn withdraw(
+    app_state: &mut AppState,
+    amount: u128,
+    to: Address,
+    token: Token,
+    decimals: u32,
+    pocket_money: u128,
+) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
-    let total_fee = get_relayer_total_fee(app_state).await?;
+    let pocket_money = U256::from(pocket_money);
+    let total_fee = get_relayer_total_fee(app_state, token, decimals, pocket_money).await?;
     let amount = U256::from(amount) + total_fee;
+    let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
-    if amount > app_state.account.shielded_amount {
+    if amount > shielded_amount {
         bail!("Not enough funds to withdraw");
     }
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to, total_fee).await?)
+        .json(
+            &prepare_relayer_query(
+                app_state,
+                amount,
+                to,
+                token,
+                decimals,
+                total_fee,
+                pocket_money,
+            )
+            .await?,
+        )
         .send()
         .await?;
 
@@ -57,12 +75,17 @@ pub async fn withdraw(app_state: &mut AppState, amount: u128, to: Address) -> Re
     let withdraw_event = get_event::<Withdraw>(&provider, tx_hash, block_hash).await?;
     debug!("Withdraw event: {withdraw_event:?}");
 
-    app_state.account.register_action(ShielderAction::withdraw(
-        amount,
-        withdraw_event.newNoteIndex,
-        tx_hash,
-        to,
-    ));
+    app_state
+        .accounts
+        .get_mut(&token.address())
+        .unwrap()
+        .register_action(ShielderAction::withdraw(
+            amount,
+            withdraw_event.newNoteIndex,
+            tx_hash,
+            to,
+            token,
+        ));
     info!("Withdrawn {amount} tokens");
     Ok(())
 }
@@ -80,12 +103,20 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
     bail!("Couldn't fetch transaction receipt")
 }
 
-async fn get_relayer_total_fee(app_state: &mut AppState) -> Result<U256> {
+async fn get_relayer_total_fee(
+    app_state: &mut AppState,
+    token: Token,
+    decimals: u32,
+    pocket_money: U256,
+) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {
-            fee_token: TokenKind::Native,
-            pocket_money: U256::ZERO,
+            fee_token: match token {
+                Token::Native => TokenKind::Native,
+                Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
+            },
+            pocket_money,
         })
         .send()
         .await?;
@@ -120,11 +151,13 @@ async fn prepare_relayer_query(
     app_state: &AppState,
     amount: U256,
     to: Address,
+    token: Token,
+    decimals: u32,
     relayer_fee: U256,
+    pocket_money: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
-    let leaf_index = app_state
-        .account
+    let leaf_index = app_state.accounts[&token.address()]
         .current_leaf_index()
         .expect("Deposit mustn't be the first action");
     let (merkle_root, merkle_path) =
@@ -136,39 +169,40 @@ async fn prepare_relayer_query(
         .get_chain_id()
         .await?;
 
-    let calldata: withdrawNativeCall = app_state
-        .account
-        .prepare_call::<WithdrawCallType>(
-            &params,
-            &pk,
-            Token::Native,
-            amount,
-            &WithdrawExtra {
-                merkle_path,
-                to,
-                relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
-                relayer_fee,
-                contract_version: contract_version(),
-                chain_id: U256::from(chain_id),
-                mac_salt: get_mac_salt(),
-                pocket_money: U256::ZERO,
-            },
-        )
-        .try_into()
-        .unwrap();
+    let calldata = app_state.accounts[&token.address()].prepare_call::<WithdrawCallType>(
+        &params,
+        &pk,
+        token,
+        amount,
+        &WithdrawExtra {
+            merkle_path,
+            to,
+            relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
+            relayer_fee,
+            contract_version: contract_version(),
+            chain_id: U256::from(chain_id),
+            mac_salt: get_mac_salt(),
+            pocket_money,
+        },
+    );
+
+    let fee_token = match token {
+        Token::Native => TokenKind::Native,
+        Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
+    };
 
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
         amount,
         withdraw_address: to,
         merkle_root,
-        nullifier_hash: calldata.oldNullifierHash,
-        new_note: calldata.newNote,
+        nullifier_hash: calldata.old_nullifier_hash,
+        new_note: calldata.new_note,
         proof: calldata.proof,
-        fee_token: TokenKind::Native,
-        fee_amount: calldata.relayerFee,
-        mac_salt: calldata.macSalt,
-        mac_commitment: calldata.macCommitment,
-        pocket_money: U256::ZERO,
+        fee_token,
+        fee_amount: calldata.relayer_fee,
+        mac_salt: calldata.mac_salt,
+        mac_commitment: calldata.mac_commitment,
+        pocket_money,
     })
 }

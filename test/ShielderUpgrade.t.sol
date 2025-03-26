@@ -11,7 +11,6 @@ import { ShielderV2Mock } from "./ShielderV2Mock.sol";
 contract ShielderUpgrade is Test {
     address public owner;
 
-    uint256 public depositLimit = 100e18;
     uint256 public anonymityRevokerPubkeyX = 42;
     uint256 public anonymityRevokerPubkeyY = 43;
 
@@ -76,13 +75,7 @@ contract ShielderUpgrade is Test {
             "Shielder.sol:Shielder",
             abi.encodeCall(
                 Shielder.initialize,
-                (
-                    owner,
-                    depositLimit,
-                    anonymityRevokerPubkeyX,
-                    anonymityRevokerPubkeyY,
-                    false
-                )
+                (owner, anonymityRevokerPubkeyX, anonymityRevokerPubkeyY, false)
             )
         );
         Shielder shielder = Shielder(shielderProxy);

@@ -2,7 +2,10 @@ use std::time::Instant;
 
 use alloy_provider::Provider;
 use anyhow::Result;
-use shielder_account::call_data::{Token, WithdrawCallType, WithdrawExtra};
+use shielder_account::{
+    call_data::{WithdrawCallType, WithdrawExtra},
+    Token,
+};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     withdraw::WithdrawCircuit,

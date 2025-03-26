@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use alloy_primitives::U256;
+use alloy_primitives::{Address, U256};
 use halo2curves::bn256::Fr;
 use serde::{Deserialize, Serialize};
 
@@ -12,8 +12,9 @@ mod shielder_action;
 pub use shielder_action::{ShielderAction, ShielderTxData};
 use shielder_circuits::{generate_user_id, note_hash, Note};
 use shielder_setup::{native_token::NATIVE_TOKEN_ADDRESS, version::contract_version};
-use type_conversions::{field_to_u256, u256_to_field};
+use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_to_field};
 
+/// Shielder account state for a single token.
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {
     /// The seed used to generate nullifiers and trapdoors. The only secret we need to preserve to
@@ -22,6 +23,8 @@ pub struct ShielderAccount {
     /// WARNING: You SHOULD NOT use `Self::Default` in production, as this will set the seed to
     /// zero, which is insecure and might get in conflict with other accounts (similarly set up).
     pub id: U256,
+    /// The token used in the account.
+    pub token: Token,
     /// The nonce used to generate nullifiers and trapdoors. It is incremented after each action.
     pub nonce: u32,
     /// The total current amount of tokens shielded by the account.
@@ -35,6 +38,7 @@ impl Display for ShielderAccount {
         f.debug_struct("ShielderAccount")
             .field("id", &self.id)
             .field("nonce", &self.nonce)
+            .field("token", &self.token)
             .field("shielded_amount", &self.shielded_amount)
             .field("current_leaf_index", &self.current_leaf_index())
             .finish()
@@ -42,14 +46,15 @@ impl Display for ShielderAccount {
 }
 
 impl ShielderAccount {
-    /// Create a new account with the given id. Other fields are initialized to default
+    /// Create a new account with the given id for a token. Other fields are initialized to default
     /// values (like the account has no history).
     ///
     /// Note: You SHOULD prefer using `Self::new` instead of `Default::default()`, unless you are
     /// writing single-actor tests.
-    pub fn new(id_seed: U256) -> Self {
+    pub fn new(id_seed: U256, token: Token) -> Self {
         Self {
             id: field_to_u256(generate_user_id(u256_to_field::<Fr>(id_seed).to_bytes())),
+            token,
             ..Default::default()
         }
     }
@@ -57,6 +62,8 @@ impl ShielderAccount {
     /// Save the action in the account history and update the account state.
     pub fn register_action(&mut self, action: impl Into<ShielderAction>) {
         let action = action.into();
+        assert_eq!(self.token, action.token(), "token mismatch");
+
         match &action {
             ShielderAction::Deposit(data) | ShielderAction::NewAccount(data) => {
                 self.shielded_amount = self
@@ -85,7 +92,7 @@ impl ShielderAccount {
     }
 
     /// Compute note representing current state. `None` if no operations have been performed.
-    pub fn note(&self) -> Option<U256> {
+    pub fn note(&self, token: Token) -> Option<U256> {
         if self.nonce == 0 {
             return None;
         }
@@ -95,7 +102,7 @@ impl ShielderAccount {
             nullifier: u256_to_field(self.previous_nullifier()),
             trapdoor: u256_to_field(self.previous_trapdoor().unwrap()), // safe unwrap
             account_balance: u256_to_field(self.shielded_amount),
-            token_address: NATIVE_TOKEN_ADDRESS,
+            token_address: address_to_field(token.address()),
         });
         Some(field_to_u256(raw_note))
     }
@@ -123,5 +130,33 @@ impl ShielderAccount {
         self.nonce
             .checked_sub(1)
             .map(|nonce| secrets::nonced::derive_trapdoor(self.id, nonce))
+    }
+}
+
+#[derive(
+    Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Default, Deserialize, Serialize,
+)]
+pub enum Token {
+    #[default]
+    Native,
+    ERC20(Address),
+}
+
+impl Token {
+    pub fn address(&self) -> Address {
+        match self {
+            Token::Native => field_to_address(NATIVE_TOKEN_ADDRESS),
+            Token::ERC20(address) => *address,
+        }
+    }
+}
+
+impl From<Address> for Token {
+    fn from(address: Address) -> Self {
+        if address == field_to_address(NATIVE_TOKEN_ADDRESS) {
+            Token::Native
+        } else {
+            Token::ERC20(address)
+        }
     }
 }

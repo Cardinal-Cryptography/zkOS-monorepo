@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.26;
 
-import { DepositLimit } from "./DepositLimit.sol";
 import { Halo2Verifier as DepositVerifier } from "./DepositVerifier.sol";
 import { Halo2Verifier as NewAccountVerifier } from "./NewAccountVerifier.sol";
 import { Halo2Verifier as WithdrawVerifier } from "./WithdrawVerifier.sol";
@@ -27,7 +26,6 @@ contract Shielder is
     PausableUpgradeable,
     MerkleTree,
     Nullifiers,
-    DepositLimit,
     AnonymityRevoker
 {
     // -- Constants --
@@ -122,7 +120,6 @@ contract Shielder is
 
     function initialize(
         address initialOwner,
-        uint256 _depositLimit,
         uint256 _anonymityRevokerPublicKeyX,
         uint256 _anonymityRevokerPublicKeyY,
         bool _isArbitrumChain
@@ -130,7 +127,6 @@ contract Shielder is
         __Ownable_init(initialOwner);
         __Pausable_init();
         __MerkleTree_init();
-        __DepositLimit_init(_depositLimit);
         __AnonymityRevoker_init(
             _anonymityRevokerPublicKeyX,
             _anonymityRevokerPublicKeyY
@@ -283,8 +279,6 @@ contract Shielder is
         fieldElement(symKeyEncryptionC2Y)
         returns (uint256)
     {
-        if (amount > depositLimit()) revert AmountOverDepositLimit();
-
         if (nullifiers(prenullifier) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](12);
@@ -419,7 +413,6 @@ contract Shielder is
         fieldElement(newNote)
         returns (uint256)
     {
-        if (amount > depositLimit()) revert AmountOverDepositLimit();
         if (amount == 0) revert ZeroAmount();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
@@ -633,14 +626,5 @@ contract Shielder is
     modifier fieldElement(uint256 x) {
         require(x < FIELD_MODULUS, NotAFieldElement());
         _;
-    }
-
-    // -- Setters ---
-
-    /*
-     * Set the deposit limit for the maximal amount
-     */
-    function setDepositLimit(uint256 _depositLimit) external onlyOwner {
-        _setDepositLimit(_depositLimit);
     }
 }
