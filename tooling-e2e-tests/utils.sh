@@ -114,7 +114,7 @@ EOF
 }
 
 mint_erc20_tokens() {
-  AMOUNT=$(mtzero 10000)
+  AMOUNT=$(mtzero 100000)
 
   keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}" "${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}")
 
