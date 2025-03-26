@@ -45,10 +45,9 @@ scenario() {
   fi
 
   # ERC20 withdrawal
-  withdrawal_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${ALICE_PUBLIC_KEY}")
-  echo $withdrawal_balance_before
+  withdrawal_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
   alice withdraw-erc20 $withdrawal_amount "${WITHDRAWAL_PUBLIC_KEY}" "${ERC20_CONTRACT_ADDRESS_1}" 18
-  withdrawal_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${ALICE_PUBLIC_KEY}")
+  withdrawal_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
 
   withdrawn=$((withdrawal_balance_after - withdrawal_balance_before))
   if [ $withdrawn -ne $withdrawal_amount ]; then

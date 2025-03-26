@@ -4,9 +4,9 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use shielder_account::call_data::WithdrawCall;
 use shielder_contract::{
     alloy_primitives::{Address, U256},
-    ShielderContract::withdrawNativeCall,
 };
 use shielder_relayer::{
     scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
@@ -45,11 +45,10 @@ pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) ->
         return response;
     }
 
-    let (pocket_money, withdraw_call) =
-        create_call(query, app_state.fee_destination, app_state.total_fee);
+    let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
     let Ok(rx) = app_state
         .taskmaster
-        .register_new_task(withdraw_call, pocket_money, request_trace)
+        .register_new_task(withdraw_call, request_trace)
         .await
     else {
         error!("Failed to register new task");
@@ -99,27 +98,22 @@ fn internal_server_error(msg: &str) -> Response {
         .into_response()
 }
 
-fn create_call(
-    q: RelayQuery,
-    relayer_address: Address,
-    relayer_fee: U256,
-) -> (U256, withdrawNativeCall) {
-    (
-        q.pocket_money,
-        withdrawNativeCall {
-            expectedContractVersion: q.expected_contract_version,
-            withdrawalAddress: q.withdraw_address,
-            relayerAddress: relayer_address,
-            relayerFee: relayer_fee,
-            amount: q.amount,
-            merkleRoot: q.merkle_root,
-            oldNullifierHash: q.nullifier_hash,
-            newNote: q.new_note,
-            proof: q.proof,
-            macSalt: q.mac_salt,
-            macCommitment: q.mac_commitment,
-        },
-    )
+fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> WithdrawCall {
+    WithdrawCall {
+        expected_contract_version: q.expected_contract_version,
+        withdrawal_address: q.withdraw_address,
+        relayer_address,
+        relayer_fee,
+        amount: q.amount,
+        merkle_root: q.merkle_root,
+        old_nullifier_hash: q.nullifier_hash,
+        new_note: q.new_note,
+        proof: q.proof,
+        mac_salt: q.mac_salt,
+        mac_commitment: q.mac_commitment,
+        token: q.fee_token.into(),
+        pocket_money: q.pocket_money,
+    }
 }
 
 fn check_expected_version(
