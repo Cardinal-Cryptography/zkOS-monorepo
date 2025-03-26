@@ -78,8 +78,8 @@ pub fn query_events(
     viewing_key: Option<Vec<u8>>,
 ) -> Result<Vec<Event>, rusqlite::Error> {
     let statement = match viewing_key {
-        Some(_) => "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events where viewing_key = ?1", 
-        None => "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events", 
+        Some(_) => "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events where viewing_key = ?1",
+        None => "SELECT tx_hash, block_number, mac_salt, mac_commitment, viewing_key FROM events",
     };
 
     let mut query = connection.prepare(statement)?;
@@ -100,6 +100,47 @@ pub fn query_events(
     };
 
     results.into_iter().collect()
+}
+
+pub fn create_checkpoint_table(
+    connection: &Connection,
+    table: &str,
+) -> Result<(), rusqlite::Error> {
+    connection.execute(
+        &format!(
+            "CREATE TABLE IF NOT EXISTS {table} (
+            id INTEGER PRIMARY KEY,
+            last_block_number INTEGER NOT NULL
+        )"
+        ),
+        (),
+    )?;
+    Ok(())
+}
+
+pub fn update_checkpoint(
+    connection: &Connection,
+    table: &str,
+    last_block_number: u64,
+) -> Result<(), rusqlite::Error> {
+    connection.execute(
+        &format!("REPLACE INTO {table} (id, last_block_number) VALUES (0, ?1)"),
+        (&last_block_number,),
+    )?;
+
+    Ok(())
+}
+
+pub fn query_checkpoint(connection: &Connection, table: &str) -> Result<u64, rusqlite::Error> {
+    match connection.query_row(
+        &format!("SELECT last_block_number FROM {table} WHERE id = 0"),
+        [],
+        |row| row.get::<_, u64>(0),
+    ) {
+        Ok(n) => Ok(n),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(0),
+        Err(other) => Err(other),
+    }
 }
 
 #[derive(Debug)]

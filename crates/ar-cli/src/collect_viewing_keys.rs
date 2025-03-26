@@ -1,4 +1,5 @@
 use std::{
+    cmp::max,
     fs::File,
     io::{self, Read},
     path::PathBuf,
@@ -12,7 +13,7 @@ use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, TransactionTrait}
 use alloy_sol_types::SolCall;
 use alloy_transport::TransportErrorKind;
 use hex::FromHexError;
-use log::{debug, info};
+use log::{debug, info, trace};
 use rusqlite::Connection;
 use shielder_circuits::{grumpkin, GrumpkinPointAffine};
 use shielder_contract::{
@@ -26,6 +27,8 @@ use crate::{
     cli::Endianess,
     db::{self, ViewingKey},
 };
+
+const CHECKPOINT_TABLE_NAME: &str = "last_keys_block";
 
 #[derive(Debug, Error)]
 #[error(transparent)]
@@ -70,6 +73,7 @@ pub async fn run(
         .await?;
 
     let last_finalized_block_number = provider.get_block_number().await?;
+    info!("last finalized block number: {last_finalized_block_number}");
 
     let bytes = match endianess {
         Endianess::LitteEndian => private_key_bytes(private_key_file)?,
@@ -85,9 +89,13 @@ pub async fn run(
         .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
 
     db::create_viewing_keys_table(&connection)?;
-    // TODO: checkpoint tx blocks
+    db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
 
-    for block_number in from_block..=last_finalized_block_number {
+    let last_seen_block = db::query_checkpoint(&connection, CHECKPOINT_TABLE_NAME)?;
+
+    info!("last seen block: {last_seen_block}");
+
+    for block_number in max(from_block, last_seen_block)..=last_finalized_block_number {
         if let Some(block) = provider
             .get_block_by_number(
                 BlockNumberOrTag::Number(block_number),
@@ -142,6 +150,9 @@ pub async fn run(
                 }
             }
         }
+
+        trace!("Updating last seen block: {block_number}");
+        db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, block_number)?;
     }
 
     info!("Done");
@@ -197,7 +208,6 @@ fn private_key_bytes(file: &PathBuf) -> Result<[u8; 32], io::Error> {
 
 mod logging {
 
-    use rand::{seq::SliceRandom, thread_rng};
     use shielder_circuits::Fr;
     use type_conversions::Endianess;
 
@@ -210,12 +220,10 @@ mod logging {
         let mut chars: Vec<char> = input.chars().collect();
         let total_chars = chars.len();
 
-        // redact half of the content
+        // redact first half of the content
         let chars_to_redact = (total_chars as f32 * 0.5).ceil() as usize;
 
-        let mut rng = thread_rng();
-        let mut indices: Vec<usize> = (0..total_chars).collect();
-        indices.shuffle(&mut rng);
+        let indices: Vec<usize> = (0..total_chars).collect();
 
         for &idx in indices.iter().take(chars_to_redact) {
             chars[idx] = '*';

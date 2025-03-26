@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 
 use alloy_json_rpc::RpcError;
 use alloy_primitives::Address;
@@ -6,7 +6,7 @@ use alloy_provider::Provider;
 use alloy_rpc_types::{Filter, Log};
 use alloy_sol_types::SolEvent;
 use alloy_transport::TransportErrorKind;
-use log::{debug, info};
+use log::{debug, info, trace};
 use rusqlite::Connection;
 use shielder_circuits::Fr;
 use shielder_contract::{
@@ -18,6 +18,8 @@ use thiserror::Error;
 use type_conversions::u256_to_field;
 
 use crate::db::{self, Event};
+
+const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
 
 #[derive(Debug, Error)]
 #[error(transparent)]
@@ -51,9 +53,12 @@ pub async fn run(
     let base_filter = Filter::new().address(*shielder_address);
 
     db::create_events_table(&connection)?;
-    // TODO: checkpoint event blocks
+    db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
 
-    for block_number in (from_block..=current_height).step_by(batch_size) {
+    let last_seen_block = db::query_checkpoint(&connection, CHECKPOINT_TABLE_NAME)?;
+    info!("last seen block: {last_seen_block}");
+
+    for block_number in (max(from_block, last_seen_block)..=current_height).step_by(batch_size) {
         let last_batch_block = min(block_number + batch_size as u64 - 1, current_height);
         let filter = base_filter
             .clone()
@@ -68,6 +73,8 @@ pub async fn run(
         );
 
         process_logs(raw_logs, &connection)?;
+        trace!("Updating last seen block: {last_batch_block}");
+        db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, last_batch_block)?;
     }
 
     Ok(())
