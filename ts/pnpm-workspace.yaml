@@ -3,3 +3,4 @@ packages:
   - "shielder-sdk-crypto-wasm"
   - "shielder-sdk"
   - "shielder-sdk-tests"
+  - "!shielder-sdk-crypto-mobile"
