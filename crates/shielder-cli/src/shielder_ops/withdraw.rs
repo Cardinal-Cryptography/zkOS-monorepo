@@ -30,10 +30,11 @@ pub async fn withdraw(
     to: Address,
     token: Token,
     decimals: u32,
+    pocket_money: u128,
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
-    let total_fee = get_relayer_total_fee(app_state, token).await?;
+    let total_fee = get_relayer_total_fee(app_state, token, decimals, pocket_money).await?;
     let amount = U256::from(amount) + total_fee;
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
@@ -90,13 +91,20 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
     bail!("Couldn't fetch transaction receipt")
 }
 
-// todo: use _token, once relayer actually supports ERC20 in quotes
-async fn get_relayer_total_fee(app_state: &mut AppState, _token: Token) -> Result<U256> {
+async fn get_relayer_total_fee(
+    app_state: &mut AppState,
+    token: Token,
+    decimals: u32,
+    pocket_money: u128,
+) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {
-            fee_token: TokenKind::Native,
-            pocket_money: U256::ZERO,
+            fee_token: match token {
+                Token::Native => TokenKind::Native,
+                Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
+            },
+            pocket_money: U256::from(pocket_money),
         })
         .send()
         .await?;

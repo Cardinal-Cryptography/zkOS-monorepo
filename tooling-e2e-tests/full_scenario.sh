@@ -31,7 +31,9 @@ scenario() {
 
   withdrawal_amount=$(mtzero 50)
 
-  # Native withdrawal
+  #####################################################################################
+  ################################# Native withdrawal #################################
+  #####################################################################################
   withdrawal_balance_before=$(cast balance -r "${NODE_RPC_URL}" "${WITHDRAWAL_PUBLIC_KEY}")
   alice withdraw $withdrawal_amount "${WITHDRAWAL_PUBLIC_KEY}"
   withdrawal_balance_after=$(cast balance -r "${NODE_RPC_URL}" "${WITHDRAWAL_PUBLIC_KEY}")
@@ -44,19 +46,34 @@ scenario() {
     log_progress "✅ Native withdrawal successful"
   fi
 
-  # ERC20 withdrawal
-  withdrawal_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
+  ####################################################################################
+  ################################# ERC20 withdrawal #################################
+  ####################################################################################
+  withdrawal_balance_before=$(cast balance -r "${NODE_RPC_URL}" "${WITHDRAWAL_PUBLIC_KEY}")
+  withdrawal_erc20_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
   relayer_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${FEE_DESTINATION}")
-  alice withdraw-erc20 $withdrawal_amount "${WITHDRAWAL_PUBLIC_KEY}" "${ERC20_CONTRACT_ADDRESS_1}" 18
-  withdrawal_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
+
+  pocket_money=$(mtzero 1)
+  alice withdraw-erc20 $withdrawal_amount "${WITHDRAWAL_PUBLIC_KEY}" "${ERC20_CONTRACT_ADDRESS_1}" 18 $pocket_money
+
+  withdrawal_balance_after=$(cast balance -r "${NODE_RPC_URL}" "${WITHDRAWAL_PUBLIC_KEY}")
+  withdrawal_erc20_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
   relayer_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${FEE_DESTINATION}")
 
-  withdrawn=$((withdrawal_balance_after - withdrawal_balance_before))
+  withdrawn_erc20=$((withdrawal_erc20_balance_after - withdrawal_erc20_balance_before))
   if [ $withdrawn -ne $withdrawal_amount ]; then
-    log_progress "❌ ERC20 withdrawal failed: expected ${withdrawal_amount} token increase, got ${withdrawn}"
+    log_progress "❌ ERC20 withdrawal failed: expected ${withdrawal_amount} token increase, got ${withdrawn_erc20}"
     exit 1
   else
     log_progress "✅ ERC20 withdrawal successful"
+  fi
+
+  pocket_money_sent=$((withdrawal_balance_after - withdrawal_balance_before))
+  if [ $pocket_money_sent -ne $pocket_money ]; then
+    log_progress "❌ ERC20 withdrawal failed: expected ${pocket_money} pocket money, got ${pocket_money_sent}"
+    exit 1
+  else
+    log_progress "✅ ERC20 withdrawal pocket money successful"
   fi
 
   fee=$((relayer_balance_after - relayer_balance_before))
