@@ -34,6 +34,7 @@ pub async fn withdraw(
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
+    let pocket_money = U256::from(pocket_money);
     let total_fee = get_relayer_total_fee(app_state, token, decimals, pocket_money).await?;
     let amount = U256::from(amount) + total_fee;
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
@@ -44,7 +45,18 @@ pub async fn withdraw(
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to, token, decimals, total_fee).await?)
+        .json(
+            &prepare_relayer_query(
+                app_state,
+                amount,
+                to,
+                token,
+                decimals,
+                total_fee,
+                pocket_money,
+            )
+            .await?,
+        )
         .send()
         .await?;
 
@@ -95,7 +107,7 @@ async fn get_relayer_total_fee(
     app_state: &mut AppState,
     token: Token,
     decimals: u32,
-    pocket_money: u128,
+    pocket_money: U256,
 ) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
@@ -104,7 +116,7 @@ async fn get_relayer_total_fee(
                 Token::Native => TokenKind::Native,
                 Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
             },
-            pocket_money: U256::from(pocket_money),
+            pocket_money,
         })
         .send()
         .await?;
@@ -142,6 +154,7 @@ async fn prepare_relayer_query(
     token: Token,
     decimals: u32,
     relayer_fee: U256,
+    pocket_money: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
     let leaf_index = app_state.accounts[&token.address()]
@@ -169,7 +182,7 @@ async fn prepare_relayer_query(
             contract_version: contract_version(),
             chain_id: U256::from(chain_id),
             mac_salt: get_mac_salt(),
-            pocket_money: U256::ZERO,
+            pocket_money,
         },
     );
 
@@ -190,6 +203,6 @@ async fn prepare_relayer_query(
         fee_amount: calldata.relayer_fee,
         mac_salt: calldata.mac_salt,
         mac_commitment: calldata.mac_commitment,
-        pocket_money: U256::ZERO,
+        pocket_money,
     })
 }
