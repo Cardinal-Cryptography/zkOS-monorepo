@@ -5,9 +5,7 @@ use axum::{
     Json,
 };
 use shielder_account::call_data::WithdrawCall;
-use shielder_contract::{
-    alloy_primitives::{Address, U256},
-};
+use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
     scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
 };

@@ -46,8 +46,10 @@ scenario() {
 
   # ERC20 withdrawal
   withdrawal_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
+  relayer_balance_before=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${FEE_DESTINATION}")
   alice withdraw-erc20 $withdrawal_amount "${WITHDRAWAL_PUBLIC_KEY}" "${ERC20_CONTRACT_ADDRESS_1}" 18
   withdrawal_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${WITHDRAWAL_PUBLIC_KEY}")
+  relayer_balance_after=$(erc20_balance "${ERC20_CONTRACT_ADDRESS_1}" "${FEE_DESTINATION}")
 
   withdrawn=$((withdrawal_balance_after - withdrawal_balance_before))
   if [ $withdrawn -ne $withdrawal_amount ]; then
@@ -55,6 +57,14 @@ scenario() {
     exit 1
   else
     log_progress "✅ ERC20 withdrawal successful"
+  fi
+
+  fee=$((relayer_balance_after - relayer_balance_before))
+  if [ $fee -ne $TOTAL_FEE ]; then
+    log_progress "❌ ERC20 withdrawal failed: expected ${withdrawal_amount} fee, got ${fee}"
+    exit 1
+  else
+    log_progress "✅ ERC20 withdrawal fee successful"
   fi
 
   alice display-account
