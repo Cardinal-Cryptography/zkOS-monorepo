@@ -144,6 +144,8 @@ jobs:
         with:
           node-version: 23
 
+      - run: corepack enable
+
       - name: Add .npmrc with publish token
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISHING_KEY }}" > .npmrc
         working-directory: ts/${{ github.event.inputs.package }}
