@@ -132,9 +132,6 @@ jobs:
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
 
-      - name: Ensure xcodebuild is available
-        run: xcode-select --install
-
       - name: Install iOS rust toolchain
         run: |
           rustup target add \
@@ -146,10 +143,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 23
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.2.0
 
       - name: Install dependencies
         run: yarn
