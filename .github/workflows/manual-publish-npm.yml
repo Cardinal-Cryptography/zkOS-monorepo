@@ -144,6 +144,10 @@ jobs:
         with:
           node-version: 23
 
+      - name: Add .npmrc with publish token
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISHING_KEY }}" > .npmrc
+        working-directory: ts/${{ github.event.inputs.package }}
+
       - name: Install dependencies
         run: yarn
         working-directory: ts/shielder-sdk-crypto-mobile
