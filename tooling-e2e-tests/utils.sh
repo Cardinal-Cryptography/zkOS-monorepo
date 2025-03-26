@@ -114,7 +114,7 @@ EOF
 }
 
 mint_erc20_tokens() {
-  AMOUNT=$(mtzero 100000)
+  AMOUNT=$(mtzero 10000)
 
   keys=("${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}" "${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}")
 
@@ -153,6 +153,11 @@ approve_erc20_tokens() {
   done
 
   log_progress "✅ Tokens approved for spending by the shielder contract"
+}
+
+erc20_balance() {
+  full_answer=$(cast call -r "${NODE_RPC_URL}" "${1}" "balanceOf(address)(uint256)" "${2}")
+  echo "${full_answer}" | awk '{print $1;}'
 }
 
 ####################################################################################################
