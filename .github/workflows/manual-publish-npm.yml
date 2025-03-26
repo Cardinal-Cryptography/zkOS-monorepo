@@ -147,8 +147,8 @@ jobs:
       - run: corepack enable
 
       - name: Add .npmrc with publish token
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISHING_KEY }}" > .npmrc
-        working-directory: ts/${{ github.event.inputs.package }}
+        run: echo "npmAuthToken: ${{ secrets.NPM_PUBLISHING_KEY }}" >> .yarnrc.yml
+        working-directory: ts/shielder-sdk-crypto-mobile
 
       - name: Install dependencies
         run: yarn
