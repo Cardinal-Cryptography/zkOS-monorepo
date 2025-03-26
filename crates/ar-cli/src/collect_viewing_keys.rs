@@ -157,8 +157,6 @@ pub async fn run(
         db::update_checkpoint(&connection, CHECKPOINT_TABLE_NAME, block_number)?;
     }
 
-    info!("Done");
-
     Ok(())
 }
 

@@ -70,9 +70,7 @@ async fn main() -> Result<(), CliError> {
             let mut delay = DEFAULT_BACKOFF;
 
             loop {
-                if let Err(CollectKeysError::Rpc(alloy_json_rpc::RpcError::Transport(
-                    TransportErrorKind::HttpError(http_err),
-                ))) = collect_viewing_keys::run(
+                match collect_viewing_keys::run(
                     rpc_url,
                     shielder_address,
                     private_key_file,
@@ -83,10 +81,27 @@ async fn main() -> Result<(), CliError> {
                 )
                 .await
                 {
-                    if http_err.is_rate_limit_err() {
-                        delay = min(MAX_BACKOFF, 2 * delay);
-                        info!("Waiting {delay:?} before retrying.");
-                        sleep(delay);
+                    Ok(_) => {
+                        info!("Done");
+                        break;
+                    }
+
+                    Err(CollectKeysError::Rpc(alloy_json_rpc::RpcError::Transport(
+                        TransportErrorKind::HttpError(http_err),
+                    ))) => {
+                        if http_err.is_rate_limit_err() {
+                            delay = min(MAX_BACKOFF, 2 * delay);
+                            info!("Waiting {delay:?} before retrying.");
+                            sleep(delay);
+                        } else {
+                            error!("{http_err:?}");
+                            break;
+                        }
+                    }
+
+                    Err(why) => {
+                        error!("{why:?}");
+                        break;
                     }
                 }
             }
@@ -116,6 +131,7 @@ async fn main() -> Result<(), CliError> {
                     info!("Done");
                     break;
                 }
+
                 Err(IndexEventsError::Rpc(alloy_json_rpc::RpcError::Transport(
                     TransportErrorKind::HttpError(http_err),
                 ))) => {
@@ -123,10 +139,15 @@ async fn main() -> Result<(), CliError> {
                         delay = min(MAX_BACKOFF, 2 * delay);
                         info!("Waiting {delay:?} before retrying.");
                         sleep(delay);
+                    } else {
+                        error!("{http_err:?}");
+                        break;
                     }
                 }
+
                 Err(why) => {
                     error!("{why:?}");
+                    break;
                 }
             }
         },
