@@ -118,14 +118,33 @@ async fn perform_contract_action(
         }) => deposit(app_state, amount, Token::ERC20(token_address)).await,
 
         ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
-            withdraw(app_state, amount, to, Token::Native, NATIVE_TOKEN_DECIMALS).await
+            withdraw(
+                app_state,
+                amount,
+                to,
+                Token::Native,
+                NATIVE_TOKEN_DECIMALS,
+                0,
+            )
+            .await
         }
         ContractInteractionCommand::WithdrawERC20(WithdrawERC20Cmd {
             amount,
             to,
             token_address,
             decimals,
-        }) => withdraw(app_state, amount, to, Token::ERC20(token_address), decimals).await,
+            pocket_money,
+        }) => {
+            withdraw(
+                app_state,
+                amount,
+                to,
+                Token::ERC20(token_address),
+                decimals,
+                pocket_money,
+            )
+            .await
+        }
     }
 }
 

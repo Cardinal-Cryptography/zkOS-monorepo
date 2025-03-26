@@ -1,11 +1,10 @@
-use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;
 use async_channel::{Receiver as MPMCReceiver, Sender as MPMCSender};
+use shielder_account::{call_data::WithdrawCall, Token};
 use shielder_contract::{
     alloy_primitives::{Address, TxHash},
     call_type::{DryRun, Submit},
-    ShielderContract::withdrawNativeCall,
     ShielderContractError, ShielderUser,
 };
 use tokio::sync::{
@@ -32,9 +31,7 @@ pub enum TaskResult {
 
 pub struct Task {
     report: OneshotSender<(RequestTrace, TaskResult)>,
-    payload: withdrawNativeCall,
-    #[allow(unused)]
-    pocket_money: U256,
+    payload: WithdrawCall,
     request_trace: RequestTrace,
 }
 
@@ -93,8 +90,7 @@ impl Taskmaster {
 
     pub async fn register_new_task(
         &self,
-        payload: withdrawNativeCall,
-        pocket_money: U256,
+        payload: WithdrawCall,
         mut request_trace: RequestTrace,
     ) -> Result<OneshotReceiver<(RequestTrace, TaskResult)>> {
         let (report_sender, report_receiver) = oneshot::channel();
@@ -103,7 +99,6 @@ impl Taskmaster {
         let task = Task {
             report: report_sender,
             payload,
-            pocket_money,
             request_trace,
         };
         self.task_sender
@@ -128,9 +123,21 @@ async fn relay_worker(
         request_trace.set_relayer_address(worker_address);
 
         if dry_run_manager.should_dry_run_now() {
-            let dry_run_result = shielder_user
-                .withdraw_native::<DryRun>(task.payload.clone())
-                .await;
+            let dry_run_result = match task.payload.token {
+                Token::Native => {
+                    shielder_user
+                        .withdraw_native::<DryRun>(task.payload.clone().try_into().unwrap())
+                        .await
+                }
+                Token::ERC20(_) => {
+                    shielder_user
+                        .withdraw_erc20::<DryRun>(
+                            task.payload.clone().try_into().unwrap(),
+                            task.payload.pocket_money,
+                        )
+                        .await
+                }
+            };
             request_trace.record("dry run completed");
 
             if let Err(err) = dry_run_result {
@@ -141,7 +148,21 @@ async fn relay_worker(
             }
         }
 
-        let submit_result = shielder_user.withdraw_native::<Submit>(task.payload).await;
+        let submit_result = match task.payload.token {
+            Token::Native => {
+                shielder_user
+                    .withdraw_native::<Submit>(task.payload.try_into().unwrap())
+                    .await
+            }
+            Token::ERC20(_) => {
+                shielder_user
+                    .withdraw_erc20::<Submit>(
+                        task.payload.clone().try_into().unwrap(),
+                        task.payload.pocket_money,
+                    )
+                    .await
+            }
+        };
         request_trace.record("relay completed");
 
         match submit_result {
