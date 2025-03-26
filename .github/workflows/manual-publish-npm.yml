@@ -103,11 +103,20 @@ jobs:
       - name: GIT | Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare Rust env
-        uses: ./.github/actions/prepare-rust-env
+      - uses: webfactory/ssh-agent@v0.9.0
         with:
-          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY }}
+            ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
+
+      - name: Install Rust toolchain
+        uses: Cardinal-Cryptography/github-actions/install-rust-toolchain@v7
+        with:
+          channel: nightly
+
+      - name: Install active toolchain
+        shell: bash
+        run: rustup toolchain install
 
       - name: Install C++ tooling
         run: brew install cmake ninja clang-format
