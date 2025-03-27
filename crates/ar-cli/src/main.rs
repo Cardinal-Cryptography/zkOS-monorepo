@@ -3,9 +3,8 @@ use std::{cmp::min, thread::sleep, time::Duration};
 use alloy_transport::TransportErrorKind;
 use clap::Parser;
 use cli::{ChainConfig, Cli};
-use collect_viewing_keys::CollectKeysError;
-use index_events::IndexEventsError;
 use log::{error, info};
+use recoverable_error::MaybeRecoverableError;
 use thiserror::Error;
 
 mod cli;
@@ -13,6 +12,7 @@ mod collect_viewing_keys;
 mod db;
 mod generate;
 mod index_events;
+mod recoverable_error;
 mod reveal;
 mod revoke;
 
@@ -26,11 +26,8 @@ enum CliError {
     #[error("Error generating keys")]
     Generate(#[from] generate::GenerateError),
 
-    #[error("Error collecting viewing keys")]
-    CollectKeys(#[from] collect_viewing_keys::CollectKeysError),
-
-    #[error("Error indexing events")]
-    Index(#[from] index_events::IndexEventsError),
+    #[error("Cannot recover from this variant of MaybeRecoverable")]
+    MaybeRecoverable(#[from] MaybeRecoverableError),
 
     #[error("Error revoking txs")]
     Revoke(#[from] revoke::RevokeError),
@@ -40,6 +37,30 @@ enum CliError {
 
     #[error("Db Error")]
     Db(#[from] rusqlite::Error),
+}
+
+pub async fn retry_with_backoff<F, Fut, T>(mut op: F) -> Result<T, MaybeRecoverableError>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T, MaybeRecoverableError>>,
+{
+    let mut delay = DEFAULT_BACKOFF;
+
+    loop {
+        match op().await {
+            Ok(result) => return Ok(result),
+
+            Err(MaybeRecoverableError::Rpc(alloy_json_rpc::RpcError::Transport(
+                TransportErrorKind::HttpError(http_err),
+            ))) if http_err.is_rate_limit_err() => {
+                delay = min(MAX_BACKOFF, delay * 2);
+                info!("Rate limited. Waiting {:?} before retrying.", delay);
+                sleep(delay);
+            }
+
+            Err(e) => return Err(e),
+        }
+    }
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -67,10 +88,8 @@ async fn main() -> Result<(), CliError> {
                 },
             db,
         } => {
-            let mut delay = DEFAULT_BACKOFF;
-
-            loop {
-                match collect_viewing_keys::run(
+            retry_with_backoff(|| {
+                collect_viewing_keys::run(
                     rpc_url,
                     shielder_address,
                     private_key_file,
@@ -79,33 +98,10 @@ async fn main() -> Result<(), CliError> {
                     &db.path,
                     *redact_sensitive_data,
                 )
-                .await
-                {
-                    Ok(_) => {
-                        info!("Done");
-                        break;
-                    }
-
-                    Err(CollectKeysError::Rpc(alloy_json_rpc::RpcError::Transport(
-                        TransportErrorKind::HttpError(http_err),
-                    ))) => {
-                        if http_err.is_rate_limit_err() {
-                            delay = min(MAX_BACKOFF, 2 * delay);
-                            info!("Waiting {delay:?} before retrying.");
-                            sleep(delay);
-                        } else {
-                            error!("{http_err:?}");
-                            break;
-                        }
-                    }
-
-                    Err(why) => {
-                        error!("{why:?}");
-                        break;
-                    }
-                }
-            }
+            })
+            .await?
         }
+
         cli::Command::IndexEvents {
             common:
                 ChainConfig {
@@ -115,46 +111,24 @@ async fn main() -> Result<(), CliError> {
                 },
             db,
             batch_size,
-        } => loop {
-            let mut delay = DEFAULT_BACKOFF;
+        } => {
+            retry_with_backoff(|| {
+                index_events::run(
+                    rpc_url,
+                    shielder_address,
+                    *from_block,
+                    *batch_size,
+                    &db.path,
+                )
+            })
+            .await?
+        }
 
-            match index_events::run(
-                rpc_url,
-                shielder_address,
-                *from_block,
-                *batch_size,
-                &db.path,
-            )
-            .await
-            {
-                Ok(_) => {
-                    info!("Done");
-                    break;
-                }
-
-                Err(IndexEventsError::Rpc(alloy_json_rpc::RpcError::Transport(
-                    TransportErrorKind::HttpError(http_err),
-                ))) => {
-                    if http_err.is_rate_limit_err() {
-                        delay = min(MAX_BACKOFF, 2 * delay);
-                        info!("Waiting {delay:?} before retrying.");
-                        sleep(delay);
-                    } else {
-                        error!("{http_err:?}");
-                        break;
-                    }
-                }
-
-                Err(why) => {
-                    error!("{why:?}");
-                    break;
-                }
-            }
-        },
         cli::Command::Revoke { db } => {
             let connection = db::init(&db.path)?;
             revoke::run(connection).await?
         }
+
         cli::Command::Reveal { db, tx_hash } => {
             let connection = db::init(&db.path)?;
             reveal::run(connection, tx_hash).await?

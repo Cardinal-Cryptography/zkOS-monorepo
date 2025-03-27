@@ -5,53 +5,24 @@ use std::{
     path::PathBuf,
 };
 
-use alloy_json_rpc::RpcError;
 use alloy_network::AnyNetwork;
 use alloy_primitives::{Address, U256};
 use alloy_provider::{Provider, ProviderBuilder};
 use alloy_rpc_types::{BlockNumberOrTag, BlockTransactionsKind, TransactionTrait};
 use alloy_sol_types::SolCall;
-use alloy_transport::TransportErrorKind;
-use hex::FromHexError;
 use log::{debug, info, trace};
 use rusqlite::Connection;
 use shielder_circuits::{grumpkin, GrumpkinPointAffine};
-use shielder_contract::{
-    ShielderContract::{newAccountERC20Call, newAccountNativeCall},
-    ShielderContractError,
-};
-use thiserror::Error;
+use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeCall};
 use type_conversions::u256_to_field;
 
 use crate::{
     cli::Endianess,
     db::{self, ViewingKey},
+    recoverable_error::MaybeRecoverableError,
 };
 
 const CHECKPOINT_TABLE_NAME: &str = "last_keys_block";
-
-#[derive(Debug, Error)]
-#[error(transparent)]
-#[non_exhaustive]
-pub enum CollectKeysError {
-    #[error("Error while interacting with the Shielder contract")]
-    Contract(#[from] ShielderContractError),
-
-    #[error("RPC error")]
-    Rpc(#[from] RpcError<TransportErrorKind>),
-
-    #[error("Hex decoding error")]
-    HexError(#[from] FromHexError),
-
-    #[error("Error reading AR private key file")]
-    ARKeyRead(#[from] std::io::Error),
-
-    #[error("Error converting from a little-endian byte representation to grumpkin::Fr")]
-    NotAGrumpkinBaseFieldElement,
-
-    #[error("Error while persisting data")]
-    Db(#[from] rusqlite::Error),
-}
 
 /// Goes back in transaction history and collects all viewing keys
 /// - look for new_account txs
@@ -66,7 +37,7 @@ pub async fn run(
     from_block: u64,
     db_path: &PathBuf,
     redact_sensitive_data: bool,
-) -> Result<(), CollectKeysError> {
+) -> Result<(), MaybeRecoverableError> {
     let connection = db::init(db_path)?;
 
     let provider = ProviderBuilder::new()
@@ -88,7 +59,7 @@ pub async fn run(
 
     let private_key = grumpkin::Fr::from_bytes(&bytes)
         .into_option()
-        .ok_or(CollectKeysError::NotAGrumpkinBaseFieldElement)?;
+        .ok_or(MaybeRecoverableError::NotAGrumpkinBaseFieldElement)?;
 
     db::create_viewing_keys_table(&connection)?;
     db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
@@ -168,7 +139,7 @@ fn decode_and_persist(
     c2y: U256,
     private_key: grumpkin::Fr,
     redact_sensitive_data: bool,
-) -> Result<(), CollectKeysError> {
+) -> Result<(), MaybeRecoverableError> {
     let ciphertext1 = GrumpkinPointAffine::new(u256_to_field(c1x), u256_to_field(c1y));
     let ciphertext2 = GrumpkinPointAffine::new(u256_to_field(c2x), u256_to_field(c2y));
 

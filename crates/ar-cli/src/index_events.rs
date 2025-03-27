@@ -3,46 +3,25 @@ use std::{
     path::PathBuf,
 };
 
-use alloy_json_rpc::RpcError;
 use alloy_primitives::Address;
 use alloy_provider::Provider;
 use alloy_rpc_types::{Filter, Log};
 use alloy_sol_types::SolEvent;
-use alloy_transport::TransportErrorKind;
 use log::{debug, info, trace};
 use rusqlite::Connection;
 use shielder_circuits::Fr;
 use shielder_contract::{
     providers::create_simple_provider,
     ShielderContract::{Deposit, NewAccount, ShielderContractEvents, Withdraw},
-    ShielderContractError,
 };
-use thiserror::Error;
 use type_conversions::u256_to_field;
 
-use crate::db::{self, Event};
+use crate::{
+    db::{self, Event},
+    recoverable_error::MaybeRecoverableError,
+};
 
 const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
-
-#[derive(Debug, Error)]
-#[error(transparent)]
-#[non_exhaustive]
-pub enum IndexEventsError {
-    #[error("Error while interacting with the Shielder contract")]
-    Contract(#[from] ShielderContractError),
-
-    #[error("RPC error")]
-    Rpc(#[from] RpcError<TransportErrorKind>),
-
-    #[error("Error while decoding event log")]
-    EventLog(#[from] alloy_sol_types::Error),
-
-    #[error("Event is missing some data")]
-    MissingData,
-
-    #[error("Error while persisting data")]
-    Db(#[from] rusqlite::Error),
-}
 
 pub async fn run(
     rpc_url: &str,
@@ -50,7 +29,7 @@ pub async fn run(
     from_block: u64,
     batch_size: usize,
     db_path: &PathBuf,
-) -> Result<(), IndexEventsError> {
+) -> Result<(), MaybeRecoverableError> {
     let connection = db::init(db_path)?;
     let provider = create_simple_provider(rpc_url).await?;
     let current_height = provider.get_block_number().await?;
@@ -84,10 +63,13 @@ pub async fn run(
     Ok(())
 }
 
-fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), IndexEventsError> {
+fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), MaybeRecoverableError> {
     for log in logs {
-        let tx_hash = log.transaction_hash.ok_or(IndexEventsError::MissingData)?.0;
-        let block_number = log.block_number.ok_or(IndexEventsError::MissingData)?;
+        let tx_hash = log
+            .transaction_hash
+            .ok_or(MaybeRecoverableError::MissingData)?
+            .0;
+        let block_number = log.block_number.ok_or(MaybeRecoverableError::MissingData)?;
 
         match log.topic0() {
             Some(&NewAccount::SIGNATURE_HASH) => {
