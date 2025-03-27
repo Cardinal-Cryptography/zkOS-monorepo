@@ -24,16 +24,11 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
       { op: withdrawOp(nativeToken(), 7n ** 17n, "bob", 0n), actor: "alice" },
 
       // create ERC20 account, deposit, withdraw manually and via relayer
+      { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
+      { op: shieldOp(ercToken, 2n * 10n ** 17n), actor: "alice" },
+      { op: withdrawManualOp(ercToken, 5n ** 17n, "bob"), actor: "alice" },
       {
-        op: shieldOp(ercToken, 10n ** 17n),
-        actor: "alice"
-      },
-      {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
-        actor: "alice"
-      },
-      {
-        op: withdrawManualOp(ercToken, 10n ** 17n, "bob"),
+        op: withdrawOp(ercToken, 7n ** 17n, "bob", 10n ** 17n),
         actor: "alice"
       },
 
@@ -43,14 +38,15 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
 
       // shield again
       { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
-      {
-        op: shieldOp(ercToken, 10n ** 17n),
-        actor: "alice"
-      },
+      { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
 
-      // withdraw again
+      // withdraw again via relayer
       {
         op: withdrawOp(nativeToken(), 10n ** 17n, "charlie", 0n),
+        actor: "alice"
+      },
+      {
+        op: withdrawOp(ercToken, 10n ** 17n, "charlie", 0n),
         actor: "alice"
       }
     ]

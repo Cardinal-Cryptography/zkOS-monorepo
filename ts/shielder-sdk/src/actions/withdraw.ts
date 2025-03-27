@@ -221,7 +221,7 @@ export class WithdrawAction extends NoteAction {
    * Withdraw `amount` from the account.
    * Calls the relayer to perform the withdrawal on the blockchain.
    * @param calldata calldata for withdrawal action
-   * @returns transaction hash of the withdraw transaction
+   * @returns transaction hash of the withdrawal transaction
    * @throws VersionRejectedByRelayer
    */
   async sendCalldataWithRelayer(calldata: WithdrawCalldata) {

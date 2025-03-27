@@ -38,6 +38,10 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
       { op: shieldOp(nativeToken(), 3n * 10n ** 17n), actor: "charlie" },
       { op: shieldOp(ercToken, 3n * 10n ** 17n), actor: "charlie" },
       {
+        op: withdrawOp(ercToken, 10n ** 17n, "dave", 10n ** 17n),
+        actor: "charlie"
+      },
+      {
         op: withdrawOp(nativeToken(), 3n * 10n ** 17n, "dave", 0n),
         actor: "charlie"
       }
