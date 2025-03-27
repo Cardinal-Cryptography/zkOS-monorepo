@@ -73,7 +73,7 @@ async fn actor_task(actor: Actor, query: RelayQuery, relayer_rpc_url: String) ->
     }
 }
 
-async fn prepare_relay_queries<'actor>(
+async fn prepare_relay_queries(
     config: &Config,
     actors: Vec<Actor>,
 ) -> Result<Vec<(Actor, RelayQuery)>> {
