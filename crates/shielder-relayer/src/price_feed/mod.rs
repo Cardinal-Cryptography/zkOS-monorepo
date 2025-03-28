@@ -7,7 +7,7 @@ use fetching::{fetch_price, PriceFetchError};
 pub use price::Price;
 #[cfg(test)]
 use rust_decimal::Decimal;
-use shielder_relayer::{PriceProvider, Token, TokenKind};
+use shielder_relayer::{PriceProvider, TokenInfo, TokenKind};
 use time::OffsetDateTime;
 use tokio::time::Duration;
 
@@ -22,7 +22,7 @@ mod price;
 pub struct Prices {
     validity: time::Duration,
     refresh_interval: Duration,
-    tokens: HashMap<TokenKind, Token>,
+    tokens: HashMap<TokenKind, TokenInfo>,
     inner: HashMap<TokenKind, Arc<Mutex<Option<Price>>>>,
 }
 
@@ -32,7 +32,7 @@ impl Prices {
     ///
     /// Note that you should realistically set `validity` to at least 5 or 10 minutes - it seems
     /// the API we are using (DIA) updates about 2 or 3 minutes or so.
-    pub fn new(tokens: &[Token], validity: Duration, refresh_interval: Duration) -> Self {
+    pub fn new(tokens: &[TokenInfo], validity: Duration, refresh_interval: Duration) -> Self {
         let validity =
             time::Duration::new(validity.as_secs() as i64, validity.subsec_nanos() as i32);
 
@@ -100,15 +100,15 @@ mod tests {
 
     use super::*;
 
-    fn token_with_static_price() -> Token {
-        Token {
+    fn token_with_static_price() -> TokenInfo {
+        TokenInfo {
             kind: TokenKind::Native,
             price_provider: PriceProvider::Static(Decimal::ONE),
         }
     }
 
-    fn token_with_url_price() -> Token {
-        Token {
+    fn token_with_url_price() -> TokenInfo {
+        TokenInfo {
             kind: TokenKind::Native,
             price_provider: PriceProvider::Url(
                 "https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000".to_string(),

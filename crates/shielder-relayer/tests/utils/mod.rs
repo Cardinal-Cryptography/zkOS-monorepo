@@ -7,7 +7,7 @@ use rand::Rng;
 use reqwest::Response;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use shielder_relayer::{PriceProvider, RelayQuery, Token, TokenKind};
+use shielder_relayer::{PriceProvider, RelayQuery, TokenInfo, TokenKind};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -52,7 +52,7 @@ impl TestContext {
             test_config.shielder_contract.address(),
             FEE_DESTINATION_KEY.to_string(),
             test_config.relayer_signer.signing_key(),
-            vec![Token {
+            vec![TokenInfo {
                 kind: TokenKind::Native,
                 price_provider: PriceProvider::Static(Decimal::ONE),
             }],

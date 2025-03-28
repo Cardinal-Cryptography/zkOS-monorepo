@@ -1,8 +1,8 @@
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
 use shielder_relayer::{
-    Token, FEE_DESTINATION_KEY_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV,
-    RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_CONFIG_ENV,
+    TokenInfo, FEE_DESTINATION_KEY_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV,
+    RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_CONFIG_ENV,
 };
 use testcontainers::{core::WaitFor, Image};
 
@@ -28,7 +28,7 @@ impl RelayerImage {
         shielder_address: String,
         fee_destination_key: String,
         signing_key: String,
-        token_config: Vec<Token>,
+        token_config: Vec<TokenInfo>,
     ) -> Self {
         Self {
             env_vars: HashMap::from([

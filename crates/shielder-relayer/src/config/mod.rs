@@ -51,7 +51,7 @@ pub struct OperationalConfig {
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub relay_count_for_recharge: u32,
-    pub token_config: Vec<Token>,
+    pub token_config: Vec<TokenInfo>,
     pub price_feed_validity: Duration,
     pub price_feed_refresh_interval: Duration,
     pub service_fee_percent: u32,

@@ -86,15 +86,15 @@ mod native_fee {
 mod erc20_fee {
     use assert2::assert;
     use rust_decimal::Decimal;
-    use shielder_relayer::{PriceProvider, Token};
+    use shielder_relayer::{PriceProvider, TokenInfo};
 
     use super::*;
 
     const ERC20_ADDRESS: Address = address!("1111111111111111111111111111111111111111");
 
     /// ETH price is $1.5
-    fn erc20() -> Token {
-        Token {
+    fn erc20() -> TokenInfo {
+        TokenInfo {
             kind: TokenKind::ERC20 {
                 address: ERC20_ADDRESS,
                 decimals: 18,
@@ -104,8 +104,8 @@ mod erc20_fee {
     }
 
     /// AZERO price is $3
-    fn native() -> Token {
-        Token {
+    fn native() -> TokenInfo {
+        TokenInfo {
             kind: TokenKind::Native,
             price_provider: PriceProvider::Static(Decimal::new(3, 0)),
         }
@@ -262,7 +262,7 @@ mod erc20_fee {
         let app_state = AppState {
             token_config: vec![
                 erc20(),
-                Token {
+                TokenInfo {
                     kind: TokenKind::Native,
                     price_provider: PriceProvider::Url(String::new()),
                 },

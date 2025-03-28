@@ -30,12 +30,12 @@ pub enum PriceProvider {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-pub struct Token {
+pub struct TokenInfo {
     pub kind: TokenKind,
     pub price_provider: PriceProvider,
 }
 
-impl Token {
+impl TokenInfo {
     pub fn decimals(&self) -> u32 {
         match self.kind {
             // Native EVM has 18 decimals by default
