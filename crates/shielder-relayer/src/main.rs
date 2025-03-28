@@ -170,14 +170,10 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         max_pocket_money: config.operations.max_pocket_money,
     };
 
-    let base_routes = routes!(
-        quote::quote_fees,
-        monitor::endpoints::health_endpoint,
-        fee_address,
-    );
-
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
-        .routes(base_routes)
+        .routes(routes!(monitor::endpoints::health_endpoint))
+        .routes(routes!(fee_address))
+        .routes(routes!(quote::quote_fees))
         .split_for_parts();
 
     let app = router
