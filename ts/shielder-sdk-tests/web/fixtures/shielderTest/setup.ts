@@ -21,6 +21,7 @@ import {
   validateShielderHistory as validateShielderHistorySingle
 } from "./validate";
 import { keyToToken, tokenToKey } from "@/testUtils";
+import { nativeToken } from "@cardinal-cryptography/shielder-sdk";
 
 export interface ShielderTestFixture {
   executeAction: (action: TestAction) => Promise<void>;
@@ -82,6 +83,10 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
         usedTokens.add(tokenToKey(action.op.token));
         if (action.op.pocketMoney > 0n) {
           usedTokens.add("native");
+          withdrawnBalance[action.op.to].add(
+            nativeToken(),
+            action.op.pocketMoney
+          );
         }
       } else if (action.op.type === "withdrawManual") {
         await shielderClient.withdrawManual(
