@@ -7,13 +7,14 @@ use rand::Rng;
 use reqwest::Response;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use shielder_account::Token;
 use shielder_relayer::{PriceProvider, RelayQuery, TokenInfo, TokenKind};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
     ImageExt, TestcontainersError,
 };
-use shielder_account::Token;
+
 use crate::{
     ctx_assert,
     utils::{
