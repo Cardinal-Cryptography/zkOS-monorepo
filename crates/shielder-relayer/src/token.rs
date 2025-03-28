@@ -1,12 +1,14 @@
 use alloy_primitives::Address;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Deserialize, Serialize, ToSchema)]
 pub enum TokenKind {
     #[default]
     Native,
     ERC20 {
+        #[schema(value_type = String)]
         address: Address,
         decimals: u32,
     },

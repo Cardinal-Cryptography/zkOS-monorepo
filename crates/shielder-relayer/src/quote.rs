@@ -2,12 +2,24 @@ use alloy_provider::Provider;
 use axum::{extract::State, http::status::StatusCode, response::IntoResponse, Json};
 use rust_decimal::Decimal;
 use shielder_contract::{alloy_primitives::U256, providers::create_simple_provider};
-use shielder_relayer::{scale_u256, server_error, QuoteFeeQuery, QuoteFeeResponse, TokenKind};
+use shielder_relayer::{
+    scale_u256, server_error, QuoteFeeQuery, QuoteFeeResponse, SimpleServiceResponse, TokenKind,
+};
 use time::OffsetDateTime;
 use tracing::error;
 
 use crate::{price_feed::Price, quote_cache::CachedQuote, AppState};
 
+/// Get a quote for the fees associated with a relay.
+#[utoipa::path(
+    post,
+    path = "/quote_fees",
+    request_body(content = QuoteFeeQuery, description = "Query for fee quotation"),
+    responses(
+        (status = 200, description = "Quotation successful", body = QuoteFeeResponse),
+        (status = INTERNAL_SERVER_ERROR, description = "Couldn't connect to chain, price feed or computed fee", body = SimpleServiceResponse)
+    )
+)]
 pub async fn quote_fees(
     State(app_state): State<AppState>,
     Json(query): Json<QuoteFeeQuery>,

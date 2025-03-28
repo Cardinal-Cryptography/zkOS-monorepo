@@ -42,7 +42,7 @@ tracing-subscriber = { workspace = true, features = [
     "json",
     "env-filter",
 ] }
-utoipa = { workspace = true, features = ["axum_extras", "yaml"] }
+utoipa = { workspace = true, features = ["axum_extras", "yaml", "decimal"] }
 utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 zip = { workspace = true }

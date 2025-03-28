@@ -22,6 +22,7 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
@@ -170,12 +171,17 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         max_pocket_money: config.operations.max_pocket_money,
     };
 
-    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi()).split_for_parts();
+    let base_routes = routes!(
+        quote::quote_fees
+    );
+
+    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .routes(base_routes)
+        .split_for_parts();
 
     let app = router
         .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
-        .route("/quote_fees", post(quote::quote_fees))
         .route("/fee_address", get(fee_address))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))
