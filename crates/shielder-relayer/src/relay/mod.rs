@@ -29,6 +29,18 @@ const TASK_QUEUE_SIZE: usize = 1024;
 const OPTIMISTIC_DRY_RUN_THRESHOLD: u32 = 32;
 const FEE_MARGIN_PERCENT: u32 = 10;
 
+/// The relay endpoint is used to relay a withdrawal request to the shielder contract.
+#[utoipa::path(
+    post,
+    path = "/relay",
+    request_body(content = RelayQuery, description = "The relay request"),
+    responses(
+        (status = 200, description = "Quotation successful", body = RelayResponse),
+        (status = BAD_REQUEST, description = "Failed to relay withdrawal. Ensure your query, including proof, is correct.", body = SimpleServiceResponse),
+        (status = SERVICE_UNAVAILABLE, description = "Failed to obtain current chain and price info. Try again later.", body = SimpleServiceResponse),
+        (status = INTERNAL_SERVER_ERROR, description = "Server encountered unexpected error. Try again later.", body = SimpleServiceResponse),
+    )
+)]
 pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) -> impl IntoResponse {
     debug!("Relay request received: {query:?}");
     let mut request_trace = RequestTrace::new(&query);

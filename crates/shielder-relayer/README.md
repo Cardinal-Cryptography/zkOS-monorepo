@@ -62,4 +62,4 @@ defaults not provided.
 
 # API
 
-TO BE DONE, ONCE ADR IS IMPLEMENTED
+To inspect the API, you can use the OpenAPI specification provided by the service. By default, it is available at `/api` path.

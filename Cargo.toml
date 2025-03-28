@@ -27,7 +27,7 @@ anyhow = { version = "1.0.86", default-features = false }
 askama = { version = "0.12.0", default-features = false }
 assert2 = { version = "0.3.15" }
 async-channel = { version = "2.3.1" }
-axum = { version = "0.7.7" }
+axum = { version = "0.8.1" }
 byteorder = { version = "1.4.3" }
 chacha20poly1305 = { version = "0.10.1", default-features = false }
 clap = { version = "4.5.8" }
@@ -46,7 +46,7 @@ rayon = { version = "1.8" }
 reqwest = { version = "0.12.5" }
 revm = { version = "18.0.0", default-features = false }
 revm-primitives = { version = "14.0.0", default-features = false }
-rstest = "0.23.0"
+rstest = { version = "0.23.0" }
 ruint = { version = "1" }
 rust-argon2 = { version = "2.1.0" }
 rust_decimal = { version = "1.36.0" }
@@ -55,8 +55,6 @@ serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
 shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "491a0dd" }
-strum = { version = "0.27.1" }
-strum_macros = { version = "0.27.1" }
 testcontainers = { version = "0.19.0" }
 thiserror = { version = "2.0.9" }
 time = { version = "0.3.37" }
@@ -65,8 +63,12 @@ tower-http = { version = "0.6.1" }
 tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18" }
 uniffi = { version = "0.28.3" }
-wasm-bindgen = { version = "0.2.92" }
-wasm-bindgen-rayon = { version = "1.2.1" }
+utoipa = { version = "5.3.1" }
+utoipa-axum = { version = "0.2.0" }
+utoipa-swagger-ui = { version = "9.0.0" }
+wasm-bindgen = { version = "=0.2.93" }
+wasm-bindgen-rayon = { version = "=1.2.1" }
+zip = { version = "=2.3.0", default-features = false } # https://github.com/juhaku/utoipa/issues/1350
 
 # AR-CLI
 rand_chacha = { version = "0.3.1" }
