@@ -13,7 +13,7 @@ use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
     ImageExt, TestcontainersError,
 };
-
+use shielder_account::Token;
 use crate::{
     ctx_assert,
     utils::{
@@ -76,7 +76,7 @@ impl TestContext {
                 nullifier_hash: U256::ZERO,
                 new_note: U256::ZERO,
                 proof: Bytes::new(),
-                fee_token: TokenKind::Native,
+                fee_token: Token::Native,
                 fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
                 mac_salt: U256::ZERO,
                 mac_commitment: U256::ZERO,

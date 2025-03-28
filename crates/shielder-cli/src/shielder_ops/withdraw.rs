@@ -11,7 +11,7 @@ use shielder_account::{
 use shielder_contract::{
     events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
-use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse, TokenKind};
+use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -29,13 +29,12 @@ pub async fn withdraw(
     amount: u128,
     to: Address,
     token: Token,
-    decimals: u32,
     pocket_money: u128,
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
     let pocket_money = U256::from(pocket_money);
-    let total_fee = get_relayer_total_fee(app_state, token, decimals, pocket_money).await?;
+    let total_fee = get_relayer_total_fee(app_state, token, pocket_money).await?;
     let amount = U256::from(amount) + total_fee;
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
@@ -45,18 +44,7 @@ pub async fn withdraw(
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(
-            &prepare_relayer_query(
-                app_state,
-                amount,
-                to,
-                token,
-                decimals,
-                total_fee,
-                pocket_money,
-            )
-            .await?,
-        )
+        .json(&prepare_relayer_query(app_state, amount, to, token, total_fee, pocket_money).await?)
         .send()
         .await?;
 
@@ -106,16 +94,12 @@ async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<Blo
 async fn get_relayer_total_fee(
     app_state: &mut AppState,
     token: Token,
-    decimals: u32,
     pocket_money: U256,
 ) -> Result<U256> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {
-            fee_token: match token {
-                Token::Native => TokenKind::Native,
-                Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
-            },
+            fee_token: token,
             pocket_money,
         })
         .send()
@@ -152,7 +136,6 @@ async fn prepare_relayer_query(
     amount: U256,
     to: Address,
     token: Token,
-    decimals: u32,
     relayer_fee: U256,
     pocket_money: U256,
 ) -> Result<impl Serialize> {
@@ -186,11 +169,6 @@ async fn prepare_relayer_query(
         },
     );
 
-    let fee_token = match token {
-        Token::Native => TokenKind::Native,
-        Token::ERC20(address) => TokenKind::ERC20 { address, decimals },
-    };
-
     Ok(RelayQuery {
         expected_contract_version: contract_version().to_bytes(),
         amount,
@@ -199,7 +177,7 @@ async fn prepare_relayer_query(
         nullifier_hash: calldata.old_nullifier_hash,
         new_note: calldata.new_note,
         proof: calldata.proof,
-        fee_token,
+        fee_token: token,
         fee_amount: calldata.relayer_fee,
         mac_salt: calldata.mac_salt,
         mac_commitment: calldata.mac_commitment,
