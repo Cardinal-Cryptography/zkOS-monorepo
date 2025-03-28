@@ -10,7 +10,7 @@ use shielder_contract::{
     providers::create_provider_with_nonce_caching_signer,
     ConnectionPolicy, ShielderUser,
 };
-use shielder_relayer::Token;
+use shielder_relayer::{Token, TokenKind};
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -194,10 +194,16 @@ async fn fee_address(state: State<AppState>) -> impl IntoResponse {
 #[utoipa::path(
     get,
     path = "/supported_tokens",
-    responses((status = 200, body = [Token]))
+    responses((status = 200, body = [TokenKind]))
 )]
 async fn supported_tokens(state: State<AppState>) -> impl IntoResponse {
-    Json(state.token_config.clone())
+    Json(
+        state
+            .token_config
+            .iter()
+            .map(|t| t.kind)
+            .collect::<Vec<_>>(),
+    )
 }
 
 fn init_logging(format: LoggingFormat) -> Result<()> {

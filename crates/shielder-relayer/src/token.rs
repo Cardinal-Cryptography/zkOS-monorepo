@@ -23,16 +23,15 @@ impl From<TokenKind> for shielder_account::Token {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize, ToSchema)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub enum PriceProvider {
     Url(String),
     Static(Decimal),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize, ToSchema)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Token {
     pub kind: TokenKind,
-    #[schema(ignore)]
     pub price_provider: PriceProvider,
 }
 
