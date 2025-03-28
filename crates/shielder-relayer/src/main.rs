@@ -178,7 +178,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         .route("/quote_fees", post(quote::quote_fees))
         .route("/fee_address", get(fee_address))
         .with_state(state.clone())
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api.clone()))
+        .merge(SwaggerUi::new("/api").url("/api/openapi.json", api.clone()))
         .route_layer(middleware::from_fn(metrics::request_metrics))
         .layer(CorsLayer::permissive());
     Ok(axum::serve(listener, app).await?)
