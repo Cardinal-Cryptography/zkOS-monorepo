@@ -5,8 +5,8 @@ use axum::{
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
+use utoipa::ToSchema;
 
 mod environment_variables;
 pub use environment_variables::*;

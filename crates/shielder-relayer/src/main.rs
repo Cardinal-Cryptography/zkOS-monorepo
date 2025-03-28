@@ -21,8 +21,7 @@ use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
-use utoipa_axum::router::OpenApiRouter;
-use utoipa_axum::routes;
+use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
@@ -172,7 +171,9 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     };
 
     let base_routes = routes!(
-        quote::quote_fees
+        quote::quote_fees,
+        monitor::endpoints::health_endpoint,
+        fee_address,
     );
 
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
@@ -180,9 +181,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         .split_for_parts();
 
     let app = router
-        .route("/health", get(monitor::endpoints::health_endpoint))
         .route("/relay", post(relay::relay))
-        .route("/fee_address", get(fee_address))
         .with_state(state.clone())
         .route_layer(middleware::from_fn(metrics::request_metrics))
         .merge(SwaggerUi::new("/api").url("/api/openapi.json", api.clone()))
@@ -190,6 +189,11 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     Ok(axum::serve(listener, app).await?)
 }
 
+#[utoipa::path(
+    get,
+    path = "/fee_address",
+    responses((status = 200, description = "Address for relay fees", body = String))
+)]
 async fn fee_address(state: State<AppState>) -> impl IntoResponse {
     state.fee_destination.to_string()
 }
