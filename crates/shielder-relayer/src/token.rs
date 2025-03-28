@@ -32,6 +32,7 @@ pub enum PriceProvider {
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize, ToSchema)]
 pub struct Token {
     pub kind: TokenKind,
+    #[schema(ignore)]
     pub price_provider: PriceProvider,
 }
 
