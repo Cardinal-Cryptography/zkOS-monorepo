@@ -3,13 +3,7 @@ use std::{env, io, str::FromStr, sync::Arc};
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, Result};
-use axum::{
-    extract::State,
-    middleware,
-    response::IntoResponse,
-    routing::{get, post},
-    Router,
-};
+use axum::{extract::State, middleware, response::IntoResponse, routing::get, Router};
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
@@ -174,17 +168,18 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         .routes(routes!(monitor::endpoints::health_endpoint))
         .routes(routes!(fee_address))
         .routes(routes!(quote::quote_fees))
+        .routes(routes!(relay::relay))
+        .with_state(state.clone())
+        .route_layer(middleware::from_fn(metrics::request_metrics))
         .split_for_parts();
 
     let app = router
-        .route("/relay", post(relay::relay))
-        .with_state(state.clone())
-        .route_layer(middleware::from_fn(metrics::request_metrics))
         .merge(SwaggerUi::new("/api").url("/api/openapi.json", api.clone()))
         .layer(CorsLayer::permissive());
     Ok(axum::serve(listener, app).await?)
 }
 
+/// Get the address to which relay fees should be sent.
 #[utoipa::path(
     get,
     path = "/fee_address",
