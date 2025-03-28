@@ -1,6 +1,7 @@
 use alloy_provider::Provider;
 use axum::{extract::State, http::status::StatusCode, response::IntoResponse, Json};
 use rust_decimal::Decimal;
+use shielder_account::Token;
 use shielder_contract::{alloy_primitives::U256, providers::create_simple_provider};
 use shielder_relayer::{
     scale_u256, server_error, QuoteFeeQuery, QuoteFeeResponse, SimpleServiceResponse, TokenKind,
@@ -53,7 +54,7 @@ async fn _quote_fees(
 
     // Token conversion.
     let prices = match query.fee_token {
-        TokenKind::Native => {
+        Token::Native => {
             let price = get_native_token_price(&app_state)?;
             Prices {
                 fee_token_price: price.clone(),
@@ -61,7 +62,7 @@ async fn _quote_fees(
                 ratio: Decimal::ONE,
             }
         }
-        erc20 @ TokenKind::ERC20 { .. } => get_token_price(&app_state, erc20)?,
+        erc20 @ Token::ERC20 { .. } => get_token_price(&app_state, erc20)?,
     };
 
     let cached_quote = CachedQuote {
@@ -122,12 +123,19 @@ fn get_native_token_price(app_state: &AppState) -> Result<Price, String> {
         .ok_or("Native token price not available")?)
 }
 
-fn get_token_price(app_state: &AppState, token: TokenKind) -> Result<Prices, String> {
+fn get_token_price(app_state: &AppState, token: Token) -> Result<Prices, String> {
     let native_token_price = get_native_token_price(app_state)?;
+
+    let token_kind = app_state
+        .token_config
+        .iter()
+        .find(|info| Token::from(info.kind) == token)
+        .map(|info| info.kind)
+        .ok_or_else(|| format!("Requested token fee is not supported: {token:?}"))?;
 
     let fee_token_price = app_state
         .prices
-        .price(token)
+        .price(token_kind)
         .ok_or("Fee token price not available")?;
 
     let ratio = native_token_price.unit_price / fee_token_price.unit_price;

@@ -30,11 +30,11 @@ fn config_resolution() {
     let total_fee = U256::from_str(&DEFAULT_TOTAL_FEE).unwrap();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let token_config = vec![
-        Token {
+        TokenInfo {
             kind: TokenKind::Native,
             price_provider: PriceProvider::Url("https://price.feed".to_string()),
         },
-        Token {
+        TokenInfo {
             kind: TokenKind::ERC20 {
                 address: address!("2222222222222222222222222222222222222222"),
                 decimals: 10,

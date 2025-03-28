@@ -14,7 +14,7 @@ use shielder_contract::{
     alloy_primitives::U256, merkle_path::get_current_merkle_path,
     providers::create_simple_provider, ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{QuoteFeeResponse, RelayQuery, TokenKind};
+use shielder_relayer::{QuoteFeeResponse, RelayQuery};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
@@ -140,7 +140,7 @@ async fn prepare_relay_query(
         nullifier_hash: calldata.oldNullifierHash,
         new_note: calldata.newNote,
         proof: calldata.proof,
-        fee_token: TokenKind::Native,
+        fee_token: Token::Native,
         fee_amount: calldata.relayerFee,
         mac_salt: calldata.macSalt,
         mac_commitment: calldata.macCommitment,

@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use alloy_primitives::U256;
 use rust_decimal::Decimal;
-use shielder_relayer::TokenKind;
+use shielder_account::Token;
 use time::OffsetDateTime;
 use tokio::{sync::Mutex, time::interval};
 
@@ -10,7 +10,7 @@ use tokio::{sync::Mutex, time::interval};
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CachedQuote {
     /// Requested fee token.
-    pub fee_token: TokenKind,
+    pub fee_token: Token,
     /// Gas price (in native token) at the quotation moment.
     pub gas_price: U256,
     /// Price of the native token (base unit, like 1 ETH or 1 BTC) at the quotation moment.
@@ -81,7 +81,7 @@ mod tests {
 
     use alloy_primitives::U256;
     use rust_decimal::Decimal;
-    use shielder_relayer::TokenKind;
+    use shielder_account::Token;
     use time::OffsetDateTime;
     use tokio::time::sleep;
 
@@ -95,7 +95,7 @@ mod tests {
 
     fn quote() -> CachedQuote {
         CachedQuote {
-            fee_token: TokenKind::Native,
+            fee_token: Token::Native,
             gas_price: U256::from(1),
             native_token_price: Decimal::ONE,
             token_price_ratio: Decimal::ONE,

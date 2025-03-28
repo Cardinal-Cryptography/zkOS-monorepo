@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use shielder_account::call_data::WithdrawCall;
+use shielder_account::{call_data::WithdrawCall, Token};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
     scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
@@ -121,7 +121,7 @@ fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> Wi
         proof: q.proof,
         mac_salt: q.mac_salt,
         mac_commitment: q.mac_commitment,
-        token: q.fee_token.into(),
+        token: q.fee_token,
         pocket_money: q.pocket_money,
     }
 }
@@ -150,25 +150,25 @@ fn check_fee(
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
     match query.fee_token {
-        TokenKind::Native => {
+        Token::Native => {
             // todo: discuss if we want to prevent users from spending too much
             if query.fee_amount < app_state.total_fee {
                 request_trace.record_insufficient_fee(query.fee_amount);
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        token @ TokenKind::ERC20 { .. } => check_erc20_fee(app_state, token, query, request_trace)?,
+        token @ Token::ERC20 { .. } => check_erc20_fee(app_state, token, query, request_trace)?,
     }
     Ok(())
 }
 
 fn check_erc20_fee(
     app_state: &AppState,
-    fee_token: TokenKind,
+    fee_token: Token,
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    ensure_permissible_token(app_state, fee_token)?;
+    let fee_token = ensure_permissible_token(app_state, fee_token)?;
 
     let get_price = |token| {
         app_state
@@ -190,12 +190,16 @@ fn check_erc20_fee(
     Ok(())
 }
 
-fn ensure_permissible_token(app_state: &AppState, token: TokenKind) -> Result<(), Response> {
-    if !app_state.token_config.iter().any(|t| t.kind == token) {
-        error!("Requested token fee is not supported: {token:?}");
-        return Err(bad_request("Requested token fee is not supported."));
-    }
-    Ok(())
+fn ensure_permissible_token(app_state: &AppState, token: Token) -> Result<TokenKind, Response> {
+    app_state
+        .token_config
+        .iter()
+        .find(|t| Token::from(t.kind) == token)
+        .map(|t| t.kind)
+        .ok_or_else(|| {
+            error!("Requested token fee is not supported: {token:?}");
+            bad_request("Requested token fee is not supported.")
+        })
 }
 
 fn add_fee_error_margin(fee: U256) -> U256 {
@@ -207,7 +211,7 @@ fn check_pocket_money(
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    if query.fee_token == TokenKind::Native && query.pocket_money != U256::ZERO {
+    if query.fee_token == Token::Native && query.pocket_money != U256::ZERO {
         request_trace.record_pocket_money_native_withdrawal();
         return Err(bad_request(
             "Pocket money is not supported for native token withdrawals.",

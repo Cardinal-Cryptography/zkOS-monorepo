@@ -84,14 +84,7 @@ export class Relayer implements IRelayer {
             mac_salt: macSalt,
             mac_commitment: macCommitment,
             fee_token:
-              token.type === "native"
-                ? "Native"
-                : {
-                    ERC20: {
-                      address: token.address,
-                      decimals: token.decimals
-                    }
-                  },
+              token.type === "native" ? "Native" : { ERC20: token.address },
             fee_amount: feeAmount,
             proof: Array.from(proof),
             pocket_money: pocketMoney

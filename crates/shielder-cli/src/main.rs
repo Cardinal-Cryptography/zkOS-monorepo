@@ -3,7 +3,6 @@ use std::{env, io};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use shielder_account::Token;
-use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -118,21 +117,12 @@ async fn perform_contract_action(
         }) => deposit(app_state, amount, Token::ERC20(token_address)).await,
 
         ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
-            withdraw(
-                app_state,
-                amount,
-                to,
-                Token::Native,
-                NATIVE_TOKEN_DECIMALS,
-                0,
-            )
-            .await
+            withdraw(app_state, amount, to, Token::Native, 0).await
         }
         ContractInteractionCommand::WithdrawERC20(WithdrawERC20Cmd {
             amount,
             to,
             token_address,
-            decimals,
             pocket_money,
         }) => {
             withdraw(
@@ -140,7 +130,6 @@ async fn perform_contract_action(
                 amount,
                 to,
                 Token::ERC20(token_address),
-                decimals,
                 pocket_money,
             )
             .await

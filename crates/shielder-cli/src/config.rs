@@ -172,8 +172,6 @@ pub struct WithdrawERC20Cmd {
     pub to: Address,
     /// Address of the token.
     pub token_address: Address,
-    /// ERC20 token decimals.
-    pub decimals: u32,
     /// Pocket money to be sent to the withdrawal address.
     pub pocket_money: u128,
 }

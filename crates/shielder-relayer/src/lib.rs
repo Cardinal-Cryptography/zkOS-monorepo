@@ -10,6 +10,8 @@ use utoipa::ToSchema;
 
 mod environment_variables;
 pub use environment_variables::*;
+use shielder_account::Token;
+
 mod token;
 pub use token::*;
 
@@ -90,7 +92,8 @@ pub struct QuoteFeeResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 pub struct QuoteFeeQuery {
-    pub fee_token: TokenKind,
+    #[schema(value_type = Object, examples("Native", json!({"ERC20": "0x1234"})))]
+    pub fee_token: Token,
     #[schema(value_type = String)]
     pub pocket_money: U256,
 }
@@ -111,7 +114,8 @@ pub struct RelayQuery {
     pub new_note: U256,
     #[schema(value_type = Object)]
     pub proof: Bytes,
-    pub fee_token: TokenKind,
+    #[schema(value_type = Object, examples("Native", json!({"ERC20": "0x1234"})))]
+    pub fee_token: Token,
     #[schema(value_type = String)]
     pub fee_amount: U256,
     #[schema(value_type = String)]

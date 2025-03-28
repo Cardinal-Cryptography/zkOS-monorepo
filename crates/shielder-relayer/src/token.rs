@@ -1,6 +1,7 @@
 use alloy_primitives::Address;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use shielder_account::Token;
 use utoipa::ToSchema;
 
 #[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Deserialize, Serialize, ToSchema)]
@@ -14,11 +15,11 @@ pub enum TokenKind {
     },
 }
 
-impl From<TokenKind> for shielder_account::Token {
+impl From<TokenKind> for Token {
     fn from(token_kind: TokenKind) -> Self {
         match token_kind {
-            TokenKind::Native => shielder_account::Token::Native,
-            TokenKind::ERC20 { address, .. } => shielder_account::Token::ERC20(address),
+            TokenKind::Native => Token::Native,
+            TokenKind::ERC20 { address, .. } => Token::ERC20(address),
         }
     }
 }
@@ -30,12 +31,12 @@ pub enum PriceProvider {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-pub struct Token {
+pub struct TokenInfo {
     pub kind: TokenKind,
     pub price_provider: PriceProvider,
 }
 
-impl Token {
+impl TokenInfo {
     pub fn decimals(&self) -> u32 {
         match self.kind {
             // Native EVM has 18 decimals by default
