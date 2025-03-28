@@ -87,7 +87,10 @@ export class Relayer implements IRelayer {
               token.type === "native"
                 ? "Native"
                 : {
-                    ERC20: token.address
+                    ERC20: {
+                      address: token.address,
+                      decimals: token.decimals
+                    }
                   },
             fee_amount: feeAmount,
             proof: Array.from(proof),

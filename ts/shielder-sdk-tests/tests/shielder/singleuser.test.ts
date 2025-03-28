@@ -17,33 +17,36 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
   {
     id: 1,
     actions: [
+      // create native account, deposit, withdraw manually and via relayer
       { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
       { op: shieldOp(nativeToken(), 2n * 10n ** 17n), actor: "alice" },
-      { op: withdrawOp(nativeToken(), 10n ** 17n, "bob", 0n), actor: "alice" },
+      { op: withdrawManualOp(nativeToken(), 5n ** 17n, "bob"), actor: "alice" },
+      { op: withdrawOp(nativeToken(), 7n ** 17n, "bob", 0n), actor: "alice" },
+
+      // create ERC20 account, deposit, withdraw manually and via relayer
+      { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
+      { op: shieldOp(ercToken, 2n * 10n ** 17n), actor: "alice" },
+      { op: withdrawManualOp(ercToken, 5n ** 17n, "bob"), actor: "alice" },
       {
-        op: shieldOp(ercToken, 10n ** 17n),
+        op: withdrawOp(ercToken, 7n ** 17n, "bob", 10n ** 17n),
         actor: "alice"
       },
-      {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
-        actor: "alice"
-      },
-      {
-        op: withdrawManualOp(ercToken, 10n ** 17n, "bob"),
-        actor: "alice"
-      },
+
       // clear and recover
       { op: clearStorageOp(), actor: "alice" },
       { op: recoverOp(), actor: "alice" },
+
       // shield again
       { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
-      {
-        op: shieldOp(ercToken, 10n ** 17n),
-        actor: "alice"
-      },
-      // withdraw again
+      { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
+
+      // withdraw again via relayer
       {
         op: withdrawOp(nativeToken(), 10n ** 17n, "charlie", 0n),
+        actor: "alice"
+      },
+      {
+        op: withdrawOp(ercToken, 10n ** 17n, "charlie", 0n),
         actor: "alice"
       }
     ]
