@@ -33,7 +33,7 @@ build-pkg-wasm:
 
 .PHONY: update-package-web
 update-package-web:
-	$(SED_CMD) "s|import initWbg, { wbg_rayon_start_worker } from '../../../';|import initWbg, { wbg_rayon_start_worker } from '../../../shielder_bindings';|g" pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.js
+	$(SED_CMD) "s|import initWbg, { wbg_rayon_start_worker } from '../../../';|import initWbg, { wbg_rayon_start_worker } from '../../../shielder_bindings';|g" pkg/pkg-web-multithreaded/snippets/wasm-bindgen-rayon-3e04391371ad0a8e/src/workerHelpers.worker.js
 
 .PHONY: remove-unused-files-wasm
 remove-unused-files-wasm:
