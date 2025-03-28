@@ -3,7 +3,7 @@ use std::{env, io, str::FromStr, sync::Arc};
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, Result};
-use axum::{extract::State, middleware, response::IntoResponse, routing::get, Router};
+use axum::{extract::State, middleware, response::IntoResponse, routing::get, Json, Router};
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
@@ -167,6 +167,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(monitor::endpoints::health_endpoint))
         .routes(routes!(fee_address))
+        .routes(routes!(supported_tokens))
         .routes(routes!(quote::quote_fees))
         .routes(routes!(relay::relay))
         .with_state(state.clone())
@@ -183,10 +184,20 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
 #[utoipa::path(
     get,
     path = "/fee_address",
-    responses((status = 200, description = "Address for relay fees", body = String))
+    responses((status = 200, body = String))
 )]
 async fn fee_address(state: State<AppState>) -> impl IntoResponse {
     state.fee_destination.to_string()
+}
+
+/// Get information about the supported tokens.
+#[utoipa::path(
+    get,
+    path = "/supported_tokens",
+    responses((status = 200, body = [Token]))
+)]
+async fn supported_tokens(state: State<AppState>) -> impl IntoResponse {
+    Json(state.token_config.clone())
 }
 
 fn init_logging(format: LoggingFormat) -> Result<()> {
