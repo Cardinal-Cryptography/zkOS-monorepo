@@ -166,7 +166,7 @@ erc20_balance() {
 ####################################################################################################
 start_relayer() {
   cd "${ROOT_DIR}/crates/shielder-relayer/"
-  make run
+  make run &>> output.log
   cd "${ROOT_DIR}"
 
   log_progress "✅ Relayer started"

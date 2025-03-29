@@ -43,6 +43,7 @@ run: build-image stop ## Start the Relayer service in a local Docker container
 	@DOCKER_USER=$(DOCKER_USER) \
 	RELAYER_CONTAINER_NAME=$(RELAYER_CONTAINER_NAME) \
 	RELAYER_DOCKER_IMAGE=$(RELAYER_DOCKER_IMAGE) \
+	DETACHED=$(DETACHED) \
 	./run-relayer.sh
 
 .PHONY: stop
