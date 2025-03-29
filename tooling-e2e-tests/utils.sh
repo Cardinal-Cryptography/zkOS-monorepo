@@ -165,19 +165,6 @@ erc20_balance() {
 #### RELAYER #######################################################################################
 ####################################################################################################
 start_relayer() {
-  if [[ -z "${TOKEN_CONFIG:-}" ]]; then
-      TOKEN_CONFIG=$(cat <<EOF
-      [
-        {
-          "kind":"Native",
-          "price_provider":{"Static":1}
-        }
-      ]
-EOF
-      )
-    export TOKEN_CONFIG
-  fi
-
   cd "${ROOT_DIR}/crates/shielder-relayer/"
   make run &>> output.log
   cd "${ROOT_DIR}"
