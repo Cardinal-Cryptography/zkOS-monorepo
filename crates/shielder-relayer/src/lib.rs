@@ -116,6 +116,16 @@ pub struct RelayQuote {
     pub token_price_ratio: Decimal,
 }
 
+impl From<QuoteFeeResponse> for RelayQuote {
+    fn from(response: QuoteFeeResponse) -> Self {
+        Self {
+            gas_price: response.gas_price,
+            native_token_price: response.native_token_price,
+            token_price_ratio: response.token_price_ratio,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
 pub struct RelayQuery {
     pub calldata: RelayCalldata,

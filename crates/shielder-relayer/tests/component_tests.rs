@@ -95,7 +95,7 @@ async fn when_relayer_signer_does_not_have_enough_funds_service_is_healthy() {
 #[tokio::test(flavor = "multi_thread")]
 async fn when_contract_returns_ok_server_sings_success() {
     let test_context = TestContext::new(standard_config()).await;
-    let response = test_context.relay().await;
+    let response = test_context.relay_with_quote().await;
 
     ctx_assert!(response.status().is_success(), test_context);
     response_message::<RelayResponse>(response).await;
@@ -108,7 +108,7 @@ async fn when_contract_reverts_server_screams_failure() {
         ..standard_config()
     };
     let test_context = TestContext::new(config).await;
-    let response = test_context.relay().await;
+    let response = test_context.relay_with_quote().await;
 
     ctx_assert_eq!(response.status(), StatusCode::BAD_REQUEST, test_context);
     ctx_assert_eq!(
@@ -122,8 +122,8 @@ async fn when_contract_reverts_server_screams_failure() {
 async fn metrics_register_withdrawals() {
     let context = TestContext::new(standard_config()).await;
 
-    context.relay().await;
-    context.relay().await;
+    context.relay_with_quote().await;
+    context.relay_with_quote().await;
 
     let metrics = context.get_metrics().await;
     ctx_assert!(
