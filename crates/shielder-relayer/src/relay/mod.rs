@@ -28,7 +28,6 @@ mod taskmaster;
 
 const TASK_QUEUE_SIZE: usize = 1024;
 const OPTIMISTIC_DRY_RUN_THRESHOLD: u32 = 32;
-const FEE_MARGIN_PERCENT: u32 = 10;
 
 /// The relay endpoint is used to relay a withdrawal request to the shielder contract.
 #[utoipa::path(
@@ -174,7 +173,7 @@ fn check_erc20_fee(
 
     let expected_fee = scale_u256(fee_amount, ratio).map_err(server_error)?;
 
-    if add_fee_error_margin(expected_fee) < app_state.total_fee {
+    if expected_fee < app_state.total_fee {
         request_trace.record_insufficient_fee(fee_amount);
         return Err(bad_request("Insufficient fee."));
     }
@@ -191,10 +190,6 @@ fn ensure_permissible_token(app_state: &AppState, token: Token) -> Result<TokenK
             error!("Requested token fee is not supported: {token:?}");
             bad_request("Requested token fee is not supported.")
         })
-}
-
-fn add_fee_error_margin(fee: U256) -> U256 {
-    fee * U256::from(100 + FEE_MARGIN_PERCENT) / U256::from(100)
 }
 
 fn check_pocket_money(

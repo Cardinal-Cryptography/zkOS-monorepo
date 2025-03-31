@@ -53,13 +53,6 @@ mod native_fee {
     }
 
     #[test]
-    fn low_fee_but_within_margin_fails() {
-        let query = query(99, Token::Native);
-        let mut request_trace = RequestTrace::new(&query);
-        assert!(let Err(_) = check_fee(&app_state(), &query, &mut request_trace));
-    }
-
-    #[test]
     fn exact_fee_passes() {
         let query = query(100, Token::Native);
         let mut request_trace = RequestTrace::new(&query);
@@ -161,15 +154,6 @@ mod erc20_fee {
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
         assert!(let Err(_) = result);
-    }
-
-    #[test]
-    fn low_fee_but_within_margin_passes() {
-        let query = query(199, Token::ERC20(ERC20_ADDRESS));
-        let mut request_trace = RequestTrace::new(&query);
-
-        let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
-        assert!(let Ok(_) = result);
     }
 
     #[test]
