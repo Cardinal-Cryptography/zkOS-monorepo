@@ -1,8 +1,3 @@
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
-};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
@@ -14,19 +9,12 @@ use shielder_account::Token;
 
 mod token;
 pub use token::*;
+pub mod server;
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 #[serde(transparent)]
 pub struct SimpleServiceResponse {
     pub message: String,
-}
-
-impl SimpleServiceResponse {
-    pub fn from(message: &str) -> Json<Self> {
-        Json(Self {
-            message: message.to_string(),
-        })
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
@@ -118,11 +106,6 @@ pub struct RelayQuery {
     pub mac_commitment: U256,
     #[schema(value_type = String)]
     pub pocket_money: U256,
-}
-
-pub fn server_error(msg: &str) -> Response {
-    let code = StatusCode::INTERNAL_SERVER_ERROR;
-    (code, SimpleServiceResponse::from(msg)).into_response()
 }
 
 pub const RELATIVE_PRICE_DIGITS: u32 = 20;

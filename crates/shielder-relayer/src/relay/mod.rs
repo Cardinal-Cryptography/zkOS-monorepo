@@ -1,13 +1,14 @@
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use shielder_account::{call_data::WithdrawCall, Token};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
+    scale_u256,
+    server::{bad_request, server_error, success_response, temporary_failure},
+    RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
@@ -47,7 +48,7 @@ pub async fn relay(
 ) -> impl IntoResponse {
     debug!("Relay request received: {query:?}");
     match _relay(app_state, query).await {
-        Ok(response) => (StatusCode::OK, Json(response)).into_response(),
+        Ok(response) => success_response(response),
         Err(err) => {
             error!("Relay request failed: {err:?}");
             err
@@ -90,26 +91,6 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
             Err(server_error("Relay task failed"))
         }
     }
-}
-
-fn bad_request(msg: &str) -> Response {
-    (StatusCode::BAD_REQUEST, SimpleServiceResponse::from(msg)).into_response()
-}
-
-fn temporary_failure(msg: &str) -> Response {
-    (
-        StatusCode::SERVICE_UNAVAILABLE,
-        SimpleServiceResponse::from(msg),
-    )
-        .into_response()
-}
-
-fn internal_server_error(msg: &str) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        SimpleServiceResponse::from(msg),
-    )
-        .into_response()
 }
 
 fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> WithdrawCall {
@@ -185,7 +166,7 @@ fn check_erc20_fee(
     let native_price = get_price(TokenKind::Native)?.unit_price;
     let ratio = fee_token_price / native_price;
 
-    let expected_fee = scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
+    let expected_fee = scale_u256(query.fee_amount, ratio).map_err(server_error)?;
 
     if add_fee_error_margin(expected_fee) < app_state.total_fee {
         request_trace.record_insufficient_fee(query.fee_amount);
