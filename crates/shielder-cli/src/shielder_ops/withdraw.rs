@@ -186,10 +186,6 @@ async fn prepare_relayer_query(
             mac_commitment: calldata.mac_commitment,
             pocket_money,
         },
-        quote: RelayQuote {
-            gas_price: quoted_fee.gas_price,
-            native_token_price: quoted_fee.native_token_price,
-            token_price_ratio: quoted_fee.token_price_ratio,
-        },
+        quote: quoted_fee.into(),
     })
 }
