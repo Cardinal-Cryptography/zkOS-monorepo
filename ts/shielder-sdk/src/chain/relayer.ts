@@ -126,7 +126,11 @@ export class Relayer implements IRelayer {
               proof: Array.from(proof),
               pocket_money: pocketMoney
             },
-            quote: quotedFees
+            quote: {
+              gas_price: quotedFees.gas_price,
+              native_token_price: quotedFees.native_token_price,
+              token_price_ratio: quotedFees.token_price_ratio
+            }
           },
           (_, value: unknown) =>
             typeof value === "bigint" ? value.toString() : value
@@ -163,14 +167,11 @@ export class Relayer implements IRelayer {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(
-          {
-            fee_token: token,
-            pocket_money: pocketMoney
-          },
-          (_, value: unknown) =>
-            typeof value === "bigint" ? value.toString() : value
-        )
+        body: JSON.stringify({
+          fee_token:
+            token.type === "native" ? "Native" : { ERC20: token.address },
+          pocket_money: pocketMoney.toString()
+        })
       });
     } catch (error) {
       throw new Error(`${(error as Error).message}`);
