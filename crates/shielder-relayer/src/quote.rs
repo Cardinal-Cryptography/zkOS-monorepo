@@ -1,12 +1,11 @@
 use alloy_provider::Provider;
 use axum::{extract::State, response::IntoResponse, Json};
-use rust_decimal::Decimal;
 use shielder_account::Token;
 use shielder_contract::{alloy_primitives::U256, providers::create_simple_provider};
 use shielder_relayer::{
-    scale_u256,
+    compute_fee,
     server::{server_error, success_response},
-    QuoteFeeQuery, QuoteFeeResponse, SimpleServiceResponse, TokenKind,
+    PriceDetails, QuoteFeeQuery, QuoteFeeResponse, SimpleServiceResponse, TokenKind,
 };
 use time::OffsetDateTime;
 use tracing::error;
@@ -40,19 +39,8 @@ async fn _quote_fees(
     app_state: AppState,
     query: QuoteFeeQuery,
 ) -> Result<QuoteFeeResponse, String> {
-    // Gas-related calculations.
     let gas_price = U256::from(get_gas_price(&app_state).await?);
     let required_gas = U256::from(app_state.relay_gas);
-    let gas_cost_native = required_gas * gas_price;
-
-    // Actual cost of performing the relay.
-    let relayer_cost_native = gas_cost_native + query.pocket_money;
-
-    // Relay commission.
-    let commission_native = relayer_cost_native * U256::from(15) / U256::from(100);
-
-    // Total cost for the user.
-    let total_cost_native = relayer_cost_native + commission_native;
 
     // Token conversion.
     let prices = match query.fee_token {
@@ -61,17 +49,33 @@ async fn _quote_fees(
             Prices {
                 fee_token_price: price.clone(),
                 native_token_price: price,
-                ratio: Decimal::ONE,
             }
         }
         erc20 @ Token::ERC20 { .. } => get_token_price(&app_state, erc20)?,
     };
 
+    let fee_details = compute_fee(
+        gas_price,
+        required_gas,
+        query.pocket_money,
+        app_state.service_fee_percent,
+        prices.native_token_price.unit_price,
+        prices.fee_token_price.unit_price,
+    )?;
+
+    let price_details = PriceDetails {
+        gas_price,
+        native_token_price: prices.native_token_price.token_price,
+        native_token_unit_price: prices.native_token_price.unit_price,
+        fee_token_price: prices.fee_token_price.token_price,
+        fee_token_unit_price: prices.fee_token_price.unit_price,
+    };
+
     let cached_quote = CachedQuote {
         fee_token: query.fee_token,
         gas_price,
-        native_token_price: prices.native_token_price.token_price,
-        token_price_ratio: prices.ratio,
+        native_token_unit_price: prices.native_token_price.unit_price,
+        fee_token_unit_price: prices.fee_token_price.unit_price,
     };
     app_state
         .quote_cache
@@ -80,24 +84,13 @@ async fn _quote_fees(
 
     Ok(QuoteFeeResponse {
         total_fee: app_state.total_fee,
-        base_fee: gas_cost_native,
-        relay_fee: app_state.total_fee.saturating_sub(gas_cost_native),
+        base_fee: fee_details.gas_cost_native,
+        relay_fee: app_state
+            .total_fee
+            .saturating_sub(fee_details.gas_cost_native),
 
-        total_cost_native,
-        total_cost_fee_token: scale_u256(total_cost_native, prices.ratio)?,
-
-        gas_price,
-        gas_cost_native,
-        gas_cost_fee_token: scale_u256(gas_cost_native, prices.ratio)?,
-
-        commission_native,
-        commission_fee_token: scale_u256(commission_native, prices.ratio)?,
-
-        native_token_price: prices.native_token_price.token_price,
-        native_token_unit_price: prices.native_token_price.unit_price,
-        fee_token_price: prices.fee_token_price.token_price,
-        fee_token_unit_price: prices.fee_token_price.unit_price,
-        token_price_ratio: prices.ratio,
+        fee_details,
+        price_details,
     })
 }
 
@@ -115,7 +108,6 @@ async fn get_gas_price(app_state: &AppState) -> Result<u128, String> {
 struct Prices {
     fee_token_price: Price,
     native_token_price: Price,
-    ratio: Decimal,
 }
 
 fn get_native_token_price(app_state: &AppState) -> Result<Price, String> {
@@ -140,11 +132,8 @@ fn get_token_price(app_state: &AppState, token: Token) -> Result<Prices, String>
         .price(token_kind)
         .ok_or("Fee token price not available")?;
 
-    let ratio = native_token_price.unit_price / fee_token_price.unit_price;
-
     Ok(Prices {
         fee_token_price,
         native_token_price,
-        ratio,
     })
 }

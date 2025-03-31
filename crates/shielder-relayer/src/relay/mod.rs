@@ -162,8 +162,8 @@ async fn check_quote_validity(
     let cached_quote = CachedQuote {
         fee_token: query.calldata.fee_token,
         gas_price: query.quote.gas_price,
-        native_token_price: query.quote.native_token_price,
-        token_price_ratio: query.quote.token_price_ratio,
+        native_token_unit_price: query.quote.native_token_unit_price,
+        fee_token_unit_price: query.quote.fee_token_unit_price,
     };
     match app_state.quote_cache.is_quote_valid(&cached_quote).await {
         true => Ok(()),

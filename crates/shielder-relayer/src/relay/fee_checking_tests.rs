@@ -26,6 +26,7 @@ fn app_state() -> AppState {
         relay_gas: Default::default(),
         quote_cache: QuoteCache::new(Default::default()),
         max_pocket_money: Default::default(),
+        service_fee_percent: Default::default(),
     }
 }
 
