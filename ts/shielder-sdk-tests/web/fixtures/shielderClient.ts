@@ -103,12 +103,12 @@ export const setupShielderClient = async (
       return {
         tx: await shielderClient.withdraw(
           token,
-          amount + fees.totalFee,
-          fees.totalFee,
+          amount + fees.total_fee,
+          fees,
           to,
           pocketMoney
         ),
-        totalFee: fees.totalFee
+        totalFee: fees.total_fee
       };
     },
     withdrawManual: async (token, amount, to) => {

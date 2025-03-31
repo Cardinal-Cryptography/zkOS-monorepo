@@ -1,7 +1,6 @@
 export type {
   SendShielderTransaction,
   ShielderCallbacks,
-  QuotedFees,
   ShielderOperation
 } from "@/client/types";
 export { ShielderClient } from "@/client/client";

@@ -45,13 +45,3 @@ export type SendShielderTransaction = (params: {
   value: bigint;
   gas: bigint;
 }) => Promise<`0x${string}`>;
-
-export type QuotedFees = {
-  // esimated base fee for the withdraw operation
-  baseFee: bigint;
-  // estimated relay fee for the withdraw operation
-  relayFee: bigint;
-  // total fee for the withdraw operation, is deducted from the
-  // amount to withdraw, supposedly a sum of `baseFee` and `relayFee`
-  totalFee: bigint;
-};

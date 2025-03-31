@@ -1,6 +1,5 @@
 import { Token } from "@/types";
 import {
-  QuotedFees,
   SendShielderTransaction,
   ShielderCallbacks,
   ShielderOperation
@@ -8,11 +7,7 @@ import {
 import { AccountRegistry } from "@/state/accountRegistry";
 import { Hash, PublicClient } from "viem";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
-import {
-  IRelayer,
-  quotedFeesFromTotalFee,
-  QuoteFeesResponse
-} from "@/chain/relayer";
+import { IRelayer, quotedFeesFromTotalFee, QuotedFees } from "@/chain/relayer";
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
@@ -37,12 +32,7 @@ export class ShielderActions {
    * @returns quoted fees for the withdraw operation
    */
   async getWithdrawFees(): Promise<QuotedFees> {
-    const fees = await this.relayer.quoteFees();
-    return {
-      baseFee: fees.base_fee,
-      relayFee: fees.relay_fee,
-      totalFee: fees.total_fee
-    };
+    return await this.relayer.quoteFees();
   }
 
   /**
@@ -79,7 +69,7 @@ export class ShielderActions {
    * Mutates the shielder state.
    * @param {Token} token - token to withdraw
    * @param {bigint} amount - amount to withdraw, in wei
-   * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
+   * @param {QuotedFees} quotedFees - fee info provided by the relayer
    * @param {`0x${string}`} withdrawalAddress - public address of the recipient
    * @param {bigint} pocketMoney - amount of native token to be sent to the recipient by the relayer; only for ERC20 withdrawals
    * @returns transaction hash of the withdraw transaction
@@ -88,7 +78,7 @@ export class ShielderActions {
   async withdraw(
     token: Token,
     amount: bigint,
-    quotedFees: QuoteFeesResponse,
+    quotedFees: QuotedFees,
     withdrawalAddress: `0x${string}`,
     pocketMoney: bigint
   ) {

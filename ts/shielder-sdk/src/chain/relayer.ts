@@ -30,7 +30,7 @@ const quoteFeesResponseSchema = z.object({
   token_price_ratio: z.coerce.string()
 });
 
-export type QuoteFeesResponse = z.infer<typeof quoteFeesResponseSchema>;
+export type QuotedFees = z.infer<typeof quoteFeesResponseSchema>;
 
 export const quotedFeesFromTotalFee = (totalFee: bigint) => {
   return {
@@ -75,9 +75,9 @@ export type IRelayer = {
     macSalt: bigint,
     macCommitment: bigint,
     pocketMoney: bigint,
-    quotedFees: QuoteFeesResponse
+    quotedFees: QuotedFees
   ) => Promise<WithdrawResponse>;
-  quoteFees: () => Promise<QuoteFeesResponse>;
+  quoteFees: () => Promise<QuotedFees>;
 };
 
 export class Relayer implements IRelayer {
@@ -100,7 +100,7 @@ export class Relayer implements IRelayer {
     macSalt: bigint,
     macCommitment: bigint,
     pocketMoney: bigint,
-    quotedFees: QuoteFeesResponse
+    quotedFees: QuotedFees
   ): Promise<WithdrawResponse> => {
     let response;
     try {

@@ -305,11 +305,7 @@ describe("ShielderActions", () => {
 
       const fees = await actions.getWithdrawFees();
 
-      expect(fees).toEqual({
-        baseFee: mockFees.base_fee,
-        relayFee: mockFees.relay_fee,
-        totalFee: mockFees.total_fee
-      });
+      expect(fees).toEqual(mockFees);
       expect(mockRelayer.quoteFees).toHaveBeenCalledTimes(1);
     });
   });
@@ -496,7 +492,13 @@ describe("ShielderActions", () => {
 
   describe("withdraw", () => {
     const withdrawMethod = () =>
-      actions.withdraw(mockToken, mockAmount, quotedFeesFromTotalFee(mockTotalFee), mockAddress, mockPocketMoney);
+      actions.withdraw(
+        mockToken,
+        mockAmount,
+        quotedFeesFromTotalFee(mockTotalFee),
+        mockAddress,
+        mockPocketMoney
+      );
 
     it("should throw error when account not found", async () => {
       mockAccountRegistry.getAccountState.mockResolvedValue(null);

@@ -8,7 +8,7 @@ import {
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
-import { IRelayer, QuoteFeesResponse } from "@/chain/relayer";
+import { IRelayer, QuotedFees } from "@/chain/relayer";
 import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
@@ -25,7 +25,7 @@ export interface WithdrawCalldata {
   provingTimeMillis: number;
   amount: bigint;
   withdrawalAddress: Address;
-  quotedFees: QuoteFeesResponse;
+  quotedFees: QuotedFees;
   token: Token;
   pocketMoney: bigint;
 }
@@ -157,7 +157,7 @@ export class WithdrawAction extends NoteAction {
     state: AccountStateMerkleIndexed,
     amount: bigint,
     relayerAddress: Address,
-    quotedFees: QuoteFeesResponse,
+    quotedFees: QuotedFees,
     withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`,
     pocketMoney: bigint
