@@ -9,7 +9,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_account::Token;
 use shielder_relayer::{
-    PriceProvider, RelayCalldata, RelayQuery, RelayQuote, TokenInfo, TokenKind,
+    PriceProvider, QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote,
+    TokenInfo, TokenKind,
 };
 use shielder_setup::version::contract_version;
 use testcontainers::{
@@ -68,7 +69,28 @@ impl TestContext {
         }
     }
 
-    pub async fn relay(&self) -> Response {
+    pub async fn quote(&self) -> RelayQuote {
+        reqwest::Client::new()
+            .post(format!("{BASE_URL}:{}/quote_fees", self.relayer_port))
+            .json(&QuoteFeeQuery {
+                fee_token: Token::Native,
+                pocket_money: U256::ZERO,
+            })
+            .send()
+            .await
+            .expect("Failed to reach relay endpoint")
+            .json::<QuoteFeeResponse>()
+            .await
+            .expect("Cannot parse quote response")
+            .into()
+    }
+
+    pub async fn relay_with_quote(&self) -> Response {
+        let quote = self.quote().await;
+        self.relay(quote).await
+    }
+
+    pub async fn relay(&self, quote: RelayQuote) -> Response {
         reqwest::Client::new()
             .post(format!("{BASE_URL}:{}/relay", self.relayer_port))
             .json(&RelayQuery {
@@ -86,11 +108,7 @@ impl TestContext {
                     mac_commitment: U256::ZERO,
                     pocket_money: U256::ZERO,
                 },
-                quote: RelayQuote {
-                    gas_price: Default::default(),
-                    native_token_price: Default::default(),
-                    token_price_ratio: Default::default(),
-                },
+                quote,
             })
             .send()
             .await
