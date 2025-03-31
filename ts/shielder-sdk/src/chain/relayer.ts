@@ -16,18 +16,22 @@ const quoteFeesResponseSchema = z.object({
   relay_fee: z.coerce.bigint(),
   total_fee: z.coerce.bigint(),
   // 8< ----------------------- >8
-  total_cost_native: z.coerce.bigint(),
-  total_cost_fee_token: z.coerce.bigint(),
-  gas_price: z.coerce.bigint(),
-  gas_cost_native: z.coerce.bigint(),
-  gas_cost_fee_token: z.coerce.bigint(),
-  commission_native: z.coerce.bigint(),
-  commission_fee_token: z.coerce.bigint(),
-  native_token_price: z.coerce.string(),
-  native_token_unit_price: z.coerce.string(),
-  fee_token_price: z.coerce.string(),
-  fee_token_unit_price: z.coerce.string(),
-  token_price_ratio: z.coerce.string()
+  fee_details: z.object({
+    total_cost_native: z.coerce.bigint(),
+    total_cost_fee_token: z.coerce.bigint(),
+    gas_cost_native: z.coerce.bigint(),
+    gas_cost_fee_token: z.coerce.bigint(),
+    commission_native: z.coerce.bigint(),
+    commission_fee_token: z.coerce.bigint()
+  }),
+  price_details: z.object({
+    gas_price: z.coerce.bigint(),
+    native_token_price: z.coerce.string(),
+    native_token_unit_price: z.coerce.string(),
+    fee_token_price: z.coerce.string(),
+    fee_token_unit_price: z.coerce.string(),
+    token_price_ratio: z.coerce.string()
+  })
 });
 
 export type QuotedFees = z.infer<typeof quoteFeesResponseSchema>;
@@ -37,18 +41,22 @@ export const quotedFeesFromTotalFee = (totalFee: bigint) => {
     base_fee: 0n,
     relay_fee: 0n,
     total_fee: totalFee,
-    total_cost_native: totalFee,
-    total_cost_fee_token: 0n,
-    gas_price: 0n,
-    gas_cost_native: 0n,
-    gas_cost_fee_token: 0n,
-    commission_native: 0n,
-    commission_fee_token: 0n,
-    native_token_price: "1",
-    native_token_unit_price: "1",
-    fee_token_price: "1",
-    fee_token_unit_price: "1",
-    token_price_ratio: "1"
+    fee_details: {
+      total_cost_native: totalFee,
+      total_cost_fee_token: 0n,
+      gas_cost_native: 0n,
+      gas_cost_fee_token: 0n,
+      commission_native: 0n,
+      commission_fee_token: 0n
+    },
+    price_details: {
+      gas_price: 0n,
+      native_token_price: "1",
+      native_token_unit_price: "1",
+      fee_token_price: "1",
+      fee_token_unit_price: "1",
+      token_price_ratio: "1"
+    }
   };
 };
 
@@ -127,9 +135,11 @@ export class Relayer implements IRelayer {
               pocket_money: pocketMoney
             },
             quote: {
-              gas_price: quotedFees.gas_price,
-              native_token_price: quotedFees.native_token_price,
-              token_price_ratio: quotedFees.token_price_ratio
+              gas_price: quotedFees.price_details.gas_price,
+              native_token_unit_price:
+                quotedFees.price_details.native_token_unit_price,
+              fee_token_unit_price:
+                quotedFees.price_details.fee_token_unit_price
             }
           },
           (_, value: unknown) =>
