@@ -35,12 +35,6 @@ pub struct RelayResponse {
     pub tx_hash: TxHash,
 }
 
-impl RelayResponse {
-    pub fn from(tx_hash: TxHash) -> Json<Self> {
-        Json(Self { tx_hash })
-    }
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 pub struct QuoteFeeResponse {
     // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON

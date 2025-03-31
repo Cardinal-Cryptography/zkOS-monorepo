@@ -41,49 +41,53 @@ const FEE_MARGIN_PERCENT: u32 = 10;
         (status = INTERNAL_SERVER_ERROR, description = "Server encountered unexpected error. Try again later.", body = SimpleServiceResponse),
     )
 )]
-pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) -> impl IntoResponse {
+pub async fn relay(
+    State(app_state): State<AppState>,
+    Json(query): Json<RelayQuery>,
+) -> impl IntoResponse {
     debug!("Relay request received: {query:?}");
+    match _relay(app_state, query).await {
+        Ok(response) => (StatusCode::OK, Json(response)).into_response(),
+        Err(err) => {
+            error!("Relay request failed: {err:?}");
+            err
+        }
+    }
+}
+
+async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse, Response> {
     let mut request_trace = RequestTrace::new(&query);
 
-    if let Err(response) = check_expected_version(&query, &mut request_trace) {
-        return response;
-    }
-    if let Err(response) = check_fee(&app_state, &query, &mut request_trace) {
-        return response;
-    }
-    if let Err(response) = check_pocket_money(&app_state, &query, &mut request_trace) {
-        return response;
-    }
+    check_expected_version(&query, &mut request_trace)?;
+    check_fee(&app_state, &query, &mut request_trace)?;
+    check_pocket_money(&app_state, &query, &mut request_trace)?;
 
     let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
-    let Ok(rx) = app_state
+    let rx = app_state
         .taskmaster
         .register_new_task(withdraw_call, request_trace)
         .await
-    else {
-        error!("Failed to register new task");
-        return server_error("Failed to register new task");
-    };
+        .map_err(|err| server_error(&format!("Failed to register new task: {err:?}")))?;
 
     match rx.await {
         Ok((mut request_trace, task_result)) => match task_result {
             TaskResult::Ok(tx_hash) => {
                 request_trace.record_success(tx_hash);
-                (StatusCode::OK, RelayResponse::from(tx_hash)).into_response()
+                Ok(RelayResponse { tx_hash })
             }
             TaskResult::DryRunFailed(err) => {
                 request_trace.record_dry_run_failure(err);
-                bad_request("Dry run failed")
+                Err(bad_request("Dry run failed"))
             }
             TaskResult::RelayFailed(err) => {
                 request_trace.record_failure(err);
-                bad_request("Relay failed")
+                Err(bad_request("Relay failed"))
             }
         },
         Err(err) => {
             error!("[UNEXPECTED] Relay task master failed: {err}");
             metrics::counter!(WITHDRAW_FAILURE).increment(1);
-            server_error("Relay task failed")
+            Err(server_error("Relay task failed"))
         }
     }
 }
