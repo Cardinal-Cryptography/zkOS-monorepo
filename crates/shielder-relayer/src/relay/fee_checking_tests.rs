@@ -29,6 +29,17 @@ fn app_state() -> AppState {
     }
 }
 
+fn query(fee_amount: u64, fee_token: Token) -> RelayQuery {
+    RelayQuery {
+        calldata: RelayCalldata {
+            fee_amount: U256::from(fee_amount),
+            fee_token,
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
 mod native_fee {
     use assert2::assert;
 
@@ -36,49 +47,29 @@ mod native_fee {
 
     #[test]
     fn too_low_fee_fails() {
-        let query = RelayQuery {
-            fee_amount: U256::from(80),
-            fee_token: Token::Native,
-            ..Default::default()
-        };
+        let query = query(80, Token::Native);
         let mut request_trace = RequestTrace::new(&query);
-
         assert!(let Err(_) = check_fee(&app_state(), &query, &mut request_trace));
     }
 
     #[test]
     fn low_fee_but_within_margin_fails() {
-        let query = RelayQuery {
-            fee_amount: U256::from(99),
-            fee_token: Token::Native,
-            ..Default::default()
-        };
+        let query = query(99, Token::Native);
         let mut request_trace = RequestTrace::new(&query);
-
         assert!(let Err(_) = check_fee(&app_state(), &query, &mut request_trace));
     }
 
     #[test]
     fn exact_fee_passes() {
-        let query = RelayQuery {
-            fee_amount: U256::from(100),
-            fee_token: Token::Native,
-            ..Default::default()
-        };
+        let query = query(100, Token::Native);
         let mut request_trace = RequestTrace::new(&query);
-
         assert!(let Ok(_) = check_fee(&app_state(), &query, &mut request_trace));
     }
 
     #[test]
     fn way_too_high_fee_passes() {
-        let query = RelayQuery {
-            fee_amount: U256::from(1000000),
-            fee_token: Token::Native,
-            ..Default::default()
-        };
+        let query = query(1000000, Token::Native);
         let mut request_trace = RequestTrace::new(&query);
-
         assert!(let Ok(_) = check_fee(&app_state(), &query, &mut request_trace));
     }
 }
@@ -118,11 +109,7 @@ mod erc20_fee {
             ..app_state()
         };
 
-        let query = RelayQuery {
-            fee_token: Token::ERC20(ERC20_ADDRESS),
-            fee_amount: U256::from(100000000),
-            ..RelayQuery::default()
-        };
+        let query = query(100000000, Token::ERC20(ERC20_ADDRESS));
         let mut request_trace = RequestTrace::new(&query);
 
         // When none is set.
@@ -160,11 +147,7 @@ mod erc20_fee {
 
     #[test]
     fn exact_fee_passes() {
-        let query = RelayQuery {
-            fee_amount: U256::from(200), // total fee is AZERO 100, which is worth $300
-            fee_token: Token::ERC20(ERC20_ADDRESS),
-            ..RelayQuery::default()
-        };
+        let query = query(200, Token::ERC20(ERC20_ADDRESS));
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
@@ -173,11 +156,7 @@ mod erc20_fee {
 
     #[test]
     fn too_low_fee_fails() {
-        let query = RelayQuery {
-            fee_amount: U256::from(20), // total fee is AZERO 100, which is worth $300
-            fee_token: Token::ERC20(ERC20_ADDRESS),
-            ..RelayQuery::default()
-        };
+        let query = query(20, Token::ERC20(ERC20_ADDRESS));
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
@@ -186,11 +165,7 @@ mod erc20_fee {
 
     #[test]
     fn low_fee_but_within_margin_passes() {
-        let query = RelayQuery {
-            fee_amount: U256::from(199), // total fee is AZERO 100, which is worth $300
-            fee_token: Token::ERC20(ERC20_ADDRESS),
-            ..RelayQuery::default()
-        };
+        let query = query(199, Token::ERC20(ERC20_ADDRESS));
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
@@ -199,11 +174,7 @@ mod erc20_fee {
 
     #[test]
     fn way_too_high_fee_passes() {
-        let query = RelayQuery {
-            fee_amount: U256::from(200000),
-            fee_token: Token::ERC20(ERC20_ADDRESS),
-            ..RelayQuery::default()
-        };
+        let query = query(200000, Token::ERC20(ERC20_ADDRESS));
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
@@ -212,11 +183,10 @@ mod erc20_fee {
 
     #[test]
     fn unknown_fee_token_fails() {
-        let query = RelayQuery {
-            fee_amount: U256::from(200_000_000),
-            fee_token: Token::ERC20(address!("2222222222222222222222222222222222222222")),
-            ..RelayQuery::default()
-        };
+        let query = query(
+            200_000_000,
+            Token::ERC20(address!("2222222222222222222222222222222222222222")),
+        );
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state_with_pricing(), &query, &mut request_trace);
@@ -238,11 +208,7 @@ mod erc20_fee {
         // there is no way of checking AZERO price (we don't configure background
         // price fetching, nor we set the price manually)
 
-        let query = RelayQuery {
-            fee_amount: U256::from(200),
-            fee_token: Token::ERC20(ERC20_ADDRESS),
-            ..RelayQuery::default()
-        };
+        let query = query(200, Token::ERC20(ERC20_ADDRESS));
         let mut request_trace = RequestTrace::new(&query);
 
         let result = check_fee(&app_state, &query, &mut request_trace);

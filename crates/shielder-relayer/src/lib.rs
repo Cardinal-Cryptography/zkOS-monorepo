@@ -81,7 +81,7 @@ pub struct QuoteFeeQuery {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
-pub struct RelayQuery {
+pub struct RelayCalldata {
     #[schema(value_type = Object)]
     pub expected_contract_version: FixedBytes<3>,
     #[schema(value_type = String)]
@@ -106,6 +106,20 @@ pub struct RelayQuery {
     pub mac_commitment: U256,
     #[schema(value_type = String)]
     pub pocket_money: U256,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
+pub struct RelayQuote {
+    #[schema(value_type = String)]
+    pub gas_price: U256,
+    pub native_token_price: Decimal,
+    pub token_price_ratio: Decimal,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
+pub struct RelayQuery {
+    pub calldata: RelayCalldata,
+    pub quote: RelayQuote,
 }
 
 pub const RELATIVE_PRICE_DIGITS: u32 = 20;

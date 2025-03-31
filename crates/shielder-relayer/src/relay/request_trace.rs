@@ -27,7 +27,7 @@ pub struct RequestTrace {
 impl RequestTrace {
     pub fn new(relay_query: &RelayQuery) -> Self {
         Self {
-            created_note: relay_query.new_note,
+            created_note: relay_query.calldata.new_note,
             measurements: Vec::new(),
             last_timestamp: Instant::now(),
             current_state: "created",
