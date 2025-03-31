@@ -163,10 +163,14 @@ export class Relayer implements IRelayer {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          fee_token: token,
-          pocket_money: pocketMoney
-        })
+        body: JSON.stringify(
+          {
+            fee_token: token,
+            pocket_money: pocketMoney
+          },
+          (_, value: unknown) =>
+            typeof value === "bigint" ? value.toString() : value
+        )
       });
     } catch (error) {
       throw new Error(`${(error as Error).message}`);
