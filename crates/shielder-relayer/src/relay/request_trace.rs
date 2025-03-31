@@ -97,6 +97,12 @@ impl RequestTrace {
         self.finish("❌ POCKET MONEY FAILURE");
     }
 
+    pub fn record_quote_invalidity(&mut self) {
+        metrics::counter!(WITHDRAW_FAILURE).increment(1);
+        error!("Invalid quote (probably expired)");
+        self.finish("❌ QUOTE VALIDITY FAILURE");
+    }
+
     pub fn record_failure(&mut self, err: ShielderContractError) {
         metrics::counter!(WITHDRAW_FAILURE).increment(1);
         error!("Relay failed: {err}");

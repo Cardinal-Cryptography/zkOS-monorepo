@@ -1,3 +1,4 @@
+
 use axum::{
     extract::State,
     response::{IntoResponse, Response},
@@ -16,6 +17,7 @@ use tracing::{debug, error};
 pub use crate::relay::taskmaster::Taskmaster;
 use crate::{
     metrics::WITHDRAW_FAILURE,
+    quote_cache::CachedQuote,
     relay::{request_trace::RequestTrace, taskmaster::TaskResult},
     AppState,
 };
@@ -59,6 +61,7 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
     let mut request_trace = RequestTrace::new(&query);
 
     check_expected_version(&query.calldata, &mut request_trace)?;
+    check_quote_validity(&app_state, &query, &mut request_trace).await?;
     check_fee(&app_state, &query, &mut request_trace)?;
     check_pocket_money(&app_state, &query, &mut request_trace)?;
 
@@ -150,6 +153,26 @@ fn check_fee(
         }
     }
     Ok(())
+}
+
+async fn check_quote_validity(
+    app_state: &AppState,
+    query: &RelayQuery,
+    request_trace: &mut RequestTrace,
+) -> Result<(), Response> {
+    let cached_quote = CachedQuote {
+        fee_token: query.calldata.fee_token,
+        gas_price: query.quote.gas_price,
+        native_token_price: query.quote.native_token_price,
+        token_price_ratio: query.quote.token_price_ratio,
+    };
+    match app_state.quote_cache.is_quote_valid(&cached_quote).await {
+        true => Ok(()),
+        false => {
+            request_trace.record_quote_invalidity();
+            Err(bad_request("Invalid quote (probably expired)"))
+        }
+    }
 }
 
 fn check_erc20_fee(
