@@ -13,10 +13,10 @@ pub struct CachedQuote {
     pub fee_token: Token,
     /// Gas price (in native token) at the quotation moment.
     pub gas_price: U256,
-    /// Price of the native token (base unit, like 1 ETH or 1 BTC) at the quotation moment.
-    pub native_token_price: Decimal,
-    /// Ratio between the native token and the fee token at the quotation moment.
-    pub token_price_ratio: Decimal,
+    /// Price of the minimal unit of the native token (like 1 wei or 1 satoshi) at the quotation moment.
+    pub native_token_unit_price: Decimal,
+    /// Price of the minimal unit of the fee token (like 1 wei or 1 satoshi) at the quotation moment.
+    pub fee_token_unit_price: Decimal,
 }
 
 /// Service storing quotations with a certain validity.
@@ -97,8 +97,8 @@ mod tests {
         CachedQuote {
             fee_token: Token::Native,
             gas_price: U256::from(1),
-            native_token_price: Decimal::ONE,
-            token_price_ratio: Decimal::ONE,
+            native_token_unit_price: Decimal::ONE,
+            fee_token_unit_price: Decimal::ONE,
         }
     }
 

@@ -9,7 +9,9 @@ use shielder_account::Token;
 
 mod token;
 pub use token::*;
+mod fee;
 pub mod server;
+pub use fee::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 #[serde(transparent)]
@@ -21,63 +23,6 @@ pub struct SimpleServiceResponse {
 pub struct RelayResponse {
     #[schema(value_type = String)]
     pub tx_hash: TxHash,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
-pub struct QuoteFeeResponse {
-    // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON
-    /// The fee used as a contract input by the relayer.
-    #[schema(value_type = String)]
-    pub total_fee: U256,
-    /// The estimation of a base fee for relay call.
-    #[schema(value_type = String)]
-    pub base_fee: U256,
-    /// The estimation of a relay fee for relay call.
-    #[schema(value_type = String)]
-    pub relay_fee: U256,
-    // 8< ----------------------------------------------------- >8
-    /// The total relay cost in native token.
-    #[schema(value_type = String)]
-    pub total_cost_native: U256,
-    /// The total relay cost in fee token.
-    #[schema(value_type = String)]
-    pub total_cost_fee_token: U256,
-
-    /// Current gas price (in native token).
-    #[schema(value_type = String)]
-    pub gas_price: U256,
-    /// Gas cost for relay call (in native token).
-    #[schema(value_type = String)]
-    pub gas_cost_native: U256,
-    /// Gas cost for relay call (in fee token).
-    #[schema(value_type = String)]
-    pub gas_cost_fee_token: U256,
-
-    /// The commission for the relayer in native token.
-    #[schema(value_type = String)]
-    pub commission_native: U256,
-    /// The commission for the relayer in fee token.
-    #[schema(value_type = String)]
-    pub commission_fee_token: U256,
-
-    /// Current price of the native token (base unit, like 1 ETH or 1 BTC).
-    pub native_token_price: Decimal,
-    /// Current price of the minimal unit of the native token (like 1 wei or 1 satoshi).
-    pub native_token_unit_price: Decimal,
-    /// Current price of the fee token (base unit, like 1 ETH or 1 BTC).
-    pub fee_token_price: Decimal,
-    /// Current price of the minimal unit of the fee token (like 1 wei or 1 satoshi).
-    pub fee_token_unit_price: Decimal,
-    /// Current ratio between the native token and the fee token.
-    pub token_price_ratio: Decimal,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
-pub struct QuoteFeeQuery {
-    #[schema(value_type = Object, examples("Native", json!({"ERC20": "0x1234"})))]
-    pub fee_token: Token,
-    #[schema(value_type = String)]
-    pub pocket_money: U256,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
@@ -112,16 +57,16 @@ pub struct RelayCalldata {
 pub struct RelayQuote {
     #[schema(value_type = String)]
     pub gas_price: U256,
-    pub native_token_price: Decimal,
-    pub token_price_ratio: Decimal,
+    pub native_token_unit_price: Decimal,
+    pub fee_token_unit_price: Decimal,
 }
 
 impl From<QuoteFeeResponse> for RelayQuote {
     fn from(response: QuoteFeeResponse) -> Self {
         Self {
-            gas_price: response.gas_price,
-            native_token_price: response.native_token_price,
-            token_price_ratio: response.token_price_ratio,
+            gas_price: response.price_details.gas_price,
+            native_token_unit_price: response.price_details.native_token_unit_price,
+            fee_token_unit_price: response.price_details.fee_token_unit_price,
         }
     }
 }
@@ -130,15 +75,4 @@ impl From<QuoteFeeResponse> for RelayQuote {
 pub struct RelayQuery {
     pub calldata: RelayCalldata,
     pub quote: RelayQuote,
-}
-
-pub const RELATIVE_PRICE_DIGITS: u32 = 20;
-
-pub fn scale_u256(a: U256, b: Decimal) -> Result<U256, &'static str> {
-    let b = b
-        .round_sf(RELATIVE_PRICE_DIGITS)
-        .ok_or("Arithmetic error")?;
-    let mantissa: U256 = b.mantissa().try_into().map_err(|_| "Arithmetic error")?;
-    let scale = U256::pow(U256::from(10), U256::from(b.scale()));
-    Ok(a * mantissa / scale)
 }

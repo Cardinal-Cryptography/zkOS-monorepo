@@ -49,6 +49,7 @@ pub struct AppState {
     pub token_config: Vec<TokenInfo>,
     pub quote_cache: QuoteCache,
     pub max_pocket_money: U256,
+    pub service_fee_percent: u32,
 }
 
 struct Signers {
@@ -162,6 +163,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         prices,
         quote_cache,
         max_pocket_money: config.operations.max_pocket_money,
+        service_fee_percent: config.operations.service_fee_percent,
     };
 
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())

@@ -1,6 +1,6 @@
 use reqwest::{Response, StatusCode};
 use rust_decimal::Decimal;
-use shielder_relayer::{RelayQuote, RelayResponse, SimpleServiceResponse};
+use shielder_relayer::{RelayResponse, SimpleServiceResponse};
 
 use crate::utils::{
     config::{NodeRpcUrl, RelayerSigner, ShielderContract, TestConfig, POOR_ADDRESS, SIGNER},
@@ -110,8 +110,8 @@ async fn relay_query_without_quote_before_fails() {
 async fn server_returns_quotation() {
     let context = TestContext::new(standard_config()).await;
     let quote = context.quote().await;
-    assert_eq!(quote.native_token_price, Decimal::ONE);
-    assert_eq!(quote.token_price_ratio, Decimal::ONE);
+    assert_eq!(quote.native_token_unit_price, Decimal::new(1, 18));
+    assert_eq!(quote.fee_token_unit_price, Decimal::new(1, 18));
 }
 
 #[tokio::test(flavor = "multi_thread")]
