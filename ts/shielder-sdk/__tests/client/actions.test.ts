@@ -9,7 +9,7 @@ import {
 } from "../../src/client/types";
 import { AccountRegistry } from "../../src/state/accountRegistry";
 import { StateSynchronizer } from "../../src/state/sync/synchronizer";
-import { IRelayer } from "../../src/chain/relayer";
+import { IRelayer, quotedFeesFromTotalFee } from "../../src/chain/relayer";
 import { NewAccountAction } from "../../src/actions/newAccount";
 import { DepositAction } from "../../src/actions/deposit";
 import { WithdrawAction } from "../../src/actions/withdraw";
@@ -115,7 +115,7 @@ describe("ShielderActions", () => {
     provingTimeMillis: 100,
     amount: mockAmount,
     withdrawalAddress: mockAddress,
-    totalFee,
+    quotedFees: quotedFeesFromTotalFee(totalFee),
     token: mockToken,
     pocketMoney: mockPocketMoney
   });
@@ -286,7 +286,19 @@ describe("ShielderActions", () => {
       const mockFees = {
         base_fee: 1000n,
         relay_fee: 500n,
-        total_fee: 1500n
+        total_fee: 1500n,
+        total_cost_native: 1500n,
+        total_cost_fee_token: 0n,
+        gas_price: 0n,
+        gas_cost_native: 0n,
+        gas_cost_fee_token: 0n,
+        commission_native: 0n,
+        commission_fee_token: 0n,
+        native_token_price: "1",
+        native_token_unit_price: "1",
+        fee_token_price: "1",
+        fee_token_unit_price: "1",
+        token_price_ratio: "1"
       };
 
       mockRelayer.quoteFees.mockResolvedValue(mockFees);
@@ -484,7 +496,7 @@ describe("ShielderActions", () => {
 
   describe("withdraw", () => {
     const withdrawMethod = () =>
-      actions.withdraw(mockToken, mockAmount, mockTotalFee, mockAddress, mockPocketMoney);
+      actions.withdraw(mockToken, mockAmount, quotedFeesFromTotalFee(mockTotalFee), mockAddress, mockPocketMoney);
 
     it("should throw error when account not found", async () => {
       mockAccountRegistry.getAccountState.mockResolvedValue(null);
@@ -514,7 +526,7 @@ describe("ShielderActions", () => {
         mockAccountState,
         mockAmount,
         mockRelayerAddress,
-        mockTotalFee,
+        quotedFeesFromTotalFee(mockTotalFee),
         mockAddress,
         contractVersion,
         mockPocketMoney
@@ -576,8 +588,7 @@ describe("ShielderActions", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom,
-        mockPocketMoney
+        mockFrom
       );
 
     it("should throw error when account not found", async () => {
@@ -606,7 +617,7 @@ describe("ShielderActions", () => {
         mockAccountState,
         mockAmount,
         mockFrom,
-        0n, // totalFee is 0 for manual withdrawals
+        quotedFeesFromTotalFee(0n),
         mockAddress,
         contractVersion,
         mockPocketMoney

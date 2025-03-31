@@ -8,7 +8,11 @@ import {
 import { AccountRegistry } from "@/state/accountRegistry";
 import { Hash, PublicClient } from "viem";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
-import { IRelayer } from "@/chain/relayer";
+import {
+  IRelayer,
+  quotedFeesFromTotalFee,
+  QuoteFeesResponse
+} from "@/chain/relayer";
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
@@ -84,7 +88,7 @@ export class ShielderActions {
   async withdraw(
     token: Token,
     amount: bigint,
-    totalFee: bigint,
+    quotedFees: QuoteFeesResponse,
     withdrawalAddress: `0x${string}`,
     pocketMoney: bigint
   ) {
@@ -99,7 +103,7 @@ export class ShielderActions {
           state,
           amount,
           relayerAddress,
-          totalFee,
+          quotedFees,
           withdrawalAddress,
           contractVersion,
           pocketMoney
@@ -144,7 +148,7 @@ export class ShielderActions {
           state,
           amount,
           from,
-          0n, // totalFee is 0, as it is not used in this case
+          quotedFeesFromTotalFee(0n),
           withdrawalAddress,
           contractVersion,
           0n // pocketMoney is 0, as it is not used in this case

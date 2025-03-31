@@ -11,12 +11,46 @@ const withdrawResponseSchema = z.object({
 export type WithdrawResponse = z.infer<typeof withdrawResponseSchema>;
 
 const quoteFeesResponseSchema = z.object({
+  // 8< ----------------------- >8
   base_fee: z.coerce.bigint(),
   relay_fee: z.coerce.bigint(),
-  total_fee: z.coerce.bigint()
+  total_fee: z.coerce.bigint(),
+  // 8< ----------------------- >8
+  total_cost_native: z.coerce.bigint(),
+  total_cost_fee_token: z.coerce.bigint(),
+  gas_price: z.coerce.bigint(),
+  gas_cost_native: z.coerce.bigint(),
+  gas_cost_fee_token: z.coerce.bigint(),
+  commission_native: z.coerce.bigint(),
+  commission_fee_token: z.coerce.bigint(),
+  native_token_price: z.coerce.string(),
+  native_token_unit_price: z.coerce.string(),
+  fee_token_price: z.coerce.string(),
+  fee_token_unit_price: z.coerce.string(),
+  token_price_ratio: z.coerce.string()
 });
 
 export type QuoteFeesResponse = z.infer<typeof quoteFeesResponseSchema>;
+
+export const quotedFeesFromTotalFee = (totalFee: bigint) => {
+  return {
+    base_fee: 0n,
+    relay_fee: 0n,
+    total_fee: totalFee,
+    total_cost_native: totalFee,
+    total_cost_fee_token: 0n,
+    gas_price: 0n,
+    gas_cost_native: 0n,
+    gas_cost_fee_token: 0n,
+    commission_native: 0n,
+    commission_fee_token: 0n,
+    native_token_price: "1",
+    native_token_unit_price: "1",
+    fee_token_price: "1",
+    fee_token_unit_price: "1",
+    token_price_ratio: "1"
+  };
+};
 
 export class GenericWithdrawError extends Error {
   constructor(message: string) {
@@ -40,7 +74,8 @@ export type IRelayer = {
     withdrawalAddress: `0x${string}`,
     macSalt: bigint,
     macCommitment: bigint,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    quotedFees: QuoteFeesResponse
   ) => Promise<WithdrawResponse>;
   quoteFees: () => Promise<QuoteFeesResponse>;
 };
@@ -64,7 +99,8 @@ export class Relayer implements IRelayer {
     withdrawalAddress: `0x${string}`,
     macSalt: bigint,
     macCommitment: bigint,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    quotedFees: QuoteFeesResponse
   ): Promise<WithdrawResponse> => {
     let response;
     try {
@@ -75,19 +111,26 @@ export class Relayer implements IRelayer {
         },
         body: JSON.stringify(
           {
-            expected_contract_version: expectedContractVersion,
-            amount,
-            withdraw_address: withdrawalAddress,
-            merkle_root: merkleRoot,
-            nullifier_hash: oldNullifierHash,
-            new_note: newNote,
-            mac_salt: macSalt,
-            mac_commitment: macCommitment,
-            fee_token:
-              token.type === "native" ? "Native" : { ERC20: token.address },
-            fee_amount: feeAmount,
-            proof: Array.from(proof),
-            pocket_money: pocketMoney
+            calldata: {
+              expected_contract_version: expectedContractVersion,
+              amount,
+              withdraw_address: withdrawalAddress,
+              merkle_root: merkleRoot,
+              nullifier_hash: oldNullifierHash,
+              new_note: newNote,
+              mac_salt: macSalt,
+              mac_commitment: macCommitment,
+              fee_token:
+                token.type === "native" ? "Native" : { ERC20: token.address },
+              fee_amount: feeAmount,
+              proof: Array.from(proof),
+              pocket_money: pocketMoney
+            },
+            quote: {
+              gas_price: quotedFees.gas_price,
+              native_token_price: quotedFees.native_token_price,
+              token_price_ratio: quotedFees.token_price_ratio
+            }
           },
           (_, value: unknown) =>
             typeof value === "bigint" ? value.toString() : value

@@ -8,7 +8,7 @@ import {
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
-import { IRelayer } from "@/chain/relayer";
+import { IRelayer, QuoteFeesResponse } from "@/chain/relayer";
 import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
 import { getAddressByToken } from "@/utils";
@@ -25,7 +25,7 @@ export interface WithdrawCalldata {
   provingTimeMillis: number;
   amount: bigint;
   withdrawalAddress: Address;
-  totalFee: bigint;
+  quotedFees: QuoteFeesResponse;
   token: Token;
   pocketMoney: bigint;
 }
@@ -147,7 +147,7 @@ export class WithdrawAction extends NoteAction {
    * @param state current account state
    * @param amount amount to withdraw, excluding the relayer fee
    * @param relayerAddress relayer address
-   * @param totalFee total relayer fee, usually a sum of base fee and relay fee (can be less, in which case relayer looses money)
+   * @param quotedFees fee info quoted by the relayer
    * @param withdrawalAddress recipient address
    * @param expectedContractVersion expected contract version
    * @param pocketMoney pocket money that the relayer should pay to the account
@@ -157,7 +157,7 @@ export class WithdrawAction extends NoteAction {
     state: AccountStateMerkleIndexed,
     amount: bigint,
     relayerAddress: Address,
-    totalFee: bigint,
+    quotedFees: QuoteFeesResponse,
     withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`,
     pocketMoney: bigint
@@ -165,9 +165,9 @@ export class WithdrawAction extends NoteAction {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < totalFee) {
+    if (amount < quotedFees.total_fee) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${totalFee.toString()}`
+        `Amount must be greater than the relayer fee: ${quotedFees.total_fee.toString()}`
       );
     }
     if (state.token.type === "native" && pocketMoney > 0) {
@@ -187,7 +187,7 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      totalFee,
+      quotedFees.total_fee,
       merklePath,
       pocketMoney
     );
@@ -211,7 +211,7 @@ export class WithdrawAction extends NoteAction {
       provingTimeMillis: provingTime,
       amount,
       withdrawalAddress,
-      totalFee,
+      quotedFees,
       token: state.token,
       pocketMoney
     };
@@ -230,13 +230,14 @@ export class WithdrawAction extends NoteAction {
       calldata: { pubInputs, proof },
       amount,
       withdrawalAddress,
-      pocketMoney
+      pocketMoney,
+      quotedFees
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
         expectedContractVersion,
         calldata.token,
-        calldata.totalFee,
+        quotedFees.total_fee,
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
@@ -245,7 +246,8 @@ export class WithdrawAction extends NoteAction {
         withdrawalAddress,
         scalarToBigint(pubInputs.macSalt),
         scalarToBigint(pubInputs.macCommitment),
-        pocketMoney
+        pocketMoney,
+        quotedFees
       )
       .catch((e) => {
         if (e instanceof OutdatedSdkError) {
@@ -265,7 +267,7 @@ export class WithdrawAction extends NoteAction {
       calldata: { pubInputs, proof },
       amount,
       withdrawalAddress,
-      totalFee,
+      quotedFees,
       pocketMoney
     } = calldata;
     const encodedCalldata =
@@ -275,7 +277,7 @@ export class WithdrawAction extends NoteAction {
             from,
             withdrawalAddress,
             from, // use sender as relayer
-            totalFee,
+            quotedFees.total_fee,
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -290,7 +292,7 @@ export class WithdrawAction extends NoteAction {
             from,
             withdrawalAddress,
             from, // use sender as relayer
-            totalFee,
+            quotedFees.total_fee,
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
