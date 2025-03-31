@@ -1,5 +1,6 @@
 use reqwest::{Response, StatusCode};
-use shielder_relayer::{RelayResponse, SimpleServiceResponse};
+use rust_decimal::Decimal;
+use shielder_relayer::{RelayQuote, RelayResponse, SimpleServiceResponse};
 
 use crate::utils::{
     config::{NodeRpcUrl, RelayerSigner, ShielderContract, TestConfig, POOR_ADDRESS, SIGNER},
@@ -90,6 +91,27 @@ async fn when_relayer_signer_does_not_have_enough_funds_service_is_healthy() {
         metrics.contains(&format!("signer_balances{{address=\"{POOR_ADDRESS}\"}} 0")),
         test_context
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn relay_query_without_quote_before_fails() {
+    let context = TestContext::new(standard_config()).await;
+    let response = context.relay(Default::default()).await;
+
+    ctx_assert_eq!(response.status(), StatusCode::BAD_REQUEST, context);
+    ctx_assert_eq!(
+        simple_payload(response).await,
+        "Invalid quote (probably expired)",
+        context
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn server_returns_quotation() {
+    let context = TestContext::new(standard_config()).await;
+    let quote = context.quote().await;
+    assert_eq!(quote.native_token_price, Decimal::ONE);
+    assert_eq!(quote.token_price_ratio, Decimal::ONE);
 }
 
 #[tokio::test(flavor = "multi_thread")]
