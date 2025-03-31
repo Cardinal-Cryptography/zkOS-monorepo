@@ -303,10 +303,13 @@ describe("ShielderActions", () => {
 
       mockRelayer.quoteFees.mockResolvedValue(mockFees);
 
-      const fees = await actions.getWithdrawFees();
+      const fees = await actions.getWithdrawFees(mockToken, mockPocketMoney);
 
       expect(fees).toEqual(mockFees);
-      expect(mockRelayer.quoteFees).toHaveBeenCalledTimes(1);
+      expect(mockRelayer.quoteFees).toHaveBeenCalledWith(
+        mockToken,
+        mockPocketMoney
+      );
     });
   });
 

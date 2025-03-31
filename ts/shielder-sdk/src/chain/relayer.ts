@@ -77,7 +77,7 @@ export type IRelayer = {
     pocketMoney: bigint,
     quotedFees: QuotedFees
   ) => Promise<WithdrawResponse>;
-  quoteFees: () => Promise<QuotedFees>;
+  quoteFees: (token: Token, pocketMoney: bigint) => Promise<QuotedFees>;
 };
 
 export class Relayer implements IRelayer {
@@ -155,7 +155,7 @@ export class Relayer implements IRelayer {
     }
   };
 
-  quoteFees = async () => {
+  quoteFees = async (token: Token, pocketMoney: bigint) => {
     let response;
     try {
       response = await fetch(`${this.url}${feePath}`, {
@@ -164,8 +164,8 @@ export class Relayer implements IRelayer {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          fee_token: "Native",
-          pocket_money: "0"
+          fee_token: token,
+          pocket_money: pocketMoney
         })
       });
     } catch (error) {

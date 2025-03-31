@@ -5,7 +5,7 @@ import { MockedCryptoClient } from "../helpers";
 import { ShielderClient } from "../../src/client/client";
 import { createShielderClient } from "../../src/client/factories";
 import { Contract } from "../../src/chain/contract";
-import { Relayer } from "../../src/chain/relayer";
+import { quotedFeesFromTotalFee, Relayer } from "../../src/chain/relayer";
 import { InjectedStorageInterface } from "../../src/storage/storageSchema";
 import {
   AccountStateMerkleIndexed,
@@ -298,18 +298,16 @@ describe("ShielderClient", () => {
 
   describe("getWithdrawFees", () => {
     it("should delegate to shielderActions", async () => {
-      const mockFees = {
-        baseFee: 1000n,
-        relayFee: 500n,
-        totalFee: 1500n
-      };
-
+      const mockFees = quotedFeesFromTotalFee(100n);
       mockShielderActions.getWithdrawFees.mockResolvedValue(mockFees);
 
-      const fees = await client.getWithdrawFees();
+      const fees = await client.getWithdrawFees(nativeToken(), 0n);
 
       expect(fees).toEqual(mockFees);
-      expect(mockShielderActions.getWithdrawFees).toHaveBeenCalledTimes(1);
+      expect(mockShielderActions.getWithdrawFees).toHaveBeenCalledWith(
+        nativeToken(),
+        0n
+      );
     });
   });
 
@@ -353,7 +351,7 @@ describe("ShielderClient", () => {
       const txHash = await client.withdraw(
         nativeToken(),
         mockAmount,
-        mockTotalFee,
+        quotedFeesFromTotalFee(mockTotalFee),
         mockAddress,
         mockPocketMoney
       );
@@ -362,7 +360,7 @@ describe("ShielderClient", () => {
       expect(mockShielderActions.withdraw).toHaveBeenCalledWith(
         nativeToken(),
         mockAmount,
-        mockTotalFee,
+        quotedFeesFromTotalFee(mockTotalFee),
         mockAddress,
         mockPocketMoney
       );
