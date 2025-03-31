@@ -8,7 +8,9 @@ use reqwest::Response;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_account::Token;
-use shielder_relayer::{PriceProvider, RelayQuery, TokenInfo, TokenKind};
+use shielder_relayer::{
+    PriceProvider, RelayCalldata, RelayQuery, RelayQuote, TokenInfo, TokenKind,
+};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -70,18 +72,25 @@ impl TestContext {
         reqwest::Client::new()
             .post(format!("{BASE_URL}:{}/relay", self.relayer_port))
             .json(&RelayQuery {
-                expected_contract_version: contract_version().to_bytes(),
-                amount: U256::from(1),
-                withdraw_address: Address::from_str(FEE_DESTINATION).unwrap(),
-                merkle_root: U256::ZERO,
-                nullifier_hash: U256::ZERO,
-                new_note: U256::ZERO,
-                proof: Bytes::new(),
-                fee_token: Token::Native,
-                fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
-                mac_salt: U256::ZERO,
-                mac_commitment: U256::ZERO,
-                pocket_money: U256::ZERO,
+                calldata: RelayCalldata {
+                    expected_contract_version: contract_version().to_bytes(),
+                    amount: U256::from(1),
+                    withdraw_address: Address::from_str(FEE_DESTINATION).unwrap(),
+                    merkle_root: U256::ZERO,
+                    nullifier_hash: U256::ZERO,
+                    new_note: U256::ZERO,
+                    proof: Bytes::new(),
+                    fee_token: Token::Native,
+                    fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
+                    mac_salt: U256::ZERO,
+                    mac_commitment: U256::ZERO,
+                    pocket_money: U256::ZERO,
+                },
+                quote: RelayQuote {
+                    gas_price: Default::default(),
+                    native_token_price: Default::default(),
+                    token_price_ratio: Default::default(),
+                },
             })
             .send()
             .await

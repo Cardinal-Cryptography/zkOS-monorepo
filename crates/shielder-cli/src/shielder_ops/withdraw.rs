@@ -11,7 +11,9 @@ use shielder_account::{
 use shielder_contract::{
     events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
-use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayQuery, RelayResponse};
+use shielder_relayer::{
+    QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote, RelayResponse,
+};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -34,8 +36,8 @@ pub async fn withdraw(
     app_state.relayer_rpc_url.check_connection().await?;
 
     let pocket_money = U256::from(pocket_money);
-    let total_fee = get_relayer_total_fee(app_state, token, pocket_money).await?;
-    let amount = U256::from(amount) + total_fee;
+    let quoted_fee = get_relayer_total_fee(app_state, token, pocket_money).await?;
+    let amount = U256::from(amount) + quoted_fee.total_fee;
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
     if amount > shielded_amount {
@@ -44,7 +46,7 @@ pub async fn withdraw(
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to, token, total_fee, pocket_money).await?)
+        .json(&prepare_relayer_query(app_state, amount, to, token, quoted_fee, pocket_money).await?)
         .send()
         .await?;
 
@@ -95,7 +97,7 @@ async fn get_relayer_total_fee(
     app_state: &mut AppState,
     token: Token,
     pocket_money: U256,
-) -> Result<U256> {
+) -> Result<QuoteFeeResponse> {
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.fees_url())
         .json(&QuoteFeeQuery {
@@ -112,7 +114,7 @@ async fn get_relayer_total_fee(
         );
     }
     let quoted_fees = relayer_response.json::<QuoteFeeResponse>().await?;
-    Ok(quoted_fees.total_fee)
+    Ok(quoted_fees)
 }
 
 async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address> {
@@ -136,7 +138,7 @@ async fn prepare_relayer_query(
     amount: U256,
     to: Address,
     token: Token,
-    relayer_fee: U256,
+    quoted_fee: QuoteFeeResponse,
     pocket_money: U256,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
@@ -161,7 +163,7 @@ async fn prepare_relayer_query(
             merkle_path,
             to,
             relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
-            relayer_fee,
+            relayer_fee: quoted_fee.total_fee,
             contract_version: contract_version(),
             chain_id: U256::from(chain_id),
             mac_salt: get_mac_salt(),
@@ -170,17 +172,24 @@ async fn prepare_relayer_query(
     );
 
     Ok(RelayQuery {
-        expected_contract_version: contract_version().to_bytes(),
-        amount,
-        withdraw_address: to,
-        merkle_root,
-        nullifier_hash: calldata.old_nullifier_hash,
-        new_note: calldata.new_note,
-        proof: calldata.proof,
-        fee_token: token,
-        fee_amount: calldata.relayer_fee,
-        mac_salt: calldata.mac_salt,
-        mac_commitment: calldata.mac_commitment,
-        pocket_money,
+        calldata: RelayCalldata {
+            expected_contract_version: contract_version().to_bytes(),
+            amount,
+            withdraw_address: to,
+            merkle_root,
+            nullifier_hash: calldata.old_nullifier_hash,
+            new_note: calldata.new_note,
+            proof: calldata.proof,
+            fee_token: token,
+            fee_amount: calldata.relayer_fee,
+            mac_salt: calldata.mac_salt,
+            mac_commitment: calldata.mac_commitment,
+            pocket_money,
+        },
+        quote: RelayQuote {
+            gas_price: quoted_fee.gas_price,
+            native_token_price: quoted_fee.native_token_price,
+            token_price_ratio: quoted_fee.token_price_ratio,
+        },
     })
 }

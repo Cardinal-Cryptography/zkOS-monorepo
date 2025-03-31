@@ -1,8 +1,3 @@
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
-};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_contract::alloy_primitives::{Address, Bytes, FixedBytes, TxHash, U256};
@@ -14,6 +9,7 @@ use shielder_account::Token;
 
 mod token;
 pub use token::*;
+pub mod server;
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 #[serde(transparent)]
@@ -21,24 +17,10 @@ pub struct SimpleServiceResponse {
     pub message: String,
 }
 
-impl SimpleServiceResponse {
-    pub fn from(message: &str) -> Json<Self> {
-        Json(Self {
-            message: message.to_string(),
-        })
-    }
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 pub struct RelayResponse {
     #[schema(value_type = String)]
     pub tx_hash: TxHash,
-}
-
-impl RelayResponse {
-    pub fn from(tx_hash: TxHash) -> Json<Self> {
-        Json(Self { tx_hash })
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
@@ -99,7 +81,7 @@ pub struct QuoteFeeQuery {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
-pub struct RelayQuery {
+pub struct RelayCalldata {
     #[schema(value_type = Object)]
     pub expected_contract_version: FixedBytes<3>,
     #[schema(value_type = String)]
@@ -126,9 +108,18 @@ pub struct RelayQuery {
     pub pocket_money: U256,
 }
 
-pub fn server_error(msg: &str) -> Response {
-    let code = StatusCode::INTERNAL_SERVER_ERROR;
-    (code, SimpleServiceResponse::from(msg)).into_response()
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
+pub struct RelayQuote {
+    #[schema(value_type = String)]
+    pub gas_price: U256,
+    pub native_token_price: Decimal,
+    pub token_price_ratio: Decimal,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
+pub struct RelayQuery {
+    pub calldata: RelayCalldata,
+    pub quote: RelayQuote,
 }
 
 pub const RELATIVE_PRICE_DIGITS: u32 = 20;

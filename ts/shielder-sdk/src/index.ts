@@ -1,7 +1,6 @@
 export type {
   SendShielderTransaction,
   ShielderCallbacks,
-  QuotedFees,
   ShielderOperation
 } from "@/client/types";
 export { ShielderClient } from "@/client/client";
@@ -14,3 +13,4 @@ export {
   accountObjectSchema,
   InjectedStorageInterface
 } from "@/storage/storageSchema";
+export type { QuotedFees } from "@/chain/relayer";

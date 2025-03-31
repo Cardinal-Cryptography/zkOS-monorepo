@@ -11,7 +11,7 @@ import { MockedCryptoClient, hashedNote } from "../helpers";
 
 import { WithdrawAction } from "../../src/actions/withdraw";
 import { IContract } from "../../src/chain/contract";
-import { IRelayer, WithdrawResponse } from "../../src/chain/relayer";
+import { IRelayer, quotedFeesFromTotalFee, WithdrawResponse } from "../../src/chain/relayer";
 import { nativeToken } from "../../src/utils";
 import { OutdatedSdkError } from "../../src/errors";
 import { AccountStateMerkleIndexed } from "../../src/state/types";
@@ -143,7 +143,7 @@ describe("WithdrawAction", () => {
         state,
         amount,
         mockRelayerAddress,
-        totalFee,
+        quotedFeesFromTotalFee(totalFee),
         address,
         expectedVersion,
         pocketMoney
@@ -173,7 +173,7 @@ describe("WithdrawAction", () => {
           state,
           amount,
           mockRelayerAddress,
-          totalFee,
+          quotedFeesFromTotalFee(totalFee),
           mockAddress,
           expectedVersion,
           pocketMoney
@@ -191,7 +191,7 @@ describe("WithdrawAction", () => {
           state,
           amount,
           mockRelayerAddress,
-          totalFee,
+          quotedFeesFromTotalFee(totalFee),
           mockAddress,
           expectedVersion,
           pocketMoney
@@ -209,7 +209,7 @@ describe("WithdrawAction", () => {
           state,
           amount,
           mockRelayerAddress,
-          totalFee,
+          quotedFeesFromTotalFee(totalFee),
           mockAddress,
           expectedVersion,
           pocketMoney
@@ -232,7 +232,7 @@ describe("WithdrawAction", () => {
           state,
           amount,
           mockRelayerAddress,
-          totalFee,
+          quotedFeesFromTotalFee(totalFee),
           mockAddress,
           expectedVersion,
           pocketMoney
@@ -260,7 +260,7 @@ describe("WithdrawAction", () => {
           state,
           amount,
           mockRelayerAddress,
-          totalFee,
+          quotedFeesFromTotalFee(totalFee),
           mockAddress,
           expectedVersion,
           pocketMoney
@@ -279,7 +279,7 @@ describe("WithdrawAction", () => {
         state,
         amount,
         mockRelayerAddress,
-        totalFee,
+        quotedFeesFromTotalFee(totalFee),
         mockAddress,
         expectedVersion,
         pocketMoney
@@ -290,7 +290,7 @@ describe("WithdrawAction", () => {
       expect(relayer.withdraw).toHaveBeenCalledWith(
         expectedVersion,
         nativeToken(),
-        calldata.totalFee,
+        calldata.quotedFees.total_fee,
         scalarToBigint(calldata.calldata.pubInputs.hNullifierOld),
         scalarToBigint(calldata.calldata.pubInputs.hNoteNew),
         scalarToBigint(calldata.calldata.pubInputs.merkleRoot),
@@ -299,7 +299,8 @@ describe("WithdrawAction", () => {
         mockAddress,
         scalarToBigint(calldata.calldata.pubInputs.macSalt),
         scalarToBigint(calldata.calldata.pubInputs.macCommitment),
-        calldata.pocketMoney
+        calldata.pocketMoney,
+        quotedFeesFromTotalFee(totalFee)
       );
 
       expect(txHash).toBe("0xtxHash");
@@ -314,7 +315,7 @@ describe("WithdrawAction", () => {
         state,
         amount,
         mockRelayerAddress,
-        totalFee,
+        quotedFeesFromTotalFee(totalFee),
         mockAddress,
         expectedVersion,
         pocketMoney
@@ -354,7 +355,7 @@ describe("WithdrawAction", () => {
         state,
         amount,
         mockRelayerAddress,
-        totalFee,
+        quotedFeesFromTotalFee(totalFee),
         mockAddress,
         expectedVersion,
         pocketMoney

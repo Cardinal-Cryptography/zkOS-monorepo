@@ -1,9 +1,5 @@
 import { Address } from "viem";
-import {
-  QuotedFees,
-  SendShielderTransaction,
-  ShielderCallbacks
-} from "./types";
+import { SendShielderTransaction, ShielderCallbacks } from "./types";
 import { Token } from "@/types";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
 import { HistoryFetcher } from "@/state/sync/historyFetcher";
@@ -11,6 +7,7 @@ import { ShielderTransaction } from "@/state/types";
 import { AccountRegistry } from "@/state/accountRegistry";
 import { ShielderActions } from "./actions";
 import { ShielderComponents } from "./factories";
+import { QuotedFees } from "@/chain/relayer";
 
 export class ShielderClient {
   private accountRegistry: AccountRegistry;
@@ -100,7 +97,7 @@ export class ShielderClient {
    * @returns quoted fees for the withdraw operation
    */
   async getWithdrawFees(): Promise<QuotedFees> {
-    return this.shielderActions.getWithdrawFees();
+    return await this.shielderActions.getWithdrawFees();
   }
 
   /**
@@ -134,7 +131,7 @@ export class ShielderClient {
    * Mutates the shielder state.
    * @param {Token} token - token to withdraw
    * @param {bigint} amount - amount to withdraw, in wei
-   * @param {bigint} totalFee - total fee that is deducted from amount, in wei, supposedly a sum of base fee and relay fee
+   * @param {QuotedFees} quotedFees - fee info provided by the relayer
    * @param {`0x${string}`} withdrawalAddress - public address of the recipient
    * @param {bigint} pocketMoney - amount of native token to be sent to the recipient by the relayer; only for ERC20 withdrawals
    * @returns transaction hash of the withdraw transaction
@@ -143,14 +140,14 @@ export class ShielderClient {
   async withdraw(
     token: Token,
     amount: bigint,
-    totalFee: bigint,
+    quotedFees: QuotedFees,
     withdrawalAddress: Address,
     pocketMoney: bigint
   ) {
     return this.shielderActions.withdraw(
       token,
       amount,
-      totalFee,
+      quotedFees,
       withdrawalAddress,
       pocketMoney
     );

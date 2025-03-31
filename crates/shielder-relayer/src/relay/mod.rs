@@ -1,13 +1,14 @@
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use shielder_account::{call_data::WithdrawCall, Token};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    scale_u256, server_error, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
+    scale_u256,
+    server::{bad_request, server_error, success_response, temporary_failure},
+    RelayCalldata, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
@@ -41,96 +42,84 @@ const FEE_MARGIN_PERCENT: u32 = 10;
         (status = INTERNAL_SERVER_ERROR, description = "Server encountered unexpected error. Try again later.", body = SimpleServiceResponse),
     )
 )]
-pub async fn relay(app_state: State<AppState>, Json(query): Json<RelayQuery>) -> impl IntoResponse {
+pub async fn relay(
+    State(app_state): State<AppState>,
+    Json(query): Json<RelayQuery>,
+) -> impl IntoResponse {
     debug!("Relay request received: {query:?}");
+    match _relay(app_state, query).await {
+        Ok(response) => success_response(response),
+        Err(err) => {
+            error!("Relay request failed: {err:?}");
+            err
+        }
+    }
+}
+
+async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse, Response> {
     let mut request_trace = RequestTrace::new(&query);
 
-    if let Err(response) = check_expected_version(&query, &mut request_trace) {
-        return response;
-    }
-    if let Err(response) = check_fee(&app_state, &query, &mut request_trace) {
-        return response;
-    }
-    if let Err(response) = check_pocket_money(&app_state, &query, &mut request_trace) {
-        return response;
-    }
+    check_expected_version(&query.calldata, &mut request_trace)?;
+    check_fee(&app_state, &query, &mut request_trace)?;
+    check_pocket_money(&app_state, &query, &mut request_trace)?;
 
-    let withdraw_call = create_call(query, app_state.fee_destination, app_state.total_fee);
-    let Ok(rx) = app_state
+    let withdraw_call = create_call(
+        query.calldata,
+        app_state.fee_destination,
+        app_state.total_fee,
+    );
+    let rx = app_state
         .taskmaster
         .register_new_task(withdraw_call, request_trace)
         .await
-    else {
-        error!("Failed to register new task");
-        return server_error("Failed to register new task");
-    };
+        .map_err(|err| server_error(&format!("Failed to register new task: {err:?}")))?;
 
     match rx.await {
         Ok((mut request_trace, task_result)) => match task_result {
             TaskResult::Ok(tx_hash) => {
                 request_trace.record_success(tx_hash);
-                (StatusCode::OK, RelayResponse::from(tx_hash)).into_response()
+                Ok(RelayResponse { tx_hash })
             }
             TaskResult::DryRunFailed(err) => {
                 request_trace.record_dry_run_failure(err);
-                bad_request("Dry run failed")
+                Err(bad_request("Dry run failed"))
             }
             TaskResult::RelayFailed(err) => {
                 request_trace.record_failure(err);
-                bad_request("Relay failed")
+                Err(bad_request("Relay failed"))
             }
         },
         Err(err) => {
             error!("[UNEXPECTED] Relay task master failed: {err}");
             metrics::counter!(WITHDRAW_FAILURE).increment(1);
-            server_error("Relay task failed")
+            Err(server_error("Relay task failed"))
         }
     }
 }
 
-fn bad_request(msg: &str) -> Response {
-    (StatusCode::BAD_REQUEST, SimpleServiceResponse::from(msg)).into_response()
-}
-
-fn temporary_failure(msg: &str) -> Response {
-    (
-        StatusCode::SERVICE_UNAVAILABLE,
-        SimpleServiceResponse::from(msg),
-    )
-        .into_response()
-}
-
-fn internal_server_error(msg: &str) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        SimpleServiceResponse::from(msg),
-    )
-        .into_response()
-}
-
-fn create_call(q: RelayQuery, relayer_address: Address, relayer_fee: U256) -> WithdrawCall {
+fn create_call(c: RelayCalldata, relayer_address: Address, relayer_fee: U256) -> WithdrawCall {
     WithdrawCall {
-        expected_contract_version: q.expected_contract_version,
-        withdrawal_address: q.withdraw_address,
+        expected_contract_version: c.expected_contract_version,
+        withdrawal_address: c.withdraw_address,
         relayer_address,
         relayer_fee,
-        amount: q.amount,
-        merkle_root: q.merkle_root,
-        old_nullifier_hash: q.nullifier_hash,
-        new_note: q.new_note,
-        proof: q.proof,
-        mac_salt: q.mac_salt,
-        mac_commitment: q.mac_commitment,
-        token: q.fee_token,
-        pocket_money: q.pocket_money,
+        amount: c.amount,
+        merkle_root: c.merkle_root,
+        old_nullifier_hash: c.nullifier_hash,
+        new_note: c.new_note,
+        proof: c.proof,
+        mac_salt: c.mac_salt,
+        mac_commitment: c.mac_commitment,
+        token: c.fee_token,
+        pocket_money: c.pocket_money,
     }
 }
 
 fn check_expected_version(
-    query: &RelayQuery,
+    calldata: &RelayCalldata,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    let expected_by_client = ContractVersion::from_bytes(query.expected_contract_version);
+    let expected_by_client = ContractVersion::from_bytes(calldata.expected_contract_version);
     let expected_by_relayer = contract_version();
 
     if expected_by_client != expected_by_relayer {
@@ -149,15 +138,17 @@ fn check_fee(
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    match query.fee_token {
+    match query.calldata.fee_token {
         Token::Native => {
             // todo: discuss if we want to prevent users from spending too much
-            if query.fee_amount < app_state.total_fee {
-                request_trace.record_insufficient_fee(query.fee_amount);
+            if query.calldata.fee_amount < app_state.total_fee {
+                request_trace.record_insufficient_fee(query.calldata.fee_amount);
                 return Err(bad_request("Insufficient fee."));
             }
         }
-        token @ Token::ERC20 { .. } => check_erc20_fee(app_state, token, query, request_trace)?,
+        token @ Token::ERC20 { .. } => {
+            check_erc20_fee(app_state, token, query.calldata.fee_amount, request_trace)?
+        }
     }
     Ok(())
 }
@@ -165,7 +156,7 @@ fn check_fee(
 fn check_erc20_fee(
     app_state: &AppState,
     fee_token: Token,
-    query: &RelayQuery,
+    fee_amount: U256,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
     let fee_token = ensure_permissible_token(app_state, fee_token)?;
@@ -181,10 +172,10 @@ fn check_erc20_fee(
     let native_price = get_price(TokenKind::Native)?.unit_price;
     let ratio = fee_token_price / native_price;
 
-    let expected_fee = scale_u256(query.fee_amount, ratio).map_err(internal_server_error)?;
+    let expected_fee = scale_u256(fee_amount, ratio).map_err(server_error)?;
 
     if add_fee_error_margin(expected_fee) < app_state.total_fee {
-        request_trace.record_insufficient_fee(query.fee_amount);
+        request_trace.record_insufficient_fee(fee_amount);
         return Err(bad_request("Insufficient fee."));
     }
     Ok(())
@@ -211,14 +202,15 @@ fn check_pocket_money(
     query: &RelayQuery,
     request_trace: &mut RequestTrace,
 ) -> Result<(), Response> {
-    if query.fee_token == Token::Native && query.pocket_money != U256::ZERO {
+    let pocket_money = query.calldata.pocket_money;
+    if query.calldata.fee_token == Token::Native && pocket_money != U256::ZERO {
         request_trace.record_pocket_money_native_withdrawal();
         return Err(bad_request(
             "Pocket money is not supported for native token withdrawals.",
         ));
     }
-    if app_state.max_pocket_money < query.pocket_money {
-        request_trace.record_pocket_money_too_high(app_state.max_pocket_money, query.pocket_money);
+    if app_state.max_pocket_money < pocket_money {
+        request_trace.record_pocket_money_too_high(app_state.max_pocket_money, pocket_money);
         return Err(bad_request("Pocket money too high."));
     }
     Ok(())

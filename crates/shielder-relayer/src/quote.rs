@@ -1,10 +1,12 @@
 use alloy_provider::Provider;
-use axum::{extract::State, http::status::StatusCode, response::IntoResponse, Json};
+use axum::{extract::State, response::IntoResponse, Json};
 use rust_decimal::Decimal;
 use shielder_account::Token;
 use shielder_contract::{alloy_primitives::U256, providers::create_simple_provider};
 use shielder_relayer::{
-    scale_u256, server_error, QuoteFeeQuery, QuoteFeeResponse, SimpleServiceResponse, TokenKind,
+    scale_u256,
+    server::{server_error, success_response},
+    QuoteFeeQuery, QuoteFeeResponse, SimpleServiceResponse, TokenKind,
 };
 use time::OffsetDateTime;
 use tracing::error;
@@ -26,7 +28,7 @@ pub async fn quote_fees(
     Json(query): Json<QuoteFeeQuery>,
 ) -> impl IntoResponse {
     match _quote_fees(app_state, query).await {
-        Ok(response) => (StatusCode::OK, Json(response)).into_response(),
+        Ok(response) => success_response(response),
         Err(err) => {
             error!(err);
             server_error(&err)
