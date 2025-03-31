@@ -126,11 +126,7 @@ export class Relayer implements IRelayer {
               proof: Array.from(proof),
               pocket_money: pocketMoney
             },
-            quote: {
-              gas_price: quotedFees.gas_price,
-              native_token_price: quotedFees.native_token_price,
-              token_price_ratio: quotedFees.token_price_ratio
-            }
+            quote: quotedFees
           },
           (_, value: unknown) =>
             typeof value === "bigint" ? value.toString() : value

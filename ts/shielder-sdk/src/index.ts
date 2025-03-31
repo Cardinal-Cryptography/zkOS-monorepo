@@ -13,3 +13,4 @@ export {
   accountObjectSchema,
   InjectedStorageInterface
 } from "@/storage/storageSchema";
+export type { QuotedFees } from "@/chain/relayer";
