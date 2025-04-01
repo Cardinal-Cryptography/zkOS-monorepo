@@ -57,13 +57,9 @@ if [[ -n "${RELAYER_METRICS_PORT:-}" ]]; then
   ARGS+=(-e RELAYER_METRICS_PORT="${RELAYER_METRICS_PORT}")
 fi
 
-if [[ -n "${TOTAL_FEE:-}" ]]; then
-  ARGS+=(-e TOTAL_FEE="${TOTAL_FEE}")
-fi
 if [[ -n "${RELAY_GAS:-}" ]]; then
   ARGS+=(-e RELAY_GAS="${RELAY_GAS}")
 fi
-
 if [[ -n "${BALANCE_MONITOR_INTERVAL:-}" ]]; then
   ARGS+=(-e BALANCE_MONITOR_INTERVAL="${BALANCE_MONITOR_INTERVAL}")
 fi

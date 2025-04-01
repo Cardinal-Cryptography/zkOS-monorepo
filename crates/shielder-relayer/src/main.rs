@@ -135,7 +135,6 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         fee_destination,
         signers.addresses.len(),
         config.operations.relay_count_for_recharge,
-        config.chain.total_fee,
     );
 
     let quote_cache = QuoteCache::new(config.operations.quote_validity);

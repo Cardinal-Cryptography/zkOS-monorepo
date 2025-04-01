@@ -41,7 +41,6 @@ impl NetworkConfig {
 pub struct ChainConfig {
     pub node_rpc_url: String,
     pub shielder_contract_address: Address,
-    pub total_fee: U256,
     pub relay_gas: u64,
 }
 
@@ -117,7 +116,6 @@ fn resolve_config_from_cli_config(
         nonce_policy,
         dry_running,
         relay_count_for_recharge,
-        total_fee,
         relay_gas,
         token_config,
         price_feed_validity,
@@ -159,11 +157,6 @@ fn resolve_config_from_cli_config(
             SHIELDER_CONTRACT_ADDRESS_ENV,
             None,
         )),
-        total_fee: resolve_value(
-            total_fee,
-            TOTAL_FEE_ENV,
-            Some(parse_u256(DEFAULT_TOTAL_FEE).unwrap()),
-        ),
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
     };
 

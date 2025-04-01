@@ -27,7 +27,6 @@ fn config_resolution() {
     let nonce_policy = DEFAULT_NONCE_POLICY;
     let dry_running = DryRunning::Always;
     let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
-    let total_fee = U256::from_str(&DEFAULT_TOTAL_FEE).unwrap();
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let token_config = vec![
         TokenInfo {
@@ -58,7 +57,6 @@ fn config_resolution() {
         chain: ChainConfig {
             node_rpc_url: node_rpc_url.clone(), // from CLI
             shielder_contract_address,          // from CLI
-            total_fee,                          // from CLI
             relay_gas,                          // from env
         },
         operations: OperationalConfig {
@@ -93,7 +91,6 @@ fn config_resolution() {
         nonce_policy: None,
         dry_running: Some(dry_running),
         relay_count_for_recharge: None,
-        total_fee: Some(total_fee),
         relay_gas: None,
         token_config: None,
         price_feed_refresh_interval: None,

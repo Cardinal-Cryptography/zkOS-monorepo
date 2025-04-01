@@ -128,17 +128,6 @@ pub struct CLIConfig {
 
     #[clap(
         long,
-        help = "Total fee.",
-        long_help = format!("The total fee, which is used as an argument for `withdraw_native` call. \
-            It should be a fixed value, close to a sum of 'withdraw_native' on-chain gas cost and the intended relayer fee. \
-            If not provided, the value from the environment variable `{TOTAL_FEE_ENV}` will be used. \
-            If that is not set, the default value is `{DEFAULT_TOTAL_FEE:?}`."),
-        value_parser = parsing::parse_u256
-    )]
-    pub total_fee: Option<U256>,
-
-    #[clap(
-        long,
         help = "Relay gas amount.",
         long_help = format!("The estimated amount of gas 'withdraw_native' on-chain call burns. If not provided, the value from the \
             environment variable `{RELAY_GAS_ENV}` will be used. If that is not set,\
