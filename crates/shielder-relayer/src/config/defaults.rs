@@ -9,7 +9,7 @@ pub const DEFAULT_METRICS_PORT: u16 = 9615;
 pub const DEFAULT_BALANCE_MONITOR_INTERVAL: Duration = Duration::from_secs(15);
 pub const DEFAULT_NONCE_POLICY: NoncePolicy = NoncePolicy::Caching;
 pub const DEFAULT_DRY_RUNNING: DryRunning = DryRunning::Always;
-pub const DEFAULT_RELAY_COUNT_FOR_RECHARGE: u32 = 20;
+pub const DEFAULT_RECHARGE_THRESHOLD: &str = "1_000_000_000_000_000_000"; // 1 TZERO
 pub const DEFAULT_RELAY_GAS: u64 = 2_000_000; // an estimated amount of gas for a 'withdraw_native' call
 
 pub const DEFAULT_PRICE_FEED_VALIDITY: Duration = Duration::from_secs(600);

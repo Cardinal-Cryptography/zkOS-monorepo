@@ -61,7 +61,7 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
     check_pocket_money(&app_state, &query, &mut request_trace)?;
     check_quote_validity(&app_state, &query, &mut request_trace).await?;
 
-    let expected_fee_in_withdrawal_token = compute_fee(
+    let fee_details = compute_fee(
         query.quote.gas_price,
         app_state.relay_gas,
         query.calldata.pocket_money,
@@ -69,17 +69,20 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
         query.quote.native_token_unit_price,
         query.quote.fee_token_unit_price,
     )
-    .map_err(server_error)?
-    .total_cost_fee_token;
+    .map_err(server_error)?;
 
     let withdraw_call = create_call(
         query.calldata,
         app_state.fee_destination,
-        expected_fee_in_withdrawal_token,
+        fee_details.total_cost_fee_token,
     );
     let rx = app_state
         .taskmaster
-        .register_new_task(withdraw_call, request_trace)
+        .register_new_task(
+            withdraw_call,
+            fee_details.relayer_cost_native,
+            request_trace,
+        )
         .await
         .map_err(|err| server_error(&format!("Failed to register new task: {err:?}")))?;
 

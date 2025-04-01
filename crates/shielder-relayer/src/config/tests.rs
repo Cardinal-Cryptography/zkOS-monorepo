@@ -26,7 +26,7 @@ fn config_resolution() {
     let key2 = "key2".to_string();
     let nonce_policy = DEFAULT_NONCE_POLICY;
     let dry_running = DryRunning::Always;
-    let relay_count_for_recharge = DEFAULT_RELAY_COUNT_FOR_RECHARGE;
+    let relay_count_for_recharge = DEFAULT_RECHARGE_THRESHOLD;
     let relay_gas: u64 = DEFAULT_RELAY_GAS + 1;
     let token_config = vec![
         TokenInfo {
@@ -90,7 +90,7 @@ fn config_resolution() {
         signing_keys: None,
         nonce_policy: None,
         dry_running: Some(dry_running),
-        relay_count_for_recharge: None,
+        recharge_threshold: None,
         relay_gas: None,
         token_config: None,
         price_feed_refresh_interval: None,

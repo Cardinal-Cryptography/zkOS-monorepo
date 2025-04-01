@@ -119,12 +119,13 @@ pub struct CLIConfig {
     #[clap(
         long,
         value_enum,
-        help = "How many relays must a single relayer do to get a recharge.",
-        long_help = format!("Relay count for recharge. If not provided, the value from the \
-            environment variable `{RELAY_COUNT_FOR_RECHARGE_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_RELAY_COUNT_FOR_RECHARGE:?}`.")
+        help = "How much a worker must have spent on relaying to be recharged.",
+        long_help = format!("How much a worker must have spent on relaying to be recharged. If not\
+            provided, the value from the environment variable `{RECHARGE_THRESHOLD_ENV}` will \
+            be used. If that is not set, the default value is `{DEFAULT_RECHARGE_THRESHOLD:?}`."),
+        value_parser = parsing::parse_u256
     )]
-    pub relay_count_for_recharge: Option<u32>,
+    pub recharge_threshold: Option<U256>,
 
     #[clap(
         long,

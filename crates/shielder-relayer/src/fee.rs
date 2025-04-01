@@ -21,6 +21,11 @@ pub struct FeeDetails {
     #[schema(value_type = String)]
     pub total_cost_fee_token: U256,
 
+    /// The actual on-chain cost of the relay in native token, including gas and pocket money,
+    /// but excluding the commission.
+    #[schema(value_type = String)]
+    pub relayer_cost_native: U256,
+
     /// Gas cost for relay call (in native token).
     #[schema(value_type = String)]
     pub gas_cost_native: U256,
@@ -79,6 +84,7 @@ pub fn compute_fee(
     Ok(FeeDetails {
         total_cost_native,
         total_cost_fee_token: scale_u256(total_cost_native, native_to_fee_ratio)?,
+        relayer_cost_native,
         gas_cost_native,
         gas_cost_fee_token: scale_u256(gas_cost_native, native_to_fee_ratio)?,
         commission_native,

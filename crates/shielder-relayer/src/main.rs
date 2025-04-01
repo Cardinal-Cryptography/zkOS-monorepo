@@ -134,7 +134,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         config.chain.node_rpc_url.clone(),
         fee_destination,
         signers.addresses.len(),
-        config.operations.relay_count_for_recharge,
+        config.operations.recharge_threshold,
     );
 
     let quote_cache = QuoteCache::new(config.operations.quote_validity);
