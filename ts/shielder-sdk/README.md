@@ -114,7 +114,7 @@ const fees = await shielderClient.getWithdrawFees();
 const txHash = await shielderClient.withdraw(
   nativeToken(), // Token to withdraw
   amount, // Amount in wei
-  fees.totalFee, // Total fee for the operation
+  fees.fee_details.total_cost_fee_token, // Total fee for the operation
   toAddress // Recipient's address
 );
 ```

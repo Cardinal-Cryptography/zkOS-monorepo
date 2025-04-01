@@ -165,9 +165,9 @@ export class WithdrawAction extends NoteAction {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < quotedFees.total_fee) {
+    if (amount < quotedFees.fee_details.total_cost_fee_token) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${quotedFees.total_fee.toString()}`
+        `Amount must be greater than the relayer fee: ${quotedFees.fee_details.total_cost_fee_token.toString()}`
       );
     }
     if (state.token.type === "native" && pocketMoney > 0) {
@@ -187,7 +187,7 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      quotedFees.total_fee,
+      quotedFees.fee_details.total_cost_fee_token,
       merklePath,
       pocketMoney
     );
@@ -237,7 +237,6 @@ export class WithdrawAction extends NoteAction {
       .withdraw(
         expectedContractVersion,
         calldata.token,
-        quotedFees.total_fee,
         scalarToBigint(pubInputs.hNullifierOld),
         scalarToBigint(pubInputs.hNoteNew),
         scalarToBigint(pubInputs.merkleRoot),
@@ -277,7 +276,7 @@ export class WithdrawAction extends NoteAction {
             from,
             withdrawalAddress,
             from, // use sender as relayer
-            quotedFees.total_fee,
+            quotedFees.fee_details.total_cost_native,
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
@@ -292,7 +291,7 @@ export class WithdrawAction extends NoteAction {
             from,
             withdrawalAddress,
             from, // use sender as relayer
-            quotedFees.total_fee,
+            quotedFees.fee_details.total_cost_fee_token,
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),

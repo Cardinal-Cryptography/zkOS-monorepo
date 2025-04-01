@@ -11,11 +11,6 @@ const withdrawResponseSchema = z.object({
 export type WithdrawResponse = z.infer<typeof withdrawResponseSchema>;
 
 const quoteFeesResponseSchema = z.object({
-  // 8< ----------------------- >8
-  base_fee: z.coerce.bigint(),
-  relay_fee: z.coerce.bigint(),
-  total_fee: z.coerce.bigint(),
-  // 8< ----------------------- >8
   fee_details: z.object({
     total_cost_native: z.coerce.bigint(),
     total_cost_fee_token: z.coerce.bigint(),
@@ -36,14 +31,13 @@ const quoteFeesResponseSchema = z.object({
 
 export type QuotedFees = z.infer<typeof quoteFeesResponseSchema>;
 
-export const quotedFeesFromTotalFee = (totalFee: bigint) => {
+/// Create a quoted fees object from the expected token fee. Only `total_cost_fee_token`
+/// has reasonable value, the rest are set arbitrarily.
+export const quotedFeesFromExpectedTokenFee = (totalCostFeeToken: bigint) => {
   return {
-    base_fee: 0n,
-    relay_fee: 0n,
-    total_fee: totalFee,
     fee_details: {
-      total_cost_native: totalFee,
-      total_cost_fee_token: 0n,
+      total_cost_native: 0n,
+      total_cost_fee_token: totalCostFeeToken,
       gas_cost_native: 0n,
       gas_cost_fee_token: 0n,
       commission_native: 0n,
@@ -73,7 +67,6 @@ export type IRelayer = {
   withdraw: (
     expectedContractVersion: `0x${string}`,
     token: Token,
-    feeAmount: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -98,7 +91,6 @@ export class Relayer implements IRelayer {
   withdraw = async (
     expectedContractVersion: `0x${string}`,
     token: Token,
-    feeAmount: bigint,
     oldNullifierHash: bigint,
     newNote: bigint,
     merkleRoot: bigint,
@@ -130,7 +122,7 @@ export class Relayer implements IRelayer {
               mac_commitment: macCommitment,
               fee_token:
                 token.type === "native" ? "Native" : { ERC20: token.address },
-              fee_amount: feeAmount,
+              fee_amount: quotedFees.fee_details.total_cost_fee_token,
               proof: Array.from(proof),
               pocket_money: pocketMoney
             },
