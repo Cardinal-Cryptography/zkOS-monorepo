@@ -1,4 +1,3 @@
-use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;
 use async_channel::{Receiver as MPMCReceiver, Sender as MPMCSender};
@@ -9,7 +8,7 @@ use shielder_contract::{
     ShielderContractError, ShielderUser,
 };
 use tokio::sync::{
-    mpsc::{Sender as MPSCSender, Sender},
+    mpsc::Sender as MPSCSender,
     oneshot,
     oneshot::{Receiver as OneshotReceiver, Sender as OneshotSender},
 };
@@ -17,7 +16,6 @@ use tracing::{error, info};
 
 use crate::{
     config::DryRunning,
-    recharge::RelayCostReport,
     relay::{
         monitoring::{DryRunSwitch, ObligatoryDryRun, OptionalDryRun, RelayingMonitoring},
         request_trace::RequestTrace,
@@ -34,7 +32,6 @@ pub enum TaskResult {
 pub struct Task {
     report: OneshotSender<(RequestTrace, TaskResult)>,
     payload: WithdrawCall,
-    expected_cost_native: U256,
     request_trace: RequestTrace,
 }
 
@@ -47,7 +44,7 @@ impl Taskmaster {
     pub fn new(
         shielder_users: Vec<ShielderUser<impl Provider + Clone + 'static>>,
         dry_running: DryRunning,
-        recharge_reporter: MPSCSender<RelayCostReport>,
+        recharge_reporter: MPSCSender<Address>,
     ) -> Self {
         let (task_sender, task_receiver) = async_channel::bounded(TASK_QUEUE_SIZE);
 
@@ -79,7 +76,7 @@ impl Taskmaster {
         shielder_users: Vec<ShielderUser<impl Provider + Clone + 'static>>,
         task_receiver: MPMCReceiver<Task>,
         dry_run_manager: impl RelayingMonitoring + DryRunSwitch + 'static,
-        recharge_reporter: MPSCSender<RelayCostReport>,
+        recharge_reporter: MPSCSender<Address>,
     ) {
         for shielder_user in shielder_users {
             tokio::spawn(relay_worker(
@@ -94,7 +91,6 @@ impl Taskmaster {
     pub async fn register_new_task(
         &self,
         payload: WithdrawCall,
-        expected_cost_native: U256,
         mut request_trace: RequestTrace,
     ) -> Result<OneshotReceiver<(RequestTrace, TaskResult)>> {
         let (report_sender, report_receiver) = oneshot::channel();
@@ -103,7 +99,6 @@ impl Taskmaster {
         let task = Task {
             report: report_sender,
             payload,
-            expected_cost_native,
             request_trace,
         };
         self.task_sender
@@ -119,7 +114,7 @@ async fn relay_worker(
     requests: MPMCReceiver<Task>,
     shielder_user: ShielderUser<impl Provider + Clone>,
     mut dry_run_manager: impl RelayingMonitoring + DryRunSwitch,
-    recharge_reporter: MPSCSender<RelayCostReport>,
+    recharge_reporter: MPSCSender<Address>,
 ) {
     let worker_address = shielder_user.address();
     while let Ok(task) = requests.recv().await {
@@ -183,27 +178,13 @@ async fn relay_worker(
             }
         };
 
-        report_relay_cost(
-            &recharge_reporter,
-            worker_address,
-            task.expected_cost_native,
-        )
-        .await;
+        if let Err(err) = recharge_reporter.send(worker_address).await {
+            error!(
+                relay_worker = ?worker_address,
+                "Failed to report relay to recharge worker: {err}"
+            );
+        }
     }
 
     error!("Relay worker thread stopped working - channel closed. Corresponding address: {worker_address}");
-}
-
-async fn report_relay_cost(
-    recharge_reporter: &Sender<RelayCostReport>,
-    relayer: Address,
-    cost: U256,
-) {
-    let relay_cost_report = RelayCostReport { relayer, cost };
-    if let Err(err) = recharge_reporter.send(relay_cost_report).await {
-        error!(
-            relay_worker = ?relayer,
-            "Failed to report relay to recharge worker: {err}"
-        );
-    }
 }

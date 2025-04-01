@@ -119,13 +119,24 @@ pub struct CLIConfig {
     #[clap(
         long,
         value_enum,
-        help = "How much a worker must have spent on relaying to be recharged.",
-        long_help = format!("How much a worker must have spent on relaying to be recharged. If not\
-            provided, the value from the environment variable `{RECHARGE_THRESHOLD_ENV}` will \
-            be used. If that is not set, the default value is `{DEFAULT_RECHARGE_THRESHOLD:?}`."),
+        help = "Threshold worker balance must reach to be recharged.",
+        long_help = format!("Threshold worker balance must reach to be recharged. If not provided, \
+        the value from the environment variable `{RECHARGE_THRESHOLD_ENV}` will be used. If that \
+        is not set, the default value is `{DEFAULT_RECHARGE_THRESHOLD:?}`."),
         value_parser = parsing::parse_u256
     )]
     pub recharge_threshold: Option<U256>,
+
+    #[clap(
+        long,
+        value_enum,
+        help = "How much worker will be endowed after reaching recharge threshold.",
+        long_help = format!("How much worker will be endowed after reaching recharge threshold. If \
+        not provided, the value from the environment variable `{RECHARGE_AMOUNT_ENV}` will be \
+        used. If that is not set, the default value is `{DEFAULT_RECHARGE_AMOUNT:?}`."),
+        value_parser = parsing::parse_u256
+    )]
+    pub recharge_amount: Option<U256>,
 
     #[clap(
         long,

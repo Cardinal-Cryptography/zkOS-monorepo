@@ -78,11 +78,7 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
     );
     let rx = app_state
         .taskmaster
-        .register_new_task(
-            withdraw_call,
-            fee_details.relayer_cost_native,
-            request_trace,
-        )
+        .register_new_task(withdraw_call, request_trace)
         .await
         .map_err(|err| server_error(&format!("Failed to register new task: {err:?}")))?;
 

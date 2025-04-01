@@ -50,6 +50,7 @@ pub struct OperationalConfig {
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub recharge_threshold: U256,
+    pub recharge_amount: U256,
     pub token_config: Vec<TokenInfo>,
     pub price_feed_validity: Duration,
     pub price_feed_refresh_interval: Duration,
@@ -116,6 +117,7 @@ fn resolve_config_from_cli_config(
         nonce_policy,
         dry_running,
         recharge_threshold,
+        recharge_amount,
         relay_gas,
         token_config,
         price_feed_validity,
@@ -179,6 +181,12 @@ fn resolve_config_from_cli_config(
             RECHARGE_THRESHOLD_ENV,
             parse_u256,
             Some(parse_u256(DEFAULT_RECHARGE_THRESHOLD).unwrap()),
+        ),
+        recharge_amount: resolve_value_map(
+            recharge_amount,
+            RECHARGE_AMOUNT_ENV,
+            parse_u256,
+            Some(parse_u256(DEFAULT_RECHARGE_AMOUNT).unwrap()),
         ),
         token_config,
         price_feed_validity: resolve_value_map(
