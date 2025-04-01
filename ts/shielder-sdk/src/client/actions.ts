@@ -7,7 +7,11 @@ import {
 import { AccountRegistry } from "@/state/accountRegistry";
 import { Hash, PublicClient } from "viem";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
-import { IRelayer, quotedFeesFromTotalFee, QuotedFees } from "@/chain/relayer";
+import {
+  IRelayer,
+  quotedFeesFromExpectedTokenFee,
+  QuotedFees
+} from "@/chain/relayer";
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
 import { WithdrawAction } from "@/actions/withdraw";
@@ -141,7 +145,7 @@ export class ShielderActions {
           state,
           amount,
           from,
-          quotedFeesFromTotalFee(0n),
+          quotedFeesFromExpectedTokenFee(0n),
           withdrawalAddress,
           contractVersion,
           0n // pocketMoney is 0, as it is not used in this case

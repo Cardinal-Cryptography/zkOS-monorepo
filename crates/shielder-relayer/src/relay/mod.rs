@@ -6,9 +6,9 @@ use axum::{
 use shielder_account::{call_data::WithdrawCall, Token};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    scale_u256,
-    server::{bad_request, server_error, success_response, temporary_failure},
-    RelayCalldata, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
+    compute_fee,
+    server::{bad_request, server_error, success_response},
+    RelayCalldata, RelayQuery, RelayResponse, SimpleServiceResponse,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
@@ -21,8 +21,6 @@ use crate::{
     AppState,
 };
 
-#[cfg(test)]
-mod fee_checking_tests;
 mod monitoring;
 mod request_trace;
 mod taskmaster;
@@ -60,14 +58,24 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
     let mut request_trace = RequestTrace::new(&query);
 
     check_expected_version(&query.calldata, &mut request_trace)?;
-    check_quote_validity(&app_state, &query, &mut request_trace).await?;
-    check_fee(&app_state, &query, &mut request_trace)?;
     check_pocket_money(&app_state, &query, &mut request_trace)?;
+    check_quote_validity(&app_state, &query, &mut request_trace).await?;
+
+    let expected_fee_in_withdrawal_token = compute_fee(
+        query.quote.gas_price,
+        app_state.relay_gas,
+        query.calldata.pocket_money,
+        app_state.service_fee_percent,
+        query.quote.native_token_unit_price,
+        query.quote.fee_token_unit_price,
+    )
+    .map_err(server_error)?
+    .total_cost_fee_token;
 
     let withdraw_call = create_call(
         query.calldata,
         app_state.fee_destination,
-        app_state.total_fee,
+        expected_fee_in_withdrawal_token,
     );
     let rx = app_state
         .taskmaster
@@ -134,26 +142,6 @@ fn check_expected_version(
     Ok(())
 }
 
-fn check_fee(
-    app_state: &AppState,
-    query: &RelayQuery,
-    request_trace: &mut RequestTrace,
-) -> Result<(), Response> {
-    match query.calldata.fee_token {
-        Token::Native => {
-            // todo: discuss if we want to prevent users from spending too much
-            if query.calldata.fee_amount < app_state.total_fee {
-                request_trace.record_insufficient_fee(query.calldata.fee_amount);
-                return Err(bad_request("Insufficient fee."));
-            }
-        }
-        token @ Token::ERC20 { .. } => {
-            check_erc20_fee(app_state, token, query.calldata.fee_amount, request_trace)?
-        }
-    }
-    Ok(())
-}
-
 async fn check_quote_validity(
     app_state: &AppState,
     query: &RelayQuery,
@@ -172,46 +160,6 @@ async fn check_quote_validity(
             Err(bad_request("Invalid quote (probably expired)"))
         }
     }
-}
-
-fn check_erc20_fee(
-    app_state: &AppState,
-    fee_token: Token,
-    fee_amount: U256,
-    request_trace: &mut RequestTrace,
-) -> Result<(), Response> {
-    let fee_token = ensure_permissible_token(app_state, fee_token)?;
-
-    let get_price = |token| {
-        app_state
-            .prices
-            .price(token)
-            .ok_or_else(|| temporary_failure(&format!("Couldn't fetch price for {token:?}.")))
-    };
-
-    let fee_token_price = get_price(fee_token)?.unit_price;
-    let native_price = get_price(TokenKind::Native)?.unit_price;
-    let ratio = fee_token_price / native_price;
-
-    let expected_fee = scale_u256(fee_amount, ratio).map_err(server_error)?;
-
-    if expected_fee < app_state.total_fee {
-        request_trace.record_insufficient_fee(fee_amount);
-        return Err(bad_request("Insufficient fee."));
-    }
-    Ok(())
-}
-
-fn ensure_permissible_token(app_state: &AppState, token: Token) -> Result<TokenKind, Response> {
-    app_state
-        .token_config
-        .iter()
-        .find(|t| Token::from(t.kind) == token)
-        .map(|t| t.kind)
-        .ok_or_else(|| {
-            error!("Requested token fee is not supported: {token:?}");
-            bad_request("Requested token fee is not supported.")
-        })
 }
 
 fn check_pocket_money(

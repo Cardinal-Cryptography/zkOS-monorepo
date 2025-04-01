@@ -12,28 +12,6 @@ else
 fi
 source "${SCRIPT_DIR}/utils.sh"
 
-check_balances() {
-  alice_account=$(alice display-account)
-  if ! echo "${alice_account}" | grep -q "shielded_amount: 8000000000000000,"; then # 210 deposited, 2 withdrawn, 200 in fees
-      echo "❌ Alice has wrong shielded amount"
-      exit 1
-  fi
-
-  bob_account=$(bob display-account)
-  if ! echo "${bob_account}" | grep -q "shielded_amount: 216000000000000000,"; then # 420 deposited, 4 withdrawn, 200 in fees
-      echo "❌ Bob has wrong shielded amount"
-      exit 1
-  fi
-
-  charlie_account=$(charlie display-account)
-  if ! echo "${charlie_account}" | grep -q "shielded_amount: 424000000000000000,"; then # 630 deposited, 6 withdrawn, 200 in fees
-      echo "❌ Charlie has wrong shielded amount"
-      exit 1
-  fi
-
-  log_progress "✅ Accounts have the expected balances"
-}
-
 scenario() {
   configure_cli alice ${ALICE_PRIVATE_KEY}
   configure_cli bob ${BOB_PRIVATE_KEY}
@@ -73,8 +51,6 @@ scenario() {
     log_progress "❌ Some withdrawals failed: expected 444 mTZERO increase, got ${withdrawal_amount}"
     exit 1
   fi
-
-  check_balances
 }
 
 run() {

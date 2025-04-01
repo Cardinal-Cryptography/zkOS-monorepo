@@ -40,7 +40,6 @@ async fn _quote_fees(
     query: QuoteFeeQuery,
 ) -> Result<QuoteFeeResponse, String> {
     let gas_price = U256::from(get_gas_price(&app_state).await?);
-    let required_gas = U256::from(app_state.relay_gas);
 
     // Token conversion.
     let prices = match query.fee_token {
@@ -56,7 +55,7 @@ async fn _quote_fees(
 
     let fee_details = compute_fee(
         gas_price,
-        required_gas,
+        app_state.relay_gas,
         query.pocket_money,
         app_state.service_fee_percent,
         prices.native_token_price.unit_price,
@@ -83,12 +82,6 @@ async fn _quote_fees(
         .await;
 
     Ok(QuoteFeeResponse {
-        total_fee: app_state.total_fee,
-        base_fee: fee_details.gas_cost_native,
-        relay_fee: app_state
-            .total_fee
-            .saturating_sub(fee_details.gas_cost_native),
-
         fee_details,
         price_details,
     })

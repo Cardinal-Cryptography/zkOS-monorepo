@@ -9,7 +9,10 @@ import {
 } from "../../src/client/types";
 import { AccountRegistry } from "../../src/state/accountRegistry";
 import { StateSynchronizer } from "../../src/state/sync/synchronizer";
-import { IRelayer, quotedFeesFromTotalFee } from "../../src/chain/relayer";
+import {
+  IRelayer,
+  quotedFeesFromExpectedTokenFee
+} from "../../src/chain/relayer";
 import { NewAccountAction } from "../../src/actions/newAccount";
 import { DepositAction } from "../../src/actions/deposit";
 import { WithdrawAction } from "../../src/actions/withdraw";
@@ -115,7 +118,7 @@ describe("ShielderActions", () => {
     provingTimeMillis: 100,
     amount: mockAmount,
     withdrawalAddress: mockAddress,
-    quotedFees: quotedFeesFromTotalFee(totalFee),
+    quotedFees: quotedFeesFromExpectedTokenFee(totalFee),
     token: mockToken,
     pocketMoney: mockPocketMoney
   });
@@ -284,21 +287,22 @@ describe("ShielderActions", () => {
   describe("getWithdrawFees", () => {
     it("should return quoted fees from relayer", async () => {
       const mockFees = {
-        base_fee: 1000n,
-        relay_fee: 500n,
-        total_fee: 1500n,
-        total_cost_native: 1500n,
-        total_cost_fee_token: 0n,
-        gas_price: 0n,
-        gas_cost_native: 0n,
-        gas_cost_fee_token: 0n,
-        commission_native: 0n,
-        commission_fee_token: 0n,
-        native_token_price: "1",
-        native_token_unit_price: "1",
-        fee_token_price: "1",
-        fee_token_unit_price: "1",
-        token_price_ratio: "1"
+        fee_details: {
+          total_cost_native: 1500n,
+          total_cost_fee_token: 0n,
+          gas_cost_native: 0n,
+          gas_cost_fee_token: 0n,
+          commission_native: 0n,
+          commission_fee_token: 0n
+        },
+        price_details: {
+          gas_price: 0n,
+          native_token_price: "1",
+          native_token_unit_price: "1",
+          fee_token_price: "1",
+          fee_token_unit_price: "1",
+          token_price_ratio: "1"
+        }
       };
 
       mockRelayer.quoteFees.mockResolvedValue(mockFees);
@@ -498,7 +502,7 @@ describe("ShielderActions", () => {
       actions.withdraw(
         mockToken,
         mockAmount,
-        quotedFeesFromTotalFee(mockTotalFee),
+        quotedFeesFromExpectedTokenFee(mockTotalFee),
         mockAddress,
         mockPocketMoney
       );
@@ -531,7 +535,7 @@ describe("ShielderActions", () => {
         mockAccountState,
         mockAmount,
         mockRelayerAddress,
-        quotedFeesFromTotalFee(mockTotalFee),
+        quotedFeesFromExpectedTokenFee(mockTotalFee),
         mockAddress,
         contractVersion,
         mockPocketMoney
@@ -622,7 +626,7 @@ describe("ShielderActions", () => {
         mockAccountState,
         mockAmount,
         mockFrom,
-        quotedFeesFromTotalFee(0n),
+        quotedFeesFromExpectedTokenFee(0n),
         mockAddress,
         contractVersion,
         mockPocketMoney

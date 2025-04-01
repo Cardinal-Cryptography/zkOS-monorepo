@@ -86,7 +86,8 @@ async fn prepare_relay_queries(
         .await?
         .json::<QuoteFeeResponse>()
         .await?
-        .total_fee;
+        .fee_details
+        .total_cost_fee_token;
 
     println!("⏳ Preparing relay queries for actors...");
     for actor in actors {

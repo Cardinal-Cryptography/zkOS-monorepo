@@ -41,7 +41,6 @@ pub struct AppState {
     pub node_rpc_url: String,
     pub fee_destination: Address,
     pub relay_gas: u64,
-    pub total_fee: U256,
     pub signer_addresses: Vec<Address>,
     pub taskmaster: Taskmaster,
     pub balances: Balances,
@@ -146,7 +145,6 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         node_rpc_url: config.chain.node_rpc_url.clone(),
         fee_destination: fee_destination_address,
         relay_gas: config.chain.relay_gas,
-        total_fee: config.chain.total_fee,
         balances: signers.balances,
         signer_addresses: signers.addresses,
         taskmaster: Taskmaster::new(

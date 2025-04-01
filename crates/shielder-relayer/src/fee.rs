@@ -53,31 +53,20 @@ pub struct PriceDetails {
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 pub struct QuoteFeeResponse {
-    // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON
-    /// The fee used as a contract input by the relayer.
-    #[schema(value_type = String)]
-    pub total_fee: U256,
-    /// The estimation of a base fee for relay call.
-    #[schema(value_type = String)]
-    pub base_fee: U256,
-    /// The estimation of a relay fee for relay call.
-    #[schema(value_type = String)]
-    pub relay_fee: U256,
-    // 8< ----------------------------------------------------- >8
     pub fee_details: FeeDetails,
     pub price_details: PriceDetails,
 }
 
 pub fn compute_fee(
     gas_price: U256,
-    required_gas: U256,
+    required_gas: u64,
     pocket_money: U256,
     commission: u32,
     native_token_unit_price: Decimal,
     fee_token_unit_price: Decimal,
 ) -> Result<FeeDetails, &'static str> {
     // Gas cost in native token.
-    let gas_cost_native = required_gas * gas_price;
+    let gas_cost_native = U256::from(required_gas) * gas_price;
     // Actual cost of performing the relay.
     let relayer_cost_native = gas_cost_native + pocket_money;
     // Relay commission.
