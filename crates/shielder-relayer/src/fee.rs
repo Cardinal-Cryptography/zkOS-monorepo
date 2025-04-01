@@ -53,17 +53,6 @@ pub struct PriceDetails {
 
 #[derive(Clone, Debug, Deserialize, Serialize, ToSchema)]
 pub struct QuoteFeeResponse {
-    // 8< ----------------------------------------------------- >8  TO BE REMOVED SOON
-    /// The fee used as a contract input by the relayer.
-    #[schema(value_type = String)]
-    pub total_fee: U256,
-    /// The estimation of a base fee for relay call.
-    #[schema(value_type = String)]
-    pub base_fee: U256,
-    /// The estimation of a relay fee for relay call.
-    #[schema(value_type = String)]
-    pub relay_fee: U256,
-    // 8< ----------------------------------------------------- >8
     pub fee_details: FeeDetails,
     pub price_details: PriceDetails,
 }

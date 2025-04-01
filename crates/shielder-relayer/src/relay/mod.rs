@@ -6,9 +6,9 @@ use axum::{
 use shielder_account::{call_data::WithdrawCall, Token};
 use shielder_contract::alloy_primitives::{Address, U256};
 use shielder_relayer::{
-    compute_fee, scale_u256,
-    server::{bad_request, server_error, success_response, temporary_failure},
-    RelayCalldata, RelayQuery, RelayResponse, SimpleServiceResponse, TokenKind,
+    compute_fee,
+    server::{bad_request, server_error, success_response},
+    RelayCalldata, RelayQuery, RelayResponse, SimpleServiceResponse,
 };
 use shielder_setup::version::{contract_version, ContractVersion};
 use tracing::{debug, error};
@@ -71,7 +71,8 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
         query.quote.native_token_unit_price,
         query.quote.fee_token_unit_price,
     )
-    .map_err(|err| server_error(err))?.total_cost_fee_token;
+    .map_err(server_error)?
+    .total_cost_fee_token;
 
     let withdraw_call = create_call(
         query.calldata,

@@ -82,12 +82,6 @@ async fn _quote_fees(
         .await;
 
     Ok(QuoteFeeResponse {
-        total_fee: app_state.total_fee,
-        base_fee: fee_details.gas_cost_native,
-        relay_fee: app_state
-            .total_fee
-            .saturating_sub(fee_details.gas_cost_native),
-
         fee_details,
         price_details,
     })
