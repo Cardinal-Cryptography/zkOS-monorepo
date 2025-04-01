@@ -35,7 +35,7 @@ pub async fn withdraw(
 
     let pocket_money = U256::from(pocket_money);
     let quoted_fee = get_relayer_total_fee(app_state, token, pocket_money).await?;
-    let amount = U256::from(amount) + quoted_fee.total_fee;
+    let amount = U256::from(amount) + quoted_fee.fee_details.total_cost_fee_token;
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
     if amount > shielded_amount {
@@ -161,7 +161,7 @@ async fn prepare_relayer_query(
             merkle_path,
             to,
             relayer_address: get_relayer_address(&app_state.relayer_rpc_url).await?,
-            relayer_fee: quoted_fee.total_fee,
+            relayer_fee: quoted_fee.fee_details.total_cost_fee_token,
             contract_version: contract_version(),
             chain_id: U256::from(chain_id),
             mac_salt: get_mac_salt(),
