@@ -70,14 +70,14 @@ pub struct QuoteFeeResponse {
 
 pub fn compute_fee(
     gas_price: U256,
-    required_gas: U256,
+    required_gas: u64,
     pocket_money: U256,
     commission: u32,
     native_token_unit_price: Decimal,
     fee_token_unit_price: Decimal,
 ) -> Result<FeeDetails, &'static str> {
     // Gas cost in native token.
-    let gas_cost_native = required_gas * gas_price;
+    let gas_cost_native = U256::from(required_gas) * gas_price;
     // Actual cost of performing the relay.
     let relayer_cost_native = gas_cost_native + pocket_money;
     // Relay commission.
