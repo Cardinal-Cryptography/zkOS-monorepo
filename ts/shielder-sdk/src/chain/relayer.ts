@@ -16,6 +16,7 @@ const quoteFeesResponseSchema = z.object({
     total_cost_fee_token: z.coerce.bigint(),
     gas_cost_native: z.coerce.bigint(),
     gas_cost_fee_token: z.coerce.bigint(),
+    relayer_cost_native: z.coerce.bigint(),
     commission_native: z.coerce.bigint(),
     commission_fee_token: z.coerce.bigint()
   }),
@@ -40,6 +41,7 @@ export const quotedFeesFromExpectedTokenFee = (totalCostFeeToken: bigint) => {
       total_cost_fee_token: totalCostFeeToken,
       gas_cost_native: 0n,
       gas_cost_fee_token: 0n,
+      relayer_cost_native: 0n,
       commission_native: 0n,
       commission_fee_token: 0n
     },

@@ -69,8 +69,8 @@ fi
 if [[ -n "${DRY_RUNNING:-}" ]]; then
   ARGS+=(-e DRY_RUNNING="${DRY_RUNNING}")
 fi
-if [[ -n "${RELAY_COUNT_FOR_RECHARGE:-}" ]]; then
-  ARGS+=(-e RELAY_COUNT_FOR_RECHARGE="${RELAY_COUNT_FOR_RECHARGE}")
+if [[ -n "${RECHARGE_THRESHOLD:-}" ]]; then
+  ARGS+=(-e RECHARGE_THRESHOLD="${RECHARGE_THRESHOLD}")
 fi
 
 if [[ -n "${PRICE_FEED_REFRESH_INTERVAL:-}" ]]; then
