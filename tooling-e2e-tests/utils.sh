@@ -40,7 +40,7 @@ start_node() {
 endow_accounts() {
   AMOUNT=$(mtzero 100000)
 
-  keys=("${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}" "${TS_SDK_PUBLIC_KEY}" "${RELAYER_SIGNER_ADDRESSES[@]}")
+  keys=("${ALICE_PUBLIC_KEY}" "${BOB_PUBLIC_KEY}" "${CHARLIE_PUBLIC_KEY}" "${TS_SDK_PUBLIC_KEY}" "${FEE_DESTINATION}")
   for key in "${keys[@]}"; do
     curl "${NODE_RPC_URL}" -X POST -H "Content-Type: application/json" \
       --data '{"method":"anvil_setBalance","params":["'"${key}"'", "'${AMOUNT}'"],"id":1,"jsonrpc":"2.0"}' \

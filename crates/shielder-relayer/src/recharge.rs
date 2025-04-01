@@ -50,7 +50,11 @@ async fn recharging_worker(
         let relayer_balance = provider.get_balance(relayer).await?;
         if relayer_balance < recharge_threshold {
             info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
-            recharge_relayer(&provider, relayer, cornucopia_address, recharge_amount).await?;
+            if let Err(err) =
+                recharge_relayer(&provider, relayer, cornucopia_address, recharge_amount).await
+            {
+                error!("Failed to recharge relayer {relayer} with {recharge_amount}: {err}");
+            }
         } else {
             info!(
             "Relayer {relayer} reported another expense. Their current balance: {relayer_balance} - no need to recharge."
