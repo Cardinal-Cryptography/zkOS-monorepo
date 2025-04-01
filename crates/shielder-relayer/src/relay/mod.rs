@@ -60,9 +60,9 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
     let mut request_trace = RequestTrace::new(&query);
 
     check_expected_version(&query.calldata, &mut request_trace)?;
+    check_pocket_money(&app_state, &query, &mut request_trace)?;
     check_quote_validity(&app_state, &query, &mut request_trace).await?;
     check_fee(&app_state, &query, &mut request_trace)?;
-    check_pocket_money(&app_state, &query, &mut request_trace)?;
 
     let withdraw_call = create_call(
         query.calldata,
