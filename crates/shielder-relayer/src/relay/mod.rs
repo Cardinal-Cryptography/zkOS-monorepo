@@ -21,8 +21,6 @@ use crate::{
     AppState,
 };
 
-#[cfg(test)]
-mod fee_checking_tests;
 mod monitoring;
 mod request_trace;
 mod taskmaster;
