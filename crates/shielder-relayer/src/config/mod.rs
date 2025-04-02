@@ -41,7 +41,6 @@ impl NetworkConfig {
 pub struct ChainConfig {
     pub node_rpc_url: String,
     pub shielder_contract_address: Address,
-    pub total_fee: U256,
     pub relay_gas: u64,
 }
 
@@ -50,7 +49,8 @@ pub struct OperationalConfig {
     pub balance_monitor_interval: Duration,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
-    pub relay_count_for_recharge: u32,
+    pub recharge_threshold: U256,
+    pub recharge_amount: U256,
     pub token_config: Vec<TokenInfo>,
     pub price_feed_validity: Duration,
     pub price_feed_refresh_interval: Duration,
@@ -116,8 +116,8 @@ fn resolve_config_from_cli_config(
         signing_keys,
         nonce_policy,
         dry_running,
-        relay_count_for_recharge,
-        total_fee,
+        recharge_threshold,
+        recharge_amount,
         relay_gas,
         token_config,
         price_feed_validity,
@@ -159,11 +159,6 @@ fn resolve_config_from_cli_config(
             SHIELDER_CONTRACT_ADDRESS_ENV,
             None,
         )),
-        total_fee: resolve_value(
-            total_fee,
-            TOTAL_FEE_ENV,
-            Some(parse_u256(DEFAULT_TOTAL_FEE).unwrap()),
-        ),
         relay_gas: resolve_value(relay_gas, RELAY_GAS_ENV, Some(DEFAULT_RELAY_GAS)),
     };
 
@@ -181,10 +176,17 @@ fn resolve_config_from_cli_config(
         ),
         nonce_policy: resolve_value(nonce_policy, NONCE_POLICY_ENV, Some(DEFAULT_NONCE_POLICY)),
         dry_running: resolve_value(dry_running, DRY_RUNNING_ENV, Some(DEFAULT_DRY_RUNNING)),
-        relay_count_for_recharge: resolve_value(
-            relay_count_for_recharge,
-            RELAY_COUNT_FOR_RECHARGE_ENV,
-            Some(DEFAULT_RELAY_COUNT_FOR_RECHARGE),
+        recharge_threshold: resolve_value_map(
+            recharge_threshold,
+            RECHARGE_THRESHOLD_ENV,
+            parse_u256,
+            Some(parse_u256(DEFAULT_RECHARGE_THRESHOLD).unwrap()),
+        ),
+        recharge_amount: resolve_value_map(
+            recharge_amount,
+            RECHARGE_AMOUNT_ENV,
+            parse_u256,
+            Some(parse_u256(DEFAULT_RECHARGE_AMOUNT).unwrap()),
         ),
         token_config,
         price_feed_validity: resolve_value_map(

@@ -177,6 +177,7 @@ async fn relay_worker(
                 dry_run_manager.notice_relay_failure();
             }
         };
+
         if let Err(err) = recharge_reporter.send(worker_address).await {
             error!(
                 relay_worker = ?worker_address,

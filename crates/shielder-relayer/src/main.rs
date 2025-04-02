@@ -133,10 +133,11 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let report_for_recharge = start_recharging_worker(
         config.chain.node_rpc_url.clone(),
         fee_destination,
-        signers.addresses.len(),
-        config.operations.relay_count_for_recharge,
-        config.chain.total_fee,
-    );
+        &signers.addresses,
+        config.operations.recharge_threshold,
+        config.operations.recharge_amount,
+    )
+    .await;
 
     let quote_cache = QuoteCache::new(config.operations.quote_validity);
     tokio::spawn(garbage_collector_worker(quote_cache.clone()));

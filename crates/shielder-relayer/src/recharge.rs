@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use alloy_provider::{network::TransactionBuilder, Provider};
 use alloy_rpc_types::TransactionRequest;
 use alloy_signer_local::PrivateKeySigner;
@@ -11,23 +9,29 @@ use shielder_contract::{
 use tokio::sync::mpsc::{self, Receiver as MPSCReceiver, Sender as MPSCSender};
 use tracing::{error, info};
 
-const RECHARGE_AS_FEE_PERCENT: u32 = 70;
-
-pub fn start_recharging_worker(
+pub async fn start_recharging_worker(
     node_rpc_url: String,
     cornucopia: PrivateKeySigner,
-    relay_workers: usize,
-    relay_count_for_recharge: u32,
-    total_fee: U256,
+    relay_workers: &[Address],
+    recharge_threshold: U256,
+    recharge_amount: U256,
 ) -> MPSCSender<Address> {
-    let (relay_report_sender, relay_report_receiver) = mpsc::channel(relay_workers);
+    let (relay_report_sender, relay_report_receiver) = mpsc::channel(relay_workers.len());
     tokio::spawn(recharging_worker(
         node_rpc_url,
         cornucopia,
         relay_report_receiver,
-        relay_count_for_recharge,
-        total_fee,
+        recharge_threshold,
+        recharge_amount,
     ));
+
+    // Trigger the recharging worker to ensure that every worker has funds.
+    for relayer in relay_workers {
+        relay_report_sender
+            .send(*relayer)
+            .await
+            .expect("Relay report channel closed");
+    }
 
     relay_report_sender
 }
@@ -36,29 +40,31 @@ async fn recharging_worker(
     node_rpc_url: String,
     cornucopia: PrivateKeySigner,
     mut relay_reports: MPSCReceiver<Address>,
-    relay_count_for_recharge: u32,
-    total_fee: U256,
+    recharge_threshold: U256,
+    recharge_amount: U256,
 ) -> Result<()> {
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
-    let mut accounting = HashMap::<Address, u32>::new();
-
     while let Some(relayer) = relay_reports.recv().await {
-        let count = accounting.entry(relayer).or_insert(0);
-        *count += 1;
-        info!("Relayer {relayer} reported that it sent a relay tx. Current counter: {count}");
-
-        if *count >= relay_count_for_recharge {
-            match recharge_relayer(&provider, relayer, cornucopia_address, *count, total_fee).await
-            {
-                Ok(recharge_amount) => {
-                    info!("Recharged relayer {relayer} with {recharge_amount}");
-                }
-                Err(e) => {
-                    error!("Failed to recharge relayer {relayer}: {e:?}");
-                }
+        let relayer_balance = match provider.get_balance(relayer).await {
+            Ok(balance) => balance,
+            Err(err) => {
+                error!("Failed to retrieve balance: {err:?}");
+                continue;
             }
-            *count = 0;
+        };
+
+        if relayer_balance < recharge_threshold {
+            info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
+            if let Err(err) =
+                recharge_relayer(&provider, relayer, cornucopia_address, recharge_amount).await
+            {
+                error!("Failed to recharge relayer {relayer} with {recharge_amount}: {err}");
+            }
+        } else {
+            info!(
+            "Relayer {relayer} reported another expense. Their current balance: {relayer_balance} - no need to recharge."
+        );
         }
     }
 
@@ -70,17 +76,12 @@ async fn recharge_relayer(
     provider: &impl Provider,
     relayer: Address,
     cornucopia_address: Address,
-    relay_count: u32,
-    total_fee: U256,
-) -> Result<U256> {
-    let recharge_amount = U256::from(relay_count)
-        * (total_fee * U256::from(RECHARGE_AS_FEE_PERCENT) / U256::from(100));
-
+    recharge_amount: U256,
+) -> Result<()> {
     let tx = TransactionRequest::default()
         .with_from(cornucopia_address)
         .with_value(recharge_amount)
         .with_to(relayer);
-
     provider.send_transaction(tx).await?.watch().await?;
-    Ok(recharge_amount)
+    Ok(())
 }

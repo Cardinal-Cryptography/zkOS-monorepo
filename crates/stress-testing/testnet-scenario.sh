@@ -23,8 +23,6 @@ NONCE_POLICY=caching
 export NONCE_POLICY
 DRY_RUNNING=optimistic
 export DRY_RUNNING
-RELAY_COUNT_FOR_RECHARGE=10
-export RELAY_COUNT_FOR_RECHARGE
 
 # ======================== Accounts ========================
 DEPLOYER_PRIVATE_KEY=

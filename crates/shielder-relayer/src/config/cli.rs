@@ -119,23 +119,24 @@ pub struct CLIConfig {
     #[clap(
         long,
         value_enum,
-        help = "How many relays must a single relayer do to get a recharge.",
-        long_help = format!("Relay count for recharge. If not provided, the value from the \
-            environment variable `{RELAY_COUNT_FOR_RECHARGE_ENV}` will be used. If that is not set,\
-            the default value is `{DEFAULT_RELAY_COUNT_FOR_RECHARGE:?}`.")
+        help = "Threshold worker balance must reach to be recharged.",
+        long_help = format!("Threshold worker balance must reach to be recharged. If not provided, \
+        the value from the environment variable `{RECHARGE_THRESHOLD_ENV}` will be used. If that \
+        is not set, the default value is `{DEFAULT_RECHARGE_THRESHOLD:?}`."),
+        value_parser = parsing::parse_u256
     )]
-    pub relay_count_for_recharge: Option<u32>,
+    pub recharge_threshold: Option<U256>,
 
     #[clap(
         long,
-        help = "Total fee.",
-        long_help = format!("The total fee, which is used as an argument for `withdraw_native` call. \
-            It should be a fixed value, close to a sum of 'withdraw_native' on-chain gas cost and the intended relayer fee. \
-            If not provided, the value from the environment variable `{TOTAL_FEE_ENV}` will be used. \
-            If that is not set, the default value is `{DEFAULT_TOTAL_FEE:?}`."),
+        value_enum,
+        help = "How much worker will be endowed after reaching recharge threshold.",
+        long_help = format!("How much worker will be endowed after reaching recharge threshold. If \
+        not provided, the value from the environment variable `{RECHARGE_AMOUNT_ENV}` will be \
+        used. If that is not set, the default value is `{DEFAULT_RECHARGE_AMOUNT:?}`."),
         value_parser = parsing::parse_u256
     )]
-    pub total_fee: Option<U256>,
+    pub recharge_amount: Option<U256>,
 
     #[clap(
         long,
