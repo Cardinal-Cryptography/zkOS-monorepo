@@ -3,14 +3,14 @@ use std::{env, io, str::FromStr, sync::Arc};
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::{anyhow, Result};
-use axum::{extract::State, middleware, response::IntoResponse, routing::get, Json, Router};
+use axum::{middleware, routing::get, Router};
 use price_feed::{start_price_feed, Prices};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
     providers::create_provider_with_nonce_caching_signer,
     ConnectionPolicy, ShielderUser,
 };
-use shielder_relayer::{TokenInfo, TokenKind};
+use shielder_relayer::TokenInfo;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -28,6 +28,7 @@ use crate::{
 };
 
 mod config;
+mod info_endpoints;
 mod metrics;
 mod monitor;
 mod price_feed;
@@ -167,8 +168,9 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
 
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(monitor::endpoints::health_endpoint))
-        .routes(routes!(fee_address))
-        .routes(routes!(supported_tokens))
+        .routes(routes!(info_endpoints::fee_address))
+        .routes(routes!(info_endpoints::supported_tokens))
+        .routes(routes!(info_endpoints::max_pocket_money))
         .routes(routes!(quote::quote_fees))
         .routes(routes!(relay::relay))
         .with_state(state.clone())
@@ -179,32 +181,6 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         .merge(SwaggerUi::new("/api").url("/api/openapi.json", api.clone()))
         .layer(CorsLayer::permissive());
     Ok(axum::serve(listener, app).await?)
-}
-
-/// Get the address to which relay fees should be sent.
-#[utoipa::path(
-    get,
-    path = "/fee_address",
-    responses((status = 200, body = String))
-)]
-async fn fee_address(state: State<AppState>) -> impl IntoResponse {
-    state.fee_destination.to_string()
-}
-
-/// Get information about the supported tokens.
-#[utoipa::path(
-    get,
-    path = "/supported_tokens",
-    responses((status = 200, body = [TokenKind]))
-)]
-async fn supported_tokens(state: State<AppState>) -> impl IntoResponse {
-    Json(
-        state
-            .token_config
-            .iter()
-            .map(|t| t.kind)
-            .collect::<Vec<_>>(),
-    )
 }
 
 fn init_logging(format: LoggingFormat) -> Result<()> {
