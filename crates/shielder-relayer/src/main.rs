@@ -169,6 +169,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         .routes(routes!(monitor::endpoints::health_endpoint))
         .routes(routes!(fee_address))
         .routes(routes!(supported_tokens))
+        .routes(routes!(max_pocket_money))
         .routes(routes!(quote::quote_fees))
         .routes(routes!(relay::relay))
         .with_state(state.clone())
@@ -205,6 +206,12 @@ async fn supported_tokens(state: State<AppState>) -> impl IntoResponse {
             .map(|t| t.kind)
             .collect::<Vec<_>>(),
     )
+}
+
+/// Get upper limit for pocket money.
+#[utoipa::path(get, path = "/max_pocket_money", responses((status = 200, body = String)))]
+async fn max_pocket_money(state: State<AppState>) -> impl IntoResponse {
+    Json(state.max_pocket_money.to_string())
 }
 
 fn init_logging(format: LoggingFormat) -> Result<()> {
