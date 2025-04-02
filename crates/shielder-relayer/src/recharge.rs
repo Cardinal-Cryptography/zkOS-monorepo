@@ -45,9 +45,15 @@ async fn recharging_worker(
 ) -> Result<()> {
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
-
     while let Some(relayer) = relay_reports.recv().await {
-        let relayer_balance = provider.get_balance(relayer).await?;
+        let relayer_balance = match provider.get_balance(relayer).await {
+            Ok(balance) => balance,
+            Err(err) => {
+                error!("Failed to retrieve balance: {err:?}");
+                continue;
+            }
+        };
+
         if relayer_balance < recharge_threshold {
             info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
             if let Err(err) =
