@@ -56,7 +56,7 @@ impl TestContext {
             metrics_port,
             test_config.node_rpc_url.url(),
             test_config.shielder_contract.address(),
-            test_config.fee_destination.signing_key(),
+            FEE_DESTINATION.to_string(),
             SIGNER_KEY.to_string(),
             vec![
                 TokenInfo {
