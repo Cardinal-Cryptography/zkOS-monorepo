@@ -15,23 +15,32 @@ pub async fn balance_monitor(
     interval_duration: Duration,
     balances: Balances,
 ) -> Result<()> {
-    let provider = create_simple_provider(node_rpc_url).await?;
     let mut interval = interval(interval_duration);
 
     loop {
         interval.tick().await;
-        for signer in balances.keys() {
-            match provider.get_balance(*signer).await {
-                Ok(balance) => {
-                    set_balance(&balances, *signer, Some(balance)).await;
-                }
-                Err(err) => {
-                    error!("Cannot reach RPC node: {err:?}. Cannot check balance for {signer}");
-                    set_balance(&balances, *signer, None).await;
-                }
+        let _ = update_balances(&balances, node_rpc_url).await;
+    }
+}
+
+pub async fn update_balances(balances: &Balances, node_rpc_url: &str) -> Result<()> {
+    let provider = create_simple_provider(node_rpc_url).await.map_err(|err| {
+        error!("Cannot reach RPC node: {err:?}");
+        err
+    })?;
+
+    for signer in balances.keys() {
+        match provider.get_balance(*signer).await {
+            Ok(balance) => {
+                set_balance(balances, *signer, Some(balance)).await;
+            }
+            Err(err) => {
+                error!("Cannot reach RPC node: {err:?}. Cannot check balance for {signer}");
+                set_balance(balances, *signer, None).await;
             }
         }
     }
+    Ok(())
 }
 
 async fn set_balance(balances: &Balances, address: Address, balance: Option<U256>) {

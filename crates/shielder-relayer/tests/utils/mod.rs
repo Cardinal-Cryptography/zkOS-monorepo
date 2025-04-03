@@ -21,7 +21,7 @@ use testcontainers::{
 use crate::{
     ctx_assert,
     utils::{
-        config::{TestConfig, BASE_URL, FEE_DESTINATION, FEE_DESTINATION_KEY},
+        config::{TestConfig, BASE_URL, FEE_DESTINATION, SIGNER_KEY},
         relayer_image::RelayerImage,
     },
 };
@@ -56,8 +56,8 @@ impl TestContext {
             metrics_port,
             test_config.node_rpc_url.url(),
             test_config.shielder_contract.address(),
-            FEE_DESTINATION_KEY.to_string(),
-            test_config.relayer_signer.signing_key(),
+            test_config.fee_destination.signing_key(),
+            SIGNER_KEY.to_string(),
             vec![
                 TokenInfo {
                     kind: TokenKind::Native,
@@ -78,6 +78,10 @@ impl TestContext {
             relayer_port: port,
             relayer_metrics_port: metrics_port,
         }
+    }
+
+    pub async fn default() -> Self {
+        Self::new(Default::default()).await
     }
 
     pub async fn quote(&self, fee_token: Token) -> RelayQuote {

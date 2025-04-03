@@ -9,14 +9,36 @@ use shielder_contract::{
 use tokio::sync::mpsc::{self, Receiver as MPSCReceiver, Sender as MPSCSender};
 use tracing::{error, info};
 
-pub async fn start_recharging_worker(
+pub async fn ensure_workers_are_funded(
     node_rpc_url: String,
     cornucopia: PrivateKeySigner,
     relay_workers: &[Address],
     recharge_threshold: U256,
     recharge_amount: U256,
+) -> Result<()> {
+    let cornucopia_address = cornucopia.address();
+    let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
+    for worker in relay_workers {
+        try_recharging_worker(
+            *worker,
+            &provider,
+            cornucopia_address,
+            recharge_threshold,
+            recharge_amount,
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+pub async fn start_recharging_worker(
+    node_rpc_url: String,
+    cornucopia: PrivateKeySigner,
+    num_workers: usize,
+    recharge_threshold: U256,
+    recharge_amount: U256,
 ) -> MPSCSender<Address> {
-    let (relay_report_sender, relay_report_receiver) = mpsc::channel(relay_workers.len());
+    let (relay_report_sender, relay_report_receiver) = mpsc::channel(num_workers);
     tokio::spawn(recharging_worker(
         node_rpc_url,
         cornucopia,
@@ -25,15 +47,40 @@ pub async fn start_recharging_worker(
         recharge_amount,
     ));
 
-    // Trigger the recharging worker to ensure that every worker has funds.
-    for relayer in relay_workers {
-        relay_report_sender
-            .send(*relayer)
-            .await
-            .expect("Relay report channel closed");
-    }
-
     relay_report_sender
+}
+
+pub async fn try_recharging_worker(
+    worker: Address,
+    provider: &impl Provider,
+    recharger_address: Address,
+    recharge_threshold: U256,
+    recharge_amount: U256,
+) -> Result<()> {
+    let relayer_balance = match provider.get_balance(worker).await {
+        Ok(balance) => balance,
+        Err(err) => {
+            let msg = format!("Failed to retrieve balance: {err:?}");
+            error!(msg);
+            bail!(msg);
+        }
+    };
+
+    if relayer_balance < recharge_threshold {
+        info!("Relayer {worker} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
+        if let Err(err) =
+            recharge_relayer(&provider, worker, recharger_address, recharge_amount).await
+        {
+            let msg = format!("Failed to recharge relayer {worker} with {recharge_amount}: {err}");
+            error!(msg);
+            bail!(msg);
+        } else {
+            Ok(())
+        }
+    } else {
+        info!("Relayer {worker} balance: {relayer_balance} - no need to recharge.");
+        Ok(())
+    }
 }
 
 async fn recharging_worker(
@@ -46,26 +93,14 @@ async fn recharging_worker(
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
     while let Some(relayer) = relay_reports.recv().await {
-        let relayer_balance = match provider.get_balance(relayer).await {
-            Ok(balance) => balance,
-            Err(err) => {
-                error!("Failed to retrieve balance: {err:?}");
-                continue;
-            }
-        };
-
-        if relayer_balance < recharge_threshold {
-            info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
-            if let Err(err) =
-                recharge_relayer(&provider, relayer, cornucopia_address, recharge_amount).await
-            {
-                error!("Failed to recharge relayer {relayer} with {recharge_amount}: {err}");
-            }
-        } else {
-            info!(
-            "Relayer {relayer} reported another expense. Their current balance: {relayer_balance} - no need to recharge."
-        );
-        }
+        let _ = try_recharging_worker(
+            relayer,
+            &provider,
+            cornucopia_address,
+            recharge_threshold,
+            recharge_amount,
+        )
+        .await;
     }
 
     error!("Relay report channel closed");

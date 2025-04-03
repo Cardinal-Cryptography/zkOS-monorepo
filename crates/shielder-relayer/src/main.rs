@@ -21,9 +21,12 @@ use utoipa_swagger_ui::SwaggerUi;
 use crate::{
     config::{resolve_config, ChainConfig, KeyConfig, LoggingFormat, NoncePolicy, ServerConfig},
     metrics::{prometheus_endpoint, setup_metrics_handle},
-    monitor::{balance_monitor::balance_monitor, Balances},
+    monitor::{
+        balance_monitor::{balance_monitor, update_balances},
+        Balances,
+    },
     quote_cache::{garbage_collector_worker, QuoteCache},
-    recharge::start_recharging_worker,
+    recharge::{ensure_workers_are_funded, start_recharging_worker},
     relay::Taskmaster,
 };
 
@@ -124,21 +127,28 @@ async fn start_metrics_server(config: &ServerConfig, balances: Balances) -> Resu
 }
 
 async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Prices) -> Result<()> {
-    let address = config.network.main_address();
-    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
-    info!("Listening on {address}");
-
     let fee_destination = signer(&config.keys.fee_destination_key)?;
     let fee_destination_address = fee_destination.address();
 
     let report_for_recharge = start_recharging_worker(
+        config.chain.node_rpc_url.clone(),
+        fee_destination.clone(),
+        signers.addresses.len(),
+        config.operations.recharge_threshold,
+        config.operations.recharge_amount,
+    )
+    .await;
+
+    ensure_workers_are_funded(
         config.chain.node_rpc_url.clone(),
         fee_destination,
         &signers.addresses,
         config.operations.recharge_threshold,
         config.operations.recharge_amount,
     )
-    .await;
+    .await?;
+    let _ = update_balances(&signers.balances, &config.chain.node_rpc_url).await;
+    info!("Relay workers have sufficient funds");
 
     let quote_cache = QuoteCache::new(config.operations.quote_validity);
     tokio::spawn(garbage_collector_worker(quote_cache.clone()));
@@ -180,6 +190,11 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let app = router
         .merge(SwaggerUi::new("/api").url("/api/openapi.json", api.clone()))
         .layer(CorsLayer::permissive());
+
+    let address = config.network.main_address();
+    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
+    info!("Listening on {address}");
+
     Ok(axum::serve(listener, app).await?)
 }
 

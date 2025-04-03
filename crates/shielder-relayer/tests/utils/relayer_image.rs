@@ -1,5 +1,6 @@
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
+use alloy_primitives::Address;
 use shielder_relayer::{
     TokenInfo, FEE_DESTINATION_KEY_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV,
     RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_CONFIG_ENV,
@@ -25,7 +26,7 @@ impl RelayerImage {
         port: u16,
         metrics_port: u16,
         node_rpc_url: String,
-        shielder_address: String,
+        shielder_address: Address,
         fee_destination_key: String,
         signing_key: String,
         token_config: Vec<TokenInfo>,
@@ -38,7 +39,10 @@ impl RelayerImage {
                     format!("{metrics_port}"),
                 ),
                 (NODE_RPC_URL_ENV.to_string(), node_rpc_url),
-                (SHIELDER_CONTRACT_ADDRESS_ENV.to_string(), shielder_address),
+                (
+                    SHIELDER_CONTRACT_ADDRESS_ENV.to_string(),
+                    shielder_address.to_string(),
+                ),
                 (FEE_DESTINATION_KEY_ENV.to_string(), fee_destination_key),
                 (RELAYER_SIGNING_KEYS_ENV.to_string(), signing_key),
                 (
