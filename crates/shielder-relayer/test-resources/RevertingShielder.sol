@@ -18,4 +18,21 @@ contract RevertingShielder {
     ) external {
         revert();
     }
+
+    function withdrawERC20(
+        bytes3 expectedContractVersion,
+        address tokenAddress,
+        uint256 amount,
+        address withdrawalAddress,
+        uint256 merkleRoot,
+        uint256 oldNullifierHash,
+        uint256 newNote,
+        bytes calldata proof,
+        address relayerAddress,
+        uint256 relayerFee,
+        uint256 macSalt,
+        uint256 macCommitment
+    ) external payable {
+        revert();
+    }
 }

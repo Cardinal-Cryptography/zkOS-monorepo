@@ -48,6 +48,7 @@ utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 zip = { workspace = true }
 
 [dev-dependencies]
+parameterized = { workspace = true }
 rand = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 testcontainers = { workspace = true }

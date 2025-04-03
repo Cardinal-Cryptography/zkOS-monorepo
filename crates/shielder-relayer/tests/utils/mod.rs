@@ -2,7 +2,7 @@
 
 use std::{net::TcpListener, str::FromStr};
 
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{address, Address, Bytes, U256};
 use rand::Rng;
 use reqwest::Response;
 use rust_decimal::Decimal;
@@ -28,6 +28,8 @@ use crate::{
 
 pub mod config;
 pub mod relayer_image;
+
+pub const ERC20_ADDRESS: Address = address!("2222222222222222222222222222222222222222");
 
 /// Dockerized testing environment.
 pub struct TestContext {
@@ -56,10 +58,19 @@ impl TestContext {
             test_config.shielder_contract.address(),
             FEE_DESTINATION_KEY.to_string(),
             test_config.relayer_signer.signing_key(),
-            vec![TokenInfo {
-                kind: TokenKind::Native,
-                price_provider: PriceProvider::Static(Decimal::ONE),
-            }],
+            vec![
+                TokenInfo {
+                    kind: TokenKind::Native,
+                    price_provider: PriceProvider::Static(Decimal::ONE),
+                },
+                TokenInfo {
+                    kind: TokenKind::ERC20 {
+                        address: ERC20_ADDRESS,
+                        decimals: 18,
+                    },
+                    price_provider: PriceProvider::Static(Decimal::ONE),
+                },
+            ],
         ));
 
         Self {
@@ -69,11 +80,11 @@ impl TestContext {
         }
     }
 
-    pub async fn quote(&self) -> RelayQuote {
+    pub async fn quote(&self, fee_token: Token) -> RelayQuote {
         reqwest::Client::new()
             .post(format!("{BASE_URL}:{}/quote_fees", self.relayer_port))
             .json(&QuoteFeeQuery {
-                fee_token: Token::Native,
+                fee_token,
                 pocket_money: U256::ZERO,
             })
             .send()
@@ -85,12 +96,12 @@ impl TestContext {
             .into()
     }
 
-    pub async fn relay_with_quote(&self) -> Response {
-        let quote = self.quote().await;
-        self.relay(quote).await
+    pub async fn relay_with_quote(&self, fee_token: Token) -> Response {
+        let quote = self.quote(fee_token).await;
+        self.relay(quote, fee_token).await
     }
 
-    pub async fn relay(&self, quote: RelayQuote) -> Response {
+    pub async fn relay(&self, quote: RelayQuote, fee_token: Token) -> Response {
         reqwest::Client::new()
             .post(format!("{BASE_URL}:{}/relay", self.relayer_port))
             .json(&RelayQuery {
@@ -102,7 +113,7 @@ impl TestContext {
                     nullifier_hash: U256::ZERO,
                     new_note: U256::ZERO,
                     proof: Bytes::new(),
-                    fee_token: Token::Native,
+                    fee_token,
                     fee_amount: U256::from_str("100_000_000_000_000_000").unwrap(),
                     mac_salt: U256::ZERO,
                     mac_commitment: U256::ZERO,
