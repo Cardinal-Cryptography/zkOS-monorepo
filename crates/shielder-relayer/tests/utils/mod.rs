@@ -21,7 +21,7 @@ use testcontainers::{
 use crate::{
     ctx_assert,
     utils::{
-        config::{TestConfig, BASE_URL, FEE_DESTINATION, SIGNER_KEY},
+        config::{TestConfig, BASE_URL, FEE_DESTINATION, FEE_DESTINATION_KEY, SIGNER_KEY},
         relayer_image::RelayerImage,
     },
 };
@@ -56,7 +56,7 @@ impl TestContext {
             metrics_port,
             test_config.node_rpc_url.url(),
             test_config.shielder_contract.address(),
-            FEE_DESTINATION.to_string(),
+            FEE_DESTINATION_KEY.to_string(),
             SIGNER_KEY.to_string(),
             vec![
                 TokenInfo {

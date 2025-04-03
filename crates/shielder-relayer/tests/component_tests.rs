@@ -5,7 +5,7 @@ use shielder_account::Token;
 use shielder_relayer::{RelayResponse, SimpleServiceResponse};
 
 use crate::utils::{
-    config::{NodeRpcUrl, ShielderContract, TestConfig, SIGNER_ADDRESS},
+    config::{ShielderContract, TestConfig, SIGNER_ADDRESS},
     container_logs, response_message, TestContext, ERC20_ADDRESS,
 };
 
