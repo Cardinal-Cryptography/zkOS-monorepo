@@ -46,25 +46,16 @@ async fn recharging_worker(
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
     while let Some(relayer) = relay_reports.recv().await {
-        let relayer_balance = match provider.get_balance(relayer).await {
-            Ok(balance) => balance,
-            Err(err) => {
-                error!("Failed to retrieve balance: {err:?}");
-                continue;
-            }
-        };
-
-        if relayer_balance < recharge_threshold {
-            info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
-            if let Err(err) =
-                recharge_relayer(&provider, relayer, cornucopia_address, recharge_amount).await
-            {
-                error!("Failed to recharge relayer {relayer} with {recharge_amount}: {err}");
-            }
-        } else {
-            info!(
-            "Relayer {relayer} reported another expense. Their current balance: {relayer_balance} - no need to recharge."
-        );
+        if let Err(err) = try_recharging_relayer(
+            &provider,
+            relayer,
+            cornucopia_address,
+            recharge_threshold,
+            recharge_amount,
+        )
+        .await
+        {
+            error!("Recharging relayer failed: {err:?}");
         }
     }
 
@@ -72,7 +63,34 @@ async fn recharging_worker(
     bail!("Relay report channel closed");
 }
 
-async fn recharge_relayer(
+/// Recharges the relayer worker with the specified amount if its balance is below the threshold.
+pub async fn try_recharging_relayer(
+    provider: &impl Provider,
+    relayer: Address,
+    cornucopia_address: Address,
+    recharge_threshold: U256,
+    recharge_amount: U256,
+) -> Result<()> {
+    let relayer_balance = match provider.get_balance(relayer).await {
+        Ok(balance) => balance,
+        Err(err) => {
+            let msg = format!("Failed to retrieve relayer worker balance: {err:?}");
+            error!(msg);
+            bail!(msg);
+        }
+    };
+
+    if relayer_balance < recharge_threshold {
+        info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
+        recharge_relayer(provider, relayer, cornucopia_address, recharge_amount).await
+    } else {
+        info!("Relayer {relayer} has sufficient funds: {relayer_balance} - no need to recharge.");
+        Ok(())
+    }
+}
+
+/// Recharges the relayer worker with the specified amount.
+pub async fn recharge_relayer(
     provider: &impl Provider,
     relayer: Address,
     cornucopia_address: Address,
@@ -83,5 +101,6 @@ async fn recharge_relayer(
         .with_value(recharge_amount)
         .with_to(relayer);
     provider.send_transaction(tx).await?.watch().await?;
+    info!("Relayer {relayer} recharged with {recharge_amount}.");
     Ok(())
 }
