@@ -167,6 +167,7 @@ erc20_balance() {
 start_relayer() {
   cd "${ROOT_DIR}/crates/shielder-relayer/"
   make run &>> output.log
+  sleep 5 # Wait for the relayer to fund the signer accounts - temporary solution, better one incoming soon!
   cd "${ROOT_DIR}"
 
   log_progress "✅ Relayer started"

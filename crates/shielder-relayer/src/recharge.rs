@@ -4,11 +4,10 @@ use alloy_signer_local::PrivateKeySigner;
 use anyhow::{bail, Result};
 use shielder_contract::{
     alloy_primitives::{Address, U256},
-    providers::create_provider_with_nonce_caching_signer,
+    providers::create_provider_with_signer,
 };
 use tokio::sync::mpsc::{self, Receiver as MPSCReceiver, Sender as MPSCSender};
 use tracing::{error, info};
-use shielder_contract::providers::create_provider_with_signer;
 
 pub async fn start_recharging_worker(
     node_rpc_url: String,
