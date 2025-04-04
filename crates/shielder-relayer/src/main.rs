@@ -130,7 +130,6 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let fee_destination = signer(&config.keys.fee_destination_key)?;
     let fee_destination_address = fee_destination.address();
 
-    error!("KURWA - START");
     ensure_signers_have_funds(
         &config.chain.node_rpc_url,
         fee_destination.clone(),
@@ -138,7 +137,6 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         &config.operations,
     )
     .await?;
-    error!("KURWA - STOP");
 
     let report_for_recharge = start_recharging_worker(
         config.chain.node_rpc_url.clone(),
@@ -206,20 +204,14 @@ async fn ensure_signers_have_funds(
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_signer(node_rpc_urk, cornucopia).await?;
     for relayer in &signers.addresses {
-        error!("CHUJ");
-        let e = try_recharging_relayer(
+        try_recharging_relayer(
             &provider,
             *relayer,
             cornucopia_address,
             operational_config.recharge_threshold,
             operational_config.recharge_amount,
         )
-        .await;
-        error!("CHUJ - STOP");
-
-        if let Err(err) = e {
-            error!("Recharging relayer failed: {err:?}");
-        }
+        .await?;
     }
     Ok(())
 }
