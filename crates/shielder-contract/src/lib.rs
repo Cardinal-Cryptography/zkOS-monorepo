@@ -13,12 +13,12 @@ pub use types::*;
 mod api;
 pub mod call_type;
 mod connection;
+#[cfg(feature = "erc20")]
+pub mod erc20;
 pub mod events;
 pub mod merkle_path;
 pub mod providers;
 mod types;
-#[cfg(feature = "erc20")]
-pub mod erc20;
 
 /// Errors that can occur when interacting with the Shielder contract.
 #[allow(missing_docs)]

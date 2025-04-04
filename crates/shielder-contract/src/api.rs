@@ -129,7 +129,7 @@ impl<P: Provider + Clone> ShielderUser<P> {
         amount: U256,
     ) -> ContractResult<C::Result> {
         self.connection
-            .call::<C, _>(approveCall { spender, amount })
+            .call_with_address::<C, _>(contract_address, approveCall { spender, amount })
             .await
     }
 }
