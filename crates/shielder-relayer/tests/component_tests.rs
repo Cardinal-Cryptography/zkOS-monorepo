@@ -31,7 +31,7 @@ async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
 
     let metrics = test_context.get_metrics().await;
     ctx_assert!(
-        metrics.contains(&format!("signer_balances{{address=\"{SIGNER}\"}} 10000")),
+        metrics.contains(&format!("signer_balances{{address=\"{SIGNER}\"}} 20")),
         test_context
     );
 }

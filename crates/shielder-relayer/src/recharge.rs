@@ -9,7 +9,7 @@ use shielder_contract::{
 use tokio::sync::mpsc::{self, Receiver as MPSCReceiver, Sender as MPSCSender};
 use tracing::{error, info};
 
-pub async fn start_recharging_worker(
+pub fn start_recharging_worker(
     node_rpc_url: String,
     cornucopia: PrivateKeySigner,
     relay_workers: &[Address],
@@ -24,14 +24,6 @@ pub async fn start_recharging_worker(
         recharge_threshold,
         recharge_amount,
     ));
-
-    // Trigger the recharging worker to ensure that every worker has funds.
-    for relayer in relay_workers {
-        relay_report_sender
-            .send(*relayer)
-            .await
-            .expect("Relay report channel closed");
-    }
 
     relay_report_sender
 }

@@ -147,8 +147,7 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
         &signers.addresses,
         config.operations.recharge_threshold,
         config.operations.recharge_amount,
-    )
-    .await;
+    );
 
     let quote_cache = QuoteCache::new(config.operations.quote_validity);
     tokio::spawn(garbage_collector_worker(quote_cache.clone()));
