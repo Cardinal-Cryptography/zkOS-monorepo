@@ -2,7 +2,6 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && \
     apt-get install -y \
-      curl \
       libssl-dev \
       tini \
       ca-certificates && \
@@ -15,5 +14,3 @@ RUN useradd server
 USER server
 
 ENTRYPOINT ["tini", "--", "shielder-relayer"]
-HEALTHCHECK --interval=5s --timeout=3s --start-period=3s --retries=3 \
-  CMD curl -f "http://${RELAYER_HOST:-0.0.0.0}:${RELAYER_PORT:-4141}/health" || exit 1

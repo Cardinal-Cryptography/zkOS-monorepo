@@ -148,8 +148,9 @@ start_relayer() {
   make run &>> output.log
   cd "${ROOT_DIR}"
 
-  until [ "$(docker inspect --format='{{.State.Health.Status}}' shielder-relayer)" = "healthy" ]; do
-      sleep 1
+  while true; do
+     curl -s "${RELAYER_URL}/health" && break
+     sleep 1
   done
 
   log_progress "✅ Relayer started"
