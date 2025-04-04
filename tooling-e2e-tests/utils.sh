@@ -149,7 +149,7 @@ start_relayer() {
   cd "${ROOT_DIR}"
 
   while true; do
-     curl -s "${RELAYER_URL}/health" && break
+     curl -s "${RELAYER_URL}/health" &>> /dev/null && break
      sleep 1
   done
 
