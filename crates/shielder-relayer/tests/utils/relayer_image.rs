@@ -6,6 +6,8 @@ use shielder_relayer::{
 };
 use testcontainers::{core::WaitFor, Image};
 
+use crate::utils::config::{FEE_DESTINATION_KEY, SIGNER_KEY};
+
 /// Wrapper around `shielder-relayer` Docker image.
 ///
 /// # Building image
@@ -26,8 +28,6 @@ impl RelayerImage {
         metrics_port: u16,
         node_rpc_url: String,
         shielder_address: String,
-        fee_destination_key: String,
-        signing_key: String,
         token_config: Vec<TokenInfo>,
     ) -> Self {
         Self {
@@ -39,8 +39,11 @@ impl RelayerImage {
                 ),
                 (NODE_RPC_URL_ENV.to_string(), node_rpc_url),
                 (SHIELDER_CONTRACT_ADDRESS_ENV.to_string(), shielder_address),
-                (FEE_DESTINATION_KEY_ENV.to_string(), fee_destination_key),
-                (RELAYER_SIGNING_KEYS_ENV.to_string(), signing_key),
+                (
+                    FEE_DESTINATION_KEY_ENV.to_string(),
+                    FEE_DESTINATION_KEY.to_string(),
+                ),
+                (RELAYER_SIGNING_KEYS_ENV.to_string(), SIGNER_KEY.to_string()),
                 (
                     TOKEN_CONFIG_ENV.to_string(),
                     serde_json::to_string(&token_config).unwrap(),

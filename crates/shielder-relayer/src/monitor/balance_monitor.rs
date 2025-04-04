@@ -34,7 +34,7 @@ pub async fn balance_monitor(
     }
 }
 
-async fn set_balance(balances: &Balances, address: Address, balance: Option<U256>) {
+pub async fn set_balance(balances: &Balances, address: Address, balance: Option<U256>) {
     *balances
         .get(&address)
         .expect("Map should be already intialized")
