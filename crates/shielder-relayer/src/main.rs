@@ -124,10 +124,6 @@ async fn start_metrics_server(config: &ServerConfig, balances: Balances) -> Resu
 }
 
 async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Prices) -> Result<()> {
-    let address = config.network.main_address();
-    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
-    info!("Listening on {address}");
-
     let fee_destination = signer(&config.keys.fee_destination_key)?;
     let fee_destination_address = fee_destination.address();
 
@@ -180,6 +176,11 @@ async fn start_main_server(config: &ServerConfig, signers: Signers, prices: Pric
     let app = router
         .merge(SwaggerUi::new("/api").url("/api/openapi.json", api.clone()))
         .layer(CorsLayer::permissive());
+
+    let address = config.network.main_address();
+    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
+    info!("Server is ready. Listening on {address}");
+
     Ok(axum::serve(listener, app).await?)
 }
 
