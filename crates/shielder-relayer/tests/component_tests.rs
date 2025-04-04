@@ -44,29 +44,6 @@ async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
     );
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn when_relayer_signer_does_not_have_enough_funds_service_is_healthy() {
-    let config = TestConfig {
-        relayer_signer: RelayerSigner::NotEndowed,
-        ..standard_config()
-    };
-    let test_context = TestContext::new(config).await;
-
-    let health_response = test_context.reach_health().await;
-    ctx_assert!(health_response.status().is_success(), test_context);
-    ctx_assert_eq!(
-        simple_payload(health_response).await,
-        "Healthy",
-        test_context
-    );
-
-    let metrics = test_context.get_metrics().await;
-    ctx_assert!(
-        metrics.contains(&format!("signer_balances{{address=\"{POOR_ADDRESS}\"}} 0")),
-        test_context
-    );
-}
-
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
 #[parameterized_macro(tokio::test(flavor = "multi_thread"))]
 async fn relay_query_without_quote_before_fails(token: Token) {

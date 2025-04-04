@@ -12,7 +12,7 @@ use shielder_contract::{
 };
 use shielder_relayer::TokenInfo;
 use tower_http::cors::CorsLayer;
-use tracing::{error, info};
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -24,7 +24,10 @@ use crate::{
         ServerConfig,
     },
     metrics::{prometheus_endpoint, setup_metrics_handle},
-    monitor::{balance_monitor::balance_monitor, Balances},
+    monitor::{
+        balance_monitor::{balance_monitor, set_balance},
+        Balances,
+    },
     quote_cache::{garbage_collector_worker, QuoteCache},
     recharge::{start_recharging_worker, try_recharging_relayer},
     relay::Taskmaster,
@@ -204,7 +207,7 @@ async fn ensure_signers_have_funds(
     let cornucopia_address = cornucopia.address();
     let provider = create_provider_with_signer(node_rpc_urk, cornucopia).await?;
     for relayer in &signers.addresses {
-        try_recharging_relayer(
+        let relayer_balance = try_recharging_relayer(
             &provider,
             *relayer,
             cornucopia_address,
@@ -212,6 +215,8 @@ async fn ensure_signers_have_funds(
             operational_config.recharge_amount,
         )
         .await?;
+
+        set_balance(&signers.balances, *relayer, Some(relayer_balance)).await;
     }
     Ok(())
 }

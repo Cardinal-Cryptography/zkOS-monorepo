@@ -70,7 +70,7 @@ pub async fn try_recharging_relayer(
     cornucopia_address: Address,
     recharge_threshold: U256,
     recharge_amount: U256,
-) -> Result<()> {
+) -> Result<U256> {
     let relayer_balance = match provider.get_balance(relayer).await {
         Ok(balance) => balance,
         Err(err) => {
@@ -82,10 +82,11 @@ pub async fn try_recharging_relayer(
 
     if relayer_balance < recharge_threshold {
         info!("Relayer {relayer} has insufficient funds ({relayer_balance}). Recharging with {recharge_amount}.");
-        recharge_relayer(provider, relayer, cornucopia_address, recharge_amount).await
+        recharge_relayer(provider, relayer, cornucopia_address, recharge_amount).await?;
+        Ok(recharge_amount + relayer_balance)
     } else {
         info!("Relayer {relayer} has sufficient funds: {relayer_balance} - no need to recharge.");
-        Ok(())
+        Ok(relayer_balance)
     }
 }
 
