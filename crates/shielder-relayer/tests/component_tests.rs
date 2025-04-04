@@ -5,7 +5,7 @@ use shielder_account::Token;
 use shielder_relayer::{RelayResponse, SimpleServiceResponse};
 
 use crate::utils::{
-    config::{NodeRpcUrl, RelayerSigner, ShielderContract, TestConfig, POOR_ADDRESS, SIGNER},
+    config::{ShielderContract, TestConfig, SIGNER},
     container_logs, response_message, TestContext, ERC20_ADDRESS,
 };
 
@@ -17,17 +17,9 @@ async fn simple_payload(response: Response) -> String {
         .message
 }
 
-fn standard_config() -> TestConfig {
-    TestConfig {
-        shielder_contract: ShielderContract::Accepting,
-        relayer_signer: RelayerSigner::Endowed,
-        node_rpc_url: NodeRpcUrl::Valid,
-    }
-}
-
 #[tokio::test(flavor = "multi_thread")]
 async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
-    let test_context = TestContext::new(standard_config()).await;
+    let test_context = TestContext::default().await;
 
     let health_response = test_context.reach_health().await;
     ctx_assert!(health_response.status().is_success(), test_context);
@@ -47,7 +39,7 @@ async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
 #[parameterized_macro(tokio::test(flavor = "multi_thread"))]
 async fn relay_query_without_quote_before_fails(token: Token) {
-    let context = TestContext::new(standard_config()).await;
+    let context = TestContext::default().await;
     let response = context.relay(Default::default(), token).await;
 
     ctx_assert_eq!(response.status(), StatusCode::BAD_REQUEST, context);
@@ -61,7 +53,7 @@ async fn relay_query_without_quote_before_fails(token: Token) {
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
 #[parameterized_macro(tokio::test(flavor = "multi_thread"))]
 async fn server_returns_quotation(token: Token) {
-    let context = TestContext::new(standard_config()).await;
+    let context = TestContext::default().await;
     let quote = context.quote(token).await;
     assert_eq!(quote.native_token_unit_price, Decimal::new(1, 18));
     assert_eq!(quote.fee_token_unit_price, Decimal::new(1, 18));
@@ -70,7 +62,7 @@ async fn server_returns_quotation(token: Token) {
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
 #[parameterized_macro(tokio::test(flavor = "multi_thread"))]
 async fn when_contract_returns_ok_server_sings_success(token: Token) {
-    let test_context = TestContext::new(standard_config()).await;
+    let test_context = TestContext::default().await;
     let response = test_context.relay_with_quote(token).await;
 
     ctx_assert!(response.status().is_success(), test_context);
@@ -82,7 +74,7 @@ async fn when_contract_returns_ok_server_sings_success(token: Token) {
 async fn when_contract_reverts_server_screams_failure(token: Token) {
     let config = TestConfig {
         shielder_contract: ShielderContract::Reverting,
-        ..standard_config()
+        ..Default::default()
     };
     let test_context = TestContext::new(config).await;
 
@@ -98,7 +90,7 @@ async fn when_contract_reverts_server_screams_failure(token: Token) {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn metrics_register_withdrawals() {
-    let context = TestContext::new(standard_config()).await;
+    let context = TestContext::default().await;
 
     context.relay_with_quote(Token::Native).await;
     context.relay_with_quote(Token::ERC20(ERC20_ADDRESS)).await;
