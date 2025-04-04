@@ -135,27 +135,6 @@ mint_erc20_tokens() {
   log_progress "✅ Tokens minted"
 }
 
-approve_erc20_tokens() {
-  AMOUNT=$(mtzero 100000)
-
-  keys=("${ALICE_PRIVATE_KEY}" "${BOB_PRIVATE_KEY}" "${CHARLIE_PRIVATE_KEY}")
-
-  for key in "${keys[@]}"; do
-    for token in $(echo ${TOKEN_CONTRACT_ADDRESSES} | sed "s/,/ /g"); do
-      cast send \
-        --rpc-url "${NODE_RPC_URL}" \
-        --private-key "${key}" \
-        ${token} \
-        "approve(address,uint256)" \
-        ${SHIELDER_CONTRACT_ADDRESS} \
-        ${AMOUNT} \
-        &>> output.log
-    done
-  done
-
-  log_progress "✅ Tokens approved for spending by the shielder contract"
-}
-
 erc20_balance() {
   full_answer=$(cast call -r "${NODE_RPC_URL}" "${1}" "balanceOf(address)(uint256)" "${2}")
   echo "${full_answer}" | awk '{print $1;}'
@@ -232,7 +211,6 @@ setup() {
   deploy_shielder_contracts
   deploy_erc20_tokens
   mint_erc20_tokens
-  approve_erc20_tokens
 
   start_relayer
 }

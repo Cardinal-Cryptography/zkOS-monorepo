@@ -13,6 +13,8 @@ pub use types::*;
 mod api;
 pub mod call_type;
 mod connection;
+#[cfg(feature = "erc20")]
+pub mod erc20;
 pub mod events;
 pub mod merkle_path;
 pub mod providers;

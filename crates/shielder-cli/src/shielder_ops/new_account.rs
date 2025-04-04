@@ -31,7 +31,9 @@ pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -
             user.new_account_native::<Call>(call.try_into().unwrap(), amount)
                 .await?
         }
-        Token::ERC20(_) => {
+        Token::ERC20(address) => {
+            user.approve_erc20::<Call>(address, app_state.contract_address, U256::MAX)
+                .await?;
             user.new_account_erc20::<Call>(call.try_into().unwrap())
                 .await?
         }

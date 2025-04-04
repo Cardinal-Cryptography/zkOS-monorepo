@@ -25,3 +25,7 @@ type-conversions = { workspace = true }
 
 [dev-dependencies]
 halo2curves = { workspace = true }
+
+[features]
+default = []
+erc20 = []

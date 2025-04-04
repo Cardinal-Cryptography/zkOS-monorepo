@@ -2,6 +2,8 @@ use alloy_primitives::{Address, U256};
 use alloy_provider::Provider;
 use alloy_sol_types::SolCall;
 
+#[cfg(feature = "erc20")]
+use crate::erc20::ERC20::approveCall;
 use crate::{
     call_type::CallType,
     connection::{Connection, ConnectionPolicy, NoProvider},
@@ -116,6 +118,18 @@ impl<P: Provider + Clone> ShielderUser<P> {
     ) -> ContractResult<C::Result> {
         self.connection
             .call::<C, _>(anonymityRevokerPubkeyCall::new(()))
+            .await
+    }
+
+    #[cfg(feature = "erc20")]
+    pub async fn approve_erc20<C: CallType<approveCall>>(
+        &self,
+        contract_address: Address,
+        spender: Address,
+        amount: U256,
+    ) -> ContractResult<C::Result> {
+        self.connection
+            .call_with_address::<C, _>(contract_address, approveCall { spender, amount })
             .await
     }
 }
