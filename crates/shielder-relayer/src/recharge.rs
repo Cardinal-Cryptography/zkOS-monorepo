@@ -8,6 +8,7 @@ use shielder_contract::{
 };
 use tokio::sync::mpsc::{self, Receiver as MPSCReceiver, Sender as MPSCSender};
 use tracing::{error, info};
+use shielder_contract::providers::create_provider_with_signer;
 
 pub async fn start_recharging_worker(
     node_rpc_url: String,
@@ -44,7 +45,7 @@ async fn recharging_worker(
     recharge_amount: U256,
 ) -> Result<()> {
     let cornucopia_address = cornucopia.address();
-    let provider = create_provider_with_nonce_caching_signer(&node_rpc_url, cornucopia).await?;
+    let provider = create_provider_with_signer(&node_rpc_url, cornucopia).await?;
     while let Some(relayer) = relay_reports.recv().await {
         if let Err(err) = try_recharging_relayer(
             &provider,
