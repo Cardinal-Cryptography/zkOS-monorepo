@@ -14,6 +14,7 @@ import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
 import { AccountState, AccountStateMerkleIndexed } from "@/state/types";
 import { SendShielderTransaction } from "@/client/types";
+import { Address } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -54,7 +55,8 @@ export class DepositAction extends NoteAction {
   async prepareAdvice(
     state: AccountStateMerkleIndexed,
     amount: bigint,
-    merklePath: Uint8Array
+    merklePath: Uint8Array,
+    callerAddress: Address
   ): Promise<DepositAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
 
@@ -76,6 +78,7 @@ export class DepositAction extends NoteAction {
       tokenAddress: Scalar.fromAddress(tokenAddress),
       path: merklePath,
       value: Scalar.fromBigint(amount),
+      callerAddress: Scalar.fromAddress(callerAddress),
       nullifierNew,
       trapdoorNew,
       macSalt: await this.randomSalt()
@@ -86,12 +89,15 @@ export class DepositAction extends NoteAction {
    * Generate calldata for depositing `amount` into the account.
    * @param state current account state
    * @param amount amount to deposit
+   * @param expectedContractVersion expected contract version
+   * @param callerAddress address of the caller
    * @returns calldata for deposit action
    */
   async generateCalldata(
     state: AccountStateMerkleIndexed,
     amount: bigint,
-    expectedContractVersion: `0x${string}`
+    expectedContractVersion: `0x${string}`,
+    callerAddress: Address
   ): Promise<DepositCalldata> {
     const lastNodeIndex = state.currentNoteIndex;
     const [merklePath] = await this.merklePathAndRoot(
@@ -100,7 +106,12 @@ export class DepositAction extends NoteAction {
 
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount, merklePath);
+    const advice = await this.prepareAdvice(
+      state,
+      amount,
+      merklePath,
+      callerAddress
+    );
 
     const proof = await this.cryptoClient.depositCircuit
       .prove(advice)
@@ -130,6 +141,7 @@ export class DepositAction extends NoteAction {
    * Calls the contract through RPC endpoint to perform the deposit on the blockchain.
    * @param calldata calldata for deposit action
    * @param sendShielderTransaction function to send the transaction to the blockchain
+   * @param from address of the caller
    * @returns transaction hash of the deposit transaction
    * @throws VersionRejectedByContract
    */

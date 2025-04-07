@@ -7,7 +7,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 
-import { MockedCryptoClient, hashedNote } from "../helpers";
+import { hashedNote, MockedCryptoClient } from "../helpers";
 
 import { NewAccountAction } from "../../src/actions/newAccount";
 import { AccountState } from "../../src/state/types";
@@ -100,7 +100,8 @@ describe("NewAccountAction", () => {
       const calldata = await action.generateCalldata(
         mockedState,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       // Verify the proof
@@ -123,7 +124,12 @@ describe("NewAccountAction", () => {
       cryptoClient.newAccountCircuit.prove = mockProve;
 
       await expect(
-        action.generateCalldata(mockedState, amount, expectedVersion)
+        action.generateCalldata(
+          mockedState,
+          amount,
+          expectedVersion,
+          mockAddress
+        )
       ).rejects.toThrow(
         "Failed to prove new account: Error: mocked prove failure"
       );
@@ -143,7 +149,12 @@ describe("NewAccountAction", () => {
       cryptoClient.newAccountCircuit.verify = mockVerify;
 
       await expect(
-        action.generateCalldata(mockedState, amount, expectedVersion)
+        action.generateCalldata(
+          mockedState,
+          amount,
+          expectedVersion,
+          mockAddress
+        )
       ).rejects.toThrow("New account proof verification failed");
     });
   });
@@ -155,7 +166,8 @@ describe("NewAccountAction", () => {
       const calldata = await action.generateCalldata(
         mockedState,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockSendTransaction = vitest
@@ -199,7 +211,8 @@ describe("NewAccountAction", () => {
       const calldata = await action.generateCalldata(
         mockedState,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -238,7 +251,8 @@ describe("NewAccountAction", () => {
       const calldata = await action.generateCalldata(
         mockedState,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockSendTransaction = vitest

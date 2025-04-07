@@ -20,6 +20,7 @@ pub struct NewAccountPubInputsBytes {
     pub hashed_note: Vec<u8>,
     pub prenullifier: Vec<u8>,
     pub initial_deposit: Vec<u8>,
+    pub caller_address: Vec<u8>,
     pub token_address: Vec<u8>,
     pub anonymity_revoker_public_key_x: Vec<u8>,
     pub anonymity_revoker_public_key_y: Vec<u8>,
@@ -42,6 +43,9 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
             ),
             initial_deposit: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::InitialDeposit),
+            ),
+            caller_address: field_to_bytes(
+                knowledge.compute_public_input(NewAccountInstance::CallerAddress),
             ),
             token_address: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::TokenAddress),

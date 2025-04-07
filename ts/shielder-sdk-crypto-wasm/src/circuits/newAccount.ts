@@ -40,6 +40,7 @@ export class NewAccountCircuit
         values.nullifier.bytes,
         values.trapdoor.bytes,
         values.initialDeposit.bytes,
+        values.callerAddress.bytes,
         values.tokenAddress.bytes,
         values.encryptionSalt.bytes,
         values.macSalt.bytes,
@@ -63,6 +64,7 @@ export class NewAccountCircuit
       values.nullifier.bytes,
       values.trapdoor.bytes,
       values.initialDeposit.bytes,
+      values.callerAddress.bytes,
       values.tokenAddress.bytes,
       values.encryptionSalt.bytes,
       values.macSalt.bytes,
@@ -74,6 +76,7 @@ export class NewAccountCircuit
       hNote: new Scalar(pubInputsBytes.hashed_note),
       prenullifier: new Scalar(pubInputsBytes.prenullifier),
       initialDeposit: new Scalar(pubInputsBytes.initial_deposit),
+      callerAddress: new Scalar(pubInputsBytes.caller_address),
       tokenAddress: new Scalar(pubInputsBytes.token_address),
       anonymityRevokerPublicKeyX: new Scalar(
         pubInputsBytes.anonymity_revoker_public_key_x
@@ -104,6 +107,7 @@ export class NewAccountCircuit
           pubInputs.hNote.bytes,
           pubInputs.prenullifier.bytes,
           pubInputs.initialDeposit.bytes,
+          pubInputs.callerAddress.bytes,
           pubInputs.tokenAddress.bytes,
           pubInputs.anonymityRevokerPublicKeyX.bytes,
           pubInputs.anonymityRevokerPublicKeyY.bytes,

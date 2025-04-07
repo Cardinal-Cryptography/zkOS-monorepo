@@ -13,6 +13,7 @@ import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
 import { AccountState } from "@/state/types";
 import { SendShielderTransaction } from "@/client/types";
+import { Address } from "viem";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -53,7 +54,8 @@ export class NewAccountAction extends NoteAction {
 
   async prepareAdvice(
     state: AccountState,
-    amount: bigint
+    amount: bigint,
+    callerAddress: Address
   ): Promise<NewAccountAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
     const { nullifier, trapdoor } =
@@ -69,6 +71,7 @@ export class NewAccountAction extends NoteAction {
       trapdoor,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
+      callerAddress: Scalar.fromAddress(callerAddress),
       encryptionSalt: await this.randomSalt(),
       anonymityRevokerPublicKeyX: Scalar.fromBigint(anonymityRevokerPublicKeyX),
       anonymityRevokerPublicKeyY: Scalar.fromBigint(anonymityRevokerPublicKeyY),
@@ -80,16 +83,19 @@ export class NewAccountAction extends NoteAction {
    * Generate calldata for creation of a new account with an initial deposit.
    * @param state current account state
    * @param amount initial deposit
+   * @param expectedContractVersion expected contract version
+   * @param callerAddress address of the caller
    * @returns calldata for new account action
    */
   async generateCalldata(
     state: AccountState,
     amount: bigint,
-    expectedContractVersion: `0x${string}`
+    expectedContractVersion: `0x${string}`,
+    callerAddress: Address
   ): Promise<NewAccountCalldata> {
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount);
+    const advice = await this.prepareAdvice(state, amount, callerAddress);
 
     const proof = await this.cryptoClient.newAccountCircuit
       .prove(advice)
@@ -120,6 +126,7 @@ export class NewAccountAction extends NoteAction {
    * Calls the contract through RPC endpoint to create the account on the blockchain.
    * @param calldata calldata for new account action
    * @param sendShielderTransaction function to send the transaction to the blockchain
+   * @param from address of the caller
    * @returns transaction hash of the new account transaction
    */
   async sendCalldata(

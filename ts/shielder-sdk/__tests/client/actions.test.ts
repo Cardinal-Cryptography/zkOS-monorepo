@@ -61,6 +61,7 @@ describe("ShielderActions", () => {
         hNote: Scalar.fromBigint(0n),
         prenullifier: Scalar.fromBigint(0n),
         initialDeposit: Scalar.fromBigint(0n),
+        callerAddress: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
@@ -86,6 +87,7 @@ describe("ShielderActions", () => {
         hNullifierOld: Scalar.fromBigint(0n),
         hNoteNew: Scalar.fromBigint(0n),
         value: Scalar.fromBigint(0n),
+        callerAddress: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         macSalt: Scalar.fromBigint(0n),
         macCommitment: Scalar.fromBigint(0n)
@@ -292,6 +294,7 @@ describe("ShielderActions", () => {
           total_cost_fee_token: 0n,
           gas_cost_native: 0n,
           gas_cost_fee_token: 0n,
+          relayer_cost_native: 0n,
           commission_native: 0n,
           commission_fee_token: 0n
         },
@@ -345,7 +348,8 @@ describe("ShielderActions", () => {
         expect(mockNewAccountAction.generateCalldata).toHaveBeenCalledWith(
           mockAccountState,
           mockAmount,
-          contractVersion
+          contractVersion,
+          mockFrom
         );
         expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
           mockCalldata,
@@ -431,7 +435,8 @@ describe("ShielderActions", () => {
         expect(mockDepositAction.generateCalldata).toHaveBeenCalledWith(
           mockAccountState,
           mockAmount,
-          contractVersion
+          contractVersion,
+          mockFrom
         );
         expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
           mockCalldata,

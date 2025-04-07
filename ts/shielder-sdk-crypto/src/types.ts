@@ -5,6 +5,7 @@ export type NewAccountPubInputs<T> = {
   hNote: T;
   prenullifier: T;
   initialDeposit: T;
+  callerAddress: T;
   tokenAddress: T;
   anonymityRevokerPublicKeyX: T;
   anonymityRevokerPublicKeyY: T;
@@ -21,6 +22,7 @@ export type NewAccountAdvice<T> = {
   nullifier: T;
   trapdoor: T;
   initialDeposit: T;
+  callerAddress: T;
   tokenAddress: T;
   encryptionSalt: T;
   anonymityRevokerPublicKeyX: T;
@@ -34,6 +36,7 @@ export type DepositPubInputs<T> = {
   hNullifierOld: T;
   hNoteNew: T;
   value: T;
+  callerAddress: T;
   tokenAddress: T;
   macSalt: T;
   macCommitment: T;
@@ -47,6 +50,7 @@ export type DepositAdvice<T> = {
   tokenAddress: T;
   path: Uint8Array;
   value: T;
+  callerAddress: T;
   nullifierNew: T;
   trapdoorNew: T;
   macSalt: T;

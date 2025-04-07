@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, vitest, it } from "vitest";
+import { beforeEach, describe, expect, it, vitest } from "vitest";
 import {
   DepositAdvice,
   DepositPubInputs,
@@ -7,7 +7,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 
-import { MockedCryptoClient, hashedNote } from "../helpers";
+import { hashedNote, MockedCryptoClient } from "../helpers";
 
 import { DepositAction } from "../../src/actions/deposit";
 import { IContract } from "../../src/chain/contract";
@@ -109,7 +109,8 @@ describe("DepositAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       // Verify the proof
@@ -133,7 +134,7 @@ describe("DepositAction", () => {
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([0n]);
       await expect(
-        action.generateCalldata(state, amount, expectedVersion)
+        action.generateCalldata(state, amount, expectedVersion, mockAddress)
       ).rejects.toThrow("Wrong path length");
     });
 
@@ -147,7 +148,7 @@ describe("DepositAction", () => {
         .mockRejectedValue("error");
 
       await expect(
-        action.generateCalldata(state, amount, expectedVersion)
+        action.generateCalldata(state, amount, expectedVersion, mockAddress)
       ).rejects.toThrow("Failed to prove deposit:");
     });
 
@@ -166,7 +167,7 @@ describe("DepositAction", () => {
         .mockResolvedValue(false);
 
       await expect(
-        action.generateCalldata(state, amount, expectedVersion)
+        action.generateCalldata(state, amount, expectedVersion, mockAddress)
       ).rejects.toThrow("Deposit proof verification failed");
     });
   });
@@ -178,7 +179,8 @@ describe("DepositAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockSendTransaction = vitest
@@ -220,7 +222,8 @@ describe("DepositAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -256,7 +259,8 @@ describe("DepositAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -276,7 +280,8 @@ describe("DepositAction", () => {
       const calldata = await action.generateCalldata(
         state,
         amount,
-        expectedVersion
+        expectedVersion,
+        mockAddress
       );
 
       const mockSendTransaction = vitest
