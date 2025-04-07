@@ -36,6 +36,7 @@ pub fn prepare_call(
         &DepositExtra {
             merkle_path,
             mac_salt: U256::ZERO,
+            caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
         },
     );
     (calldata, note_index)

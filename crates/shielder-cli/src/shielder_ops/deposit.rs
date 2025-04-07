@@ -1,4 +1,4 @@
-use alloy_primitives::U256;
+use alloy_primitives::{Address, U256};
 use anyhow::Result;
 use shielder_account::{
     call_data::{DepositCall, DepositCallType, DepositExtra},
@@ -27,7 +27,13 @@ pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Re
     let shielder_user = app_state.create_shielder_user();
     let (_merkle_root, merkle_path) = get_current_merkle_path(leaf_index, &shielder_user).await?;
 
-    let call = prepare_call(app_state, amount, token, merkle_path)?;
+    let call = prepare_call(
+        app_state,
+        amount,
+        token,
+        merkle_path,
+        shielder_user.address(),
+    )?;
     let (tx_hash, block_hash) = match token {
         Token::Native => {
             shielder_user
@@ -68,11 +74,13 @@ fn prepare_call(
     amount: U256,
     token: Token,
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
+    caller_address: Address,
 ) -> Result<DepositCall> {
     let (params, pk) = get_proving_equipment(CircuitType::Deposit)?;
     let extra = DepositExtra {
         merkle_path,
         mac_salt: get_mac_salt(),
+        caller_address,
     };
 
     Ok(app_state.accounts[&token.address()]

@@ -283,23 +283,24 @@ contract Shielder is
     {
         if (nullifiers(prenullifier) != 0) revert DuplicatedNullifier();
         // @dev must follow the same order as in the circuit
-        uint256[] memory publicInputs = new uint256[](12);
+        uint256[] memory publicInputs = new uint256[](13);
         publicInputs[0] = newNote;
         publicInputs[1] = prenullifier;
         publicInputs[2] = amount;
-        publicInputs[3] = addressToUInt256(tokenAddress);
+        publicInputs[3] = addressToUInt256(msg.sender);
+        publicInputs[4] = addressToUInt256(tokenAddress);
 
         (uint256 arX, uint256 arY) = anonymityRevokerPubkey();
-        publicInputs[4] = arX;
-        publicInputs[5] = arY;
+        publicInputs[5] = arX;
+        publicInputs[6] = arY;
 
-        publicInputs[6] = symKeyEncryptionC1X;
-        publicInputs[7] = symKeyEncryptionC1Y;
-        publicInputs[8] = symKeyEncryptionC2X;
-        publicInputs[9] = symKeyEncryptionC2Y;
+        publicInputs[7] = symKeyEncryptionC1X;
+        publicInputs[8] = symKeyEncryptionC1Y;
+        publicInputs[9] = symKeyEncryptionC2X;
+        publicInputs[10] = symKeyEncryptionC2Y;
 
-        publicInputs[10] = macSalt;
-        publicInputs[11] = macCommitment;
+        publicInputs[11] = macSalt;
+        publicInputs[12] = macCommitment;
 
         bool success = NewAccountVerifier.verifyProof(proof, publicInputs);
 
@@ -422,14 +423,15 @@ contract Shielder is
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
 
         // @dev needs to match the order in the circuit
-        uint256[] memory publicInputs = new uint256[](7);
+        uint256[] memory publicInputs = new uint256[](8);
         publicInputs[0] = merkleRoot;
         publicInputs[1] = oldNullifierHash;
         publicInputs[2] = newNote;
         publicInputs[3] = amount;
-        publicInputs[4] = addressToUInt256(tokenAddress);
-        publicInputs[5] = macSalt;
-        publicInputs[6] = macCommitment;
+        publicInputs[4] = addressToUInt256(msg.sender);
+        publicInputs[5] = addressToUInt256(tokenAddress);
+        publicInputs[6] = macSalt;
+        publicInputs[7] = macCommitment;
 
         bool success = DepositVerifier.verifyProof(proof, publicInputs);
 

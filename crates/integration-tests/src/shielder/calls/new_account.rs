@@ -30,6 +30,7 @@ pub fn prepare_call(
             anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
             encryption_salt: U256::MAX,
             mac_salt: U256::ZERO,
+            caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
         },
     )
 }
