@@ -1,17 +1,17 @@
 #![allow(unused)]
 
-use std::{net::TcpListener, str::FromStr};
+use std::{fmt::Debug, net::TcpListener, str::FromStr};
 
 use alloy_primitives::{address, Address, Bytes, U256};
 use alloy_signer_local::PrivateKeySigner;
 use rand::Rng;
-use reqwest::Response;
+use reqwest::{Response, StatusCode};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_account::Token;
 use shielder_relayer::{
     PriceProvider, QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote,
-    SimpleServiceResponse, TokenInfo, TokenKind,
+    TokenInfo, TokenKind,
 };
 use shielder_setup::version::contract_version;
 use testcontainers::{
@@ -173,15 +173,6 @@ async fn start_container<I: Image>(container: ContainerRequest<I>) -> ContainerA
         .expect("Failed to start container")
 }
 
-pub async fn response_message<ResponseBody: for<'a> Deserialize<'a>>(
-    response: Response,
-) -> ResponseBody {
-    response
-        .json::<ResponseBody>()
-        .await
-        .expect("Failed to get response json body")
-}
-
 pub async fn container_logs(container: &ContainerAsync<impl Image>) -> String {
     let mut logs = String::new();
 
@@ -222,8 +213,16 @@ macro_rules! ctx_assert_eq {
     };
 }
 
-pub async fn simple_payload(response: Response) -> String {
-    response_message::<SimpleServiceResponse>(response)
+pub async fn ensure_response<ResponseBody: for<'a> Deserialize<'a> + Debug + PartialEq>(
+    response: Response,
+    status: StatusCode,
+    expected_payload: &ResponseBody,
+    context: &TestContext,
+) {
+    ctx_assert_eq!(response.status(), status, context);
+    let payload = response
+        .json::<ResponseBody>()
         .await
-        .message
+        .expect("Failed to get response json body");
+    ctx_assert_eq!(&payload, expected_payload, context);
 }

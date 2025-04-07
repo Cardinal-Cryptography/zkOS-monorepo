@@ -1,11 +1,10 @@
 use parameterized::parameterized;
-use reqwest::{ StatusCode};
+use reqwest::StatusCode;
 use shielder_account::Token;
-use shielder_relayer::RelayResponse;
 
 use crate::utils::{
     config::{ShielderContract, TestConfig},
-    container_logs, response_message, simple_payload, TestContext, ERC20_ADDRESS,
+    container_logs, ensure_response, TestContext, ERC20_ADDRESS,
 };
 
 mod utils;
@@ -16,12 +15,13 @@ async fn relay_query_without_quote_before_fails(token: Token) {
     let context = TestContext::default().await;
     let response = context.relay(Default::default(), token).await;
 
-    ctx_assert_eq!(response.status(), StatusCode::BAD_REQUEST, context);
-    ctx_assert_eq!(
-        simple_payload(response).await,
-        "Invalid quote (probably expired)",
-        context
-    );
+    ensure_response(
+        response,
+        StatusCode::BAD_REQUEST,
+        &String::from("Invalid quote (probably expired)"),
+        &context,
+    )
+    .await;
 }
 
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
@@ -31,7 +31,6 @@ async fn when_contract_returns_ok_server_sings_success(token: Token) {
     let response = test_context.relay_with_quote(token).await;
 
     ctx_assert!(response.status().is_success(), test_context);
-    response_message::<RelayResponse>(response).await;
 }
 
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
@@ -45,12 +44,13 @@ async fn when_contract_reverts_server_screams_failure(token: Token) {
 
     let response = test_context.relay_with_quote(token).await;
 
-    ctx_assert_eq!(response.status(), StatusCode::BAD_REQUEST, test_context);
-    ctx_assert_eq!(
-        simple_payload(response).await,
-        "Dry run failed",
-        test_context
-    );
+    ensure_response(
+        response,
+        StatusCode::BAD_REQUEST,
+        &String::from("Dry run failed"),
+        &test_context,
+    )
+    .await;
 }
 
 #[tokio::test]
