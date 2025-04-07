@@ -1,33 +1,40 @@
 use parameterized::parameterized;
+use reqwest::Response;
 use rust_decimal::Decimal;
 use shielder_account::Token;
 
-use crate::utils::{
-    container_logs, simple_payload, TestContext, ERC20_ADDRESS,
-};
+use crate::utils::{container_logs, simple_payload, TestContext, ERC20_ADDRESS};
 
 mod utils;
 
+async fn ensure_response(response: Response, expected_payload: &str, context: &TestContext) {
+    ctx_assert!(response.status().is_success(), context);
+    ctx_assert_eq!(simple_payload(response).await, expected_payload, context);
+}
+
 #[tokio::test]
 async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
-    let test_context = TestContext::default().await;
+    let context = TestContext::default().await;
 
-    let health_response = test_context.reach_health().await;
-    ctx_assert!(health_response.status().is_success(), test_context);
-    ctx_assert_eq!(
-        simple_payload(health_response).await,
-        "Healthy",
-        test_context
-    );
+    let response = context.reach("health").await;
+    ensure_response(response, "Healthy", &context).await;
 
-    let metrics = test_context.get_metrics().await;
+    let metrics = context.get_metrics().await;
     ctx_assert!(
         metrics.contains(&format!(
             "signer_balances{{address=\"{}\"}} 20",
-            test_context.signer.address()
+            context.signer.address()
         )),
-        test_context
+        context
     );
+}
+
+#[tokio::test]
+async fn server_provides_max_pocket_money() {
+    let context = TestContext::default().await;
+
+    let response = context.reach("max_pocket_money").await;
+    ensure_response(response, "100000000000000000", &context).await;
 }
 
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]

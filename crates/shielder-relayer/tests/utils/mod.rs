@@ -9,7 +9,10 @@ use reqwest::Response;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_account::Token;
-use shielder_relayer::{PriceProvider, QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote, SimpleServiceResponse, TokenInfo, TokenKind};
+use shielder_relayer::{
+    PriceProvider, QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote,
+    SimpleServiceResponse, TokenInfo, TokenKind,
+};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -137,8 +140,8 @@ impl TestContext {
         response.text().await.unwrap()
     }
 
-    pub async fn reach_health(&self) -> Response {
-        self.get("health", self.relayer_port).await
+    pub async fn reach(&self, path: &str) -> Response {
+        self.get(path, self.relayer_port).await
     }
 
     async fn get(&self, path: &str, port: u16) -> Response {
