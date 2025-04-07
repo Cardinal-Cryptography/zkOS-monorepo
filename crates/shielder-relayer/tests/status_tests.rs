@@ -3,7 +3,9 @@ use reqwest::Response;
 use rust_decimal::Decimal;
 use shielder_account::Token;
 
-use crate::utils::{container_logs, simple_payload, TestContext, ERC20_ADDRESS};
+use crate::utils::{
+    config::FEE_DESTINATION, container_logs, simple_payload, TestContext, ERC20_ADDRESS,
+};
 
 mod utils;
 
@@ -27,6 +29,14 @@ async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
         )),
         context
     );
+}
+
+#[tokio::test]
+async fn server_provides_fee_address() {
+    let context = TestContext::default().await;
+
+    let response = context.reach("fee_address").await;
+    ensure_response(response, FEE_DESTINATION, &context).await;
 }
 
 #[tokio::test]
