@@ -98,7 +98,7 @@ export class DepositCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
-          pubInputs.value.bytes,
+          pubInputs.callerAddress.bytes,
           pubInputs.tokenAddress.bytes,
           pubInputs.macSalt.bytes,
           pubInputs.macCommitment.bytes,
