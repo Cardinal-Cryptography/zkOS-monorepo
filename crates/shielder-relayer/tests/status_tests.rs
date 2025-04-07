@@ -2,10 +2,10 @@ use axum::http::StatusCode;
 use parameterized::parameterized;
 use rust_decimal::Decimal;
 use shielder_account::Token;
+use shielder_relayer::TokenKind;
 
 use crate::utils::{
-    config::FEE_DESTINATION, container_logs, ensure_response, TestContext,
-    ERC20_ADDRESS,
+    config::FEE_DESTINATION, container_logs, ensure_response, TestContext, ERC20_ADDRESS,
 };
 
 mod utils;
@@ -55,13 +55,25 @@ async fn server_provides_max_pocket_money() {
     .await;
 }
 
-// #[tokio::test]
-// async fn server_provides_supported_tokens() {
-//     let context = TestContext::default().await;
-//
-//     let response = context.reach("supported_tokens").await;
-//     ensure_response(response, "100000000000000000", &context).await;
-// }
+#[tokio::test]
+async fn server_provides_supported_tokens() {
+    let context = TestContext::default().await;
+
+    let response = context.reach("supported_tokens").await;
+    ensure_response(
+        response,
+        StatusCode::OK,
+        &vec![
+            TokenKind::Native,
+            TokenKind::ERC20 {
+                address: ERC20_ADDRESS,
+                decimals: 18,
+            },
+        ],
+        &context,
+    )
+    .await;
+}
 
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
 #[parameterized_macro(tokio::test)]
