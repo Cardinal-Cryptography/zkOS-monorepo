@@ -9,10 +9,7 @@ use reqwest::Response;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_account::Token;
-use shielder_relayer::{
-    PriceProvider, QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote,
-    TokenInfo, TokenKind,
-};
+use shielder_relayer::{PriceProvider, QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote, SimpleServiceResponse, TokenInfo, TokenKind};
 use shielder_setup::version::contract_version;
 use testcontainers::{
     core::IntoContainerPort, runners::AsyncRunner, ContainerAsync, ContainerRequest, Image,
@@ -220,4 +217,10 @@ macro_rules! ctx_assert_eq {
             container_logs(&$context.relayer_container).await
         );
     };
+}
+
+pub async fn simple_payload(response: Response) -> String {
+    response_message::<SimpleServiceResponse>(response)
+        .await
+        .message
 }
