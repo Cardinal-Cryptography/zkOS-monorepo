@@ -75,6 +75,17 @@ async fn server_provides_supported_tokens() {
     .await;
 }
 
+#[tokio::test]
+async fn server_provides_api() {
+    let context = TestContext::default().await;
+
+    let response = context.reach("api").await;
+    ctx_assert!(response.status().is_success(), context);
+
+    let response = context.reach("api/openapi.json").await;
+    ctx_assert!(response.status().is_success(), context);
+}
+
 #[parameterized(token = { Token::Native, Token::ERC20(ERC20_ADDRESS) })]
 #[parameterized_macro(tokio::test)]
 async fn server_returns_quotation(token: Token) {
