@@ -277,6 +277,8 @@ contract Shielder is
         fieldElement(symKeyEncryptionC1Y)
         fieldElement(symKeyEncryptionC2X)
         fieldElement(symKeyEncryptionC2Y)
+        fieldElement(macSalt)
+        fieldElement(macCommitment)
         returns (uint256)
     {
         if (nullifiers(prenullifier) != 0) revert DuplicatedNullifier();
@@ -411,6 +413,8 @@ contract Shielder is
         restrictContractVersion(expectedContractVersion)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
+        fieldElement(macSalt)
+        fieldElement(macCommitment)
         returns (uint256)
     {
         if (amount == 0) revert ZeroAmount();
