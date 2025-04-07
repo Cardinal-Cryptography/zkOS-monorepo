@@ -204,6 +204,6 @@ export class Relayer implements IRelayer {
       throw new Error(`${responseText}`);
     }
 
-    return (await response.text()) as `0x${string}`;
+    return (await response.json()) as `0x${string}`;
   };
 }
