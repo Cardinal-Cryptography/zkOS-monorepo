@@ -11,7 +11,10 @@ use shielder_account::{
 use shielder_contract::{
     events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
 };
-use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayResponse};
+use shielder_relayer::{
+    QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayResponse,
+    SimpleServiceResponse,
+};
 use shielder_setup::version::contract_version;
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -127,7 +130,10 @@ async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address>
             relayer_response.status()
         );
     }
-    let address = relayer_response.text().await?;
+    let address = relayer_response
+        .json::<SimpleServiceResponse>()
+        .await?
+        .message;
     Ok(Address::from_str(&address)?)
 }
 

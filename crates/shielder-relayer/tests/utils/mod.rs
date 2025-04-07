@@ -1,10 +1,11 @@
 #![allow(unused)]
 
-use std::{net::TcpListener, str::FromStr};
+use std::{fmt::Debug, net::TcpListener, str::FromStr};
 
 use alloy_primitives::{address, Address, Bytes, U256};
+use alloy_signer_local::PrivateKeySigner;
 use rand::Rng;
-use reqwest::Response;
+use reqwest::{Response, StatusCode};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use shielder_account::Token;
@@ -39,6 +40,8 @@ pub struct TestContext {
     pub relayer_port: u16,
     /// Exposed HTTP port of the relayer's metrics.
     pub relayer_metrics_port: u16,
+    /// Relay worker private key.
+    pub signer: PrivateKeySigner,
 }
 
 impl TestContext {
@@ -51,11 +54,13 @@ impl TestContext {
     pub async fn new(test_config: TestConfig) -> Self {
         let port = get_free_port();
         let metrics_port = get_free_port();
+        let signer = PrivateKeySigner::random();
         let relayer_container = ContainerRequest::from(RelayerImage::new(
             port,
             metrics_port,
             test_config.node_rpc_url.url(),
             test_config.shielder_contract.address(),
+            signer.to_bytes().to_string(),
             vec![
                 TokenInfo {
                     kind: TokenKind::Native,
@@ -75,6 +80,7 @@ impl TestContext {
             relayer_container: start_container(relayer_container).await,
             relayer_port: port,
             relayer_metrics_port: metrics_port,
+            signer,
         }
     }
 
@@ -134,8 +140,8 @@ impl TestContext {
         response.text().await.unwrap()
     }
 
-    pub async fn reach_health(&self) -> Response {
-        self.get("health", self.relayer_port).await
+    pub async fn reach(&self, path: &str) -> Response {
+        self.get(path, self.relayer_port).await
     }
 
     async fn get(&self, path: &str, port: u16) -> Response {
@@ -165,15 +171,6 @@ async fn start_container<I: Image>(container: ContainerRequest<I>) -> ContainerA
         .start()
         .await
         .expect("Failed to start container")
-}
-
-pub async fn response_message<ResponseBody: for<'a> Deserialize<'a>>(
-    response: Response,
-) -> ResponseBody {
-    response
-        .json::<ResponseBody>()
-        .await
-        .expect("Failed to get response json body")
 }
 
 pub async fn container_logs(container: &ContainerAsync<impl Image>) -> String {
@@ -214,4 +211,18 @@ macro_rules! ctx_assert_eq {
             container_logs(&$context.relayer_container).await
         );
     };
+}
+
+pub async fn ensure_response<ResponseBody: for<'a> Deserialize<'a> + Debug + PartialEq>(
+    response: Response,
+    status: StatusCode,
+    expected_payload: &ResponseBody,
+    context: &TestContext,
+) {
+    ctx_assert_eq!(response.status(), status, context);
+    let payload = response
+        .json::<ResponseBody>()
+        .await
+        .expect("Failed to get response json body");
+    ctx_assert_eq!(&payload, expected_payload, context);
 }
