@@ -5,7 +5,7 @@ use shielder_account::Token;
 use shielder_relayer::{RelayResponse, SimpleServiceResponse};
 
 use crate::utils::{
-    config::{ShielderContract, TestConfig, SIGNER},
+    config::{ShielderContract, TestConfig},
     container_logs, response_message, TestContext, ERC20_ADDRESS,
 };
 
@@ -31,7 +31,10 @@ async fn in_correct_setting_service_is_healthy_and_signers_have_funds() {
 
     let metrics = test_context.get_metrics().await;
     ctx_assert!(
-        metrics.contains(&format!("signer_balances{{address=\"{SIGNER}\"}} 20")),
+        metrics.contains(&format!(
+            "signer_balances{{address=\"{}\"}} 20",
+            test_context.signer.address()
+        )),
         test_context
     );
 }

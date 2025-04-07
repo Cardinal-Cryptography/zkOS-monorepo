@@ -3,6 +3,7 @@
 use std::{net::TcpListener, str::FromStr};
 
 use alloy_primitives::{address, Address, Bytes, U256};
+use alloy_signer_local::PrivateKeySigner;
 use rand::Rng;
 use reqwest::Response;
 use rust_decimal::Decimal;
@@ -39,6 +40,8 @@ pub struct TestContext {
     pub relayer_port: u16,
     /// Exposed HTTP port of the relayer's metrics.
     pub relayer_metrics_port: u16,
+    /// Relay worker private key.
+    pub signer: PrivateKeySigner,
 }
 
 impl TestContext {
@@ -51,11 +54,13 @@ impl TestContext {
     pub async fn new(test_config: TestConfig) -> Self {
         let port = get_free_port();
         let metrics_port = get_free_port();
+        let signer = PrivateKeySigner::random();
         let relayer_container = ContainerRequest::from(RelayerImage::new(
             port,
             metrics_port,
             test_config.node_rpc_url.url(),
             test_config.shielder_contract.address(),
+            signer.to_bytes().to_string(),
             vec![
                 TokenInfo {
                     kind: TokenKind::Native,
@@ -75,6 +80,7 @@ impl TestContext {
             relayer_container: start_container(relayer_container).await,
             relayer_port: port,
             relayer_metrics_port: metrics_port,
+            signer,
         }
     }
 
