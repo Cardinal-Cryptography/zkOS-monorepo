@@ -122,6 +122,7 @@ pub struct NewAccountCallExtra {
     pub anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     pub encryption_salt: U256,
     pub mac_salt: U256,
+    pub caller_address: Address,
 }
 
 pub enum NewAccountCallType {}
@@ -141,6 +142,7 @@ impl CallType for NewAccountCallType {
             nullifier: u256_to_field(account.next_nullifier()),
             trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
+            caller_address: address_to_field(extra.caller_address),
             token_address: address_to_field(token.address()),
             encryption_salt: field_element_to_le_bits::<Fr>(u256_to_field(extra.encryption_salt)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
@@ -234,6 +236,7 @@ impl TryFrom<DepositCall> for depositERC20Call {
 pub struct DepositExtra {
     pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
     pub mac_salt: U256,
+    pub caller_address: Address,
 }
 
 pub enum DepositCallType {}
@@ -262,6 +265,7 @@ impl CallType for DepositCallType {
             nullifier_old: u256_to_field(nullifier_old),
             trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
+            caller_address: address_to_field(extra.caller_address),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             deposit_value: u256_to_field(amount),

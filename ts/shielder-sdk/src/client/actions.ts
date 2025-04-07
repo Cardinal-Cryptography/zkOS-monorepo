@@ -9,8 +9,8 @@ import { Hash, PublicClient } from "viem";
 import { StateSynchronizer } from "@/state/sync/synchronizer";
 import {
   IRelayer,
-  quotedFeesFromExpectedTokenFee,
-  QuotedFees
+  QuotedFees,
+  quotedFeesFromExpectedTokenFee
 } from "@/chain/relayer";
 import { NewAccountAction } from "@/actions/newAccount";
 import { DepositAction } from "@/actions/deposit";
@@ -173,7 +173,12 @@ export class ShielderActions {
     const state = await this.accountRegistry.createEmptyAccountState(token);
     const txHash = await this.handleCalldata(
       () =>
-        this.newAccountAction.generateCalldata(state, amount, contractVersion),
+        this.newAccountAction.generateCalldata(
+          state,
+          amount,
+          contractVersion,
+          from
+        ),
       (calldata) =>
         this.newAccountAction.sendCalldata(
           calldata,
@@ -192,7 +197,13 @@ export class ShielderActions {
     from: `0x${string}`
   ) {
     const txHash = await this.handleCalldata(
-      () => this.depositAction.generateCalldata(state, amount, contractVersion),
+      () =>
+        this.depositAction.generateCalldata(
+          state,
+          amount,
+          contractVersion,
+          from
+        ),
       (calldata) =>
         this.depositAction.sendCalldata(
           calldata,

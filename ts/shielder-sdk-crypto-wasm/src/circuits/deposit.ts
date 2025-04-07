@@ -1,8 +1,8 @@
 import {
-  Proof,
   DepositAdvice,
-  DepositPubInputs,
   DepositCircuit as IDepositCircuit,
+  DepositPubInputs,
+  Proof,
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Caller } from "../wasmClient";
@@ -42,6 +42,7 @@ export class DepositCircuit
         values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
+        values.callerAddress.bytes,
         values.nullifierNew.bytes,
         values.trapdoorNew.bytes,
         values.macSalt.bytes
@@ -66,6 +67,7 @@ export class DepositCircuit
       values.tokenAddress.bytes,
       values.path,
       values.value.bytes,
+      values.callerAddress.bytes,
       values.nullifierNew.bytes,
       values.trapdoorNew.bytes,
       values.macSalt.bytes
@@ -75,6 +77,7 @@ export class DepositCircuit
       hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
       hNoteNew: new Scalar(pubInputsBytes.h_note_new),
       value: new Scalar(pubInputsBytes.value),
+      callerAddress: new Scalar(pubInputsBytes.caller_address),
       tokenAddress: new Scalar(pubInputsBytes.token_address),
       macSalt: new Scalar(pubInputsBytes.mac_salt),
       macCommitment: new Scalar(pubInputsBytes.mac_commitment)
@@ -95,6 +98,7 @@ export class DepositCircuit
           pubInputs.hNullifierOld.bytes,
           pubInputs.hNoteNew.bytes,
           pubInputs.value.bytes,
+          pubInputs.callerAddress.bytes,
           pubInputs.tokenAddress.bytes,
           pubInputs.macSalt.bytes,
           pubInputs.macCommitment.bytes,

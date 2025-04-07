@@ -59,6 +59,7 @@ impl Actor {
                     anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
                     encryption_salt: U256::MAX,
                     mac_salt: U256::ZERO,
+                    caller_address: self.shielder_user.address(),
                 },
             )
             .try_into()
