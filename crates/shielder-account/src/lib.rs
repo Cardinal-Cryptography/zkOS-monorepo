@@ -17,7 +17,7 @@ use type_conversions::{address_to_field, field_to_address, field_to_u256, u256_t
 /// Shielder account state for a single token.
 #[derive(Clone, Eq, Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct ShielderAccount {
-    /// The seed used to generate nullifiers and trapdoors. The only secret we need to preserve to
+    /// The seed used to generate nullifiers. The only secret we need to preserve to
     /// restore the account.
     ///
     /// WARNING: You SHOULD NOT use `Self::Default` in production, as this will set the seed to
@@ -25,7 +25,7 @@ pub struct ShielderAccount {
     pub id: U256,
     /// The token used in the account.
     pub token: Token,
-    /// The nonce used to generate nullifiers and trapdoors. It is incremented after each action.
+    /// The nonce used to generate nullifiers. It is incremented after each action.
     pub nonce: u32,
     /// The total current amount of tokens shielded by the account.
     pub shielded_amount: U256,
@@ -100,7 +100,6 @@ impl ShielderAccount {
             version: contract_version().note_version(),
             id: u256_to_field(self.id),
             nullifier: u256_to_field(self.previous_nullifier()),
-            trapdoor: u256_to_field(self.previous_trapdoor().unwrap()), // safe unwrap
             account_balance: u256_to_field(self.shielded_amount),
             token_address: address_to_field(token.address()),
         });
@@ -118,18 +117,6 @@ impl ShielderAccount {
         self.nonce.checked_sub(1).map_or(self.id, |nonce| {
             secrets::nonced::derive_nullifier(self.id, nonce)
         })
-    }
-
-    /// Generate the trapdoor for the next action to be done.
-    pub fn next_trapdoor(&self) -> U256 {
-        secrets::nonced::derive_trapdoor(self.id, self.nonce)
-    }
-
-    /// Generate the trapdoor for the previous action. If the account has no actions, return `None`.
-    pub fn previous_trapdoor(&self) -> Option<U256> {
-        self.nonce
-            .checked_sub(1)
-            .map(|nonce| secrets::nonced::derive_trapdoor(self.id, nonce))
     }
 }
 

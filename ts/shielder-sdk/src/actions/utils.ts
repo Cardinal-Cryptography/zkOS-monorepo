@@ -17,7 +17,7 @@ export abstract class NoteAction {
     balanceChange: (currentBalance: bigint, amount: bigint) => bigint
   ): Promise<AccountState | null> {
     const tokenAddress = getAddressByToken(stateOld.token);
-    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
+    const { nullifier: nullifierNew } =
       await this.cryptoClient.secretManager.getSecrets(
         stateOld.id,
         Number(stateOld.nonce)
@@ -38,7 +38,6 @@ export abstract class NoteAction {
       version,
       stateOld.id,
       nullifierNew,
-      trapdoorNew,
       hAccountBalanceNew
     ]);
     return {

@@ -37,14 +37,12 @@ export class DepositCircuit
       this.wasmCircuit.prove(
         values.id.bytes,
         values.nullifierOld.bytes,
-        values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
         values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
         values.callerAddress.bytes,
         values.nullifierNew.bytes,
-        values.trapdoorNew.bytes,
         values.macSalt.bytes
       )
     );
@@ -62,14 +60,12 @@ export class DepositCircuit
     const pubInputsBytes = this.wasmModule.deposit_pub_inputs(
       values.id.bytes,
       values.nullifierOld.bytes,
-      values.trapdoorOld.bytes,
       values.accountBalanceOld.bytes,
       values.tokenAddress.bytes,
       values.path,
       values.value.bytes,
       values.callerAddress.bytes,
       values.nullifierNew.bytes,
-      values.trapdoorNew.bytes,
       values.macSalt.bytes
     );
     return Promise.resolve({

@@ -23,9 +23,7 @@ use crate::{ShielderAccount, Token};
 
 struct ActionSecrets {
     nullifier_old: U256,
-    trapdoor_old: U256,
     nullifier_new: U256,
-    trapdoor_new: U256,
 }
 
 #[derive(Clone, Debug)]
@@ -140,7 +138,6 @@ impl CallType for NewAccountCallType {
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
             nullifier: u256_to_field(account.next_nullifier()),
-            trapdoor: u256_to_field(account.next_trapdoor()),
             initial_deposit: u256_to_field(amount),
             caller_address: address_to_field(extra.caller_address),
             token_address: address_to_field(token.address()),
@@ -254,23 +251,19 @@ impl CallType for DepositCallType {
     ) -> Self::ProverKnowledge {
         let ActionSecrets {
             nullifier_old,
-            trapdoor_old,
             nullifier_new,
-            trapdoor_new,
             ..
         } = account.get_secrets();
 
         DepositProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
-            trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
             caller_address: address_to_field(extra.caller_address),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             deposit_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
-            trapdoor_new: u256_to_field(trapdoor_new),
             mac_salt: u256_to_field(extra.mac_salt),
         }
     }
@@ -384,9 +377,7 @@ impl CallType for WithdrawCallType {
     ) -> Self::ProverKnowledge {
         let ActionSecrets {
             nullifier_old,
-            trapdoor_old,
             nullifier_new,
-            trapdoor_new,
             ..
         } = account.get_secrets();
 
@@ -403,13 +394,11 @@ impl CallType for WithdrawCallType {
         WithdrawProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
-            trapdoor_old: u256_to_field(trapdoor_old),
             account_old_balance: u256_to_field(account.shielded_amount),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
             withdrawal_value: u256_to_field(amount),
             nullifier_new: u256_to_field(nullifier_new),
-            trapdoor_new: u256_to_field(trapdoor_new),
             commitment: u256_to_field(commitment),
             mac_salt: u256_to_field(extra.mac_salt),
         }
@@ -455,18 +444,11 @@ impl ShielderAccount {
 
     fn get_secrets(&self) -> ActionSecrets {
         let nullifier_old = self.previous_nullifier();
-        let trapdoor_old = self
-            .previous_trapdoor()
-            .expect("The first action cannot refer to a previous trapdoor");
-
         let nullifier_new = self.next_nullifier();
-        let trapdoor_new = self.next_trapdoor();
 
         ActionSecrets {
             nullifier_old,
-            trapdoor_old,
             nullifier_new,
-            trapdoor_new,
         }
     }
 }

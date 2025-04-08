@@ -3,7 +3,6 @@ use sha3::Digest;
 
 enum Label {
     Nullifier,
-    Trapdoor,
     Id,
 }
 
@@ -11,7 +10,6 @@ impl Label {
     fn as_bytes(&self) -> &'static [u8] {
         match self {
             Label::Nullifier => b"nullifier",
-            Label::Trapdoor => b"trapdoor",
             Label::Id => b"id",
         }
     }
@@ -45,15 +43,6 @@ pub mod nonced {
         hasher.update(nonce.to_be_bytes());
         finalize_hash(hasher)
     }
-
-    /// Returns a pseudorandom field element deterministically computed from `id` and `nonce`.
-    pub fn derive_trapdoor(id: U256, nonce: u32) -> U256 {
-        let mut hasher = sha3::Keccak256::new();
-        hasher.update(id.to_be_bytes_vec());
-        hasher.update(Label::Trapdoor.as_bytes());
-        hasher.update(nonce.to_be_bytes());
-        finalize_hash(hasher)
-    }
 }
 
 /// Private-key-dependent derivation of a per-chain & per-token private ID.
@@ -73,11 +62,7 @@ mod tests {
     use alloy_primitives::U256;
     use halo2curves::{bn256::Fr, ff::PrimeField};
 
-    use crate::secrets::{
-        derive_id,
-        nonced::{derive_nullifier, derive_trapdoor},
-        FIELD_MODULUS,
-    };
+    use crate::secrets::{derive_id, nonced::derive_nullifier, FIELD_MODULUS};
 
     #[test]
     pub fn modulus_constant_is_correct() {
@@ -98,22 +83,6 @@ mod tests {
                 .unwrap();
 
         let actual = derive_nullifier(U256::from(15), 0x000000ff);
-
-        assert_ne!(expected_before_modulo, actual);
-        assert_eq!(expected_before_modulo.reduce_mod(FIELD_MODULUS), actual)
-    }
-
-    #[test]
-    pub fn derive_trapdoor_is_correct() {
-        // Calculated using online tools as the Keccak-256 of the concatenation of:
-        //   000000000000000000000000000000000000000000000000000000000000000f
-        //   74726170646f6f72 ("trapdoor")
-        //   000000ef
-        let expected_before_modulo =
-            U256::from_str("0x878855043883a06951384006c159237f0df9a2c6ede19441f7bfaf1b4ff517b1")
-                .unwrap();
-
-        let actual = derive_trapdoor(U256::from(15), 0x000000ef);
 
         assert_ne!(expected_before_modulo, actual);
         assert_eq!(expected_before_modulo.reduce_mod(FIELD_MODULUS), actual)

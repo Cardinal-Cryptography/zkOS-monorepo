@@ -75,11 +75,8 @@ const id = await cryptoClient.secretManager.deriveId(
   0 // account nonce
 );
 
-// Get secrets (trapdoor & nullifier) for a specific account and nonce
-const { nullifier, trapdoor } = await cryptoClient.secretManager.getSecrets(
-  id,
-  nonce
-);
+// Get secrets (nullifier) for a specific account and nonce
+const { nullifier } = await cryptoClient.secretManager.getSecrets(id, nonce);
 ```
 
 ## Implementations

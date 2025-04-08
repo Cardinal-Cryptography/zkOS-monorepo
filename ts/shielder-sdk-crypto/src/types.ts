@@ -20,7 +20,6 @@ export type NewAccountPubInputs<T> = {
 export type NewAccountAdvice<T> = {
   id: T;
   nullifier: T;
-  trapdoor: T;
   initialDeposit: T;
   callerAddress: T;
   tokenAddress: T;
@@ -45,14 +44,12 @@ export type DepositPubInputs<T> = {
 export type DepositAdvice<T> = {
   id: T;
   nullifierOld: T;
-  trapdoorOld: T;
   accountBalanceOld: T;
   tokenAddress: T;
   path: Uint8Array;
   value: T;
   callerAddress: T;
   nullifierNew: T;
-  trapdoorNew: T;
   macSalt: T;
 };
 
@@ -71,18 +68,15 @@ export type WithdrawPubInputs<T> = {
 export type WithdrawAdvice<T> = {
   id: T;
   nullifierOld: T;
-  trapdoorOld: T;
   accountBalanceOld: T;
   tokenAddress: T;
   path: Uint8Array;
   value: T;
   nullifierNew: T;
-  trapdoorNew: T;
   commitment: T;
   macSalt: T;
 };
 
 export type ShielderActionSecrets<T> = {
   nullifier: T;
-  trapdoor: T;
 };

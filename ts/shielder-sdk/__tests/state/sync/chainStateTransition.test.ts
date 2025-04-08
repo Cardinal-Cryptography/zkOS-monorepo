@@ -80,8 +80,7 @@ describe("ChainStateTransition", () => {
       };
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
-        nullifier: mockNullifier,
-        trapdoor: Scalar.fromBigint(0n)
+        nullifier: mockNullifier
       });
 
       vi.spyOn(mockCryptoClient.hasher, "poseidonHash").mockResolvedValue(
@@ -119,8 +118,7 @@ describe("ChainStateTransition", () => {
       const mockNullifierHash = Scalar.fromBigint(456n);
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
-        nullifier: mockNullifier,
-        trapdoor: Scalar.fromBigint(0n)
+        nullifier: mockNullifier
       });
 
       vi.spyOn(mockCryptoClient.hasher, "poseidonHash").mockResolvedValue(
@@ -177,8 +175,7 @@ describe("ChainStateTransition", () => {
       };
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
-        nullifier: mockNullifier,
-        trapdoor: Scalar.fromBigint(0n)
+        nullifier: mockNullifier
       });
 
       vi.spyOn(mockCryptoClient.hasher, "poseidonHash").mockResolvedValue(
@@ -199,8 +196,7 @@ describe("ChainStateTransition", () => {
       const mockNullifierHash = Scalar.fromBigint(456n);
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
-        nullifier: mockNullifier,
-        trapdoor: Scalar.fromBigint(0n)
+        nullifier: mockNullifier
       });
 
       vi.spyOn(mockCryptoClient.hasher, "poseidonHash").mockResolvedValue(
@@ -232,8 +228,7 @@ describe("ChainStateTransition", () => {
       };
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
-        nullifier: mockNullifier,
-        trapdoor: Scalar.fromBigint(0n)
+        nullifier: mockNullifier
       });
 
       vi.spyOn(mockCryptoClient.hasher, "poseidonHash").mockResolvedValue(

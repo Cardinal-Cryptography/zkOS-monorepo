@@ -52,14 +52,12 @@ const fullArityHash = async (inputs: Scalar[]): Promise<Scalar> => {
 export const hashedNote = async (
   id: Scalar,
   nullifier: Scalar,
-  trapdoor: Scalar,
   amount: Scalar
 ): Promise<Scalar> => {
   return mockedHash([
     Scalar.fromBigint(NOTE_VERSION),
     id,
     nullifier,
-    trapdoor,
     await fullArityHash([amount])
   ]);
 };
@@ -104,11 +102,6 @@ class MockedSecretManager implements SecretManager {
         id,
         Scalar.fromBigint(BigInt(nonce)),
         Scalar.fromBigint(0n)
-      ]),
-      trapdoor: await mockedHash([
-        id,
-        Scalar.fromBigint(BigInt(nonce)),
-        Scalar.fromBigint(1n)
       ])
     };
   }

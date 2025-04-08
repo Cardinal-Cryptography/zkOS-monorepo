@@ -110,7 +110,6 @@ impl NewAccountCircuit {
         &self,
         id: Vec<u8>,
         nullifier: Vec<u8>,
-        trapdoor: Vec<u8>,
         initial_deposit: Vec<u8>,
         caller_address: Vec<u8>,
         token_address: Vec<u8>,
@@ -123,7 +122,6 @@ impl NewAccountCircuit {
             &NewAccountProverKnowledge {
                 id: vec_to_f(id),
                 nullifier: vec_to_f(nullifier),
-                trapdoor: vec_to_f(trapdoor),
                 initial_deposit: vec_to_f(initial_deposit),
                 caller_address: vec_to_f(caller_address),
                 token_address: vec_to_f(token_address),
@@ -185,7 +183,6 @@ impl NewAccountCircuit {
 pub fn new_account_pub_inputs(
     id: Vec<u8>,
     nullifier: Vec<u8>,
-    trapdoor: Vec<u8>,
     initial_deposit: Vec<u8>,
     caller_address: Vec<u8>,
     token_address: Vec<u8>,
@@ -197,7 +194,6 @@ pub fn new_account_pub_inputs(
     let knowledge = NewAccountProverKnowledge {
         id: vec_to_f(id),
         nullifier: vec_to_f(nullifier),
-        trapdoor: vec_to_f(trapdoor),
         initial_deposit: vec_to_f(initial_deposit),
         caller_address: vec_to_f(caller_address),
         token_address: vec_to_f(token_address),
