@@ -59,8 +59,13 @@ pub const REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
 pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 DUP1 REVERT
 
 pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
-    x: U256::from_limbs([65, 78, 79, 78]), // ANON
-    y: U256::from_limbs([89, 77, 73, 84]), // YMIT
+    x: U256::from_limbs([1, 0, 0, 0]),
+    y: U256::from_limbs([
+        9457493854555940652,
+        3253583849847263892,
+        14921373847124204899,
+        2
+    ]),
 };
 
 /// Contains full deployment addresses.
