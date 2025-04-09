@@ -59,7 +59,6 @@ export class RNCryptoClient implements CryptoClient {
         const rawSecrets = getActionSecrets(scalarToArrayBuffer(id), nonce);
         return {
           nullifier: arrayBufferToScalar(rawSecrets.nullifier),
-          trapdoor: arrayBufferToScalar(rawSecrets.trapdoor),
         };
       });
     },
@@ -88,7 +87,6 @@ export class RNCryptoClient implements CryptoClient {
         const rawProof = this.newAccountCircuitGen.prove(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifier),
-          scalarToArrayBuffer(advice.trapdoor),
           scalarToArrayBuffer(advice.initialDeposit),
           scalarToArrayBuffer(advice.callerAddress),
           scalarToArrayBuffer(advice.tokenAddress),
@@ -105,7 +103,6 @@ export class RNCryptoClient implements CryptoClient {
         const rawPubInputs = newAccountPubInputs(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifier),
-          scalarToArrayBuffer(advice.trapdoor),
           scalarToArrayBuffer(advice.initialDeposit),
           scalarToArrayBuffer(advice.callerAddress),
           scalarToArrayBuffer(advice.tokenAddress),
@@ -175,13 +172,12 @@ export class RNCryptoClient implements CryptoClient {
         const rawProof = this.depositCircuitGen.prove(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifierOld),
-          scalarToArrayBuffer(advice.trapdoorOld),
           scalarToArrayBuffer(advice.accountBalanceOld),
           scalarToArrayBuffer(advice.tokenAddress),
           new Uint8Array(advice.path).buffer,
           scalarToArrayBuffer(advice.value),
+          scalarToArrayBuffer(advice.callerAddress),
           scalarToArrayBuffer(advice.nullifierNew),
-          scalarToArrayBuffer(advice.trapdoorNew),
           scalarToArrayBuffer(advice.macSalt)
         );
         return new Uint8Array(rawProof);
@@ -192,14 +188,12 @@ export class RNCryptoClient implements CryptoClient {
         const rawPubInputs = depositPubInputs(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifierOld),
-          scalarToArrayBuffer(advice.trapdoorOld),
           scalarToArrayBuffer(advice.accountBalanceOld),
           scalarToArrayBuffer(advice.tokenAddress),
           new Uint8Array(advice.path).buffer,
           scalarToArrayBuffer(advice.value),
           scalarToArrayBuffer(advice.callerAddress),
           scalarToArrayBuffer(advice.nullifierNew),
-          scalarToArrayBuffer(advice.trapdoorNew),
           scalarToArrayBuffer(advice.macSalt)
         );
         return {
@@ -222,6 +216,7 @@ export class RNCryptoClient implements CryptoClient {
             scalarToArrayBuffer(pubInputs.hNullifierOld),
             scalarToArrayBuffer(pubInputs.hNoteNew),
             scalarToArrayBuffer(pubInputs.value),
+            scalarToArrayBuffer(pubInputs.callerAddress),
             scalarToArrayBuffer(pubInputs.tokenAddress),
             scalarToArrayBuffer(pubInputs.macSalt),
             scalarToArrayBuffer(pubInputs.macCommitment),
@@ -240,13 +235,11 @@ export class RNCryptoClient implements CryptoClient {
         const rawProof = this.withdrawCircuitGen.prove(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifierOld),
-          scalarToArrayBuffer(advice.trapdoorOld),
           scalarToArrayBuffer(advice.accountBalanceOld),
           scalarToArrayBuffer(advice.tokenAddress),
           new Uint8Array(advice.path).buffer,
           scalarToArrayBuffer(advice.value),
           scalarToArrayBuffer(advice.nullifierNew),
-          scalarToArrayBuffer(advice.trapdoorNew),
           scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.macSalt)
         );
@@ -258,13 +251,11 @@ export class RNCryptoClient implements CryptoClient {
         const rawPubInputs = withdrawPubInputs(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifierOld),
-          scalarToArrayBuffer(advice.trapdoorOld),
           scalarToArrayBuffer(advice.accountBalanceOld),
           scalarToArrayBuffer(advice.tokenAddress),
           new Uint8Array(advice.path).buffer,
           scalarToArrayBuffer(advice.value),
           scalarToArrayBuffer(advice.nullifierNew),
-          scalarToArrayBuffer(advice.trapdoorNew),
           scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.macSalt)
         );

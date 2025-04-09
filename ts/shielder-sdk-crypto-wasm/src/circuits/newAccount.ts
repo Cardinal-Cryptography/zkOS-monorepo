@@ -38,7 +38,6 @@ export class NewAccountCircuit
       this.wasmCircuit.prove(
         values.id.bytes,
         values.nullifier.bytes,
-        values.trapdoor.bytes,
         values.initialDeposit.bytes,
         values.callerAddress.bytes,
         values.tokenAddress.bytes,
@@ -62,7 +61,6 @@ export class NewAccountCircuit
     const pubInputsBytes = this.wasmModule.new_account_pub_inputs(
       values.id.bytes,
       values.nullifier.bytes,
-      values.trapdoor.bytes,
       values.initialDeposit.bytes,
       values.callerAddress.bytes,
       values.tokenAddress.bytes,

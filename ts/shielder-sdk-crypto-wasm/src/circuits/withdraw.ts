@@ -37,13 +37,11 @@ export class WithdrawCircuit
       this.wasmCircuit.prove(
         values.id.bytes,
         values.nullifierOld.bytes,
-        values.trapdoorOld.bytes,
         values.accountBalanceOld.bytes,
         values.tokenAddress.bytes,
         values.path,
         values.value.bytes,
         values.nullifierNew.bytes,
-        values.trapdoorNew.bytes,
         values.commitment.bytes,
         values.macSalt.bytes
       )
@@ -62,13 +60,11 @@ export class WithdrawCircuit
     const pubInputsBytes = this.wasmModule.withdraw_pub_inputs(
       values.id.bytes,
       values.nullifierOld.bytes,
-      values.trapdoorOld.bytes,
       values.accountBalanceOld.bytes,
       values.tokenAddress.bytes,
       values.path,
       values.value.bytes,
       values.nullifierNew.bytes,
-      values.trapdoorNew.bytes,
       values.commitment.bytes,
       values.macSalt.bytes
     );

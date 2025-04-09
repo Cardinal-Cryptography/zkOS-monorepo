@@ -76,17 +76,15 @@ describe("NewAccountAction", () => {
       }
       expect(result.balance).toBe(amount);
       expect(result.nonce).toBe(mockedStateNonce + 1n);
-      // Nullifier and trapdoor should be secret manager's output
-      const { nullifier, trapdoor } =
-        await cryptoClient.secretManager.getSecrets(
-          mockedState.id,
-          Number(mockedState.nonce)
-        );
-      // Note should be hash of [version, id, nullifier, trapdoor, amount]
+      // Nullifier should be secret manager's output
+      const { nullifier } = await cryptoClient.secretManager.getSecrets(
+        mockedState.id,
+        Number(mockedState.nonce)
+      );
+      // Note should be hash of [version, id, nullifier, amount]
       const expectedNote = await hashedNote(
         mockedState.id,
         nullifier,
-        trapdoor,
         Scalar.fromBigint(amount)
       );
       expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);

@@ -23,7 +23,6 @@ describe("DepositAction", () => {
   let state: AccountStateMerkleIndexed;
   const stateNonce = 1n;
   const prevNullifier = Scalar.fromBigint(2n);
-  const prevTrapdoor = Scalar.fromBigint(3n);
   const mockAddress =
     "0x1234567890123456789012345678901234567890" as `0x${string}`;
 
@@ -62,12 +61,7 @@ describe("DepositAction", () => {
       id,
       nonce: stateNonce,
       balance: 5n,
-      currentNote: await hashedNote(
-        id,
-        prevNullifier,
-        prevTrapdoor,
-        Scalar.fromBigint(5n)
-      ),
+      currentNote: await hashedNote(id, prevNullifier, Scalar.fromBigint(5n)),
       currentNoteIndex: 100n,
       token: nativeToken()
     };
@@ -85,17 +79,16 @@ describe("DepositAction", () => {
       }
       expect(result.balance).toBe(expectedAmount);
       expect(result.nonce).toBe(2n);
-      // Nullifier and trapdoor should be secret manager's output
-      const { nullifier: newNullifier, trapdoor: newTrapdoor } =
+      // Nullifier should be secret manager's output
+      const { nullifier: newNullifier } =
         await cryptoClient.secretManager.getSecrets(
           state.id,
           Number(state.nonce)
         );
-      // Note should be hash of [version, id, nullifier, trapdoor, amount]
+      // Note should be hash of [version, id, nullifier, amount]
       const expectedNote = await hashedNote(
         state.id,
         newNullifier,
-        newTrapdoor,
         Scalar.fromBigint(expectedAmount)
       );
       expect(scalarsEqual(result.currentNote, expectedNote)).toBe(true);

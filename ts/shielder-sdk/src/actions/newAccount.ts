@@ -58,17 +58,15 @@ export class NewAccountAction extends NoteAction {
     callerAddress: Address
   ): Promise<NewAccountAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
-    const { nullifier, trapdoor } =
-      await this.cryptoClient.secretManager.getSecrets(
-        state.id,
-        Number(state.nonce)
-      );
+    const { nullifier } = await this.cryptoClient.secretManager.getSecrets(
+      state.id,
+      Number(state.nonce)
+    );
     const [anonymityRevokerPublicKeyX, anonymityRevokerPublicKeyY] =
       await this.contract.anonymityRevokerPubkey();
     return {
       id: state.id,
       nullifier,
-      trapdoor,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
       callerAddress: Scalar.fromAddress(callerAddress),

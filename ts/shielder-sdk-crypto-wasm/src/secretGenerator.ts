@@ -23,8 +23,7 @@ export class SecretGenerator
     }
     const result = this.wasmModule.get_action_secrets(id.bytes, Number(nonce));
     return Promise.resolve({
-      nullifier: new Scalar(result.nullifier),
-      trapdoor: new Scalar(result.trapdoor)
+      nullifier: new Scalar(result.nullifier)
     });
   }
 

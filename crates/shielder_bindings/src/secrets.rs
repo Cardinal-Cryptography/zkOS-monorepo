@@ -1,10 +1,7 @@
 use alloc::vec::Vec;
 
 use alloy_primitives::U256;
-use shielder_account::secrets::{
-    self,
-    nonced::{derive_nullifier, derive_trapdoor},
-};
+use shielder_account::secrets::{self, nonced::derive_nullifier};
 use shielder_circuits::Fr;
 use type_conversions::{bytes_to_u256, field_to_bytes, hex_to_u256, u256_to_bytes, u256_to_field};
 #[cfg(feature = "build-wasm")]
@@ -16,7 +13,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[derive(Clone, Debug, Default)]
 pub struct ShielderActionSecrets {
     pub nullifier: Vec<u8>,
-    pub trapdoor: Vec<u8>,
 }
 
 /// Deterministically computes `ShielderActionSecrets` from `nonce` and `id`.
@@ -28,7 +24,6 @@ pub fn get_action_secrets(id: Vec<u8>, nonce: u32) -> ShielderActionSecrets {
 
     ShielderActionSecrets {
         nullifier: u256_to_bytes(derive_nullifier(id, nonce)),
-        trapdoor: u256_to_bytes(derive_trapdoor(id, nonce)),
     }
 }
 

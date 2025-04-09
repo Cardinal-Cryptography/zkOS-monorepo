@@ -106,12 +106,12 @@ export class WithdrawAction extends NoteAction {
   ): Promise<WithdrawAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
 
-    const { nullifier: nullifierOld, trapdoor: trapdoorOld } =
+    const { nullifier: nullifierOld } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
         Number(state.nonce - 1n)
       );
-    const { nullifier: nullifierNew, trapdoor: trapdoorNew } =
+    const { nullifier: nullifierNew } =
       await this.cryptoClient.secretManager.getSecrets(
         state.id,
         Number(state.nonce)
@@ -128,13 +128,11 @@ export class WithdrawAction extends NoteAction {
     return {
       id: state.id,
       nullifierOld,
-      trapdoorOld,
       accountBalanceOld: Scalar.fromBigint(state.balance),
       tokenAddress: Scalar.fromAddress(tokenAddress),
       path: merklePath,
       value: Scalar.fromBigint(amount),
       nullifierNew,
-      trapdoorNew,
       commitment,
       macSalt: await this.randomSalt()
     };
