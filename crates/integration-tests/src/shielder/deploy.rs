@@ -59,8 +59,13 @@ pub const REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
 pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 DUP1 REVERT
 
 pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
-    x: U256::from_limbs([65, 78, 79, 78]), // ANON
-    y: U256::from_limbs([89, 77, 73, 84]), // YMIT
+    x: U256::from_limbs([1, 0, 0, 0]),
+    y: U256::from_limbs([
+        9457493854555940652,
+        3253583849847263892,
+        14921373847124204899,
+        2,
+    ]),
 };
 
 /// Contains full deployment addresses.
@@ -166,7 +171,7 @@ pub fn deployment(
         Some(reverting_bytecode),
     );
 
-    let shielder_address = deploy_shielder_contract(&mut evm, owner);
+    let shielder_address = deploy_shielder_contract(&mut evm, owner, ANONYMITY_REVOKER_PKEY);
     unpause_shielder(shielder_address, &mut evm);
 
     Deployment {
@@ -236,12 +241,16 @@ fn deploy_shielder_implementation(evm: &mut EvmRunner) -> Address {
 }
 
 /// Deploy Shielder contract using ERC 1967 proxy.
-pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address {
+fn deploy_shielder_contract(
+    evm: &mut EvmRunner,
+    owner: Address,
+    ar_key: GrumpkinPointAffine<U256>,
+) -> Address {
     let implementation_address = deploy_shielder_implementation(evm);
     let initialization_data = initializeCall {
         initialOwner: owner,
-        _anonymityRevokerPublicKeyX: ANONYMITY_REVOKER_PKEY.x,
-        _anonymityRevokerPublicKeyY: ANONYMITY_REVOKER_PKEY.y,
+        _anonymityRevokerPublicKeyX: ar_key.x,
+        _anonymityRevokerPublicKeyY: ar_key.y,
         _isArbitrumChain: false,
     }
     .abi_encode();
@@ -264,12 +273,96 @@ pub fn deploy_shielder_contract(evm: &mut EvmRunner, owner: Address) -> Address 
 
 #[cfg(test)]
 mod tests {
-    use rstest::rstest;
+    use std::str::FromStr;
 
-    use crate::deploy::{deployment, Deployment};
+    use alloy_primitives::{keccak256, Address, Bytes, U256};
+    use evm_utils::{revm_primitives::AccountInfo, EvmRunner};
+    use rstest::rstest;
+    use shielder_circuits::GrumpkinPointAffine;
+
+    use crate::deploy::{
+        deploy_shielder_contract, deployment, Deployment, ANONYMITY_REVOKER_PKEY, DEPLOYER_ADDRESS,
+        DEPLOYER_INITIAL_NATIVE_BALANCE,
+    };
 
     #[rstest]
-    fn deploy_shielder_suite(_deployment: Deployment) {
+    fn full_deployment_works(_deployment: Deployment) {
         // Deployment successful.
+    }
+
+    #[test]
+    fn minimal_shielder_contract_deployment_works() {
+        let mut evm = EvmRunner::aleph_evm();
+
+        evm.db.insert_account_info(
+            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            AccountInfo {
+                nonce: 0_u64,
+                balance: DEPLOYER_INITIAL_NATIVE_BALANCE,
+                code_hash: keccak256(Bytes::new()),
+                code: None,
+            },
+        );
+
+        deploy_shielder_contract(
+            &mut evm,
+            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            ANONYMITY_REVOKER_PKEY,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Failed to deploy Shielder contract")]
+    fn deployment_fails_when_ar_key_is_not_on_curve() {
+        let mut evm = EvmRunner::aleph_evm();
+
+        evm.db.insert_account_info(
+            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            AccountInfo {
+                nonce: 0_u64,
+                balance: DEPLOYER_INITIAL_NATIVE_BALANCE,
+                code_hash: keccak256(Bytes::new()),
+                code: None,
+            },
+        );
+
+        deploy_shielder_contract(
+            &mut evm,
+            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            GrumpkinPointAffine {
+                x: U256::from(0),
+                y: U256::from(1),
+            },
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Failed to deploy Shielder contract")]
+    fn deployment_fails_when_ar_coordinates_are_not_from_field() {
+        let mut evm = EvmRunner::aleph_evm();
+
+        evm.db.insert_account_info(
+            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            AccountInfo {
+                nonce: 0_u64,
+                balance: DEPLOYER_INITIAL_NATIVE_BALANCE,
+                code_hash: keccak256(Bytes::new()),
+                code: None,
+            },
+        );
+
+        let field_modulus = U256::from_str(
+            "21888242871839275222246405745257275088548364400416034343698204186575808495617",
+        )
+        .unwrap();
+
+        deploy_shielder_contract(
+            &mut evm,
+            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            GrumpkinPointAffine {
+                x: ANONYMITY_REVOKER_PKEY.x + field_modulus,
+                ..ANONYMITY_REVOKER_PKEY
+            },
+        );
     }
 }

@@ -20,7 +20,7 @@ function show_help {
     echo ""
     echo "If AR_PUBLIC_KEY is provided, it will be used directly."
     echo "If AR_SEED is provided but not AR_PUBLIC_KEY, a new key pair will be generated."
-    echo "If neither is provided, default values (0,1) will be used."
+    echo "If neither is provided, default values (1,17631683881184975370165255887551781615748388533673675138860) will be used."
     exit 0
 }
 
@@ -53,9 +53,9 @@ elif [ -n "${AR_SEED:-}" ]; then
     echo "Generated AR public key: $AR_PUBLIC_KEY_X, $AR_PUBLIC_KEY_Y"
 else
     # Use default values
-    AR_PUBLIC_KEY_X=$(cast to-uint256 0)
-    AR_PUBLIC_KEY_Y=$(cast to-uint256 1)
-    echo "Using default AR public key: 0, 1"
+    AR_PUBLIC_KEY_X=$(cast to-uint256 1)
+    AR_PUBLIC_KEY_Y=$(cast to-uint256 17631683881184975370165255887551781615748388533673675138860)
+    echo "Using default AR public key: 1, 17631683881184975370165255887551781615748388533673675138860"
 fi
 
 # Deploy the contract
