@@ -23,11 +23,19 @@ config_cli_for_recovery() {
 make_history() {
   configure_cli alice ${ALICE_PRIVATE_KEY}
 
+  # 1. Native token
   alice new-account $(mtzero 500) # so that we have enough balance for withdrawals
   alice deposit $(mtzero 6)
   alice withdraw $(mtzero 7) "${WITHDRAWAL_PUBLIC_KEY}"
   alice deposit $(mtzero 8)
   alice withdraw $(mtzero 9) "${WITHDRAWAL_PUBLIC_KEY}"
+
+  # 2. ERC20 token
+  alice new-account-erc20 $(mtzero 500) "${ERC20_CONTRACT_ADDRESS_1}" # so that we have enough balance for withdrawals
+  alice deposit-erc20 $(mtzero 6) "${ERC20_CONTRACT_ADDRESS_1}"
+  alice withdraw-erc20 $(mtzero 7) "${WITHDRAWAL_PUBLIC_KEY}" "${ERC20_CONTRACT_ADDRESS_1}" $(mtzero 1)
+  alice deposit-erc20 $(mtzero 8) "${ERC20_CONTRACT_ADDRESS_1}"
+  alice withdraw-erc20 $(mtzero 9) "${WITHDRAWAL_PUBLIC_KEY}" "${ERC20_CONTRACT_ADDRESS_1}" $(mtzero 1)
 
   log_progress "✅ Some deposits and withdrawals made"
 }
@@ -49,7 +57,8 @@ scenario() {
 
   config_cli_for_recovery
 
-  alice recover-state
+  alice recover-state "native"
+  alice recover-state "${ERC20_CONTRACT_ADDRESS_1}"
 
   account_now=$(alice display-account)
   history_now=$(alice history)
