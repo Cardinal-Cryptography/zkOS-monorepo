@@ -69,8 +69,8 @@ async fn perform_state_write_action(
             app_state.relayer_rpc_url = relayer_rpc_url;
         }
         // for now we support only native recovery
-        StateWriteCommand::RecoverState => {
-            recover_state(app_state, Token::Native).await?;
+        StateWriteCommand::RecoverState { token } => {
+            recover_state(app_state, token).await?;
         }
     };
     Ok(())
