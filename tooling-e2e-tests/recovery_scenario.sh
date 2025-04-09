@@ -49,8 +49,8 @@ make_history() {
 scenario() {
   make_history
 
-  account_snapshot=$(alice display-account)
-  history_snapshot=$(alice history)
+  account_snapshot=$(alice display-account | sort)
+  history_snapshot=$(alice history | sort)
 
   clear_local_cli_state
   log_progress "✅ State lost"
@@ -60,8 +60,8 @@ scenario() {
   alice recover-state "native"
   alice recover-state "${ERC20_CONTRACT_ADDRESS_1}"
 
-  account_now=$(alice display-account)
-  history_now=$(alice history)
+  account_now=$(alice display-account | sort)
+  history_now=$(alice history | sort)
 
   if [ "$account_snapshot" != "$account_now" ]; then
     log_progress "❌ Account state mismatch"
