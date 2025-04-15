@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use alloy_primitives::U256;
 use anyhow::Result;
 use axum::{
     extract::{MatchedPath, Request},
@@ -30,16 +31,20 @@ pub async fn prometheus_endpoint(
     metrics_handle.render()
 }
 
+fn u256_to_f64(value: U256) -> f64 {
+    let pow2_64 = 2_f64.powi(64);
+    value
+        .into_limbs()
+        .iter()
+        .rev()
+        .fold(0_f64, |acc, &limb| acc * pow2_64 + limb as f64)
+}
+
 async fn render_signer_balances(balances: Balances) {
     for (signer, balance) in balances.iter() {
-        let unit_balance = balance.read().await.unwrap_or_default().to_string();
-        let (tokens, decimals) = unit_balance.split_at(
-            unit_balance
-                .len()
-                .saturating_sub(NATIVE_TOKEN_DECIMALS as usize),
-        );
-        let token_balance = format!("{tokens}.{decimals}").parse::<f64>().unwrap();
-        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string()).set(token_balance);
+        let unit_balance = balance.read().await.unwrap_or_default();
+        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string())
+            .set(u256_to_f64(unit_balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
     }
 }
 

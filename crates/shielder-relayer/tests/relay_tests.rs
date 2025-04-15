@@ -70,6 +70,7 @@ async fn metrics_register_withdrawals() {
         metrics.contains("# TYPE withdraw_success counter\nwithdraw_success 2"),
         context
     );
+    println!("metrics: {}", metrics);
     ctx_assert!(
         metrics.contains(&format!(
             "signer_balances{{address=\"{}\"}} 19.99",
