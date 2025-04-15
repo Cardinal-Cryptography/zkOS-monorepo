@@ -1,4 +1,4 @@
-use std::{ops::Div, time::Instant};
+use std::time::Instant;
 
 use anyhow::Result;
 use axum::{
@@ -7,8 +7,6 @@ use axum::{
     response::IntoResponse,
 };
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
-use rust_decimal::Decimal;
-use shielder_contract::alloy_primitives::U256;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
 use crate::monitor::{healthy, Balances};

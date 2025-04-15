@@ -1,8 +1,9 @@
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
 use shielder_relayer::{
-    TokenInfo, FEE_DESTINATION_KEY_ENV, NODE_RPC_URL_ENV, RELAYER_METRICS_PORT_ENV,
-    RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV, SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_CONFIG_ENV,
+    TokenInfo, BALANCE_MONITOR_INTERVAL_ENV, FEE_DESTINATION_KEY_ENV, NODE_RPC_URL_ENV,
+    RELAYER_METRICS_PORT_ENV, RELAYER_PORT_ENV, RELAYER_SIGNING_KEYS_ENV,
+    SHIELDER_CONTRACT_ADDRESS_ENV, TOKEN_CONFIG_ENV,
 };
 use testcontainers::{core::WaitFor, Image};
 
@@ -30,6 +31,7 @@ impl RelayerImage {
         shielder_address: String,
         signer_key: String,
         token_config: Vec<TokenInfo>,
+        balance_monitor_interval: String,
     ) -> Self {
         Self {
             env_vars: HashMap::from([
@@ -48,6 +50,10 @@ impl RelayerImage {
                 (
                     TOKEN_CONFIG_ENV.to_string(),
                     serde_json::to_string(&token_config).unwrap(),
+                ),
+                (
+                    BALANCE_MONITOR_INTERVAL_ENV.to_string(),
+                    balance_monitor_interval,
                 ),
             ]),
         }
