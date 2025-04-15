@@ -87,7 +87,11 @@ pub enum StateWriteCommand {
         url: String,
     },
     /// Recover state from the blockchain.
-    RecoverState,
+    RecoverState {
+        /// Token to recover.
+        #[clap(value_parser = parsing::parse_token)]
+        token: Token,
+    },
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Subcommand)]
@@ -187,12 +191,24 @@ mod parsing {
     use std::{path::PathBuf, str::FromStr};
 
     use anyhow::{anyhow, Result};
+    use shielder_account::Token;
 
     pub fn parse_path(path: &str) -> Result<PathBuf> {
         let expanded_path =
             shellexpand::full(path).map_err(|e| anyhow!("Failed to expand path: {e:?}"))?;
         PathBuf::from_str(expanded_path.as_ref())
             .map_err(|e| anyhow!("Failed to interpret path: {e:?}"))
+    }
+
+    pub fn parse_token(token: &str) -> Result<Token> {
+        if token.to_lowercase() == "native" {
+            Ok(Token::Native)
+        } else {
+            let address = token
+                .parse()
+                .map_err(|_| anyhow!("Invalid token address"))?;
+            Ok(Token::ERC20(address))
+        }
     }
 }
 
