@@ -76,6 +76,7 @@ rand_chacha = { version = "0.3.1" }
 log = { version = "0.4.20" }
 env_logger = { version = "0.10.0" }
 rusqlite = { version = "0.34.0" }
+tiny-bip39 = { version = "2.0.0" }
 
 # Local dependencies
 content-encryption = { path = "crates/content-encryption", default-features = false }

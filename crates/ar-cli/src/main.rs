@@ -3,46 +3,28 @@ use std::{cmp::min, thread::sleep, time::Duration};
 use alloy_transport::TransportErrorKind;
 use clap::Parser;
 use cli::{ChainConfig, Cli};
-use log::{error, info};
-use recoverable_error::MaybeRecoverableError;
-use thiserror::Error;
+use log::info;
+use error::Error;
 
 mod cli;
 mod collect_viewing_keys;
 mod db;
 mod generate;
+mod inspect;
 mod index_events;
-mod recoverable_error;
+mod error;
 mod reveal;
 mod revoke;
+mod common;
 
 const DEFAULT_BACKOFF: Duration = Duration::from_millis(2000); // 2 seconds
 const MAX_BACKOFF: Duration = Duration::from_millis(600000); // 10 minutes
 
-#[derive(Debug, Error)]
-#[error(transparent)]
-#[non_exhaustive]
-enum CliError {
-    #[error("Error generating keys")]
-    Generate(#[from] generate::GenerateError),
 
-    #[error("Cannot recover from this variant of MaybeRecoverable")]
-    MaybeRecoverable(#[from] MaybeRecoverableError),
-
-    #[error("Error revoking txs")]
-    Revoke(#[from] revoke::RevokeError),
-
-    #[error("Error revealing tx")]
-    Reveal(#[from] reveal::RevealError),
-
-    #[error("Db Error")]
-    Db(#[from] rusqlite::Error),
-}
-
-pub async fn retry_with_backoff<F, Fut, T>(mut op: F) -> Result<T, MaybeRecoverableError>
+pub async fn retry_with_backoff<F, Fut, T>(mut op: F) -> Result<T, Error>
 where
     F: FnMut() -> Fut,
-    Fut: std::future::Future<Output = Result<T, MaybeRecoverableError>>,
+    Fut: std::future::Future<Output = Result<T, Error>>,
 {
     let mut delay = DEFAULT_BACKOFF;
 
@@ -50,7 +32,7 @@ where
         match op().await {
             Ok(result) => return Ok(result),
 
-            Err(MaybeRecoverableError::Rpc(alloy_json_rpc::RpcError::Transport(
+            Err(Error::Rpc(alloy_json_rpc::RpcError::Transport(
                 TransportErrorKind::HttpError(http_err),
             ))) if http_err.is_rate_limit_err() => {
                 delay = min(MAX_BACKOFF, delay * 2);
@@ -64,7 +46,7 @@ where
 }
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), CliError> {
+async fn main() -> Result<(), Error> {
     let config = Cli::parse();
     env_logger::init();
 
@@ -74,11 +56,14 @@ async fn main() -> Result<(), CliError> {
         cli::Command::Generate {
             dir,
             seed,
-            endianess,
-        } => generate::run(seed, dir, endianess)?,
+        } => generate::run(seed, dir)?,
+        cli::Command::InspectPubkey { pk } => inspect::run_pubkey(pk)?,
+        cli::Command::InspectMnemonic { mnemonic } => {
+            inspect::run_mnemonic(mnemonic)?;
+        }
+        cli::Command::GenerateMnemonic => generate::run_mnemonic()?,
         cli::Command::CollectKeys {
             private_key_file,
-            endianess,
             redact_sensitive_data,
             common:
                 ChainConfig {
@@ -93,7 +78,6 @@ async fn main() -> Result<(), CliError> {
                     rpc_url,
                     shielder_address,
                     private_key_file,
-                    endianess.clone(),
                     *from_block,
                     &db.path,
                     *redact_sensitive_data,

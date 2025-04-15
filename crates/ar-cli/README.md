@@ -1,7 +1,7 @@
 # AR-cli
 
 Cli tool that can:
-- generate symmetric encryption keys to be used in Shielder.
+- generate El-Gamal encryption keys for AR in Shielder.
 - populate a db by matching a decrypted viewing keys with the transactions.
 - answer a queries about transaction (by their tx-hash).
 

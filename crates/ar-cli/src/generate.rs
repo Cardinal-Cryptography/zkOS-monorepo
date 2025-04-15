@@ -4,21 +4,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bip39::{Language, Mnemonic, MnemonicType};
 use log::{debug, info};
-use rand_chacha::{rand_core::SeedableRng, ChaCha12Rng};
-use shielder_circuits::{generate_keys, Fr, GrumpkinPointAffine};
-use thiserror::Error;
 use type_conversions::{field_to_u256, Endianess};
 
-use crate::cli::{self};
-
-#[derive(Debug, Error)]
-#[error(transparent)]
-#[non_exhaustive]
-pub enum GenerateError {
-    #[error("Error writing")]
-    Write(#[from] std::io::Error),
-}
+use crate::{common::{mnemonic_to_seed, seed_to_keypair, serialize_pub_key}, error::Error};
 
 fn spit(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> {
     let mut private_key_file = File::create(format!("{}/{}", dir.display(), filename))?;
@@ -26,43 +16,40 @@ fn spit(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> 
     Ok(())
 }
 
-pub fn run(
-    seed: &[u8; 32],
-    dir: &PathBuf,
-    endianess: &cli::Endianess,
-) -> Result<(), GenerateError> {
-    debug!("Seeding rng with : {seed:?}");
+pub fn run(seed: &[u8; 32], dir: &PathBuf) -> Result<(), Error> {
+    run_inner(seed, Some(dir))
+}
 
-    let mut rng = ChaCha12Rng::from_seed(*seed);
 
-    info!("Generating key pair...");
-
-    let (private_key, public_key) = generate_keys(&mut rng);
-
+pub fn run_inner(seed: &[u8; 32], dir: Option<&PathBuf>) -> Result<(), Error> {
+    let (private_key, public_key) = seed_to_keypair(seed);
     debug!(
         "private key: : {private_key:?} [{}]",
         field_to_u256(private_key)
     );
-
-    let pubkey @ GrumpkinPointAffine { x, y }: GrumpkinPointAffine<Fr> = public_key.into();
-    debug!(
-        "public key: : {pubkey:?} [{},{}]",
-        field_to_u256(x),
-        field_to_u256(y)
-    );
-
-    let (private_key_bytes, x_bytes, y_bytes) = match endianess {
-        cli::Endianess::BigEndian => (private_key.to_bytes_be(), x.to_bytes_be(), y.to_bytes_be()),
-        cli::Endianess::LitteEndian => {
-            (private_key.to_bytes_le(), x.to_bytes_le(), y.to_bytes_le())
+    let public_key_bytes = serialize_pub_key(public_key);
+    let hex_pub_key = hex::encode(public_key_bytes);
+    println!("Public key: {}", hex_pub_key);
+    match dir {
+        Some(dir) => {
+            let private_key_bytes =
+                private_key.to_bytes_be();
+            spit(dir, "private_key.bin", &private_key_bytes)?;
+            spit(dir, "public_key.bin", &public_key_bytes)?;
+            info!("key pair files written to {dir:?}");
         }
-    };
-
-    spit(dir, "private_key.bin", &private_key_bytes)?;
-    spit(dir, "public_key_x_coord.bin", &x_bytes)?;
-    spit(dir, "public_key_y_coord.bin", &y_bytes)?;
-
-    info!("key pair files written to {dir:?}");
-
+        None => {
+        }
+    }
     Ok(())
 }
+
+pub fn run_mnemonic() -> Result<(), Error> {
+    let mnemonic = Mnemonic::new(MnemonicType::Words12, Language::English);
+    let phrase: &str = mnemonic.phrase();
+    println!("mnemonic phrase: {}", phrase);
+    let seed_bytes = mnemonic_to_seed(&mnemonic);
+    println!("seed bytes: {}", hex::encode(seed_bytes));
+    run_inner(&seed_bytes, None)
+}
+

@@ -17,9 +17,8 @@ use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeC
 use type_conversions::u256_to_field;
 
 use crate::{
-    cli::Endianess,
     db::{self, ViewingKey},
-    recoverable_error::MaybeRecoverableError,
+    error::Error,
 };
 
 const CHECKPOINT_TABLE_NAME: &str = "last_keys_block";
@@ -33,11 +32,10 @@ pub async fn run(
     rpc_url: &str,
     shielder_address: &Address,
     private_key_file: &PathBuf,
-    endianess: Endianess,
     from_block: u64,
     db_path: &PathBuf,
     redact_sensitive_data: bool,
-) -> Result<(), MaybeRecoverableError> {
+) -> Result<(), Error> {
     let connection = db::init(db_path)?;
 
     let provider = ProviderBuilder::new()
@@ -48,18 +46,16 @@ pub async fn run(
     let last_finalized_block_number = provider.get_block_number().await?;
     info!("last finalized block number: {last_finalized_block_number}");
 
-    let bytes = match endianess {
-        Endianess::LitteEndian => private_key_bytes(private_key_file)?,
-        Endianess::BigEndian => {
-            let mut bytes = private_key_bytes(private_key_file)?;
-            bytes.reverse();
-            bytes
-        }
+    let bytes = {
+        let mut bytes = private_key_bytes(private_key_file)?;
+        // We use big-endian encoding for the private key
+        bytes.reverse();
+        bytes
     };
 
     let private_key = grumpkin::Fr::from_bytes(&bytes)
         .into_option()
-        .ok_or(MaybeRecoverableError::NotAGrumpkinBaseFieldElement)?;
+        .ok_or(Error::NotAGrumpkinBaseFieldElement)?;
 
     db::create_viewing_keys_table(&connection)?;
     db::create_checkpoint_table(&connection, CHECKPOINT_TABLE_NAME)?;
@@ -139,7 +135,7 @@ fn decode_and_persist(
     c2y: U256,
     private_key: grumpkin::Fr,
     redact_sensitive_data: bool,
-) -> Result<(), MaybeRecoverableError> {
+) -> Result<(), Error> {
     let ciphertext1 = GrumpkinPointAffine::new(u256_to_field(c1x), u256_to_field(c1y));
     let ciphertext2 = GrumpkinPointAffine::new(u256_to_field(c2x), u256_to_field(c2y));
 

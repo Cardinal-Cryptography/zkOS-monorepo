@@ -7,7 +7,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 #[error(transparent)]
 #[non_exhaustive]
-pub enum MaybeRecoverableError {
+pub enum Error {
     #[error("Error while interacting with the Shielder contract")]
     Contract(#[from] ShielderContractError),
 
@@ -31,4 +31,16 @@ pub enum MaybeRecoverableError {
 
     #[error("Event is missing some data")]
     MissingData,
+
+    #[error("Field conversion")]
+    FieldConversion(String),
+
+    #[error("Error while deserializing public key")]
+    DeserializePubKey,
+
+    #[error("Public key does not satisfy y^2 = x^3 - 17")]
+    PubkeyNotOnCurve,
+
+    #[error("Mnemonic error")]
+    Mnemonic(#[from] bip39::ErrorKind),
 }

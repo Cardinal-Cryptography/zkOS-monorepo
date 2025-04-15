@@ -17,8 +17,7 @@ use shielder_contract::{
 use type_conversions::u256_to_field;
 
 use crate::{
-    db::{self, Event},
-    recoverable_error::MaybeRecoverableError,
+    db::{self, Event}, error::Error,
 };
 
 const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
@@ -29,7 +28,7 @@ pub async fn run(
     from_block: u64,
     batch_size: usize,
     db_path: &PathBuf,
-) -> Result<(), MaybeRecoverableError> {
+) -> Result<(), Error> {
     let connection = db::init(db_path)?;
     let provider = create_simple_provider(rpc_url).await?;
     let current_height = provider.get_block_number().await?;
@@ -63,13 +62,13 @@ pub async fn run(
     Ok(())
 }
 
-fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), MaybeRecoverableError> {
+fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), Error> {
     for log in logs {
         let tx_hash = log
             .transaction_hash
-            .ok_or(MaybeRecoverableError::MissingData)?
+            .ok_or(Error::MissingData)?
             .0;
-        let block_number = log.block_number.ok_or(MaybeRecoverableError::MissingData)?;
+        let block_number = log.block_number.ok_or(Error::MissingData)?;
 
         match log.topic0() {
             Some(&NewAccount::SIGNATURE_HASH) => {
