@@ -7,6 +7,7 @@ use axum::{
     response::IntoResponse,
 };
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+use rust_decimal::Decimal;
 use shielder_contract::alloy_primitives::U256;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
@@ -33,13 +34,14 @@ pub async fn prometheus_endpoint(
 
 async fn render_signer_balances(balances: Balances) {
     for (signer, balance) in balances.iter() {
-        let balance = balance.read().await.unwrap_or_default();
-        let tzero_balance = balance
-            .div(U256::from(10u128.pow(NATIVE_TOKEN_DECIMALS)))
-            .to_string()
-            .parse::<f64>()
-            .unwrap_or(f64::NAN);
-        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string()).set(tzero_balance);
+        let unit_balance = balance.read().await.unwrap_or_default().to_string();
+        let (tokens, decimals) = unit_balance.split_at(
+            unit_balance
+                .len()
+                .saturating_sub(NATIVE_TOKEN_DECIMALS as usize),
+        );
+        let token_balance = format!("{tokens}.{decimals}").parse::<f64>().unwrap();
+        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string()).set(token_balance);
     }
 }
 
