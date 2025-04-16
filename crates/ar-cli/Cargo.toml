@@ -30,4 +30,5 @@ alloy-transport = { workspace = true }
 alloy-sol-types = { workspace = true }
 rusqlite = { workspace = true, features = ["bundled"] }
 alloy-network = { workspace = true }
-tiny-bip39 = { workspace = true , features = ["rand"]}
+tiny-bip39 = { workspace = true, features = ["rand"] }
+rpassword = { version = "7.3.1" }

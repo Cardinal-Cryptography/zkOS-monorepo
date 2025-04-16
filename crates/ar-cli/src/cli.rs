@@ -28,10 +28,7 @@ pub enum Command {
         seed: [u8; 32],
     },
     /// Inspect a 12-word mnemonic phrase
-    InspectMnemonic {
-        /// 12-word mnemonic phrase
-        mnemonic: String,
-    },
+    InspectMnemonic,
 
     /// Inspect a 64-byte public key
     InspectPubkey {

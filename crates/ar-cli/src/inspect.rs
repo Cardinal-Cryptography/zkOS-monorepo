@@ -1,12 +1,15 @@
 use bip39::{Language, Mnemonic};
+use rpassword::read_password;
 
 use crate::{
     common::{deserialize_pub_key, mnemonic_to_seed, seed_to_keypair, serialize_pub_key},
     error::Error,
 };
 
-pub fn run_mnemonic(maybe_mnemonic: &str) -> Result<(), Error> {
-    let mnemonic = Mnemonic::from_phrase(maybe_mnemonic, Language::English)?;
+pub fn run_mnemonic() -> Result<(), Error> {
+    println!("Enter your 12-word mnemonic phrase:");
+    let maybe_mnemonic = read_password()?;
+    let mnemonic = Mnemonic::from_phrase(&maybe_mnemonic, Language::English)?;
     let seed = mnemonic_to_seed(&mnemonic);
     let (_private_key, public_key) = seed_to_keypair(&seed);
     let pub_key = serialize_pub_key(public_key);
