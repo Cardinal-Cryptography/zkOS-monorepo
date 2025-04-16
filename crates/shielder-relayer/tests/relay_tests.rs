@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use parameterized::parameterized;
 use reqwest::StatusCode;
 use shielder_account::Token;
+use tokio::time::sleep;
 
 use crate::utils::{
     config::{ShielderContract, TestConfig},
@@ -60,9 +63,19 @@ async fn metrics_register_withdrawals() {
     context.relay_with_quote(Token::Native).await;
     context.relay_with_quote(Token::ERC20(ERC20_ADDRESS)).await;
 
+    sleep(Duration::from_millis(1500)).await; // Metrics should be refreshed after 1 second.
+
     let metrics = context.get_metrics().await;
     ctx_assert!(
         metrics.contains("# TYPE withdraw_success counter\nwithdraw_success 2"),
+        context
+    );
+    println!("metrics: {}", metrics);
+    ctx_assert!(
+        metrics.contains(&format!(
+            "signer_balances{{address=\"{}\"}} 19.99",
+            context.signer.address()
+        )),
         context
     );
 }

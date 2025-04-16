@@ -7,6 +7,8 @@ pub const FEE_DESTINATION: &str = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 /// Corresponding private key.
 pub const FEE_DESTINATION_KEY: &str =
     "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+/// How often to check signer's balance - 1 second.
+pub const BALANCE_MONITOR_INTERVAL: &str = "1";
 
 fn get_env(name: &str) -> String {
     env::var(name).unwrap_or_else(|_| panic!("{name} env var is not set"))

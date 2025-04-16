@@ -22,7 +22,7 @@ use testcontainers::{
 use crate::{
     ctx_assert,
     utils::{
-        config::{TestConfig, BASE_URL, FEE_DESTINATION},
+        config::{TestConfig, BALANCE_MONITOR_INTERVAL, BASE_URL, FEE_DESTINATION},
         relayer_image::RelayerImage,
     },
 };
@@ -74,6 +74,7 @@ impl TestContext {
                     price_provider: PriceProvider::Static(Decimal::ONE),
                 },
             ],
+            BALANCE_MONITOR_INTERVAL.to_string(),
         ));
 
         Self {

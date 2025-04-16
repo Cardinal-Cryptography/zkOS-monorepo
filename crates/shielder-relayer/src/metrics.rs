@@ -1,5 +1,6 @@
-use std::{ops::Div, time::Instant};
+use std::time::Instant;
 
+use alloy_primitives::U256;
 use anyhow::Result;
 use axum::{
     extract::{MatchedPath, Request},
@@ -7,7 +8,6 @@ use axum::{
     response::IntoResponse,
 };
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
-use shielder_contract::alloy_primitives::U256;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
 use crate::monitor::{healthy, Balances};
@@ -31,15 +31,20 @@ pub async fn prometheus_endpoint(
     metrics_handle.render()
 }
 
+fn u256_to_f64(value: U256) -> f64 {
+    let pow2_64 = 2_f64.powi(64);
+    value
+        .into_limbs()
+        .iter()
+        .rev()
+        .fold(0_f64, |acc, &limb| acc * pow2_64 + limb as f64)
+}
+
 async fn render_signer_balances(balances: Balances) {
     for (signer, balance) in balances.iter() {
-        let balance = balance.read().await.unwrap_or_default();
-        let tzero_balance = balance
-            .div(U256::from(10u128.pow(NATIVE_TOKEN_DECIMALS)))
-            .to_string()
-            .parse::<f64>()
-            .unwrap_or(f64::NAN);
-        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string()).set(tzero_balance);
+        let unit_balance = balance.read().await.unwrap_or_default();
+        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string())
+            .set(u256_to_f64(unit_balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
     }
 }
 
