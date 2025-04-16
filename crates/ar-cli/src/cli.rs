@@ -10,16 +10,9 @@ pub struct Cli {
     pub command: Command,
 }
 
-#[derive(clap::ValueEnum, Clone, Default, Debug)]
-pub enum Endianess {
-    #[default]
-    LitteEndian,
-    BigEndian,
-}
-
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Generate symmetric encryption keys
+    /// Generate encryption keys from a 32 byte seed
     Generate {
         /// Directory where the generated keys are to be written to.
         ///
@@ -33,11 +26,21 @@ pub enum Command {
         /// Example: --seed 3fd54831f488a22b28398de0c567a3b064b937f54f81739ae9bd545967f3abab
         #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
         seed: [u8; 32],
-
-        /// Should the output be produced in the Lower Endian (the default) or Big Endian order?
-        #[clap(long, value_enum, default_value_t=Endianess::default())]
-        endianess: Endianess,
     },
+    /// Inspect a 12-word mnemonic phrase
+    InspectMnemonic {
+        /// 12-word mnemonic phrase
+        mnemonic: String,
+    },
+
+    /// Inspect a 64-byte public key
+    InspectPubkey {
+        /// hex encoded 64-byte public key
+        #[arg(value_parser = ValueParser::new(parse_64byte_array))]
+        pk: [u8; 64],
+    },
+    /// Generate a 12 word mnemonic and derive keys from it
+    GenerateMnemonic,
 
     /// Read newAccount on-chain transactions and collect viewing keys
     IndexEvents {
@@ -61,10 +64,6 @@ pub enum Command {
 
         #[arg(long, default_value = "./private_key.bin")]
         private_key_file: PathBuf,
-
-        /// is the key in the Lower Endian (the default) or Big Endian order?
-        #[clap(long, value_enum, default_value_t=Endianess::default())]
-        endianess: Endianess,
 
         #[arg(long, default_value = "true")]
         redact_sensitive_data: bool,
@@ -103,16 +102,21 @@ pub struct ChainConfig {
     #[arg(long, default_value = "0")]
     pub from_block: u64,
 }
+fn parse_byte_array<const N: usize>(input: &str) -> Result<[u8; N], &'static str> {
+    let sanitized_input = input.strip_prefix("0x").unwrap_or(input);
+    let mut decoded = [0u8; N];
+    if let Err(_why) = hex::decode_to_slice(sanitized_input, &mut decoded) {
+        return Err("Error when parsing input value");
+    }
+    Ok(decoded)
+}
 
 fn parse_32byte_array(input: &str) -> Result<[u8; 32], &'static str> {
-    let sanitized_input = input.strip_prefix("0x").unwrap_or(input);
+    parse_byte_array::<32>(input)
+}
 
-    let mut decoded = [0u8; 32];
-    if let Err(_why) = hex::decode_to_slice(sanitized_input, &mut decoded) {
-        return Err("Error when parsing seed value");
-    }
-
-    Ok(decoded)
+fn parse_64byte_array(input: &str) -> Result<[u8; 64], &'static str> {
+    parse_byte_array::<64>(input)
 }
 
 fn get_default_dir() -> OsString {

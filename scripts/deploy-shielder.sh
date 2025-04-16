@@ -46,10 +46,17 @@ if [ -n "${AR_PUBLIC_KEY:-}" ]; then
 elif [ -n "${AR_SEED:-}" ]; then
     # Generate the public key using ar-cli
     echo "Generating AR key pair from seed..."
-    cargo run --bin ar-cli -- generate --seed ${AR_SEED} --endianess big-endian
+    cargo run --bin ar-cli -- generate --seed ${AR_SEED}
+    AR_PUBLIC_KEY=$(cat public_key.bin | cast from-bin)
+    AR_PUBLIC_KEY_X="0x$(echo $AR_PUBLIC_KEY | cut -c3-66)"
+    AR_PUBLIC_KEY_Y="0x$(echo $AR_PUBLIC_KEY | cut -c67-130)"
     
-    AR_PUBLIC_KEY_X=$(cat public_key_x_coord.bin | cast from-bin)
-    AR_PUBLIC_KEY_Y=$(cat public_key_y_coord.bin | cast from-bin)
+    # Assert correct length of AR_PUBLIC_KEY_X and AR_PUBLIC_KEY_Y
+    if [ ${#AR_PUBLIC_KEY_X} -ne 66 ] || [ ${#AR_PUBLIC_KEY_Y} -ne 66 ]; then
+        echo "Error: Generated AR public key components have incorrect length."
+        exit 1
+    fi
+    
     echo "Generated AR public key: $AR_PUBLIC_KEY_X, $AR_PUBLIC_KEY_Y"
 else
     # Use default values

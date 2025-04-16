@@ -1,20 +1,12 @@
 use log::info;
 use rusqlite::Connection;
-use shielder_circuits::{poseidon::off_circuit::hash, Fr};
-use thiserror::Error;
+use shielder_circuits::poseidon::off_circuit::hash;
 
-use crate::db::{self, Event, ViewingKey};
-
-#[derive(Debug, Error)]
-#[error(transparent)]
-#[non_exhaustive]
-pub enum RevokeError {
-    #[error("Error while querying or persisting data")]
-    Db(#[from] rusqlite::Error),
-
-    #[error("Error while trying to convert into field element from an LE byte representation")]
-    FieldConversion(String),
-}
+use crate::{
+    common::blob_to_field,
+    db::{self, Event, ViewingKey},
+    error::Error,
+};
 
 /// Revoke known txs
 ///
@@ -22,7 +14,7 @@ pub enum RevokeError {
 /// where:
 /// - r = mac_salt from the tx
 /// - k \in keys
-pub async fn run(connection: Connection) -> Result<(), RevokeError> {
+pub async fn run(connection: Connection) -> Result<(), Error> {
     let keys = db::query_viewing_keys(&connection)?;
     let events = db::query_events(&connection, None)?;
 
@@ -58,23 +50,4 @@ pub async fn run(connection: Connection) -> Result<(), RevokeError> {
 
     info!("Done");
     Ok(())
-}
-
-fn blob_to_field(blob: &[u8]) -> Result<Fr, RevokeError> {
-    if blob.len() != 32 {
-        return Err(RevokeError::FieldConversion(format!(
-            "Expected 32 bytes, but got {} bytes",
-            blob.len()
-        )));
-    }
-
-    let bytes: [u8; 32] = blob.try_into().map_err(|_| {
-        RevokeError::FieldConversion("Failed to convert &[u8] to [u8; 32]".to_string())
-    })?;
-
-    Fr::from_bytes(&bytes)
-        .into_option()
-        .ok_or(RevokeError::FieldConversion(
-            "Failed to convert to `mac_salt`".to_string(),
-        ))
 }

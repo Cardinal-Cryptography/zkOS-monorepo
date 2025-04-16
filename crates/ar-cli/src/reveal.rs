@@ -1,21 +1,15 @@
 use log::{info, warn};
 use rusqlite::Connection;
-use thiserror::Error;
 
-use crate::db::{self, Event};
-
-#[derive(Debug, Error)]
-#[error(transparent)]
-#[non_exhaustive]
-pub enum RevealError {
-    #[error("Error while querying or persisting data")]
-    Db(#[from] rusqlite::Error),
-}
+use crate::{
+    db::{self, Event},
+    error::Error,
+};
 
 /// If the tx has a known viewing key return other txs made from the account with the same id
 ///
 /// Events are printed to stdout in a human readable output
-pub async fn run(connection: Connection, tx_hash: &[u8; 32]) -> Result<(), RevealError> {
+pub async fn run(connection: Connection, tx_hash: &[u8; 32]) -> Result<(), Error> {
     let Event { viewing_key, .. } = db::query_event(&connection, tx_hash)?;
 
     if let Some(key) = viewing_key {
