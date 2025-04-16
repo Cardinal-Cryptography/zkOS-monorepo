@@ -30,7 +30,6 @@ pub enum Command {
 
     InspectMnemonic {
         /// 12-word mnemonic phrase
-        #[arg(value_parser)]
         mnemonic: String,
     },
 

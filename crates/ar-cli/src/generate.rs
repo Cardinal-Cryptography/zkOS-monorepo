@@ -5,7 +5,7 @@ use std::{
 };
 
 use bip39::{Language, Mnemonic, MnemonicType};
-use log::{debug, info};
+use log::debug;
 use type_conversions::{field_to_u256, Endianess};
 
 use crate::{
@@ -19,11 +19,11 @@ fn spit(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), std::io::Error> 
     Ok(())
 }
 
-pub fn run(seed: &[u8; 32], dir: &PathBuf) -> Result<(), Error> {
+pub fn run_gen_from_seed(seed: &[u8; 32], dir: &PathBuf) -> Result<(), Error> {
     run_inner(seed, Some(dir))
 }
 
-pub fn run_inner(seed: &[u8; 32], dir: Option<&PathBuf>) -> Result<(), Error> {
+fn run_inner(seed: &[u8; 32], dir: Option<&PathBuf>) -> Result<(), Error> {
     let (private_key, public_key) = seed_to_keypair(seed);
     debug!(
         "private key: : {private_key:?} [{}]",
@@ -36,12 +36,12 @@ pub fn run_inner(seed: &[u8; 32], dir: Option<&PathBuf>) -> Result<(), Error> {
             let private_key_bytes = private_key.to_bytes_be();
             spit(dir, "private_key.bin", &private_key_bytes)?;
             spit(dir, "public_key.bin", &public_key_bytes)?;
-            info!("key pair files written to {dir:?}");
+            println!("key pair files written to {dir:?}");
     }
     Ok(())
 }
 
-pub fn run_mnemonic() -> Result<(), Error> {
+pub fn run_gen_mnemonic() -> Result<(), Error> {
     let mnemonic = Mnemonic::new(MnemonicType::Words12, Language::English);
     let phrase: &str = mnemonic.phrase();
     println!("mnemonic phrase: {}", phrase);

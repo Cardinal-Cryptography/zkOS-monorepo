@@ -25,7 +25,7 @@ pub fn deserialize_pub_key(bytes: &[u8]) -> Result<GrumpkinPoint<Fr>, Error> {
     let x = blob_to_field(&bytes[0..32].iter().rev().copied().collect::<Vec<u8>>())?;
     let y = blob_to_field(&bytes[32..64].iter().rev().copied().collect::<Vec<u8>>())?;
     if y * y != x * x * x - Fr::from(17) {
-        return Err(Error::DeserializePubKey);
+        return Err(Error::PubkeyNotOnCurve);
     }
     Ok(GrumpkinPointAffine::<Fr>::new(x, y).into())
 }

@@ -52,12 +52,12 @@ async fn main() -> Result<(), Error> {
     info!("{:#?}", &config);
 
     match &config.command {
-        cli::Command::Generate { dir, seed } => generate::run(seed, dir)?,
+        cli::Command::Generate { dir, seed } => generate::run_gen_from_seed(seed, dir)?,
         cli::Command::InspectPubkey { pk } => inspect::run_pubkey(pk)?,
         cli::Command::InspectMnemonic { mnemonic } => {
             inspect::run_mnemonic(mnemonic)?;
         }
-        cli::Command::GenerateMnemonic => generate::run_mnemonic()?,
+        cli::Command::GenerateMnemonic => generate::run_gen_mnemonic()?,
         cli::Command::CollectKeys {
             private_key_file,
             redact_sensitive_data,
