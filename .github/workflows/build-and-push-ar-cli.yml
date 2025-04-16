@@ -47,6 +47,6 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           file: ./crates/ar-cli/Dockerfile
           push: true
-          tags:
-            - "cardinalcryptography/ar-cli:${{ steps.get-ref-properties.outputs.sha }}"
-            - "cardinalcryptography/ar-cli:latest"
+          tags: |
+             cardinalcryptography/ar-cli:${{ steps.get-ref-properties.outputs.sha }}
+             cardinalcryptography/ar-cli:latest
