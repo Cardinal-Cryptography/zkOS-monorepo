@@ -54,8 +54,8 @@ async fn main() -> Result<(), Error> {
     match &config.command {
         cli::Command::Generate { dir, seed } => generate::run_gen_from_seed(seed, dir)?,
         cli::Command::InspectPubkey { pk } => inspect::run_pubkey(pk)?,
-        cli::Command::InspectMnemonic { mnemonic } => {
-            inspect::run_mnemonic(mnemonic)?;
+        cli::Command::InspectMnemonic => {
+            inspect::run_mnemonic()?;
         }
         cli::Command::GenerateMnemonic => generate::run_gen_mnemonic()?,
         cli::Command::CollectKeys {
