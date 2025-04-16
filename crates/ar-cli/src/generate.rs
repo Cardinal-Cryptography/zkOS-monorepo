@@ -33,10 +33,10 @@ fn run_inner(seed: &[u8; 32], dir: Option<&PathBuf>) -> Result<(), Error> {
     let hex_pub_key = hex::encode(public_key_bytes);
     println!("Public key: {}", hex_pub_key);
     if let Some(dir) = dir {
-            let private_key_bytes = private_key.to_bytes_be();
-            spit(dir, "private_key.bin", &private_key_bytes)?;
-            spit(dir, "public_key.bin", &public_key_bytes)?;
-            println!("key pair files written to {dir:?}");
+        let private_key_bytes = private_key.to_bytes_be();
+        spit(dir, "private_key.bin", &private_key_bytes)?;
+        spit(dir, "public_key.bin", &public_key_bytes)?;
+        println!("key pair files written to {dir:?}");
     }
     Ok(())
 }
