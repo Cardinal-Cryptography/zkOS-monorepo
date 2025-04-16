@@ -12,7 +12,7 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Generate symmetric encryption keys
+    /// Generate encryption keys from a 32 byte seed
     Generate {
         /// Directory where the generated keys are to be written to.
         ///
@@ -27,18 +27,19 @@ pub enum Command {
         #[arg(long, value_parser = ValueParser::new(parse_32byte_array))]
         seed: [u8; 32],
     },
-
+    /// Inspect a 12-word mnemonic phrase
     InspectMnemonic {
         /// 12-word mnemonic phrase
         mnemonic: String,
     },
 
+    /// Inspect a 64-byte public key
     InspectPubkey {
         /// hex encoded 64-byte public key
         #[arg(value_parser = ValueParser::new(parse_64byte_array))]
         pk: [u8; 64],
     },
-
+    /// Generate a 12 word mnemonic and derive keys from it
     GenerateMnemonic,
 
     /// Read newAccount on-chain transactions and collect viewing keys
