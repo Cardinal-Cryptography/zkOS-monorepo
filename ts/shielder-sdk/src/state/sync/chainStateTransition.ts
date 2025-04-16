@@ -1,6 +1,7 @@
 import { IContract, NoteEvent } from "@/chain/contract";
 import {
   CryptoClient,
+  Scalar,
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { LocalStateTransition } from "@/state/localStateTransition";
@@ -105,6 +106,7 @@ const eventToTransaction = (
     txHash: event.txHash,
     block: event.block,
     token,
-    pocketMoney: event.pocketMoney
+    pocketMoney: event.pocketMoney,
+    newNote: Scalar.fromBigint(event.newNote)
   };
 };

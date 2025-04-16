@@ -102,7 +102,8 @@ describe("ChainStateTransition", () => {
         amount: 50n,
         txHash: "0x123",
         block: 1n,
-        token: nativeToken()
+        token: nativeToken(),
+        newNote: Scalar.fromBigint(789n),
       });
 
       expect(mockNullifierBlock).toHaveBeenCalledWith(

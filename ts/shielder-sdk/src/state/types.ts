@@ -41,4 +41,5 @@ export type ShielderTransaction = {
   block: bigint;
   token: Token;
   pocketMoney?: bigint;
+  newNote: Scalar;
 };
