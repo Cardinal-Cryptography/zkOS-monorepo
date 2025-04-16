@@ -1,9 +1,9 @@
 use bip39::{Language, Mnemonic};
 
-use crate::{common::{deserialize_pub_key, mnemonic_to_seed, seed_to_keypair, serialize_pub_key}, error::Error};
-
-
-
+use crate::{
+    common::{deserialize_pub_key, mnemonic_to_seed, seed_to_keypair, serialize_pub_key},
+    error::Error,
+};
 
 pub fn run_mnemonic(maybe_mnemonic: &str) -> Result<(), Error> {
     let mnemonic = Mnemonic::from_phrase(maybe_mnemonic, Language::English)?;
@@ -15,9 +15,7 @@ pub fn run_mnemonic(maybe_mnemonic: &str) -> Result<(), Error> {
     Ok(())
 }
 
-
-
-pub fn run_pubkey(pk: &[u8;64]) -> Result<(), Error> {
+pub fn run_pubkey(pk: &[u8; 64]) -> Result<(), Error> {
     let _deserialized = deserialize_pub_key(pk)?;
     let (x, y) = pk.split_at(32);
     let x = x.to_vec();

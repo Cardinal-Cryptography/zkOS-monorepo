@@ -1,10 +1,12 @@
 use log::info;
 use rusqlite::Connection;
 use shielder_circuits::poseidon::off_circuit::hash;
-use crate::common::blob_to_field;
 
-
-use crate::{db::{self, Event, ViewingKey}, error::Error};
+use crate::{
+    common::blob_to_field,
+    db::{self, Event, ViewingKey},
+    error::Error,
+};
 
 /// Revoke known txs
 ///
@@ -49,5 +51,3 @@ pub async fn run(connection: Connection) -> Result<(), Error> {
     info!("Done");
     Ok(())
 }
-
-

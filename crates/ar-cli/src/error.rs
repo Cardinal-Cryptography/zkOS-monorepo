@@ -15,7 +15,7 @@ pub enum Error {
     Rpc(#[from] RpcError<TransportErrorKind>),
 
     #[error("Hex decoding error")]
-    HexError(#[from] FromHexError),
+    Hex(#[from] FromHexError),
 
     #[error("Error reading AR private key file")]
     ARKeyRead(#[from] std::io::Error),

@@ -17,7 +17,8 @@ use shielder_contract::{
 use type_conversions::u256_to_field;
 
 use crate::{
-    db::{self, Event}, error::Error,
+    db::{self, Event},
+    error::Error,
 };
 
 const CHECKPOINT_TABLE_NAME: &str = "last_events_block";
@@ -64,10 +65,7 @@ pub async fn run(
 
 fn process_logs(logs: Vec<Log>, connection: &Connection) -> Result<(), Error> {
     for log in logs {
-        let tx_hash = log
-            .transaction_hash
-            .ok_or(Error::MissingData)?
-            .0;
+        let tx_hash = log.transaction_hash.ok_or(Error::MissingData)?.0;
         let block_number = log.block_number.ok_or(Error::MissingData)?;
 
         match log.topic0() {

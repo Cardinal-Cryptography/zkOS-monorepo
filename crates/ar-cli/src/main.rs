@@ -3,23 +3,22 @@ use std::{cmp::min, thread::sleep, time::Duration};
 use alloy_transport::TransportErrorKind;
 use clap::Parser;
 use cli::{ChainConfig, Cli};
-use log::info;
 use error::Error;
+use log::info;
 
 mod cli;
 mod collect_viewing_keys;
+mod common;
 mod db;
-mod generate;
-mod inspect;
-mod index_events;
 mod error;
+mod generate;
+mod index_events;
+mod inspect;
 mod reveal;
 mod revoke;
-mod common;
 
 const DEFAULT_BACKOFF: Duration = Duration::from_millis(2000); // 2 seconds
 const MAX_BACKOFF: Duration = Duration::from_millis(600000); // 10 minutes
-
 
 pub async fn retry_with_backoff<F, Fut, T>(mut op: F) -> Result<T, Error>
 where
@@ -53,10 +52,7 @@ async fn main() -> Result<(), Error> {
     info!("{:#?}", &config);
 
     match &config.command {
-        cli::Command::Generate {
-            dir,
-            seed,
-        } => generate::run(seed, dir)?,
+        cli::Command::Generate { dir, seed } => generate::run(seed, dir)?,
         cli::Command::InspectPubkey { pk } => inspect::run_pubkey(pk)?,
         cli::Command::InspectMnemonic { mnemonic } => {
             inspect::run_mnemonic(mnemonic)?;

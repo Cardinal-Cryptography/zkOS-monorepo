@@ -8,10 +8,7 @@ use type_conversions::Endianess;
 
 use crate::error::Error;
 
-
-pub fn serialize_pub_key(
-    pubkey: GrumpkinPoint<Fr>,
-) -> [u8;64] {
+pub fn serialize_pub_key(pubkey: GrumpkinPoint<Fr>) -> [u8; 64] {
     let GrumpkinPointAffine { x, y }: GrumpkinPointAffine<Fr> = pubkey.into();
     let x_bytes = x.to_bytes_be();
     let y_bytes = y.to_bytes_be();
@@ -21,20 +18,17 @@ pub fn serialize_pub_key(
     bytes
 }
 
-pub fn deserialize_pub_key(
-    bytes: &[u8],
-) -> Result<GrumpkinPoint<Fr>, Error> {
+pub fn deserialize_pub_key(bytes: &[u8]) -> Result<GrumpkinPoint<Fr>, Error> {
     if bytes.len() != 64 {
         return Err(Error::DeserializePubKey);
     }
     let x = blob_to_field(&bytes[0..32].iter().rev().copied().collect::<Vec<u8>>())?;
     let y = blob_to_field(&bytes[32..64].iter().rev().copied().collect::<Vec<u8>>())?;
-    if y*y != x*x*x - Fr::from(17) {
+    if y * y != x * x * x - Fr::from(17) {
         return Err(Error::DeserializePubKey);
     }
     Ok(GrumpkinPointAffine::<Fr>::new(x, y).into())
 }
-
 
 pub fn blob_to_field(blob: &[u8]) -> Result<Fr, Error> {
     if blob.len() != 32 {
@@ -44,9 +38,9 @@ pub fn blob_to_field(blob: &[u8]) -> Result<Fr, Error> {
         )));
     }
 
-    let bytes: [u8; 32] = blob.try_into().map_err(|_| {
-        Error::FieldConversion("Failed to convert &[u8] to [u8; 32]".to_string())
-    })?;
+    let bytes: [u8; 32] = blob
+        .try_into()
+        .map_err(|_| Error::FieldConversion("Failed to convert &[u8] to [u8; 32]".to_string()))?;
 
     bytes32_to_field(&bytes)
 }

@@ -1,9 +1,10 @@
 use log::{info, warn};
 use rusqlite::Connection;
 
-
-use crate::{db::{self, Event}, error::Error};
-
+use crate::{
+    db::{self, Event},
+    error::Error,
+};
 
 /// If the tx has a known viewing key return other txs made from the account with the same id
 ///
