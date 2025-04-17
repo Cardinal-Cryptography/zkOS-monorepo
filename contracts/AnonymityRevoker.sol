@@ -19,13 +19,26 @@ abstract contract AnonymityRevoker is Initializable {
     }
 
     /*
-     * Initialize the anonymity revoker. Validate that the given point is on the Grumpkin curve.
+     * Initialize the anonymity revoker pubkey.
      */
     // solhint-disable func-name-mixedcase
     function __AnonymityRevoker_init(
         uint256 anonymityRevokerPubkeyX,
         uint256 anonymityRevokerPubkeyY
     ) internal onlyInitializing {
+        _setAnonymityRevokerPubkey(
+            anonymityRevokerPubkeyX,
+            anonymityRevokerPubkeyY
+        );
+    }
+
+    /*
+     * Set the anonymity revoker pubkey. Validate that the given point is on the Grumpkin curve.
+     */
+    function _setAnonymityRevokerPubkey(
+        uint256 anonymityRevokerPubkeyX,
+        uint256 anonymityRevokerPubkeyY
+    ) internal {
         require(
             isValidGrumpkinPoint(
                 anonymityRevokerPubkeyX,

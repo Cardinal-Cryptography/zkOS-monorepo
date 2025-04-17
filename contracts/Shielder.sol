@@ -150,6 +150,19 @@ contract Shielder is
     }
 
     /*
+     * Allows the owner to set the anonymity revoker pubkey.
+     */
+    function setAnonymityRevokerPubkey(
+        uint256 anonymityRevokerPubkeyX,
+        uint256 anonymityRevokerPubkeyY
+    ) external onlyOwner {
+        _setAnonymityRevokerPubkey(
+            anonymityRevokerPubkeyX,
+            anonymityRevokerPubkeyY
+        );
+    }
+
+    /*
      * Creates a fresh note, with an optional native token deposit.
      *
      * This transaction serves as an entrypoint to the Shielder.
