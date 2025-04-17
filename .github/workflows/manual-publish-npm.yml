@@ -92,7 +92,7 @@ jobs:
         working-directory: ts/${{ github.event.inputs.package }}
 
       - name: Publish package
-        run: pnpm publish --access restricted --no-git-checks --tag ${{ github.event.inputs.tag }}
+        run: pnpm publish --no-git-checks --tag ${{ github.event.inputs.tag }}
         working-directory: ts/${{ github.event.inputs.package }}
 
   publish-mobile:
@@ -165,5 +165,5 @@ jobs:
         working-directory: ts/shielder-sdk-crypto-mobile
 
       - name: Pack
-        run: npm publish --access restricted --tag ${{ github.event.inputs.tag }}
+        run: npm publish --tag ${{ github.event.inputs.tag }}
         working-directory: ts/shielder-sdk-crypto-mobile
