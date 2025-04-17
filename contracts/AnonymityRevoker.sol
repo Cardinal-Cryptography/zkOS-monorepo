@@ -11,6 +11,8 @@ abstract contract AnonymityRevoker is Initializable {
     uint256 private constant FIELD_MODULUS =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
+    error InvalidGrumpkinPoint();
+
     /// @custom:storage-location erc7201:zkos.storage.AnonymityRevoker
     struct AnonymityRevokerStorage {
         // IMPORTANT: curve point should be validated in the circuit or the contract!
@@ -39,13 +41,12 @@ abstract contract AnonymityRevoker is Initializable {
         uint256 anonymityRevokerPubkeyX,
         uint256 anonymityRevokerPubkeyY
     ) internal {
-        require(
-            isValidGrumpkinPoint(
+        if (
+            !isValidGrumpkinPoint(
                 anonymityRevokerPubkeyX,
                 anonymityRevokerPubkeyY
-            ),
-            "Invalid Grumpkin point"
-        );
+            )
+        ) revert InvalidGrumpkinPoint();
 
         AnonymityRevokerStorage storage $ = _getAnonymityRevokerStorage();
         $.anonymityRevokerPublicKeyX = anonymityRevokerPubkeyX;

@@ -64,6 +64,9 @@ sol! {
         error WrongContractVersion(bytes3 actual, bytes3 expectedByCaller);
         error NotAFieldElement();
 
+        error InvalidGrumpkinPoint();
+        error OwnableUnauthorizedAccount(address account);
+
         function initialize(
             address initialOwner,
             uint256 _anonymityRevokerPublicKeyX,
@@ -155,6 +158,10 @@ sol! {
         ) external view returns (uint256[] memory);
 
         function anonymityRevokerPubkey() public view returns (uint256, uint256);
+        function setAnonymityRevokerPubkey(
+            uint256 anonymityRevokerPubkeyX,
+            uint256 anonymityRevokerPubkeyY
+        ) external;
     }
 }
 

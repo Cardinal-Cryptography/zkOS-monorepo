@@ -18,6 +18,9 @@ pub enum ShielderCallErrors {
     WrongContractVersion(ShielderContract::WrongContractVersion),
     NotAFieldElement(ShielderContract::NotAFieldElement),
 
+    InvalidGrumpkinPoint(ShielderContract::InvalidGrumpkinPoint),
+    OwnableUnauthorizedAccount(ShielderContract::OwnableUnauthorizedAccount),
+
     DestinationTriggeredRevert(),
 }
 
@@ -54,6 +57,12 @@ impl From<ShielderContractErrors> for ShielderCallErrors {
                 ShielderCallErrors::WrongContractVersion(e)
             }
             ShielderContractErrors::NotAFieldElement(e) => ShielderCallErrors::NotAFieldElement(e),
+            ShielderContractErrors::InvalidGrumpkinPoint(e) => {
+                ShielderCallErrors::InvalidGrumpkinPoint(e)
+            }
+            ShielderContractErrors::OwnableUnauthorizedAccount(e) => {
+                ShielderCallErrors::OwnableUnauthorizedAccount(e)
+            }
         }
     }
 }

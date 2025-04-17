@@ -14,6 +14,7 @@ use shielder_account::Token;
 use shielder_contract::ShielderContract::{unpauseCall, ShielderContractEvents};
 
 pub mod address_conversion;
+pub mod ar_pubkey;
 pub mod call_errors;
 pub mod calls;
 pub mod deploy;
@@ -21,7 +22,6 @@ pub mod erc1967proxy;
 pub mod erc20;
 pub mod ierc20;
 pub mod merkle;
-pub mod ar_pubkey;
 
 fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     evm.call(
