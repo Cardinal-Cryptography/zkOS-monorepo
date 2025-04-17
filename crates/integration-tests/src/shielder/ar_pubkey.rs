@@ -39,14 +39,16 @@ pub fn set_ar_pubkey(
 
 #[cfg(test)]
 mod tests {
-    use alloy_primitives::U256;
+    use std::str::FromStr;
+
+    use alloy_primitives::{Address, U256};
     use rstest::rstest;
     use shielder_circuits::GrumpkinPointAffine;
 
     use crate::{
         ar_pubkey::{get_ar_pubkey, set_ar_pubkey},
         call_errors::ShielderCallErrors,
-        deploy::ANONYMITY_REVOKER_PKEY,
+        deploy::{ACTOR_ADDRESS, ANONYMITY_REVOKER_PKEY, DEPLOYER_ADDRESS},
         shielder::deploy::{deployment, Deployment},
     };
 
@@ -57,13 +59,28 @@ mod tests {
     }
 
     #[rstest]
+    fn anon_cannot_set_ar_key(mut deployment: Deployment) {
+        let new_key = GrumpkinPointAffine::new(U256::from(0), U256::from(1));
+        let result = set_ar_pubkey(
+            new_key,
+            deployment.contract_suite.shielder,
+            &mut deployment.evm,
+            Some(Address::from_str(ACTOR_ADDRESS).unwrap()),
+        );
+        assert!(matches!(
+            result,
+            Err(ShielderCallErrors::OwnableUnauthorizedAccount(_))
+        ));
+    }
+
+    #[rstest]
     fn fails_to_set_incorrect_ar_key(mut deployment: Deployment) {
         let new_key = GrumpkinPointAffine::new(U256::from(0), U256::from(1));
         let result = set_ar_pubkey(
             new_key,
             deployment.contract_suite.shielder,
             &mut deployment.evm,
-            None,
+            Some(Address::from_str(DEPLOYER_ADDRESS).unwrap()),
         );
         assert!(matches!(
             result,
