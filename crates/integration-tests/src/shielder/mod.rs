@@ -14,6 +14,7 @@ use shielder_account::Token;
 use shielder_contract::ShielderContract::{unpauseCall, ShielderContractEvents};
 
 pub mod address_conversion;
+pub mod ar_pubkey;
 pub mod call_errors;
 pub mod calls;
 pub mod deploy;
