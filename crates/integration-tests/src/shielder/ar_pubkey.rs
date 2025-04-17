@@ -87,4 +87,24 @@ mod tests {
             Err(ShielderCallErrors::InvalidGrumpkinPoint(_))
         ));
     }
+
+    #[rstest]
+    fn can_set_ar_to_another_valid_key(mut deployment: Deployment) {
+        let new_key = GrumpkinPointAffine {
+            x: U256::from_limbs([12, 0, 0, 0]),
+            y: U256::from_limbs([
+                14992752028423476423,
+                1427195812150930086,
+                1006077260510187192,
+                2285284544284890360,
+            ]),
+        };
+        let result = set_ar_pubkey(
+            new_key,
+            deployment.contract_suite.shielder,
+            &mut deployment.evm,
+            Some(Address::from_str(DEPLOYER_ADDRESS).unwrap()),
+        );
+        assert!(result.is_ok());
+    }
 }
