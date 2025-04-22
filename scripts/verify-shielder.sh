@@ -12,14 +12,10 @@ LIBRARIES=$(cat "$RUN_LATEST_PATH" | jq -r '.libraries | map("--libraries " + .)
 echo "Libraries $LIBRARIES"
 
 
-jq -c '.transactions[] | select(.transactionType == "CREATE" or .transactionType == "CREATE2")' "$RUN_LATEST_PATH" |
+jq -c '.transactions[] | select(.transactionType == "CREATE")' "$RUN_LATEST_PATH" |
 while read -r tx; do
   CONTRACT_NAME=$(echo "$tx" | jq -r '.contractName')
   CONTRACT_ADDRESS=$(echo "$tx" | jq -r '.contractAddress')
-    CONSTRUCTOR_ARGS=$(echo "$tx" | jq -r '.arguments | @sh' | xargs echo) # already ABI-encoded
-    if [[ -z "$CONSTRUCTOR_ARGS" || "$CONSTRUCTOR_ARGS" == "null" ]]; then
-        CONSTRUCTOR_ARGS="0x"
-    fi
   
 
   if [[ -z "$CONTRACT_NAME" || -z "$CONTRACT_ADDRESS" ]]; then
@@ -27,7 +23,7 @@ while read -r tx; do
     continue
   fi
 
-  echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using blockscout and constructor args $CONSTRUCTOR_ARGS"
+  echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using blockscout"
 
   forge verify-contract \
      --rpc-url ${NETWORK} --watch \
@@ -38,7 +34,7 @@ while read -r tx; do
     --guess-constructor-args
 
   if [[ -n "${ETHERSCAN_API_KEY:-}" ]]; then
-    echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using etherscan and constructor args $CONSTRUCTOR_ARGS"
+    echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using etherscan"
     forge verify-contract \
         --rpc-url ${NETWORK} --watch \
         --skip-is-verified-check \
