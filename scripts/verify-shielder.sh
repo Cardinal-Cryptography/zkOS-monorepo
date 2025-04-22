@@ -37,7 +37,7 @@ while read -r tx; do
     "$CONTRACT_ADDRESS" \
     --guess-constructor-args
 
-  if [[ -n "$ETHERSCAN_API_KEY" ]]; then
+  if [[ -n "${ETHERSCAN_API_KEY:-}" ]]; then
     echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using etherscan and constructor args $CONSTRUCTOR_ARGS"
     forge verify-contract \
         --rpc-url ${NETWORK} --watch \
@@ -67,7 +67,7 @@ while IFS=":" read -r SOURCE_FILE CONTRACT_NAME CONTRACT_ADDRESS; do
     "$CONTRACT_ADDRESS" \
     --constructor-args "0x"
 
-  if [[ -n "$ETHERSCAN_API_KEY" ]]; then
+  if [[ -n "${ETHERSCAN_API_KEY:-}" ]]; then
     echo "Verifying library $CONTRACT_NAME at $CONTRACT_ADDRESS on etherscan"
     forge verify-contract \
         --rpc-url ${NETWORK} --watch \
