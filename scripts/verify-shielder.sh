@@ -4,21 +4,76 @@ set -euo pipefail
 
 CHAIN_ID=$(cast chain-id --rpc-url ${NETWORK})
 
-LIBRARIES=$(cat broadcast/Shielder.s.sol/${CHAIN_ID}/run-latest.json | jq -r '.libraries | map("--libraries " + .) | join(" ")')
-IMPL_CONTRACT_ADDRESS=$(cat broadcast/Shielder.s.sol/${CHAIN_ID}/run-latest.json \
-    | jq -r '.transactions | .[] | select(.transactionType=="CREATE") | select(.contractName=="Shielder") | .contractAddress')
-PROXY_CONTRACT_ADDRESS=$(cat broadcast/Shielder.s.sol/${CHAIN_ID}/run-latest.json \
-    | jq -r '.transactions | .[] | select(.transactionType=="CREATE") | select(.contractName=="ERC1967Proxy") | .contractAddress')
-PROXY_DEPLOYMENT_TX_HASH=$(cat broadcast/Shielder.s.sol/${CHAIN_ID}/run-latest.json \
-    | jq '.transactions | .[] | select(.transactionType=="CREATE") | select(.contractName=="ERC1967Proxy") | .hash')
-PROXY_BLOCK_NUMBER=$(cast to-dec $(cat broadcast/Shielder.s.sol/${CHAIN_ID}/run-latest.json \
-    | jq -r ".receipts | .[] | select(.transactionHash==${PROXY_DEPLOYMENT_TX_HASH}) | .blockNumber"))
+RUN_LATEST_PATH="broadcast/Shielder.s.sol/${CHAIN_ID}/run-latest.json"
 
-echo ${PROXY_CONTRACT_ADDRESS} > shielder_address.txt
-echo ${PROXY_BLOCK_NUMBER} > shielder_block_number.txt
 
-forge verify-contract --rpc-url ${NETWORK} \
-    --verifier blockscout --verifier-url ${EXPLORER_URL} \
-    ${LIBRARIES} \
-    ${IMPL_CONTRACT_ADDRESS} \
-    contracts/Shielder.sol:Shielder
+LIBRARIES=$(cat "$RUN_LATEST_PATH" | jq -r '.libraries | map("--libraries " + .) | join(" ")')
+
+echo "Libraries $LIBRARIES"
+
+
+jq -c '.transactions[] | select(.transactionType == "CREATE" or .transactionType == "CREATE2")' "$RUN_LATEST_PATH" |
+while read -r tx; do
+  CONTRACT_NAME=$(echo "$tx" | jq -r '.contractName')
+  CONTRACT_ADDRESS=$(echo "$tx" | jq -r '.contractAddress')
+    CONSTRUCTOR_ARGS=$(echo "$tx" | jq -r '.arguments | @sh' | xargs echo) # already ABI-encoded
+    if [[ -z "$CONSTRUCTOR_ARGS" || "$CONSTRUCTOR_ARGS" == "null" ]]; then
+        CONSTRUCTOR_ARGS="0x"
+    fi
+  
+
+  if [[ -z "$CONTRACT_NAME" || -z "$CONTRACT_ADDRESS" ]]; then
+    echo "Skipping invalid transaction"
+    continue
+  fi
+
+  echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using blockscout and constructor args $CONSTRUCTOR_ARGS"
+
+  forge verify-contract \
+     --rpc-url ${NETWORK} --watch \
+     --skip-is-verified-check \
+    --verifier blockscout --verifier-url ${BLOCKSCOUT_URL} \
+    $LIBRARIES \
+    "$CONTRACT_ADDRESS" \
+    --guess-constructor-args
+
+  if [[ -n "$ETHERSCAN_API_KEY" ]]; then
+    echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using etherscan and constructor args $CONSTRUCTOR_ARGS"
+    forge verify-contract \
+        --rpc-url ${NETWORK} --watch \
+        --skip-is-verified-check \
+        --verifier etherscan --etherscan-api-key "$ETHERSCAN_API_KEY" \
+        $LIBRARIES \
+        "$CONTRACT_ADDRESS" \
+        --guess-constructor-args
+  fi
+done
+
+echo "Verifying libraries..."
+
+jq -r '.libraries[]' "$RUN_LATEST_PATH" |
+while IFS=":" read -r SOURCE_FILE CONTRACT_NAME CONTRACT_ADDRESS; do
+  if [[ -z "$CONTRACT_NAME" || -z "$CONTRACT_ADDRESS" ]]; then
+    echo "Skipping invalid library line"
+    continue
+  fi
+
+  echo "Verifying library $CONTRACT_NAME at $CONTRACT_ADDRESS on blockscout"
+
+  forge verify-contract \
+     --rpc-url ${NETWORK} --watch \
+     --skip-is-verified-check \
+    --verifier blockscout --verifier-url ${BLOCKSCOUT_URL} \
+    "$CONTRACT_ADDRESS" \
+    --constructor-args "0x"
+
+  if [[ -n "$ETHERSCAN_API_KEY" ]]; then
+    echo "Verifying library $CONTRACT_NAME at $CONTRACT_ADDRESS on etherscan"
+    forge verify-contract \
+        --rpc-url ${NETWORK} --watch \
+        --skip-is-verified-check \
+        --verifier etherscan --etherscan-api-key "$ETHERSCAN_API_KEY" \
+        "$CONTRACT_ADDRESS" \
+        --constructor-args "0x"
+  fi
+done
