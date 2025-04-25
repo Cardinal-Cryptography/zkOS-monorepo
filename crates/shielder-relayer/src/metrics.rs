@@ -1,6 +1,7 @@
 use std::time::Instant;
 
-use alloy_primitives::U256;
+use alloy_primitives::{Address, U256};
+use alloy_provider::Provider;
 use anyhow::Result;
 use axum::{
     extract::{MatchedPath, Request},
@@ -8,6 +9,7 @@ use axum::{
     response::IntoResponse,
 };
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+use shielder_contract::providers::create_simple_provider;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
 use crate::monitor::{healthy, Balances};
@@ -19,14 +21,17 @@ pub const WITHDRAW_FAILURE: &str = "withdraw_failure";
 pub const WITHDRAW_SUCCESS: &str = "withdraw_success";
 pub const HEALTH: &str = "health";
 pub const SIGNER_BALANCES: &str = "signer_balances";
+pub const FEE_DESTINATION_BALANCE: &str = "fee_destination_balance";
 
 pub async fn prometheus_endpoint(
     metrics_handle: PrometheusHandle,
     node_rpc_url: String,
     balances: Balances,
+    fee_destination: Address,
 ) -> impl IntoResponse {
     metrics::gauge!(HEALTH).set(healthy(&node_rpc_url).await.is_ok() as u8 as f64);
     render_signer_balances(balances).await;
+    let _ = render_fee_destination_balance(&node_rpc_url, fee_destination).await;
 
     metrics_handle.render()
 }
@@ -46,6 +51,17 @@ async fn render_signer_balances(balances: Balances) {
         metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string())
             .set(u256_to_f64(unit_balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
     }
+}
+
+async fn render_fee_destination_balance(
+    node_rpc_url: &str,
+    fee_destination: Address,
+) -> Result<()> {
+    let provider = create_simple_provider(node_rpc_url).await?;
+    let balance = provider.get_balance(fee_destination).await?;
+    metrics::gauge!(FEE_DESTINATION_BALANCE)
+        .set(u256_to_f64(balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
+    Ok(())
 }
 
 /// Setup Prometheus metrics handle with custom histogram buckets etc.
