@@ -48,7 +48,7 @@ export class StorageManager {
     const storageData = await this.storage.getStorage();
 
     for (const [index, account] of storageData.accounts.entries()) {
-      if (account.tokenAddress === tokenAddress) {
+      if (account.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()) {
         return {
           accountIndex: parseInt(index),
           accountObject: { ...account }

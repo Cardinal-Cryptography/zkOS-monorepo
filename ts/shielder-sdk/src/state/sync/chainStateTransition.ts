@@ -55,7 +55,7 @@ export class ChainStateTransition {
           `Unexpected version in event: ${event.contractVersion}`
         );
       }
-      if (event.tokenAddress != tokenAddress) {
+      if (event.tokenAddress.toLowerCase() != tokenAddress.toLowerCase()) {
         throw new Error(
           `Unexpected token address in event: ${event.tokenAddress}`
         );
