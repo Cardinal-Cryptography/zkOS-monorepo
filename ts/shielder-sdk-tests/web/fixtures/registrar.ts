@@ -24,7 +24,10 @@ export const setupRegistrar = (): RegistrarFixture => {
   const registerShield = (token: Token, amount: bigint) => {
     balanceRecorder.add(token, amount);
 
-    const key = token.type === "native" ? "native" : token.address;
+    const key =
+      token.type === "native"
+        ? "native"
+        : (token.address.toLowerCase() as `0x${string}`);
     if (!tokenTxHistory.has(key)) {
       tokenTxHistory.set(key, []);
     }
@@ -48,7 +51,10 @@ export const setupRegistrar = (): RegistrarFixture => {
   ) => {
     balanceRecorder.add(token, -amount);
 
-    const key = token.type === "native" ? "native" : token.address;
+    const key =
+      token.type === "native"
+        ? "native"
+        : (token.address.toLowerCase() as `0x${string}`);
     if (!tokenTxHistory.has(key)) {
       tokenTxHistory.set(key, []);
     }
@@ -68,7 +74,10 @@ export const setupRegistrar = (): RegistrarFixture => {
       return balanceRecorder.recordedBalance(token);
     },
     recordedTxHistory: (token: Token) => {
-      const key = token.type === "native" ? "native" : token.address;
+      const key =
+        token.type === "native"
+          ? "native"
+          : (token.address.toLowerCase() as `0x${string}`);
       return tokenTxHistory.get(key) ?? [];
     }
   };
