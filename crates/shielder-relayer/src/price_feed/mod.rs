@@ -10,6 +10,7 @@ use rust_decimal::Decimal;
 use shielder_relayer::{PriceProvider, TokenInfo, TokenKind};
 use time::OffsetDateTime;
 use tokio::time::Duration;
+use tracing::warn;
 
 mod fetching;
 mod price;
@@ -89,7 +90,9 @@ impl Prices {
 /// Start a price feed that updates the prices in the given `Prices` instance.
 pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
     loop {
-        prices.update().await?;
+        if let Err(err) = prices.update().await {
+            warn!("Failed to update prices: {err}");
+        }
         tokio::time::sleep(prices.refresh_interval).await;
     }
 }
