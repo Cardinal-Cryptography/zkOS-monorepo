@@ -13,6 +13,10 @@ import {
 
 const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
 
+const ercTokenLowercase = erc20Token(
+  ercToken.address.toLowerCase() as `0x${string}`
+);
+
 [
   {
     id: 1,
@@ -25,7 +29,7 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
 
       // create ERC20 account, deposit, withdraw manually and via relayer
       { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
-      { op: shieldOp(ercToken, 2n * 10n ** 17n), actor: "alice" },
+      { op: shieldOp(ercTokenLowercase, 2n * 10n ** 17n), actor: "alice" },
       { op: withdrawManualOp(ercToken, 5n ** 17n, "bob"), actor: "alice" },
       {
         op: withdrawOp(ercToken, 7n ** 17n, "bob", 10n ** 17n),

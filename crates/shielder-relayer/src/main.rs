@@ -120,10 +120,14 @@ async fn start_metrics_server(config: &ServerConfig, balances: Balances) -> Resu
     let metrics_handle = setup_metrics_handle()?;
     let node_rpc_url = config.chain.node_rpc_url.clone();
 
+    let fee_destination = signer(&config.keys.fee_destination_key)?.address();
+
     let app = Router::new()
         .route(
             "/metrics",
-            get(move || prometheus_endpoint(metrics_handle, node_rpc_url, balances)),
+            get(move || {
+                prometheus_endpoint(metrics_handle, node_rpc_url, balances, fee_destination)
+            }),
         )
         .layer(CorsLayer::permissive());
     Ok(axum::serve(listener, app).await?)
