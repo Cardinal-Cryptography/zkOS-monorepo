@@ -57,6 +57,11 @@ impl Prices {
         }
     }
 
+    /// Gather current price for all the tokens.
+    pub fn current_prices(&self) -> Vec<(TokenKind, Option<Price>)> {
+        self.tokens.keys().map(|k| (*k, self.price(*k))).collect()
+    }
+
     /// Get the price of a token or `None` if the price is not available or outdated.
     pub fn price(&self, token: TokenKind) -> Option<Price> {
         self.inner

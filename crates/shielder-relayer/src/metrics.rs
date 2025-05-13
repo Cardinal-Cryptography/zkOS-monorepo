@@ -12,7 +12,10 @@ use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
 use shielder_contract::providers::create_simple_provider;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
-use crate::monitor::{healthy, Balances};
+use crate::{
+    monitor::{healthy, Balances},
+    price_feed::Prices,
+};
 
 pub const TOTAL_REQUESTS_METRIC: &str = "http_requests_total";
 pub const REQUEST_DURATION_METRIC: &str = "http_requests_duration_seconds";
@@ -22,16 +25,19 @@ pub const WITHDRAW_SUCCESS: &str = "withdraw_success";
 pub const HEALTH: &str = "health";
 pub const SIGNER_BALANCES: &str = "signer_balances";
 pub const FEE_DESTINATION_BALANCE: &str = "fee_destination_balance";
+pub const EXPIRED_PRICE: &str = "expired_price";
 
 pub async fn prometheus_endpoint(
     metrics_handle: PrometheusHandle,
     node_rpc_url: String,
     balances: Balances,
     fee_destination: Address,
+    prices: Prices,
 ) -> impl IntoResponse {
     metrics::gauge!(HEALTH).set(healthy(&node_rpc_url).await.is_ok() as u8 as f64);
     render_signer_balances(balances).await;
     let _ = render_fee_destination_balance(&node_rpc_url, fee_destination).await;
+    render_price_validity(&prices);
 
     metrics_handle.render()
 }
@@ -108,3 +114,21 @@ fn get_request_path(req: &Request) -> String {
         req.uri().path().to_owned()
     }
 }
+
+fn render_price_validity(prices: &Prices) {
+    render_expired_prices(prices);
+    render_price_ages(prices);
+}
+
+fn render_expired_prices(prices: &Prices) {
+    let current_prices = prices.current_prices();
+    for (token, price) in current_prices.iter() {
+        let expired = match price {
+            Some(_) => 0.0,
+            None => 1.0,
+        };
+        metrics::gauge!(EXPIRED_PRICE, "token" => token.to_string()).set(expired);
+    }
+}
+
+fn render_price_ages(_prices: &Prices) {}
