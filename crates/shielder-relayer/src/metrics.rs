@@ -26,6 +26,7 @@ pub const HEALTH: &str = "health";
 pub const SIGNER_BALANCES: &str = "signer_balances";
 pub const FEE_DESTINATION_BALANCE: &str = "fee_destination_balance";
 pub const EXPIRED_PRICE: &str = "expired_price";
+pub const PRICE_AGE: &str = "price_age";
 
 pub async fn prometheus_endpoint(
     metrics_handle: PrometheusHandle,
@@ -131,4 +132,13 @@ fn render_expired_prices(prices: &Prices) {
     }
 }
 
-fn render_price_ages(_prices: &Prices) {}
+fn render_price_ages(prices: &Prices) {
+    let ages = prices.price_ages();
+    for (token, age) in ages.iter() {
+        let age = match age {
+            Some(age) => age.as_seconds_f64(),
+            None => f64::MAX,
+        };
+        metrics::gauge!(PRICE_AGE, "token" => token.to_string()).set(age);
+    }
+}

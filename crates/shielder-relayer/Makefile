@@ -61,5 +61,5 @@ start-dummy: build-image stop
 	FEE_DESTINATION_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
     RELAYER_SIGNING_KEYS="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" \
     SHIELDER_CONTRACT_ADDRESS="0x1111111111111111111111111111111111111111" \
-    TOKEN_CONFIG="[{\"kind\":\"Native\", \"price_provider\":{\"Static\": 1}}]" \
+    TOKEN_CONFIG="[{\"kind\":\"Native\", \"price_provider\":{\"Static\": 1}}, {\"kind\":{\"ERC20\":{\"address\": \"0x6b175474e89094c44da98b954eedeac495271d0f\", \"decimals\": 6}}, \"price_provider\":{\"Url\": \"http://dupa.dupa\"}}, {\"kind\":{\"ERC20\":{\"address\": \"0xa0Ee7A142d267C1f36714E4a8F75612F20a79720\", \"decimals\": 6}}, \"price_provider\":{\"Url\": \"https://api.diadata.org/v1/assetQuotation/Ethereum/0x0000000000000000000000000000000000000000\"}}]" \
 	./run-relayer.sh

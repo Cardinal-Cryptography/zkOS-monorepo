@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use fetching::{fetch_price, PriceFetchError};
+use fetching::fetch_price;
 pub use price::Price;
 #[cfg(test)]
 use rust_decimal::Decimal;
@@ -12,12 +12,14 @@ use time::OffsetDateTime;
 use tokio::time::Duration;
 use tracing::warn;
 
+use crate::price_feed::price::Expiration;
+
 mod fetching;
 mod price;
 
 /// A collection of prices for various coins.
 ///
-/// The underlying structure is behind a mutex and a process to update it
+/// The underlying structure is behind a mutex, and a process to update it
 /// asynchronously can be started with `start_price_feed`.
 #[derive(Clone)]
 pub struct Prices {
@@ -58,8 +60,27 @@ impl Prices {
     }
 
     /// Gather current price for all the tokens.
-    pub fn current_prices(&self) -> Vec<(TokenKind, Option<Price>)> {
+    pub fn current_prices(&self) -> HashMap<TokenKind, Option<Price>> {
         self.tokens.keys().map(|k| (*k, self.price(*k))).collect()
+    }
+
+    pub fn price_ages(&self) -> HashMap<TokenKind, Option<time::Duration>> {
+        let now = OffsetDateTime::now_utc();
+        self.inner
+            .iter()
+            .map(|(token, price)| {
+                let price = price.lock().expect("Mutex poisoned");
+                if price.is_none() {
+                    // if the price is None, it means it was never fetched
+                    return (*token, None);
+                }
+                let price = price.as_ref().unwrap();
+                match price.expiration {
+                    Expiration::Eternal => (*token, Some(time::Duration::ZERO)),
+                    Expiration::Timed { fetched, .. } => (*token, Some(now - fetched)),
+                }
+            })
+            .collect()
     }
 
     /// Get the price of a token or `None` if the price is not available or outdated.
@@ -72,13 +93,21 @@ impl Prices {
             .validate(&OffsetDateTime::now_utc())
     }
 
-    async fn update(&self) -> Result<(), PriceFetchError> {
+    async fn update(&self) {
         for token in self.tokens.values() {
             let PriceProvider::Url(url) = &token.price_provider else {
                 continue;
             };
-            let price_info = fetch_price(url).await?;
-            let price = Price::from_price_info(price_info, token.decimals(), self.validity);
+
+            let price_info = fetch_price(url).await;
+
+            if let Err(err) = price_info {
+                warn!("Failed to update prices: {err}");
+                continue;
+            }
+
+            let price =
+                Price::from_price_info(price_info.unwrap(), token.decimals(), self.validity);
 
             self.inner
                 .get(&token.kind)
@@ -87,18 +116,14 @@ impl Prices {
                 .expect("Mutex poisoned")
                 .replace(price);
         }
-
-        Ok(())
     }
 }
 
 /// Start a price feed that updates the prices in the given `Prices` instance.
 pub async fn start_price_feed(prices: Prices) -> Result<(), anyhow::Error> {
     loop {
-        if let Err(err) = prices.update().await {
-            warn!("Failed to update prices: {err}");
-        }
         tokio::time::sleep(prices.refresh_interval).await;
+        prices.update().await;
     }
 }
 
@@ -142,7 +167,7 @@ mod tests {
             Default::default(),
         );
 
-        prices.update().await.unwrap();
+        prices.update().await;
 
         assert!(prices.price(TokenKind::Native).is_some());
     }
@@ -155,7 +180,7 @@ mod tests {
             Default::default(),
         );
 
-        prices.update().await.unwrap();
+        prices.update().await;
 
         assert!(prices.price(TokenKind::Native).is_some());
     }
@@ -167,7 +192,7 @@ mod tests {
             Duration::from_millis(1),
             Default::default(),
         );
-        prices.update().await.unwrap();
+        prices.update().await;
 
         assert!(prices.price(TokenKind::Native).is_none());
     }
