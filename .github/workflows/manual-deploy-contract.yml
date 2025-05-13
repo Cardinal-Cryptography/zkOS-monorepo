@@ -42,17 +42,17 @@ jobs:
           if [ "${{ github.event.inputs.environment }}" == "dev" ]; then
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
             echo "NETWORK=https://rpc.alephzero-testnet.gelato.digital" >> $GITHUB_ENV
-            echo "EXPLORER_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
+            echo "BLOCKSCOUT_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "stage" ]; then
             echo "OWNER_ADDRESS=${{ vars.CI_TESTNET_STAGE_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_TESTNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
             echo "NETWORK=https://rpc.alephzero-testnet.gelato.digital" >> $GITHUB_ENV
-            echo "EXPLORER_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
+            echo "BLOCKSCOUT_URL=https://evm-explorer-testnet.alephzero.org/api" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.environment }}" == "prod" ]; then
             echo "OWNER_ADDRESS=${{ vars.MAINNET_PROD_OWNER_ADDRESS }}" >> $GITHUB_ENV
             echo "PRIVATE_KEY=${{ secrets.CI_MAINNET_DEPLOYER_PRIVATE_KEY }}" >> $GITHUB_ENV
             echo "NETWORK=https://rpc.alephzero.raas.gelato.cloud" >> $GITHUB_ENV
-            echo "EXPLORER_URL=https://evm-explorer.alephzero.org/api" >> $GITHUB_ENV
+            echo "BLOCKSCOUT_URL=https://evm-explorer.alephzero.org/api" >> $GITHUB_ENV
           else
             echo "Invalid environment selected!" >&2
             exit 1
