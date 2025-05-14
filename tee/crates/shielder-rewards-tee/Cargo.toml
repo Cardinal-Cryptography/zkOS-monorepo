@@ -1,0 +1,12 @@
+[package]
+name = "shielder-rewards-tee"
+version = "0.1.0"
+edition = "2021"
+authors = ["Cardinal"]
+homepage = "https://alephzero.org"
+license = "Apache-2.0"
+categories = ["cryptography"]
+repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
+
+[dependencies]
+shielder-rewards-common = { workspace = true }
