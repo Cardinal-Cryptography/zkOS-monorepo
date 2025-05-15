@@ -14,7 +14,7 @@ use shielder_contract::{
     alloy_primitives::U256, merkle_path::get_current_merkle_path,
     providers::create_simple_provider, ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{QuoteFeeResponse, RelayCalldata, RelayQuery};
+use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
@@ -81,7 +81,11 @@ async fn prepare_relay_queries(
     let mut result = Vec::new();
 
     let total_fee = reqwest::Client::new()
-        .get(config.relayer_url.clone() + "/quote_fee")
+        .post(config.relayer_url.clone() + "/quote_fees")
+        .json(&QuoteFeeQuery {
+            fee_token: Token::Native,
+            pocket_money: U256::ZERO,
+        })
         .send()
         .await?
         .json::<QuoteFeeResponse>()
