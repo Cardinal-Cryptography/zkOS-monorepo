@@ -39,6 +39,9 @@ jobs:
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
       # NOTE: integration tests use vanilla solc compiler for compiling Solidity
       - name: Install solc compiler
@@ -103,6 +106,9 @@ jobs:
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
+        with:
+          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
       - name: Prepare Solidity environment
         uses: ./.github/actions/prepare-sol-env
