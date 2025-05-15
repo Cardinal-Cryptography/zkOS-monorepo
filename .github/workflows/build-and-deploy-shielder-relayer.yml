@@ -50,7 +50,7 @@ jobs:
         uses: ./.github/actions/shielder-relayer/deploy
         id: deploy_shielder_relayer
         with:
-          environment: prod
+          environment: ${{ github.event.inputs.environment }}
           image-tag: ${{ needs.build-and-push.outputs.image_tag }}
           autocommit-author: ${{ secrets.AUTOCOMMIT_AUTHOR }}
           autocommit-email: ${{ secrets.AUTOCOMMIT_EMAIL }}
