@@ -5301,6 +5301,7 @@ dependencies = [
  "alloy-signer-local",
  "anyhow",
  "clap",
+ "powers-of-tau",
  "rand",
  "reqwest",
  "shielder-account",
