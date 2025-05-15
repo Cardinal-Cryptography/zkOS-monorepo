@@ -32,7 +32,7 @@ ifeq ($(BUILD),client)
 	@cargo build --release
 	@cd ../.. && docker build --tag "${RELAYER_DOCKER_IMAGE}" -f "crates/shielder-relayer/docker/Dockerfile.client" .
 else ifeq ($(BUILD),docker)
-	@cd ../.. && DOCKER_BUILDKIT=1 docker build --ssh default --tag "${RELAYER_DOCKER_IMAGE}" -f "crates/shielder-relayer/docker/Dockerfile.docker" .
+	@cd ../.. && DOCKER_BUILDKIT=1 docker build --tag "${RELAYER_DOCKER_IMAGE}" -f "crates/shielder-relayer/docker/Dockerfile.docker" .
 else
 	echo "Don't know what to do with ${BUILD}"; exit -1;
 endif

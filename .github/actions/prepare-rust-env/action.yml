@@ -1,24 +1,11 @@
 ---
 name: "Prepare Rust environment"
 description: >
-  Installs Rust toolchain, authenticates with SSH (in order to access Github private repos)
-inputs:
-  poseidon-gadget-private-key:
-    description: "SSH private key that corresponds to the deploy key in poseidon2-gadget repository"
-    required: true
-  zkos-circuits-private-key:
-    description: "SSH private key that corresponds to the deploy key in zkos-circuits repository"
-    required: true
+  Installs Rust toolchain
 
 runs:
   using: composite
   steps:
-    - uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: |
-          ${{ inputs.poseidon-gadget-private-key }}
-          ${{ inputs.zkos-circuits-private-key }}
-
     - name: Install Rust toolchain
       uses: Cardinal-Cryptography/github-actions/install-rust-toolchain@v7
       with:
