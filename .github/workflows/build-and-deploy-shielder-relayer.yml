@@ -24,9 +24,6 @@ jobs:
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
-        with:
-          poseidon-gadget-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          zkos-circuits-private-key: ${{ secrets.ZKOS_CIRCUITS_SSH_PRIVATE_KEY }}
 
       - name: Build relayer
         run: cd crates/shielder-relayer && make build
