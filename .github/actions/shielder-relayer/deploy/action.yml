@@ -43,6 +43,8 @@ runs:
 
     - name: Setup yq
       uses: dcarbone/install-yq-action@v1.3.1
+      with:
+        version: "v4.44.3"
 
     - name: Update docker image tag (dev)
       if: ${{ inputs.environment == 'dev' || inputs.environment == 'all (dev, stage, prod)' }}
