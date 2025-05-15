@@ -51,7 +51,7 @@ runs:
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2
-        yq -iy '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
 
     - name: Update docker image tag (stage)
       if: ${{ inputs.environment == 'stage' || inputs.environment == 'all' }}
