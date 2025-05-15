@@ -24,7 +24,7 @@ inputs:
     description: Environment to deploy to
     type: choice
     options:
-      - all (dev, stage, prod)
+      - all
       - dev
       - stage
       - prod
@@ -47,21 +47,21 @@ runs:
         version: "v4.44.3"
 
     - name: Update docker image tag (dev)
-      if: ${{ inputs.environment == 'dev' || inputs.environment == 'all (dev, stage, prod)' }}
+      if: ${{ inputs.environment == 'dev' || inputs.environment == 'all' }}
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2
         yq -iy '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
 
     - name: Update docker image tag (stage)
-      if: ${{ inputs.environment == 'stage' || inputs.environment == 'all (dev, stage, prod)' }}
+      if: ${{ inputs.environment == 'stage' || inputs.environment == 'all' }}
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2
         yq -iy '.relayer.image.tag = "${{ inputs.image-tag }}"' stage-values.yaml
 
     - name: Update docker image tag (prod)
-      if: ${{ inputs.environment == 'prod' || inputs.environment == 'all (dev, stage, prod)' }}
+      if: ${{ inputs.environment == 'prod' || inputs.environment == 'all' }}
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2

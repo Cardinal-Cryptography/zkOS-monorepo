@@ -8,7 +8,7 @@ on:
         description: Environment to deploy to
         type: choice
         options:
-          - all (dev, stage, prod)
+          - all
           - dev
           - stage
           - prod
