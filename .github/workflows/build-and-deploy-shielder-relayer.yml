@@ -1,14 +1,23 @@
 ---
-name: "[PROD] Build and deploy shielder-relayer"
+name: "Build and deploy shielder-relayer"
 
 on:
   workflow_dispatch:
     inputs:
-      overwrite-shielder-address:
+      environment:
+        description: Environment to deploy to
+        type: choice
+        options:
+          - all
+          - dev
+          - stage
+          - prod
+        required: true
+      branch:
+        description: "Branch to check out (by default: main)"
         type: string
-        required: false
-        default: ''
-        description: Overwrite shielder address - if empty it's not changed
+        default: main
+        required: true
 
 jobs:
   build-and-push:
@@ -17,6 +26,8 @@ jobs:
     steps:
       - name: GIT | Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
@@ -41,8 +52,10 @@ jobs:
     steps:
       - name: GIT | Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
-      - name: KUSTOMIZE | Deploy
+      - name: Deploy
         uses: ./.github/actions/shielder-relayer/deploy
         id: deploy_shielder_relayer
         with:
@@ -53,4 +66,3 @@ jobs:
           github-token: ${{ secrets.CI_GH_TOKEN }}
           kustomize-version: ${{ vars.KUSTOMIZE_VERSION }}
           ecr-private-host: ${{ secrets.ECR_PRIVATE_HOST }}
-          overwrite-shielder-address: ${{ inputs.overwrite-shielder-address }}
