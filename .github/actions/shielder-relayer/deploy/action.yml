@@ -51,21 +51,21 @@ runs:
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2
-        yq -iy '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
 
     - name: Update docker image tag (stage)
       if: ${{ inputs.environment == 'stage' || inputs.environment == 'all' }}
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2
-        yq -iy '.relayer.image.tag = "${{ inputs.image-tag }}"' stage-values.yaml
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' stage-values.yaml
 
     - name: Update docker image tag (prod)
       if: ${{ inputs.environment == 'prod' || inputs.environment == 'all' }}
       shell: bash
       run: |
         cd aleph-apps/shielder-relayer-v2
-        yq -iy '.relayer.image.tag = "${{ inputs.image-tag }}"' prod-values.yaml
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' prod-values.yaml
 
     - name: GIT | Commit changes to aleph-apps repository
       uses: EndBug/add-and-commit@v9.1.4
