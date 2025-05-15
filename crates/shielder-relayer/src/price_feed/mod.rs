@@ -1,9 +1,7 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use fetching::fetch_price;
+use parking_lot::Mutex;
 pub use price::Price;
 #[cfg(test)]
 use rust_decimal::Decimal;
@@ -69,7 +67,7 @@ impl Prices {
         self.inner
             .iter()
             .map(|(token, price)| {
-                let price = price.lock().expect("Mutex poisoned");
+                let price = price.lock();
                 if price.is_none() {
                     // if the price is None, it means it was never fetched
                     return (*token, None);
@@ -88,7 +86,6 @@ impl Prices {
         self.inner
             .get(&token)?
             .lock()
-            .expect("Mutex poisoned")
             .clone()?
             .validate(&OffsetDateTime::now_utc())
     }
@@ -109,12 +106,7 @@ impl Prices {
             let price =
                 Price::from_price_info(price_info.unwrap(), token.decimals(), self.validity);
 
-            self.inner
-                .get(&token.kind)
-                .unwrap()
-                .lock()
-                .expect("Mutex poisoned")
-                .replace(price);
+            self.inner.get(&token.kind).unwrap().lock().replace(price);
         }
     }
 }
