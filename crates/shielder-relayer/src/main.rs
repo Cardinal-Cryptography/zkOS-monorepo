@@ -89,7 +89,7 @@ async fn main() -> Result<()> {
             server_config.operations.balance_monitor_interval,
             signers.balances.clone(),
         ),
-        start_metrics_server(&server_config, signers.balances.clone()),
+        start_metrics_server(&server_config, signers.balances.clone(), prices.clone()),
         start_main_server(&server_config, signers, prices.clone()),
         start_price_feed(prices)
     )?;
@@ -112,7 +112,11 @@ fn get_signer_info(config: &KeyConfig) -> Result<Signers> {
     })
 }
 
-async fn start_metrics_server(config: &ServerConfig, balances: Balances) -> Result<()> {
+async fn start_metrics_server(
+    config: &ServerConfig,
+    balances: Balances,
+    prices: Prices,
+) -> Result<()> {
     let address = config.network.metrics_address();
     let listener = tokio::net::TcpListener::bind(address.clone()).await?;
     info!("Exposing metrics on {address}");
@@ -126,7 +130,13 @@ async fn start_metrics_server(config: &ServerConfig, balances: Balances) -> Resu
         .route(
             "/metrics",
             get(move || {
-                prometheus_endpoint(metrics_handle, node_rpc_url, balances, fee_destination)
+                prometheus_endpoint(
+                    metrics_handle,
+                    node_rpc_url,
+                    balances,
+                    fee_destination,
+                    prices,
+                )
             }),
         )
         .layer(CorsLayer::permissive());
