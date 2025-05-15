@@ -12,9 +12,13 @@ run() {
   pushd $ROOT_DIR &>> output.log
 
   start_node
-  deploy_contracts
-  start_relayer
+
+  deploy_shielder_contracts
+  deploy_erc20_tokens
+  mint_erc20_tokens
+
   endow_accounts # only needed for relayer
+  start_relayer
 
   ${ROOT_DIR}/target/release/stress-testing \
     --master-seed "${DEPLOYER_PRIVATE_KEY}" \

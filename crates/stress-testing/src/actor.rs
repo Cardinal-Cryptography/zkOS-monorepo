@@ -21,9 +21,14 @@ pub struct Actor {
     pub account: ShielderAccount,
 }
 
-const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
-    x: U256::from_limbs([65, 78, 79, 78]), // ANON
-    y: U256::from_limbs([89, 77, 73, 84]), // YMIT
+pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
+    x: U256::from_limbs([1, 0, 0, 0]),
+    y: U256::from_limbs([
+        9457493854555940652,
+        3253583849847263892,
+        14921373847124204899,
+        2,
+    ]),
 };
 
 impl Actor {
