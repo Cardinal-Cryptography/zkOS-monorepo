@@ -13,6 +13,11 @@ on:
           - stage
           - prod
         required: true
+      branch:
+        description: "Branch to check out (by default: main)"
+        type: string
+        default: main
+        required: true
 
 jobs:
   build-and-push:
@@ -21,6 +26,8 @@ jobs:
     steps:
       - name: GIT | Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
       - name: Prepare Rust env
         uses: ./.github/actions/prepare-rust-env
@@ -45,8 +52,10 @@ jobs:
     steps:
       - name: GIT | Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
-      - name: KUSTOMIZE | Deploy
+      - name: Deploy
         uses: ./.github/actions/shielder-relayer/deploy
         id: deploy_shielder_relayer
         with:
