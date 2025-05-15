@@ -14,7 +14,7 @@ use shielder_contract::{
     alloy_primitives::U256, merkle_path::get_current_merkle_path,
     providers::create_simple_provider, ShielderContract::withdrawNativeCall,
 };
-use shielder_relayer::{QuoteFeeResponse, RelayCalldata, RelayQuery};
+use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote};
 use shielder_setup::version::contract_version;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
@@ -80,18 +80,20 @@ async fn prepare_relay_queries(
     let (params, pk) = proving_keys::<WithdrawCircuit>();
     let mut result = Vec::new();
 
-    let total_fee = reqwest::Client::new()
-        .get(config.relayer_url.clone() + "/quote_fee")
+    let quote = reqwest::Client::new()
+        .post(config.relayer_url.clone() + "/quote_fees")
+        .json(&QuoteFeeQuery {
+            fee_token: Token::Native,
+            pocket_money: U256::ZERO,
+        })
         .send()
         .await?
         .json::<QuoteFeeResponse>()
-        .await?
-        .fee_details
-        .total_cost_fee_token;
+        .await?;
 
     println!("⏳ Preparing relay queries for actors...");
     for actor in actors {
-        let query = prepare_relay_query(config, &actor, &params, &pk, total_fee).await?;
+        let query = prepare_relay_query(config, &actor, &params, &pk, quote.clone()).await?;
         result.push((actor, query));
     }
     Ok(result)
@@ -102,7 +104,7 @@ async fn prepare_relay_query(
     actor: &Actor,
     params: &Params,
     pk: &ProvingKey,
-    relayer_fee: U256,
+    quote: QuoteFeeResponse,
 ) -> Result<RelayQuery> {
     let (merkle_root, merkle_path) =
         get_current_merkle_path(U256::from(actor.id), &actor.shielder_user).await?;
@@ -111,6 +113,7 @@ async fn prepare_relay_query(
         .await?
         .get_chain_id()
         .await?;
+    let amount = U256::from(WITHDRAW_AMOUNT) + quote.fee_details.total_cost_native;
 
     let calldata: withdrawNativeCall = actor
         .account
@@ -118,12 +121,12 @@ async fn prepare_relay_query(
             params,
             pk,
             Token::Native,
-            U256::from(WITHDRAW_AMOUNT),
+            amount,
             &WithdrawExtra {
                 merkle_path,
                 to,
                 relayer_address: config.relayer_address,
-                relayer_fee,
+                relayer_fee: quote.fee_details.total_cost_fee_token,
                 contract_version: contract_version(),
                 chain_id: U256::from(chain_id),
                 mac_salt: U256::ZERO,
@@ -136,7 +139,7 @@ async fn prepare_relay_query(
     let query = RelayQuery {
         calldata: RelayCalldata {
             expected_contract_version: contract_version().to_bytes(),
-            amount: U256::from(WITHDRAW_AMOUNT),
+            amount,
             withdraw_address: to,
             merkle_root,
             nullifier_hash: calldata.oldNullifierHash,
@@ -148,7 +151,11 @@ async fn prepare_relay_query(
             mac_commitment: calldata.macCommitment,
             pocket_money: U256::ZERO,
         },
-        quote: Default::default(),
+        quote: RelayQuote {
+            gas_price: quote.price_details.gas_price,
+            native_token_unit_price: quote.price_details.native_token_unit_price,
+            fee_token_unit_price: quote.price_details.fee_token_unit_price,
+        },
     };
     println!("  ✅ Prepared relay query for actor {}", actor.id);
     Ok(query)
