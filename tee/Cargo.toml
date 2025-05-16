@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2021"
+authors = ["Cardinal"]
+homepage = "https://alephzero.org"
+license = "Apache-2.0"
+categories = ["cryptography"]
+repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
+
+[workspace.dependencies]
+shielder-rewards-common = { path = "crates/shielder-rewards-common" }
