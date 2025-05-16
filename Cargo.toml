@@ -43,6 +43,7 @@ metrics-exporter-prometheus = { version = "0.16.0", default-features = false }
 num-bigint = { version = "0.4.3" }
 openssl = { version = "0.10.59" }
 parameterized = { version = "2.0.0" }
+parking_lot = { version = "0.12.3" }
 rand = { version = "0.8.5" }
 rayon = { version = "1.8" }
 reqwest = { version = "0.12.5" }
@@ -56,7 +57,7 @@ serde = { version = "1.0.203" }
 serde_json = { version = "1.0.120" }
 sha3 = { version = "0.10" }
 shellexpand = { version = "3.1.0" }
-shielder-circuits = { git = "ssh://git@github.com/Cardinal-Cryptography/zkOS-circuits", rev = "ee2fd0b5d446c5706f4e200643a160891fb11b61" }
+shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "df31437" }
 testcontainers = { version = "0.19.0" }
 thiserror = { version = "2.0.9" }
 time = { version = "0.3.37" }

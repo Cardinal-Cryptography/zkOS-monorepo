@@ -9,6 +9,8 @@
 Welcome to Shielder, the first iteration of zkOS by Aleph Zero.
 Shielder is designed to provide a seamless integration of zero-knowledge (ZK) privacy into Ethereum Virtual Machine (EVM) compatible environments with subsecond proving times.
 
+**Audit report** by zkSecurity is available [here](https://reports.zksecurity.xyz/reports/aleph-zero-shielder/).
+
 ## Table of Contents
 
 - [Introduction](#introduction)

@@ -21,15 +21,14 @@ inputs:
     description: Kustomize version
     required: true
   environment:
+    description: Environment to deploy to
     type: choice
     options:
+      - all
       - dev
       - stage
       - prod
     required: true
-  overwrite-shielder-address:
-    description: Shielder address to replace the exist one
-    required: false
 
 runs:
   using: composite
@@ -42,25 +41,31 @@ runs:
         path: "aleph-apps"
         ref: main
 
-    - name: KUSTOMIZE | Init kustomize
-      uses: imranismail/setup-kustomize@v2
+    - name: Setup yq
+      uses: dcarbone/install-yq-action@v1.3.1
       with:
-        kustomize-version: ${{ inputs.kustomize-version }}
+        version: "v4.44.3"
 
-    - name: Modify shielder address in the config map
-      if: ${{ inputs.overwrite-shielder-address != '' }}
+    - name: Update docker image tag (dev)
+      if: ${{ inputs.environment == 'dev' || inputs.environment == 'all' }}
       shell: bash
       run: |
-        yq -i '.data.SHIELDER_CONTRACT_ADDRESS="${{ inputs.overwrite-shielder-address }}"' \
-          aleph-apps/shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1/configmap.yaml
+        cd aleph-apps/shielder-relayer-v2
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
 
-    - name: KUSTOMIZE | Update docker image tag
+    - name: Update docker image tag (stage)
+      if: ${{ inputs.environment == 'stage' || inputs.environment == 'all' }}
       shell: bash
-      env:
-        DEPLOY_IMAGE: ${{ inputs.ecr-private-host }}/shielder-relayer:${{ inputs.image-tag }}
       run: |
-        cd aleph-apps/shielder-relayer/overlays/${{ inputs.environment }}/eu-central-1
-        kustomize edit set image "shielder-relayer-image-placeholder=${{ env.DEPLOY_IMAGE }}"
+        cd aleph-apps/shielder-relayer-v2
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' stage-values.yaml
+
+    - name: Update docker image tag (prod)
+      if: ${{ inputs.environment == 'prod' || inputs.environment == 'all' }}
+      shell: bash
+      run: |
+        cd aleph-apps/shielder-relayer-v2
+        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' prod-values.yaml
 
     - name: GIT | Commit changes to aleph-apps repository
       uses: EndBug/add-and-commit@v9.1.4
@@ -70,7 +75,7 @@ runs:
         author_name: ${{ inputs.autocommit-author }}
         author_email: ${{ inputs.autocommit-email }}
         message: >
-          Updating shielder-relayer ${{ inputs.environment }}
+          Updating shielder-relayer on environment: ${{ inputs.environment }}
           docker image tag: ${{ inputs.image-tag }}
         add: "*.yaml"
         cwd: 'aleph-apps'

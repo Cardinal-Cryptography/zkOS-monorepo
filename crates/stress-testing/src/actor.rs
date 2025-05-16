@@ -1,5 +1,5 @@
 use alloy_signer_local::PrivateKeySigner;
-use rand::{rngs::StdRng, SeedableRng};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use shielder_account::{
     call_data::{NewAccountCallExtra, NewAccountCallType},
     ShielderAccount, Token,
@@ -21,17 +21,26 @@ pub struct Actor {
     pub account: ShielderAccount,
 }
 
-const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
-    x: U256::from_limbs([65, 78, 79, 78]), // ANON
-    y: U256::from_limbs([89, 77, 73, 84]), // YMIT
+pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
+    x: U256::from_limbs([1, 0, 0, 0]),
+    y: U256::from_limbs([
+        9457493854555940652,
+        3253583849847263892,
+        14921373847124204899,
+        2,
+    ]),
 };
 
 impl Actor {
     pub fn new(id: u32, rpc_url: String, shielder: Address) -> Self {
-        let signer = PrivateKeySigner::random_with(&mut StdRng::from_seed(seed(id)));
+        let mut rng = StdRng::from_seed(seed(id));
+
+        let signer = PrivateKeySigner::random_with(&mut rng);
         let shielder_user =
             ShielderUser::new(shielder, ConnectionPolicy::OnDemand { rpc_url, signer });
-        let account = ShielderAccount::new(U256::from(id), Token::Native);
+
+        let account = ShielderAccount::new(U256::from(rng.gen::<u64>()), Token::Native);
+
         Self {
             id,
             shielder_user,

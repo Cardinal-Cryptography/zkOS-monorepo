@@ -12,15 +12,19 @@ run() {
   pushd $ROOT_DIR &>> output.log
 
   start_node
-  deploy_contracts
-  start_relayer
+
+  deploy_shielder_contracts
+  deploy_erc20_tokens
+  mint_erc20_tokens
+
   endow_accounts # only needed for relayer
+  start_relayer
 
   ${ROOT_DIR}/target/release/stress-testing \
     --master-seed "${DEPLOYER_PRIVATE_KEY}" \
     --node-rpc-url "${NODE_RPC_URL}" \
     --shielder "${SHIELDER_CONTRACT_ADDRESS}" \
-    --relayer-url "${RELAYER_URL}/relay" \
+    --relayer-url "${RELAYER_URL}" \
     --relayer-address "${FEE_DESTINATION}" \
     --actor-count 10
 

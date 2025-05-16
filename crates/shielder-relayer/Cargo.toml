@@ -25,6 +25,7 @@ clap = { workspace = true, features = ["derive"] }
 metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 openssl = { workspace = true, features = ["vendored"] }
+parking_lot = { workspace = true }
 reqwest.workspace = true
 rust_decimal = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use alloy_primitives::Address;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -21,6 +23,16 @@ impl From<TokenKind> for Token {
             TokenKind::Native => Token::Native,
             TokenKind::ERC20 { address, .. } => Token::ERC20(address),
         }
+    }
+}
+
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            TokenKind::Native => "native".to_string(),
+            TokenKind::ERC20 { address, .. } => format!("erc20:{address}"),
+        };
+        write!(f, "{str}")
     }
 }
 

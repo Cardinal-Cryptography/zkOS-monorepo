@@ -9,7 +9,12 @@ pub enum Expiration {
     /// The price is eternal and never expires.
     Eternal,
     /// The price is valid until the given time.
-    ValidUntil(OffsetDateTime),
+    Timed {
+        /// The expiration time.
+        expiration: OffsetDateTime,
+        /// The time when the price was fetched.
+        fetched: OffsetDateTime,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -40,7 +45,10 @@ impl Price {
         Self {
             token_price: price_info.token_price,
             unit_price: price_info.token_price * Decimal::from_i128_with_scale(1, decimals),
-            expiration: Expiration::ValidUntil(price_info.time + validity),
+            expiration: Expiration::Timed {
+                expiration: price_info.time + validity,
+                fetched: price_info.time,
+            },
         }
     }
 
@@ -48,7 +56,7 @@ impl Price {
     pub fn validate(&self, now: &OffsetDateTime) -> Option<Self> {
         match self.expiration {
             Expiration::Eternal => Some(self.clone()),
-            Expiration::ValidUntil(expiration) => {
+            Expiration::Timed { expiration, .. } => {
                 if now < &expiration {
                     Some(self.clone())
                 } else {
@@ -83,7 +91,10 @@ mod tests {
         let price = Price {
             token_price: Default::default(),
             unit_price: Default::default(),
-            expiration: Expiration::ValidUntil(now + validity),
+            expiration: Expiration::Timed {
+                expiration: now + validity,
+                fetched: now,
+            },
         };
 
         assert!(price.validate(&now).is_some());

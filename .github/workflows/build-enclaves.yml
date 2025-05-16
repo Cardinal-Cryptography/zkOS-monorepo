@@ -4,9 +4,11 @@ name: "Build enclaves"
 on:
   pull_request:
   push:
+    branches:
+      - "main"
 jobs:
   build-and-check:
-    runs-on: [self-hosted, Linux, X64, small]
+    runs-on: ubuntu-22.04
     defaults:
       run:
         working-directory: "tee/nix"
