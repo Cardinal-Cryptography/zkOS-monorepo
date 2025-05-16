@@ -25,6 +25,11 @@
         cargo = toolchain;
         rustc = toolchain;
       };
+
+      zkOS-monorepo-source = builtins.fetchGit {
+        url = "https://github.com/Cardinal-Cryptography/zkOS-monorepo.git";
+        rev = "e8b2e0ef287639afa5df5dfe6c155bbc4f50eaa7";
+      };
     in
     rec {
       defaultPackage = packages.all;
@@ -34,13 +39,8 @@
           { name = "rewardTEE"; path = packages.rewardTEE; }
         ];
 
-        zkOS-monorepo-source = builtins.fetchGit {
-          url = "https://github.com/Cardinal-Cryptography/zkOS-monorepo.git";
-          rev = "e8b2e0ef287639afa5df5dfe6c155bbc4f50eaa7";
-        };
-
         rewardTEE-binary = naersk'.buildPackage {
-          src = "${packages.zkOS-monorepo-source}/tee";
+          src = "${zkOS-monorepo-source}/tee";
 
           doCheck = true;
           nativeBuildInputs = with pkgs; [ pkgsStatic.stdenv.cc ];

@@ -1,0 +1,17 @@
+---
+
+name: "Build enclaves"
+on:
+  pull_request:
+  push:
+jobs:
+  build-and-check:
+    runs-on: [self-hosted, Linux, X64, small]
+    defaults:
+      run:
+        working-directory: "tee/nix"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - run: nix build
+      - run: nix flake check
