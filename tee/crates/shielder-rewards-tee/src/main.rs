@@ -1,5 +1,5 @@
 use log::info;
-use shielder_rewards_common::protocol::{Request, Response, RewardServer, VSOCK_PORT};
+use shielder_rewards_common::protocol::{Response, RewardServer, VSOCK_PORT};
 use tokio::spawn;
 use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
 
@@ -31,8 +31,8 @@ async fn do_handle_client(stream: VsockStream) -> Result<(), Box<dyn std::error:
 
     loop {
         server
-            .handle_request(async |command| match command {
-                Request::Ping => Response::Pong,
+            .handle_request(async |_| Response::PublicKey {
+                pubkey: "dummy_pubkey".to_string(),
             })
             .await?;
     }

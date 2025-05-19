@@ -6,12 +6,12 @@ pub const VSOCK_PORT: u32 = 5000;
 
 #[derive(Serialize, Deserialize)]
 pub enum Request {
-    Ping,
+    GetPublicKey,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum Response {
-    Pong,
+    PublicKey { pubkey: String },
 }
 
 pub type RewardServer = VsockServer<Request, Response>;

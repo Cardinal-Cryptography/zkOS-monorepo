@@ -10,6 +10,9 @@ repository.workspace = true
 
 [dependencies]
 axum = { workspace = true, features = ["tokio"] }
+clap = { workspace = true, features = ["derive"] }
+serde.workspace = true
 shielder-rewards-common.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["net", "rt", "rt-multi-thread"] }
+vsock.workspace = true
