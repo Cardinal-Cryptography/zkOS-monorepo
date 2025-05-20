@@ -1,4 +1,3 @@
-use alloy_sol_types::SolCall;
 use anyhow::Result;
 use shielder_account::Token;
 use shielder_contract::providers::create_simple_provider;
@@ -15,7 +14,9 @@ pub async fn recover_state(app_state: &mut AppState, token: Token) -> Result<()>
     } = app_state;
     let provider = create_simple_provider(node_rpc_url).await?;
 
-    Ok(accounts[&token.address()]
+    Ok(accounts
+        .get_mut(&token.address())
+        .expect("We have just ensured the account exists")
         .recover(&shielder_user, &provider)
         .await?)
 }
