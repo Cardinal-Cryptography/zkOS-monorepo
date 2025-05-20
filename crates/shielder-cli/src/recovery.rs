@@ -6,7 +6,9 @@ use alloy_provider::{
 use alloy_rpc_types_eth::{Transaction, TransactionTrait};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, bail, Result};
-use shielder_account::{ShielderAccount, ShielderAction, Token};
+use shielder_account::{
+    recovery::try_get_shielder_event_for_tx, ShielderAccount, ShielderAction, Token,
+};
 use shielder_circuits::poseidon::off_circuit::hash;
 use shielder_contract::{
     call_type::DryRun,
@@ -19,7 +21,6 @@ use shielder_contract::{
     },
 };
 use tracing::{error, info};
-use shielder_account::recovery::try_get_shielder_event_for_tx;
 use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::app_state::AppState;
@@ -92,7 +93,7 @@ async fn find_shielder_transaction(
             _ => continue,
         };
 
-        let event = match try_get_shielder_event_for_tx(provider, &tx, block.header.hash).await? {
+        let event = match try_get_shielder_event_for_tx(provider, &tx).await? {
             Some(event) => event,
             _ => continue,
         };
@@ -113,4 +114,3 @@ async fn find_shielder_transaction(
     }
     bail!("No matching Shielder transaction found in block {block_number}")
 }
-

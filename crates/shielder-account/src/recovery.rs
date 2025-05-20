@@ -1,4 +1,3 @@
-use alloy_primitives::BlockHash;
 use alloy_provider::{network::TransactionResponse, Provider};
 use alloy_rpc_types_eth::{Transaction, TransactionTrait};
 use alloy_sol_types::SolCall;
@@ -17,9 +16,11 @@ use shielder_contract::{
 pub async fn try_get_shielder_event_for_tx(
     provider: &impl Provider,
     tx: &Transaction,
-    block_hash: BlockHash,
 ) -> Result<Option<ShielderContractEvents>, ShielderContractError> {
     let tx_data = tx.input();
+    let block_hash = tx
+        .block_hash()
+        .ok_or(ShielderContractError::EventNotFound)?;
     let maybe_action = if newAccountNativeCall::abi_decode(tx_data, true).is_ok()
         || newAccountERC20Call::abi_decode(tx_data, true).is_ok()
     {
