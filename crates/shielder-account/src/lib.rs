@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "contract")]
 pub mod call_data;
-#[cfg(feature = "contract")]
-pub mod recovery;
 pub mod secrets;
 mod shielder_action;
 
