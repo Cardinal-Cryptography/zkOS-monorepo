@@ -82,12 +82,21 @@ impl AppState {
         }
     }
 
-    pub fn ensure_account_exist(&mut self, token: Token) {
+    /// If the account for `token` does not exist, create a new one. For ZK ID use either the
+    /// provided `zkid_seed` or the default one derived from the signing key.
+    pub fn ensure_account_exist(&mut self, token: Token, zkid_seed: Option<U256>) {
         if let Entry::Vacant(e) = self.accounts.entry(token.address()) {
-            let seed = U256::from_str(&self.signing_key)
-                .expect("Invalid key format - cannot cast to U256");
-            let id_per_token = hash(&[u256_to_field(seed), address_to_field(token.address())]);
-            e.insert(ShielderAccount::new(field_to_u256(id_per_token), token));
+            if let Some(zkid_seed) = zkid_seed {
+                e.insert(ShielderAccount::new(zkid_seed, token));
+            } else {
+                let seed = U256::from_str(&self.signing_key)
+                    .expect("Invalid key format - cannot cast to U256");
+                let id_per_token = field_to_u256(hash(&[
+                    u256_to_field(seed),
+                    address_to_field(token.address()),
+                ]));
+                e.insert(ShielderAccount::new(id_per_token, token));
+            }
         }
     }
 

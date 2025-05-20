@@ -1,3 +1,4 @@
+use alloy_primitives::U256;
 use anyhow::Result;
 use shielder_account::Token;
 use shielder_circuits::poseidon::off_circuit::hash;
@@ -6,9 +7,13 @@ use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::app_state::AppState;
 
-pub async fn recover_state(app_state: &mut AppState, token: Token) -> Result<()> {
+pub async fn recover_state(
+    app_state: &mut AppState,
+    token: Token,
+    zkid_seed: Option<U256>,
+) -> Result<()> {
     let shielder_user = app_state.create_shielder_user();
-    app_state.ensure_account_exist(token);
+    app_state.ensure_account_exist(token, zkid_seed);
     let AppState {
         accounts,
         node_rpc_url,
