@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "contract")]
 pub mod call_data;
+#[cfg(feature = "contract")]
+pub mod recovery;
 pub mod secrets;
 mod shielder_action;
 
@@ -106,6 +108,11 @@ impl ShielderAccount {
         Some(field_to_u256(raw_note))
     }
 
+    /// Get the prenullifier (the nullifier of the first action - new account).
+    pub fn prenullifier(&self) -> U256 {
+        self.id
+    }
+
     /// Generate the nullifier for the next action to be done.
     pub fn next_nullifier(&self) -> U256 {
         secrets::nonced::derive_nullifier(self.id, self.nonce)
@@ -114,9 +121,10 @@ impl ShielderAccount {
     /// Generate the nullifier for the previous action. If the account has no actions, `self.id`
     /// is used as 'pre-nullifier'.
     pub fn previous_nullifier(&self) -> U256 {
-        self.nonce.checked_sub(1).map_or(self.id, |nonce| {
-            secrets::nonced::derive_nullifier(self.id, nonce)
-        })
+        self.nonce.checked_sub(1).map_or_else(
+            || self.prenullifier(),
+            |nonce| secrets::nonced::derive_nullifier(self.id, nonce),
+        )
     }
 }
 

@@ -19,6 +19,7 @@ use shielder_contract::{
     },
 };
 use tracing::{error, info};
+use shielder_account::recovery::try_get_shielder_event_for_tx;
 use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::app_state::AppState;
@@ -113,29 +114,3 @@ async fn find_shielder_transaction(
     bail!("No matching Shielder transaction found in block {block_number}")
 }
 
-async fn try_get_shielder_event_for_tx(
-    provider: &impl Provider,
-    tx: &Transaction,
-    block_hash: BlockHash,
-) -> Result<Option<ShielderContractEvents>> {
-    let tx_data = tx.input();
-    let maybe_action = if newAccountNativeCall::abi_decode(tx_data, true).is_ok()
-        || newAccountERC20Call::abi_decode(tx_data, true).is_ok()
-    {
-        let event = get_event::<NewAccount>(provider, tx.tx_hash(), block_hash).await?;
-        Some(ShielderContractEvents::NewAccount(event))
-    } else if depositNativeCall::abi_decode(tx_data, true).is_ok()
-        || depositERC20Call::abi_decode(tx_data, true).is_ok()
-    {
-        let event = get_event::<Deposit>(provider, tx.tx_hash(), block_hash).await?;
-        Some(ShielderContractEvents::Deposit(event))
-    } else if withdrawNativeCall::abi_decode(tx_data, true).is_ok()
-        || withdrawERC20Call::abi_decode(tx_data, true).is_ok()
-    {
-        let event = get_event::<Withdraw>(provider, tx.tx_hash(), block_hash).await?;
-        Some(ShielderContractEvents::Withdraw(event))
-    } else {
-        None
-    };
-    Ok(maybe_action)
-}
