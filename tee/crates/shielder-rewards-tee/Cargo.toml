@@ -9,8 +9,12 @@ categories = ["cryptography"]
 repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [dependencies]
+alloy-primitives = { workspace = true }
+base64 = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
+shielder-circuits = { workspace = true }
 shielder-rewards-common = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tokio-vsock = { workspace = true }
