@@ -11,6 +11,9 @@ description = "Shielder account management"
 
 [dependencies]
 alloy-primitives = { workspace = true, features = ["serde"] }
+alloy-provider = { workspace = true, optional = true }
+alloy-rpc-types-eth = { workspace = true, optional = true }
+alloy-sol-types = { workspace = true, optional = true }
 halo2curves = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 serde = { workspace = true, features = ["derive"] }
@@ -21,4 +24,9 @@ shielder-setup = { workspace = true }
 type-conversions = { workspace = true }
 
 [features]
-contract = [ "shielder-contract" ]
+contract = [
+    "alloy-provider",
+    "alloy-rpc-types-eth",
+    "alloy-sol-types",
+    "shielder-contract"
+]

@@ -1,141 +1,38 @@
-use alloy_primitives::{BlockHash, BlockNumber, U256};
-use alloy_provider::{
-    network::{primitives::BlockTransactionsKind, TransactionResponse},
-    Provider,
-};
-use alloy_rpc_types_eth::{Transaction, TransactionTrait};
-use alloy_sol_types::SolCall;
-use anyhow::{anyhow, bail, Result};
-use shielder_account::{ShielderAccount, ShielderAction, Token};
+use alloy_primitives::U256;
+use anyhow::Result;
+use shielder_account::Token;
 use shielder_circuits::poseidon::off_circuit::hash;
-use shielder_contract::{
-    call_type::DryRun,
-    events::get_event,
-    providers::create_simple_provider,
-    ShielderContract::{
-        depositERC20Call, depositNativeCall, newAccountERC20Call, newAccountNativeCall,
-        withdrawERC20Call, withdrawNativeCall, Deposit, NewAccount, ShielderContractEvents,
-        Withdraw,
-    },
-};
-use tracing::{error, info};
+use shielder_contract::{providers::create_simple_provider, recovery::get_shielder_action};
 use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::app_state::AppState;
 
-pub async fn recover_state(app_state: &mut AppState, token: Token) -> Result<()> {
+pub async fn recover_state(
+    app_state: &mut AppState,
+    token: Token,
+    zkid_seed: Option<U256>,
+) -> Result<()> {
     let shielder_user = app_state.create_shielder_user();
-    app_state.ensure_account_exist(token);
+    app_state.ensure_account_exist(token, zkid_seed);
     let AppState {
         accounts,
         node_rpc_url,
         ..
     } = app_state;
-
-    let mut recovering_account = accounts[&token.address()].clone();
-
     let provider = create_simple_provider(node_rpc_url).await?;
 
+    let account = accounts
+        .get_mut(&token.address())
+        .expect("We have just ensured the account exists");
+
     loop {
-        info!("Recovering state for nonce {}", recovering_account.nonce);
+        let expected_nullifier = account.previous_nullifier();
+        let expected_nullifier_hash = field_to_u256(hash(&[u256_to_field(expected_nullifier)]));
 
-        // Calculate the expected nullifier hash
-        let expected_nullifier = recovering_account.previous_nullifier();
-        let expected_nullifier_hash =
-            field_to_u256(hash::<1>(&[u256_to_field(expected_nullifier)]));
-
-        // Check if the nullifier hash has already been registered in the contract.
-        let mut block_number = shielder_user
-            .nullifiers::<DryRun>(expected_nullifier_hash)
-            .await?;
-        if block_number == U256::ZERO {
-            info!("Nullifier hash {expected_nullifier_hash} not found, recovering state completed");
-            break;
-        };
-        block_number -= U256::from(1); // remove the offset for null detection
-        if block_number >= U256::from(BlockNumber::MAX) {
-            let msg = format!("Block number too large: {block_number}");
-            error!(msg);
-            bail!(msg);
+        match get_shielder_action(&provider, &shielder_user, expected_nullifier_hash).await? {
+            Some(action) => account.register_action(action),
+            None => break,
         }
-        let block_number = block_number.into_limbs()[0];
-        info!("Nullifier hash {expected_nullifier_hash} found in block {block_number}");
-
-        // If yes, find the corresponding transaction.
-        let action =
-            find_shielder_transaction(&provider, block_number, &recovering_account).await?;
-
-        // Apply the action to the account.
-        recovering_account.register_action(action);
     }
-
-    accounts.insert(token.address(), recovering_account);
-
     Ok(())
-}
-
-async fn find_shielder_transaction(
-    provider: &impl Provider,
-    block_number: BlockNumber,
-    account: &ShielderAccount,
-) -> Result<ShielderAction> {
-    let block_number = block_number.into();
-    let block = provider
-        .get_block_by_number(block_number, BlockTransactionsKind::Hashes)
-        .await?
-        .ok_or(anyhow!("Block not found"))?;
-
-    for tx_hash in block.transactions.as_hashes().expect("We have hashes") {
-        let tx = match provider.get_transaction_by_hash(*tx_hash).await {
-            Ok(Some(tx)) => tx,
-            _ => continue,
-        };
-
-        let event = match try_get_shielder_event_for_tx(provider, &tx, block.header.hash).await? {
-            Some(event) => event,
-            _ => continue,
-        };
-
-        event.check_version().map_err(|_| anyhow!("Bad version"))?;
-        let event_note = event.note();
-        let action = ShielderAction::from((tx.tx_hash(), event));
-
-        let mut hypothetical_account = account.clone();
-        hypothetical_account.register_action(action.clone());
-        let expected_note = hypothetical_account
-            .note(action.token())
-            .expect("We have just made an action");
-
-        if expected_note == event_note {
-            return Ok(action);
-        }
-    }
-    bail!("No matching Shielder transaction found in block {block_number}")
-}
-
-async fn try_get_shielder_event_for_tx(
-    provider: &impl Provider,
-    tx: &Transaction,
-    block_hash: BlockHash,
-) -> Result<Option<ShielderContractEvents>> {
-    let tx_data = tx.input();
-    let maybe_action = if newAccountNativeCall::abi_decode(tx_data, true).is_ok()
-        || newAccountERC20Call::abi_decode(tx_data, true).is_ok()
-    {
-        let event = get_event::<NewAccount>(provider, tx.tx_hash(), block_hash).await?;
-        Some(ShielderContractEvents::NewAccount(event))
-    } else if depositNativeCall::abi_decode(tx_data, true).is_ok()
-        || depositERC20Call::abi_decode(tx_data, true).is_ok()
-    {
-        let event = get_event::<Deposit>(provider, tx.tx_hash(), block_hash).await?;
-        Some(ShielderContractEvents::Deposit(event))
-    } else if withdrawNativeCall::abi_decode(tx_data, true).is_ok()
-        || withdrawERC20Call::abi_decode(tx_data, true).is_ok()
-    {
-        let event = get_event::<Withdraw>(provider, tx.tx_hash(), block_hash).await?;
-        Some(ShielderContractEvents::Withdraw(event))
-    } else {
-        None
-    };
-    Ok(maybe_action)
 }

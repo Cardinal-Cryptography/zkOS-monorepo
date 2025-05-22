@@ -69,8 +69,8 @@ async fn perform_state_write_action(
             app_state.relayer_rpc_url = relayer_rpc_url;
         }
         // for now we support only native recovery
-        StateWriteCommand::RecoverState { token } => {
-            recover_state(app_state, token).await?;
+        StateWriteCommand::RecoverState { token, zkid_seed } => {
+            recover_state(app_state, token, zkid_seed).await?;
         }
     };
     Ok(())
@@ -100,12 +100,13 @@ async fn perform_contract_action(
     command: ContractInteractionCommand,
 ) -> Result<()> {
     match command {
-        ContractInteractionCommand::NewAccount(NewAccountCmd { amount }) => {
+        ContractInteractionCommand::NewAccount(NewAccountCmd { amount, .. }) => {
             new_account(app_state, amount, Token::Native).await
         }
         ContractInteractionCommand::NewAccountERC20(NewAccountERC20Cmd {
             amount,
             token_address,
+            ..
         }) => new_account(app_state, amount, Token::ERC20(token_address)).await,
 
         ContractInteractionCommand::Deposit(DepositCmd { amount }) => {
@@ -150,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut app_state = get_app_state(&cli_config.state_file, &password)?;
 
         if let Some(token) = cli_config.command.token() {
-            app_state.ensure_account_exist(token);
+            app_state.ensure_account_exist(token, cli_config.command.zkid_seed());
         }
 
         match cli_config.command {
