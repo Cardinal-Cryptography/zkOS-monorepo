@@ -28,7 +28,7 @@
 
       zkOS-monorepo-source = builtins.fetchGit {
         url = "https://github.com/Cardinal-Cryptography/zkOS-monorepo.git";
-        rev = "e8b2e0ef287639afa5df5dfe6c155bbc4f50eaa7";
+        rev = "da70131ba57ceb678a890c1b6e553710773686a8";
       };
     in
     rec {
