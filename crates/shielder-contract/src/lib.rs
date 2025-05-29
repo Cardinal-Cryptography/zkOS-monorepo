@@ -18,6 +18,7 @@ pub mod erc20;
 pub mod events;
 pub mod merkle_path;
 pub mod providers;
+pub mod recovery;
 mod types;
 
 /// Errors that can occur when interacting with the Shielder contract.

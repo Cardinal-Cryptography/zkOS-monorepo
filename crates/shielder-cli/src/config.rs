@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use alloy_primitives::Address;
+use alloy_primitives::{Address, U256};
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use inquire::Password;
@@ -61,6 +61,19 @@ impl Command {
             _ => None,
         }
     }
+
+    pub fn zkid_seed(&self) -> Option<U256> {
+        match self {
+            Command::ContractInteraction(ContractInteractionCommand::NewAccount(
+                NewAccountCmd { zkid_seed, .. },
+            ))
+            | Command::ContractInteraction(ContractInteractionCommand::NewAccountERC20(
+                NewAccountERC20Cmd { zkid_seed, .. },
+            ))
+            | Command::StateWrite(StateWriteCommand::RecoverState { zkid_seed, .. }) => *zkid_seed,
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Subcommand)]
@@ -91,6 +104,8 @@ pub enum StateWriteCommand {
         /// Token to recover.
         #[clap(value_parser = parsing::parse_token)]
         token: Token,
+        /// Optional seed for the ZK ID. If not provided, will be derived from the private key.
+        zkid_seed: Option<U256>,
     },
 }
 
@@ -136,6 +151,8 @@ impl ContractInteractionCommand {
 pub struct NewAccountCmd {
     /// Amount of the token to be shielded.
     pub amount: u128,
+    /// Optional seed for the ZK ID. If not provided, will be derived from the private key.
+    pub zkid_seed: Option<U256>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -144,6 +161,8 @@ pub struct NewAccountERC20Cmd {
     pub amount: u128,
     /// Address of the token.
     pub token_address: Address,
+    /// Optional seed for the ZK ID. If not provided, will be derived from the private key.
+    pub zkid_seed: Option<U256>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
