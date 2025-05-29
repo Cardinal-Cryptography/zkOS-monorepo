@@ -7,11 +7,19 @@ use axum::{
     serve, Json, Router,
 };
 use clap::Parser;
-use log::debug;
+use log::{debug, error};
+use sea_orm::{
+    ActiveModelTrait as _,
+    ActiveValue::{NotSet, Set},
+    ConnectOptions, Database, DatabaseConnection,
+};
 use serde::Deserialize;
 use shielder_rewards_common::protocol::{Request, Response, RewardClient, VSOCK_PORT};
 use thiserror::Error;
 use tokio::net::TcpListener;
+
+mod entity;
+use entity::reward::{self};
 
 #[derive(Error, Debug)]
 enum Error {
@@ -20,6 +28,9 @@ enum Error {
 
     #[error("VSOCK error: {0}")]
     Vsock(#[from] shielder_rewards_common::vsock::Error),
+
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -41,11 +52,18 @@ struct Options {
 
     #[clap(long, default_value_t = 600)]
     tee_compute_timeout_secs: u64,
+
+    #[clap(
+        long,
+        default_value = "postgres://postgres:postgres@127.0.0.1:5432/reward_server"
+    )]
+    db_url: String,
 }
 
 struct AppState {
     options: Options,
     task_pool: Arc<tokio_task_pool::Pool>,
+    db: DatabaseConnection,
 }
 
 #[tokio::main]
@@ -59,11 +77,24 @@ async fn main() -> Result<(), Error> {
         .with_spawn_timeout(Duration::from_secs(options.task_pool_timeout_secs))
         .with_run_timeout(Duration::from_secs(options.tee_compute_timeout_secs))
         .into();
+    let db = Database::connect(
+        ConnectOptions::new(options.db_url.clone())
+            .connect_timeout(Duration::from_secs(1))
+            .clone(),
+    )
+    .await?;
 
     let app = Router::new()
         .route("/pubkey", get(pubkey))
         .route("/submit", post(submit))
-        .with_state(AppState { options, task_pool }.into());
+        .with_state(
+            AppState {
+                options,
+                task_pool,
+                db,
+            }
+            .into(),
+        );
 
     serve(listener, app).await?;
 
@@ -91,8 +122,25 @@ async fn submit(
     Json(submit): Json<SubmitPayload>,
 ) -> Result<(), StatusCode> {
     let task_pool = state.task_pool.clone();
+    let db = state.db.clone();
+
     task_pool
-        .spawn(request(state, submit.into()))
+        .spawn(async move {
+            match request(state, submit.clone().into()).await {
+                Ok(Json(Response::TVL { tvl, .. })) => {
+                    reward::ActiveModel {
+                        id: NotSet,
+                        user: Set(submit.user),
+                        value: Set(tvl.into()),
+                    }
+                    .insert(&db)
+                    .await
+                    .map(|_| ())
+                    .unwrap_or_else(|e| error!("Failed to insert reward: {:?}", e));
+                }
+                other => error!("Failed to handle request: {:?}", other),
+            }
+        })
         .await
         .map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
 
