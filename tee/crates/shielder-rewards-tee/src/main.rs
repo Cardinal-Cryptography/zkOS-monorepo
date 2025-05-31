@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use log::info;
 use shielder_rewards_common::protocol::{Request, Response, RewardServer, VSOCK_PORT};
 use tokio::spawn;
@@ -31,8 +33,18 @@ async fn do_handle_client(stream: VsockStream) -> Result<(), Box<dyn std::error:
 
     loop {
         server
-            .handle_request(async |command| match command {
-                Request::Ping => Response::Pong,
+            .handle_request(async |request| match request {
+                Request::GetPublicKey => Response::PublicKey {
+                    pubkey: "dummy_pubkey".to_string(),
+                },
+                Request::CalculateTVL {
+                    user,
+                    encrypted_viewing_key: _,
+                } => {
+                    // Simulate some processing
+                    tokio::time::sleep(Duration::from_secs(10)).await;
+                    Response::TVL { user, tvl: 1234 }
+                }
             })
             .await?;
     }

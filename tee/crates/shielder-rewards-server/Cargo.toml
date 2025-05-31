@@ -1,0 +1,22 @@
+[package]
+name = "shielder-rewards-server"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+axum = { workspace = true, features = ["tokio", "macros"] }
+clap = { workspace = true, features = ["derive"] }
+env_logger.workspace = true
+log.workspace = true
+sea-orm = { workspace = true, features = ["sqlx-postgres", "runtime-tokio"] }
+serde.workspace = true
+shielder-rewards-common.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["net", "rt", "rt-multi-thread"] }
+tokio-task-pool = { workspace = true, features = ["log"] }
+vsock.workspace = true
