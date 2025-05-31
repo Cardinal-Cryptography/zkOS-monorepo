@@ -2,8 +2,6 @@
 name: Nightly E2E tests run on testnet
 
 on:
-  schedule:
-    - cron: "00 23 * * *"
   workflow_dispatch:
 
 concurrency:
