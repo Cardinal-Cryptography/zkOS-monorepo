@@ -8,6 +8,9 @@ import { AccountRegistry } from "@/state/accountRegistry";
 import { ShielderActions } from "./actions";
 import { ShielderComponents } from "./factories";
 import { QuotedFees } from "@/chain/relayer";
+import { NewAccountCalldata } from "@/actions/newAccount";
+import { DepositCalldata } from "@/actions/deposit";
+import { WithdrawCalldata } from "@/actions/withdraw";
 
 export class ShielderClient {
   private accountRegistry: AccountRegistry;
@@ -183,6 +186,72 @@ export class ShielderClient {
       withdrawalAddress,
       sendShielderTransaction,
       from
+    );
+  }
+
+  /**
+   * Generate calldata for creation of a new account with an initial deposit.
+   * @param {Token} token - token to shield
+   * @param {bigint} amount - amount to shield, in wei
+   * @param {`0x${string}`} from - public address of the sender
+   * @returns calldata for new account action
+   */
+  async getNewAccountCalldata(
+    token: Token,
+    amount: bigint,
+    from: `0x${string}`
+  ): Promise<NewAccountCalldata> {
+    if (await this.accountRegistry.getAccountState(token)) {
+      throw new Error("Account state should be null");
+    }
+    return await this.shielderActions.getNewAccountCalldata(
+      token,
+      amount,
+      from
+    );
+  }
+
+  /**
+   * Generate calldata for depositing `amount` into the account.
+   * @param {Token} token - token to shield
+   * @param {bigint} amount - amount to shield, in wei
+   * @param {`0x${string}`} from - public address of the sender
+   * @returns calldata for deposit action
+   */
+  async getDepositCalldata(
+    token: Token,
+    amount: bigint,
+    from: `0x${string}`
+  ): Promise<DepositCalldata> {
+    return await this.shielderActions.getDepositCalldata(token, amount, from);
+  }
+
+  /**
+   * Generate calldata for withdrawing `amount` from the account.
+   * where `value` is the targeted amount to withdraw.
+   * @param {Token} token - token to withdraw
+   * @param {bigint} amount - amount to withdraw, in wei
+   * @param {`0x${string}`} withdrawalAddress - public address of the recipient
+   * @param {`0x${string}`} relayerAddress - public address of the sender/relayer
+   * @param {QuotedFees} quotedFees - (optional) fee info
+   * @param {bigint} pocketMoney - (optional) amount of native token to be sent to the recipient by the sender/relayer; only for ERC20 withdrawals
+   * @returns calldata for withdrawal action
+   */
+  async getWithdrawCalldata(
+    token: Token,
+    amount: bigint,
+    withdrawalAddress: `0x${string}`,
+    relayerAddress: `0x${string}`,
+    quotedFees?: QuotedFees,
+    pocketMoney?: bigint
+  ): Promise<WithdrawCalldata> {
+    return await this.shielderActions.getWithdrawCalldata(
+      token,
+      amount,
+      withdrawalAddress,
+      relayerAddress,
+      quotedFees,
+      pocketMoney
     );
   }
 }
