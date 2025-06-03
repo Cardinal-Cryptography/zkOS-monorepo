@@ -12,9 +12,9 @@ import {
   QuotedFees,
   quotedFeesFromExpectedTokenFee
 } from "@/chain/relayer";
-import { NewAccountAction } from "@/actions/newAccount";
-import { DepositAction } from "@/actions/deposit";
-import { WithdrawAction } from "@/actions/withdraw";
+import { NewAccountAction, NewAccountCalldata } from "@/actions/newAccount";
+import { DepositAction, DepositCalldata } from "@/actions/deposit";
+import { WithdrawAction, WithdrawCalldata } from "@/actions/withdraw";
 import { contractVersion } from "@/constants";
 import { Calldata } from "@/actions/types";
 import { AccountStateMerkleIndexed } from "@/state/types";
@@ -162,6 +162,87 @@ export class ShielderActions {
     await this.waitAndSync(token, txHash);
 
     return txHash;
+  }
+
+  /**
+   * Generate calldata for creation of a new account with an initial deposit.
+   * @param {Token} token - token to shield
+   * @param {bigint} amount - amount to shield, in wei
+   * @param {`0x${string}`} from - public address of the sender
+   * @returns calldata for new account action
+   */
+  async getNewAccountCalldata(
+    token: Token,
+    amount: bigint,
+    from: `0x${string}`
+  ): Promise<NewAccountCalldata> {
+    if (await this.accountRegistry.getAccountState(token)) {
+      throw new Error("Account state should be null");
+    }
+    return await this.newAccountAction.generateCalldata(
+      await this.accountRegistry.createEmptyAccountState(token),
+      amount,
+      contractVersion,
+      from
+    );
+  }
+
+  /**
+   * Generate calldata for depositing `amount` into the account.
+   * @param {Token} token - token to shield
+   * @param {bigint} amount - amount to shield, in wei
+   * @param {`0x${string}`} from - public address of the sender
+   * @returns calldata for deposit action
+   */
+  async getDepositCalldata(
+    token: Token,
+    amount: bigint,
+    from: `0x${string}`
+  ): Promise<DepositCalldata> {
+    const state = await this.accountRegistry.getAccountState(token);
+    if (!state) {
+      throw new Error("Account not found");
+    }
+    return await this.depositAction.generateCalldata(
+      state,
+      amount,
+      contractVersion,
+      from
+    );
+  }
+
+  /**
+   * Generate calldata for withdrawing `amount` from the account.
+   * where `value` is the targeted amount to withdraw.
+   * @param {Token} token - token to withdraw
+   * @param {bigint} amount - amount to withdraw, in wei
+   * @param {`0x${string}`} withdrawalAddress - public address of the recipient
+   * @param {`0x${string}`} relayerAddress - public address of the sender/relayer
+   * @param {QuotedFees} quotedFees - (optional) fee info
+   * @param {bigint} pocketMoney - (optional) amount of native token to be sent to the recipient by the sender/relayer; only for ERC20 withdrawals
+   * @returns calldata for withdrawal action
+   */
+  async getWithdrawCalldata(
+    token: Token,
+    amount: bigint,
+    withdrawalAddress: `0x${string}`,
+    relayerAddress: `0x${string}`,
+    quotedFees?: QuotedFees,
+    pocketMoney?: bigint
+  ): Promise<WithdrawCalldata> {
+    const state = await this.accountRegistry.getAccountState(token);
+    if (!state) {
+      throw new Error("Account not found");
+    }
+    return await this.withdrawAction.generateCalldata(
+      state,
+      amount,
+      relayerAddress,
+      quotedFees ?? quotedFeesFromExpectedTokenFee(0n),
+      withdrawalAddress,
+      contractVersion,
+      pocketMoney ?? 0n // pocketMoney is 0, as it is not used in this case
+    );
   }
 
   private async newAccount(
