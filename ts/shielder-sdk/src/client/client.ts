@@ -201,9 +201,6 @@ export class ShielderClient {
     amount: bigint,
     from: `0x${string}`
   ): Promise<NewAccountCalldata> {
-    if (await this.accountRegistry.getAccountState(token)) {
-      throw new Error("Account state should be null");
-    }
     return await this.shielderActions.getNewAccountCalldata(
       token,
       amount,
