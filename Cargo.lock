@@ -2006,6 +2006,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "fee-estimator"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-provider",
+ "alloy-rpc-types",
+ "alloy-signer",
+ "alloy-signer-local",
+ "anyhow",
+ "assert2",
+ "async-channel",
+ "axum",
+ "clap",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "openssl",
+ "parking_lot",
+ "reqwest",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "shielder-account",
+ "shielder-contract",
+ "shielder-setup",
+ "thiserror 2.0.11",
+ "time",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "utoipa",
+ "utoipa-axum",
+ "utoipa-swagger-ui",
+ "zip",
+]
+
+[[package]]
 name = "ff"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
