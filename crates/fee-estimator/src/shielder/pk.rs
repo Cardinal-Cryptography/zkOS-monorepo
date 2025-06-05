@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, str::FromStr};
+use std::{env, fs, path::PathBuf, str::FromStr};
 
 use anyhow::Result;
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
@@ -12,9 +12,25 @@ use shielder_circuits::{
 };
 use tracing::debug;
 
-const NEW_ACCOUNT_PK_FILE: &str = "~/fee-estimator/new_account_pk";
-const DEPOSIT_PK_FILE: &str = "~/fee-estimator/deposit_pk";
-const PROVING_PARAMS_FILE: &str = "~/fee-estimator/proving_params";
+// Get data directory from environment variable or use default
+fn get_data_dir() -> String {
+    env::var("FEE_ESTIMATOR_DATA_DIR").unwrap_or_else(|_| {
+        // Use home directory as fallback for backward compatibility
+        match env::var("HOME") {
+            Ok(home) => format!("{}/fee-estimator", home),
+            // If HOME is not set (like in some containers), use /app/data
+            Err(_) => "/app/data".to_string(),
+        }
+    })
+}
+
+fn get_file_path(filename: &str) -> String {
+    format!("{}/{}", get_data_dir(), filename)
+}
+
+const NEW_ACCOUNT_PK_FILENAME: &str = "new_account_pk";
+const DEPOSIT_PK_FILENAME: &str = "deposit_pk";
+const PROVING_PARAMS_FILENAME: &str = "proving_params";
 
 #[derive(Copy, Clone, Debug)]
 pub enum CircuitType {
@@ -24,10 +40,11 @@ pub enum CircuitType {
 
 impl CircuitType {
     pub fn filepath(self) -> Result<PathBuf> {
-        expand_path(match self {
-            CircuitType::NewAccount => NEW_ACCOUNT_PK_FILE,
-            CircuitType::Deposit => DEPOSIT_PK_FILE,
-        })
+        let filename = match self {
+            CircuitType::NewAccount => NEW_ACCOUNT_PK_FILENAME,
+            CircuitType::Deposit => DEPOSIT_PK_FILENAME,
+        };
+        Ok(PathBuf::from(get_file_path(filename)))
     }
 
     pub fn unmarshall_pk(self, bytes: &[u8]) -> Result<(u32, ProvingKey)> {
@@ -58,7 +75,7 @@ pub fn get_proving_equipment(circuit_type: CircuitType) -> Result<(Params, Provi
 }
 
 fn get_params() -> Result<Params> {
-    let file = expand_path(PROVING_PARAMS_FILE)?;
+    let file = PathBuf::from(get_file_path(PROVING_PARAMS_FILENAME));
 
     debug!("Getting proving params from {file:?}");
 
@@ -117,8 +134,17 @@ fn get_equipment(
     }
 }
 
+// Kept for backward compatibility but no longer uses shellexpand
 fn expand_path(path: &str) -> Result<PathBuf> {
-    Ok(PathBuf::from_str(shellexpand::full(path)?.as_ref())?)
+    debug!("expand_path is deprecated, using direct path resolution instead");
+    if path.starts_with("~/fee-estimator/") {
+        // Handle the specific paths we know about
+        let filename = path.strip_prefix("~/fee-estimator/").unwrap_or(path);
+        Ok(PathBuf::from(get_file_path(filename)))
+    } else {
+        // Fall back to the old behavior for any other paths
+        Ok(PathBuf::from_str(shellexpand::full(path)?.as_ref())?)
+    }
 }
 
 fn save_content(path: PathBuf, content: &[u8]) -> Result<()> {

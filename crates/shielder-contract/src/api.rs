@@ -3,7 +3,7 @@ use alloy_provider::Provider;
 use alloy_sol_types::SolCall;
 
 #[cfg(feature = "erc20")]
-use crate::erc20::ERC20::approveCall;
+use crate::erc20::ERC20::{allowanceCall, approveCall};
 use crate::{
     call_type::CallType,
     connection::{Connection, ConnectionPolicy, NoProvider},
@@ -130,6 +130,18 @@ impl<P: Provider + Clone> ShielderUser<P> {
     ) -> ContractResult<C::Result> {
         self.connection
             .call_with_address::<C, _>(contract_address, approveCall { spender, amount })
+            .await
+    }
+
+    #[cfg(feature = "erc20")]
+    pub async fn erc20_allowance<C: CallType<allowanceCall>>(
+        &self,
+        contract_address: Address,
+        owner: Address,
+        spender: Address,
+    ) -> ContractResult<C::Result> {
+        self.connection
+            .call_with_address::<C, _>(contract_address, allowanceCall { owner, spender })
             .await
     }
 }

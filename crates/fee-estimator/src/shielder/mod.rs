@@ -5,6 +5,7 @@ use alloy_primitives::{
 
 pub mod deposit;
 pub mod new_account;
+mod patched;
 mod pk;
 
 pub fn get_mac_salt() -> U256 {

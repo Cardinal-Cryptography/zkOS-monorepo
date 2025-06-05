@@ -1,7 +1,8 @@
+use alloy_primitives::U256;
 use alloy_sol_types::sol;
 
 use crate::{
-    erc20::ERC20::{approveCall, approveReturn},
+    erc20::ERC20::{allowanceCall, allowanceReturn, approveCall, approveReturn},
     ShielderContractCall,
 };
 
@@ -26,6 +27,13 @@ sol! {
 impl ShielderContractCall for approveCall {
     type UnwrappedResult = bool;
     fn unwrap_result(result: approveReturn) -> Self::UnwrappedResult {
+        result._0
+    }
+}
+
+impl ShielderContractCall for allowanceCall {
+    type UnwrappedResult = U256;
+    fn unwrap_result(result: allowanceReturn) -> Self::UnwrappedResult {
         result._0
     }
 }

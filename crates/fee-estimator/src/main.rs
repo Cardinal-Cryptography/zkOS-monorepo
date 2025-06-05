@@ -1,6 +1,7 @@
 #![warn(unused_crate_dependencies)]
 
 use std::{
+    env, io,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -16,6 +17,8 @@ mod fees;
 mod shielder;
 
 use fees::{get_fee_values, FeeResponse};
+use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -35,13 +38,13 @@ async fn start_fee_monitor(app_state: Arc<Mutex<AppState>>) -> Result<()> {
     loop {
         interval.tick().await;
 
-        println!("Fetching new fees...");
+        info!("Fetching new fees...");
 
         // Update fees with mocked values that change each iteration
         let new_fees = get_fee_values(&service_config).await;
 
         if new_fees.is_err() {
-            eprintln!("Failed to fetch new fees: {:?}", new_fees.err());
+            error!("Failed to fetch new fees: {:?}", new_fees.err());
             continue; // Skip this iteration if fetching fees fails
         }
         let new_fees = new_fees.unwrap();
@@ -53,7 +56,7 @@ async fn start_fee_monitor(app_state: Arc<Mutex<AppState>>) -> Result<()> {
     }
 }
 
-async fn start_main_server(app_state: Arc<Mutex<AppState>>) -> Result<()> {
+async fn start_main_server(address: String, app_state: Arc<Mutex<AppState>>) -> Result<()> {
     let state_for_router = app_state.clone();
 
     let app = Router::new()
@@ -61,17 +64,19 @@ async fn start_main_server(app_state: Arc<Mutex<AppState>>) -> Result<()> {
         .with_state(Arc::clone(&state_for_router))
         .layer(CorsLayer::permissive());
 
-    let listener = tokio::net::TcpListener::bind("localhost:3000").await?;
+    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
 
-    println!("Server is running on http://localhost:3000");
+    info!("Server is running on {address}");
 
     Ok(axum::serve(listener, app).await?)
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    init_logging()?;
     let service_config = config_from_env()?;
 
+    info!("Setting up server...");
     // Create the initial AppState with default values
     let app_state = Arc::new(Mutex::new(AppState {
         service_config: service_config.clone(),
@@ -80,7 +85,7 @@ async fn main() -> Result<()> {
 
     tokio::try_join!(
         start_fee_monitor(Arc::clone(&app_state)),
-        start_main_server(Arc::clone(&app_state))
+        start_main_server(service_config.server_address, Arc::clone(&app_state))
     )?;
 
     Ok(())
@@ -89,4 +94,21 @@ async fn main() -> Result<()> {
 async fn get_fees(app_state: State<Arc<Mutex<AppState>>>) -> impl (IntoResponse) {
     let state = app_state.lock().unwrap();
     Json(state.fees.clone())
+}
+
+fn init_logging() -> Result<()> {
+    const LOG_CONFIGURATION_ENVVAR: &str = "RUST_LOG";
+
+    let filter = EnvFilter::new(
+        env::var(LOG_CONFIGURATION_ENVVAR)
+            .as_deref()
+            .unwrap_or("info"),
+    );
+
+    let subscriber = tracing_subscriber::fmt()
+        .with_writer(io::stdout)
+        .with_target(true)
+        .with_env_filter(filter);
+
+    subscriber.try_init().map_err(|err| anyhow::anyhow!(err))
 }

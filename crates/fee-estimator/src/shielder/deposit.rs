@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 use alloy_primitives::{Address, U256};
+use alloy_provider::{network::AnyNetwork, Provider, ProviderBuilder};
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::Result;
 use shielder_account::{
@@ -9,28 +8,33 @@ use shielder_account::{
 };
 use shielder_circuits::poseidon::off_circuit::hash;
 use shielder_contract::{
-    call_type::EstimateGas, merkle_path::get_current_merkle_path,
-    providers::create_simple_provider, recovery::get_shielder_action, ConnectionPolicy, NoProvider,
-    ShielderUser,
+    call_type::{Call, EstimateGas},
+    merkle_path::get_current_merkle_path,
+    providers::create_simple_provider,
+    ConnectionPolicy, NoProvider, ShielderUser,
 };
 use shielder_setup::consts::{ARITY, TREE_HEIGHT};
+use tracing::info;
 use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::shielder::{
     get_mac_salt,
+    new_account::create_new_account,
+    patched::get_shielder_action,
     pk::{get_proving_equipment, CircuitType},
 };
 
 pub async fn estimate_deposit_gas(
-    private_key: String,
+    private_key: U256,
+    shielder_seed: U256,
     rpc_url: String,
     contract_address: Address,
     token: Token,
     amount: U256,
 ) -> Result<u64> {
-    let signer = PrivateKeySigner::from_str(&private_key)
+    let signer = PrivateKeySigner::from_bytes(&private_key.into())
         .expect("Invalid key format - cannot cast to PrivateKeySigner");
-    let mut shielder_account = ShielderAccount::new(U256::from_str(&private_key)?, token);
+    let mut shielder_account = ShielderAccount::new(shielder_seed, token);
 
     let user = ShielderUser::<NoProvider>::new(
         contract_address,
@@ -40,7 +44,15 @@ pub async fn estimate_deposit_gas(
         },
     );
 
-    recover_state(&mut shielder_account, user.clone(), &rpc_url).await?;
+    ensure_account_created(
+        contract_address,
+        &mut shielder_account,
+        &user,
+        token,
+        amount,
+        &rpc_url,
+    )
+    .await?;
 
     let leaf_index = shielder_account
         .current_leaf_index()
@@ -78,12 +90,51 @@ fn prepare_call(
     Ok(shielder_account.prepare_call::<DepositCallType>(&params, &pk, token, amount, &extra))
 }
 
-async fn recover_state(
+async fn ensure_account_created(
+    contract_address: Address,
     account: &mut ShielderAccount,
-    shielder_user: ShielderUser,
+    shielder_user: &ShielderUser,
+    token: Token,
+    amount: U256,
     rpc_url: &str,
 ) -> Result<()> {
+    recover_state(account, shielder_user, rpc_url).await?;
     let provider = create_simple_provider(rpc_url).await?;
+
+    if account.nonce == 0 {
+        info!("Account is not created yet. Creating a new account...");
+        if let Token::ERC20(token_address) = token {
+            // approve amount * 2 to ensure that we would have allowance after the new account creation
+            let (tx_hash, _) = shielder_user
+                .approve_erc20::<Call>(token_address, contract_address, amount * U256::from(2))
+                .await?;
+            provider
+                .get_transaction_receipt(tx_hash)
+                .await?
+                .expect("Transaction receipt not found");
+        }
+        let tx_hash = create_new_account(account, shielder_user, amount, token).await?;
+
+        provider
+            .get_transaction_receipt(tx_hash)
+            .await?
+            .expect("Transaction receipt not found");
+    }
+
+    recover_state(account, shielder_user, rpc_url).await?;
+
+    Ok(())
+}
+
+async fn recover_state(
+    account: &mut ShielderAccount,
+    shielder_user: &ShielderUser,
+    rpc_url: &str,
+) -> Result<()> {
+    let provider = ProviderBuilder::new()
+        .network::<AnyNetwork>()
+        .on_builtin(rpc_url)
+        .await?;
 
     loop {
         let expected_nullifier = account.previous_nullifier();
