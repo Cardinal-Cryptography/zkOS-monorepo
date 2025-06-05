@@ -14,36 +14,17 @@ repository.workspace = true
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-provider = { workspace = true }
-alloy-rpc-types = { workspace = true }
-alloy-signer = { workspace = true }
 alloy-signer-local = { workspace = true }
 anyhow = { workspace = true, default-features = true }
-assert2 = { workspace = true }
-async-channel = { workspace = true }
 axum = { workspace = true }
-clap = { workspace = true, features = ["derive"] }
-metrics = { workspace = true }
-metrics-exporter-prometheus = { workspace = true }
-openssl = { workspace = true, features = ["vendored"] }
-parking_lot = { workspace = true }
-reqwest.workspace = true
-rust_decimal = { workspace = true }
+powers-of-tau = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+shellexpand = { workspace = true }
 shielder-account = { workspace = true, features = ["contract"] }
+shielder-circuits = { workspace = true }
 shielder-contract = { workspace = true }
 shielder-setup = { workspace = true }
-thiserror = { workspace = true }
-time = { workspace = true, features = ["serde-human-readable"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 tower-http = { workspace = true, features = ["cors"] }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = [
-    "fmt",
-    "json",
-    "env-filter",
-] }
-utoipa = { workspace = true, features = ["axum_extras", "yaml", "decimal"] }
-utoipa-axum = { workspace = true }
-utoipa-swagger-ui = { workspace = true, features = ["axum"] }
-zip = { workspace = true }
+type-conversions = { workspace = true }

@@ -1,3 +1,5 @@
+#![warn(unused_crate_dependencies)]
+
 use std::{
     sync::{Arc, Mutex},
     time::Duration,
@@ -5,35 +7,49 @@ use std::{
 
 use anyhow::Result;
 use axum::{extract::State, response::IntoResponse, routing::get, Json, Router};
+use config::{config_from_env, ServiceConfig};
 use tokio::time::interval;
 use tower_http::cors::CorsLayer;
 
+mod config;
 mod fees;
+mod shielder;
+
 use fees::{get_fee_values, FeeResponse};
 
 #[derive(Clone)]
 pub struct AppState {
+    pub service_config: ServiceConfig,
     pub fees: FeeResponse,
 }
 
 async fn start_fee_monitor(app_state: Arc<Mutex<AppState>>) -> Result<()> {
-    let mut interval = interval(Duration::from_secs(60));
-    let mut counter = 0;
+    let service_config = {
+        let state: std::sync::MutexGuard<'_, AppState> = app_state.lock().unwrap();
+        state.service_config.clone()
+    };
+    let mut interval = interval(Duration::from_millis(
+        service_config.clone().fee_refresh_interval_millis,
+    ));
 
     loop {
         interval.tick().await;
 
-        // Update fees with mocked values that change each iteration
-        counter = (counter + 1) % 3;
-        let new_fees = get_fee_values(counter);
+        println!("Fetching new fees...");
 
+        // Update fees with mocked values that change each iteration
+        let new_fees = get_fee_values(&service_config).await;
+
+        if new_fees.is_err() {
+            eprintln!("Failed to fetch new fees: {:?}", new_fees.err());
+            continue; // Skip this iteration if fetching fees fails
+        }
+        let new_fees = new_fees.unwrap();
         // Update the shared state with new fees
         {
             let mut state = app_state.lock().unwrap();
             state.fees = new_fees;
         }
-
-        println!("Fee monitor updated fees (set {})", counter);
     }
 }
 
@@ -54,9 +70,12 @@ async fn start_main_server(app_state: Arc<Mutex<AppState>>) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let service_config = config_from_env()?;
+
     // Create the initial AppState with default values
     let app_state = Arc::new(Mutex::new(AppState {
-        fees: get_fee_values(0),
+        service_config: service_config.clone(),
+        fees: get_fee_values(&service_config).await?,
     }));
 
     tokio::try_join!(

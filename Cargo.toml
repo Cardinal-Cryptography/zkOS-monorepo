@@ -71,7 +71,7 @@ utoipa-axum = { version = "0.2.0" }
 utoipa-swagger-ui = { version = "9.0.0" }
 wasm-bindgen = { version = "=0.2.93" }
 wasm-bindgen-rayon = { version = "=1.2.1" }
-zip = { version = "=2.3.0", default-features = false }                                                                                     # https://github.com/juhaku/utoipa/issues/1350
+zip = { version = "=2.3.0", default-features = false }                                                                     # https://github.com/juhaku/utoipa/issues/1350
 
 # AR-CLI
 rand_chacha = { version = "0.3.1" }
