@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf, str::FromStr};
+use std::{env, fs, path::PathBuf};
 
 use anyhow::Result;
 use powers_of_tau::{get_ptau_file_path, read as read_setup_parameters, Format};
@@ -131,19 +131,6 @@ fn get_equipment(
 
             Ok((params, pk))
         }
-    }
-}
-
-// Kept for backward compatibility but no longer uses shellexpand
-fn expand_path(path: &str) -> Result<PathBuf> {
-    debug!("expand_path is deprecated, using direct path resolution instead");
-    if path.starts_with("~/fee-estimator/") {
-        // Handle the specific paths we know about
-        let filename = path.strip_prefix("~/fee-estimator/").unwrap_or(path);
-        Ok(PathBuf::from(get_file_path(filename)))
-    } else {
-        // Fall back to the old behavior for any other paths
-        Ok(PathBuf::from_str(shellexpand::full(path)?.as_ref())?)
     }
 }
 

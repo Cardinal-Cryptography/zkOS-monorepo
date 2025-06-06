@@ -60,7 +60,7 @@ async fn start_main_server(address: String, app_state: Arc<Mutex<AppState>>) -> 
     let state_for_router = app_state.clone();
 
     let app = Router::new()
-        .route("/get_fees", get(|state| get_fees(state)))
+        .route("/get_fees", get(get_fees))
         .with_state(Arc::clone(&state_for_router))
         .layer(CorsLayer::permissive());
 

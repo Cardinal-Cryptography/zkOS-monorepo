@@ -23,7 +23,6 @@ axum = { workspace = true }
 powers-of-tau = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 sha3 = { workspace = true }
-shellexpand = { workspace = true }
 shielder-account = { workspace = true, features = ["contract"] }
 shielder-circuits = { workspace = true }
 shielder-contract = { workspace = true, features = ["erc20"] }

@@ -140,7 +140,7 @@ async fn recover_state(
         let expected_nullifier = account.previous_nullifier();
         let expected_nullifier_hash = field_to_u256(hash(&[u256_to_field(expected_nullifier)]));
 
-        match get_shielder_action(&provider, &shielder_user, expected_nullifier_hash).await? {
+        match get_shielder_action(&provider, shielder_user, expected_nullifier_hash).await? {
             Some(action) => account.register_action(action),
             None => break,
         }

@@ -2020,7 +2020,6 @@ dependencies = [
  "powers-of-tau",
  "serde",
  "sha3 0.10.8",
- "shellexpand",
  "shielder-account",
  "shielder-circuits",
  "shielder-contract",

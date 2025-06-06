@@ -21,8 +21,8 @@ pub struct FeeResponse {
 /// Returns a FeeResponse with mocked values.
 pub async fn get_fee_values(config: &ServiceConfig) -> Result<FeeResponse> {
     let native_new_account_gas = estimate_new_account_gas(
-        config.account_pk.clone(),
-        config.empty_shielder_seed.clone(),
+        config.account_pk,
+        config.empty_shielder_seed,
         config.rpc_url.clone(),
         config.contract_address,
         Token::Native,
@@ -32,8 +32,8 @@ pub async fn get_fee_values(config: &ServiceConfig) -> Result<FeeResponse> {
     .to_string();
 
     let erc20_new_account_gas = estimate_new_account_gas(
-        config.account_pk.clone(),
-        config.empty_shielder_seed.clone(),
+        config.account_pk,
+        config.empty_shielder_seed,
         config.rpc_url.clone(),
         config.contract_address,
         Token::ERC20(config.erc20_token_address),
@@ -43,8 +43,8 @@ pub async fn get_fee_values(config: &ServiceConfig) -> Result<FeeResponse> {
     .to_string();
 
     let native_deposit_gas = estimate_deposit_gas(
-        config.account_pk.clone(),
-        config.created_shielder_seed_native.clone(),
+        config.account_pk,
+        config.created_shielder_seed_native,
         config.rpc_url.clone(),
         config.contract_address,
         Token::Native,
@@ -54,8 +54,8 @@ pub async fn get_fee_values(config: &ServiceConfig) -> Result<FeeResponse> {
     .to_string();
 
     let erc20_deposit_gas = estimate_deposit_gas(
-        config.account_pk.clone(),
-        config.created_shielder_seed_erc20.clone(),
+        config.account_pk,
+        config.created_shielder_seed_erc20,
         config.rpc_url.clone(),
         config.contract_address,
         Token::ERC20(config.erc20_token_address),
