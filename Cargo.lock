@@ -5068,6 +5068,7 @@ dependencies = [
  "alloy-rpc-types-eth",
  "alloy-signer-local",
  "alloy-sol-types",
+ "alloy-transport",
  "anyhow",
  "clap",
  "content-encryption",

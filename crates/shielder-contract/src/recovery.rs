@@ -1,8 +1,9 @@
-use alloy_network::{primitives::BlockTransactionsKind, TransactionResponse};
-use alloy_primitives::{BlockNumber, TxHash, U256};
+use alloy_network::{primitives::BlockTransactionsKind, AnyNetwork, TransactionResponse};
+use alloy_primitives::{BlockHash, BlockNumber, Bytes, TxHash, U256};
 use alloy_provider::Provider;
-use alloy_rpc_types::{Transaction, TransactionTrait};
+use alloy_rpc_types::TransactionTrait;
 use alloy_sol_types::SolCall;
+use alloy_transport::BoxTransport;
 
 use crate::{
     call_type::DryRun,
@@ -17,7 +18,7 @@ use crate::{
 };
 
 pub async fn get_shielder_action(
-    provider: &impl Provider,
+    provider: &impl Provider<BoxTransport, AnyNetwork>,
     shielder_user: &ShielderUser,
     nullifier: U256,
 ) -> ContractResult<Option<(TxHash, ShielderContractEvents)>> {
@@ -40,7 +41,14 @@ pub async fn get_shielder_action(
         .as_transactions()
         .expect("We asked for full transactions");
     for tx in txs {
-        match check_if_tx_is_shielder_action(provider, tx).await? {
+        let tx_hash = tx.info().hash.ok_or(ShielderContractError::Other(
+            "Transaction hash not found".into(),
+        ))?;
+        let block_hash = tx
+            .block_hash
+            .ok_or(ShielderContractError::Other("Block hash not found".into()))?;
+        let tx_data = tx.input();
+        match check_if_tx_is_shielder_action(provider, tx_hash, tx_data, block_hash).await? {
             Some((event, spent_nullifier)) if spent_nullifier == nullifier => {
                 return Ok(Some((tx.tx_hash(), event)));
             }
@@ -80,16 +88,13 @@ pub async fn get_block_of_nullifier_spending(
 /// Try decoding the transaction data to determine the Shielder action type. Then, if successful,
 /// get the corresponding event and used nullifier from the blockchain logs.
 pub async fn check_if_tx_is_shielder_action(
-    provider: &impl Provider,
-    tx: &Transaction,
+    provider: &impl Provider<BoxTransport, AnyNetwork>,
+    tx_hash: TxHash,
+    tx_data: &Bytes,
+    block_hash: BlockHash,
 ) -> Result<Option<(ShielderContractEvents, U256)>, ShielderContractError> {
-    let tx_data = tx.input();
-    let block_hash = tx
-        .block_hash()
-        .ok_or(ShielderContractError::EventNotFound)?;
-
     if let Ok(call) = newAccountNativeCall::abi_decode(tx_data, true) {
-        let event = get_event::<NewAccount>(provider, tx.tx_hash(), block_hash).await?;
+        let event = get_event::<NewAccount>(provider, tx_hash, block_hash).await?;
         return Ok(Some((
             ShielderContractEvents::NewAccount(event),
             call.prenullifier,
@@ -97,7 +102,7 @@ pub async fn check_if_tx_is_shielder_action(
     }
 
     if let Ok(call) = newAccountERC20Call::abi_decode(tx_data, true) {
-        let event = get_event::<NewAccount>(provider, tx.tx_hash(), block_hash).await?;
+        let event = get_event::<NewAccount>(provider, tx_hash, block_hash).await?;
         return Ok(Some((
             ShielderContractEvents::NewAccount(event),
             call.prenullifier,
@@ -105,7 +110,7 @@ pub async fn check_if_tx_is_shielder_action(
     }
 
     if let Ok(call) = depositNativeCall::abi_decode(tx_data, true) {
-        let event = get_event::<Deposit>(provider, tx.tx_hash(), block_hash).await?;
+        let event = get_event::<Deposit>(provider, tx_hash, block_hash).await?;
         return Ok(Some((
             ShielderContractEvents::Deposit(event),
             call.oldNullifierHash,
@@ -113,7 +118,7 @@ pub async fn check_if_tx_is_shielder_action(
     }
 
     if let Ok(call) = depositERC20Call::abi_decode(tx_data, true) {
-        let event = get_event::<Deposit>(provider, tx.tx_hash(), block_hash).await?;
+        let event = get_event::<Deposit>(provider, tx_hash, block_hash).await?;
         return Ok(Some((
             ShielderContractEvents::Deposit(event),
             call.oldNullifierHash,
@@ -121,7 +126,7 @@ pub async fn check_if_tx_is_shielder_action(
     }
 
     if let Ok(call) = withdrawNativeCall::abi_decode(tx_data, true) {
-        let event = get_event::<Withdraw>(provider, tx.tx_hash(), block_hash).await?;
+        let event = get_event::<Withdraw>(provider, tx_hash, block_hash).await?;
         return Ok(Some((
             ShielderContractEvents::Withdraw(event),
             call.oldNullifierHash,
@@ -129,7 +134,7 @@ pub async fn check_if_tx_is_shielder_action(
     }
 
     if let Ok(call) = withdrawERC20Call::abi_decode(tx_data, true) {
-        let event = get_event::<Withdraw>(provider, tx.tx_hash(), block_hash).await?;
+        let event = get_event::<Withdraw>(provider, tx_hash, block_hash).await?;
         return Ok(Some((
             ShielderContractEvents::Withdraw(event),
             call.oldNullifierHash,

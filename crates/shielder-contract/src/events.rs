@@ -1,13 +1,15 @@
+use alloy_network::AnyNetwork;
 use alloy_primitives::{BlockHash, TxHash};
 use alloy_provider::Provider;
 use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
+use alloy_transport::BoxTransport;
 
 use crate::{ContractResult, ShielderContractError};
 
 /// Look at the logs of `tx_hash` in `block_hash` and return the first event of type `Event`.
 pub async fn get_event<Event: SolEvent>(
-    provider: &impl Provider,
+    provider: &impl Provider<BoxTransport, AnyNetwork>,
     tx_hash: TxHash,
     block_hash: BlockHash,
 ) -> ContractResult<Event> {
