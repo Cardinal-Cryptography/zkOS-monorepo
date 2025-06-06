@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  fee-estimator:
+    build:
+      context: ../.. # Root of the workspace
+      dockerfile: crates/fee-estimator/Dockerfile.docker
+      ssh:
+        - default
+    env_file:
+      - .env
+    environment:
+      # Set default values for optional variables (similar to start.sh)
+      - FEE_REFRESH_INTERVAL_MILLIS=${FEE_REFRESH_INTERVAL_MILLIS:-60000}
+      - SERVER_ADDRESS=${SERVER_ADDRESS:-0.0.0.0:3000}
+      - FEE_ESTIMATOR_DATA_DIR=/app/data
+    volumes:
+      - fee-estimator-data:/app/data
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  fee-estimator-data:
+    # Named volume for persisting proving keys and parameters

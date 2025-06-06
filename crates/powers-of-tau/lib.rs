@@ -1,6 +1,7 @@
 //! Utilities for reading in Perpetual Powers of Tau (.ptau) files.
 
 use std::{
+    env,
     fs::File,
     io,
     io::{Read, Seek, SeekFrom},
@@ -37,10 +38,17 @@ pub enum Format {
 
 pub fn get_ptau_file_path(k: u32, format: Format) -> PathBuf {
     let file = match format {
-        Format::Raw => &format!("ppot_0080_{}_raw", k),
-        Format::PerpetualPowersOfTau => &format!("ppot_0080_{}.ptau", k),
+        Format::Raw => format!("ppot_0080_{}_raw", k),
+        Format::PerpetualPowersOfTau => format!("ppot_0080_{}.ptau", k),
     };
-    [env!("CARGO_MANIFEST_DIR"), "../../resources", file]
+
+    // Check for environment variable first
+    if let Ok(resources_dir) = env::var("PTAU_RESOURCES_DIR") {
+        return PathBuf::from(resources_dir).join(file);
+    }
+
+    // Fall back to the default path relative to the crate
+    [env!("CARGO_MANIFEST_DIR"), "../../resources", &file]
         .iter()
         .collect()
 }
