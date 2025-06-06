@@ -1,7 +1,8 @@
 use std::str::FromStr;
 
 use alloy_primitives::{Address, BlockHash, TxHash, U256};
-use alloy_provider::Provider;
+use alloy_provider::{network::AnyNetwork, Provider};
+use alloy_transport::BoxTransport;
 use anyhow::{anyhow, bail, Result};
 use serde::Serialize;
 use shielder_account::{
@@ -81,7 +82,10 @@ pub async fn withdraw(
     Ok(())
 }
 
-async fn get_block_hash(provider: &impl Provider, tx_hash: TxHash) -> Result<BlockHash> {
+async fn get_block_hash(
+    provider: &impl Provider<BoxTransport, AnyNetwork>,
+    tx_hash: TxHash,
+) -> Result<BlockHash> {
     for _ in 0..5 {
         if let Some(receipt) = provider.get_transaction_receipt(tx_hash).await? {
             if let Some(block_hash) = receipt.block_hash {

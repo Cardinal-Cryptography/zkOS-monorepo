@@ -4,8 +4,9 @@ use std::{
 };
 
 use alloy_primitives::{Address, U256};
-use alloy_provider::Provider;
+use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_signer_local::PrivateKeySigner;
+use alloy_transport::BoxTransport;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use shielder_account::{ShielderAccount, Token};
@@ -126,7 +127,9 @@ Depositor signing key: {}",
         )
     }
 
-    pub async fn create_simple_provider(&self) -> Result<impl Provider, ShielderContractError> {
+    pub async fn create_simple_provider(
+        &self,
+    ) -> Result<impl Provider<BoxTransport, AnyNetwork>, ShielderContractError> {
         create_simple_provider(&self.node_rpc_url).await
     }
 }
