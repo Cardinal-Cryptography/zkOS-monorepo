@@ -2011,10 +2011,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "alloy-provider",
- "alloy-rpc-types",
  "alloy-signer-local",
- "alloy-sol-types",
- "alloy-transport",
  "anyhow",
  "axum",
  "powers-of-tau",

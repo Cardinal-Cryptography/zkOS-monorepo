@@ -1,5 +1,5 @@
 use alloy_primitives::{Address, U256};
-use alloy_provider::{network::AnyNetwork, Provider, ProviderBuilder};
+use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::Result;
 use shielder_account::{
@@ -11,6 +11,7 @@ use shielder_contract::{
     call_type::{Call, EstimateGas},
     merkle_path::get_current_merkle_path,
     providers::create_simple_provider,
+    recovery::get_shielder_action,
     ConnectionPolicy, NoProvider, ShielderUser,
 };
 use shielder_setup::consts::{ARITY, TREE_HEIGHT};
@@ -20,7 +21,6 @@ use type_conversions::{field_to_u256, u256_to_field};
 use crate::shielder::{
     get_mac_salt,
     new_account::create_new_account,
-    patched::get_shielder_action,
     pk::{get_proving_equipment, CircuitType},
 };
 
@@ -131,10 +131,7 @@ async fn recover_state(
     shielder_user: &ShielderUser,
     rpc_url: &str,
 ) -> Result<()> {
-    let provider = ProviderBuilder::new()
-        .network::<AnyNetwork>()
-        .on_builtin(rpc_url)
-        .await?;
+    let provider = create_simple_provider(rpc_url).await?;
 
     loop {
         let expected_nullifier = account.previous_nullifier();
