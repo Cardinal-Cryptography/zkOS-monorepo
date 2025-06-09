@@ -11,10 +11,7 @@ use shielder_contract::{
 };
 use shielder_setup::shielder_circuits::GrumpkinPointAffine;
 
-use crate::shielder::{
-    get_mac_salt,
-    pk::{get_proving_equipment, CircuitType},
-};
+use crate::shielder::{get_mac_salt, pk::NEW_ACCOUNT_PROVING_EQUIPMENT};
 
 pub async fn estimate_new_account_gas(
     private_key: U256,
@@ -63,7 +60,8 @@ fn prepare_call(
     anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     caller_address: Address,
 ) -> Result<NewAccountCall> {
-    let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
+    let (params, pk) = NEW_ACCOUNT_PROVING_EQUIPMENT.clone();
+    // let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
     let extra = NewAccountCallExtra {
         anonymity_revoker_public_key,
         encryption_salt: get_mac_salt(),

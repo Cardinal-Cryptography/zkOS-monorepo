@@ -17,6 +17,7 @@ alloy-provider = { workspace = true }
 alloy-signer-local = { workspace = true }
 anyhow = { workspace = true, default-features = true }
 axum = { workspace = true }
+once_cell = { workspace = true }
 powers-of-tau = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 sha3 = { workspace = true }
@@ -24,6 +25,7 @@ shielder-account = { workspace = true, features = ["contract"] }
 shielder-circuits = { workspace = true }
 shielder-contract = { workspace = true, features = ["erc20"] }
 shielder-setup = { workspace = true }
+time = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 tower-http = { workspace = true, features = ["cors"] }
 tracing = { workspace = true }

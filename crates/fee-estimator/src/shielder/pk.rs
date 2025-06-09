@@ -69,7 +69,7 @@ impl CircuitType {
     }
 }
 
-pub fn get_proving_equipment(circuit_type: CircuitType) -> Result<(Params, ProvingKey)> {
+fn get_proving_equipment(circuit_type: CircuitType) -> Result<(Params, ProvingKey)> {
     let full_params = get_params()?;
     get_equipment(circuit_type, full_params)
 }
@@ -140,3 +140,9 @@ fn save_content(path: PathBuf, content: &[u8]) -> Result<()> {
     }
     fs::write(path, content).map_err(Into::into)
 }
+
+pub static NEW_ACCOUNT_PROVING_EQUIPMENT: once_cell::sync::Lazy<(Params, ProvingKey)> =
+    once_cell::sync::Lazy::new(|| get_proving_equipment(CircuitType::NewAccount).unwrap());
+
+pub static DEPOSIT_PROVING_EQUIPMENT: once_cell::sync::Lazy<(Params, ProvingKey)> =
+    once_cell::sync::Lazy::new(|| get_proving_equipment(CircuitType::Deposit).unwrap());

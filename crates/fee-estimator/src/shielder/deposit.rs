@@ -19,9 +19,7 @@ use tracing::info;
 use type_conversions::{field_to_u256, u256_to_field};
 
 use crate::shielder::{
-    get_mac_salt,
-    new_account::create_new_account,
-    pk::{get_proving_equipment, CircuitType},
+    get_mac_salt, new_account::create_new_account, pk::DEPOSIT_PROVING_EQUIPMENT,
 };
 
 pub async fn estimate_deposit_gas(
@@ -80,7 +78,7 @@ fn prepare_call(
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
     caller_address: Address,
 ) -> Result<DepositCall> {
-    let (params, pk) = get_proving_equipment(CircuitType::Deposit)?;
+    let (params, pk) = DEPOSIT_PROVING_EQUIPMENT.clone();
     let extra = DepositExtra {
         merkle_path,
         mac_salt: get_mac_salt(),
