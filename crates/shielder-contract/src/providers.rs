@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use alloy_network::{Ethereum, EthereumWallet, Network};
+use alloy_network::{AnyNetwork, Ethereum, EthereumWallet, Network};
 use alloy_provider::{
     fillers::{
         BlobGasFiller, CachedNonceManager, ChainIdFiller, FillerControlFlow, GasFiller,
@@ -9,7 +9,7 @@ use alloy_provider::{
     Provider, ProviderBuilder, SendableTx,
 };
 use alloy_signer_local::PrivateKeySigner;
-use alloy_transport::{Transport, TransportResult};
+use alloy_transport::{BoxTransport, Transport, TransportResult};
 
 use crate::{ContractResult, ShielderContractError};
 
@@ -18,8 +18,11 @@ use crate::{ContractResult, ShielderContractError};
 /// This is a simple provider, without any fillers or
 /// signer configuration (apart from some devnet-specific defaults). It is suitable for doing
 /// read-only operations.
-pub async fn create_simple_provider(rpc_url: &str) -> ContractResult<impl Provider> {
+pub async fn create_simple_provider(
+    rpc_url: &str,
+) -> ContractResult<impl Provider<BoxTransport, AnyNetwork>> {
     ProviderBuilder::new()
+        .network::<AnyNetwork>()
         .on_builtin(rpc_url)
         .await
         .map_err(ShielderContractError::ProviderError)
