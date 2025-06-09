@@ -41,6 +41,7 @@ itertools = { version = "0.13.0" }
 metrics = { version = "0.24.1", default-features = false }
 metrics-exporter-prometheus = { version = "0.16.0", default-features = false }
 num-bigint = { version = "0.4.3" }
+once_cell = { version = "1.21.3" }
 openssl = { version = "0.10.59" }
 parameterized = { version = "2.0.0" }
 parking_lot = { version = "0.12.3" }
@@ -71,7 +72,7 @@ utoipa-axum = { version = "0.2.0" }
 utoipa-swagger-ui = { version = "9.0.0" }
 wasm-bindgen = { version = "=0.2.93" }
 wasm-bindgen-rayon = { version = "=1.2.1" }
-zip = { version = "=2.3.0", default-features = false }                                                                                     # https://github.com/juhaku/utoipa/issues/1350
+zip = { version = "=2.3.0", default-features = false }                                                                     # https://github.com/juhaku/utoipa/issues/1350
 
 # AR-CLI
 rand_chacha = { version = "0.3.1" }

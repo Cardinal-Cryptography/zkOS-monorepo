@@ -1,0 +1,45 @@
+# Rust build artifacts
+
+target/
+Cargo.lock
+
+# IDE files
+
+.vscode/
+.idea/
+_.swp
+_.swo
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Git
+
+.git/
+.gitignore
+
+# Documentation
+
+\*.md
+!README.md
+
+# Scripts (since we're replacing with Docker)
+
+start.sh
+
+# Logs
+
+\*.log
+
+# Environment files (will be mounted separately)
+
+.env.local
+.env.\*.local
+
+# Docker files (avoid recursive copying)
+
+Dockerfile
+docker-compose.yaml
+.dockerignore

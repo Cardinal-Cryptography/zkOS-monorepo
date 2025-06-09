@@ -14,6 +14,8 @@ pub struct Submit;
 /// Dry-run the transaction.
 pub struct DryRun;
 
+pub struct EstimateGas;
+
 pub trait CallType<C: ShielderContractCall> {
     type Result: Send + Sync;
 
@@ -63,5 +65,18 @@ impl<C: ShielderContractCall + Unpin> CallType<C> for DryRun {
         call_builder: CallBuilder<T, P, PhantomData<C>>,
     ) -> ContractResult<Self::Result> {
         Ok(call_builder.call().await.map(C::unwrap_result)?)
+    }
+}
+
+impl<C: ShielderContractCall> CallType<C> for EstimateGas {
+    type Result = u64;
+
+    async fn action<T: Transport + Clone, P: Provider<T>>(
+        call_builder: CallBuilder<T, P, PhantomData<C>>,
+    ) -> ContractResult<Self::Result> {
+        call_builder
+            .estimate_gas()
+            .await
+            .map_err(ShielderContractError::from)
     }
 }
