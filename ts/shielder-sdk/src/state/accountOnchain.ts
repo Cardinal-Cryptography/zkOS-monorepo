@@ -14,13 +14,13 @@ export class AccountOnchain {
       merklePath = await this.contract.getMerklePath(
         accountState.currentNoteIndex
       );
-    } catch (error) {
+    } catch {
       throw new AccountNotOnChainError(
         `Failed to fetch merkle path for account state with index ${accountState.currentNoteIndex}.`
       );
     }
 
-    if (merklePath[0] !== scalarToBigint(accountState.currentNote)) {
+    if (!merklePath.includes(scalarToBigint(accountState.currentNote))) {
       throw new AccountNotOnChainError(
         `Account state with merkle index ${accountState.currentNoteIndex} does not match on-chain data.`
       );
