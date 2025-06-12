@@ -32,7 +32,7 @@ type BaseShielderConfig = {
   storage: InjectedStorageInterface;
   cryptoClient: CryptoClient;
   publicClient: PublicClient;
-  callbacks?: ShielderCallbacks;
+  callbacks: ShielderCallbacks;
 };
 
 // Public config for creating a client
@@ -64,7 +64,7 @@ export const createShielderClient = (
     relayer
   });
 
-  return new ShielderClient(components, config.callbacks || {});
+  return new ShielderClient(components, config.callbacks);
 };
 
 // Internal config for component creation
@@ -124,7 +124,7 @@ function createShielderComponents(
     actionComponents.depositAction,
     actionComponents.withdrawAction,
     config.publicClient,
-    config.callbacks || {}
+    config.callbacks
   );
 
   return {

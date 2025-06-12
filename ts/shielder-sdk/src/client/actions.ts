@@ -18,6 +18,7 @@ import { WithdrawAction } from "@/actions/withdraw";
 import { contractVersion } from "@/constants";
 import { Calldata } from "@/actions/types";
 import { AccountStateMerkleIndexed } from "@/state/types";
+import { handleShielderError } from "@/utils/errorHandler";
 
 export class ShielderActions {
   constructor(
@@ -224,7 +225,7 @@ export class ShielderActions {
     try {
       calldata = await generateCalldata();
     } catch (error) {
-      this.callbacks.onError?.(error, "generation", operation);
+      handleShielderError(error, this.callbacks, "generation", operation);
       throw error;
     }
     this.callbacks.onCalldataGenerated?.(calldata, operation);
@@ -234,7 +235,7 @@ export class ShielderActions {
       this.callbacks.onCalldataSent?.(txHash, operation);
       return txHash;
     } catch (error) {
-      this.callbacks.onError?.(error, "sending", operation);
+      handleShielderError(error, this.callbacks, "sending", operation);
       throw error;
     }
   }

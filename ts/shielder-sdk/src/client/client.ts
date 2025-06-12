@@ -8,6 +8,7 @@ import { AccountRegistry } from "@/state/accountRegistry";
 import { ShielderActions } from "./actions";
 import { ShielderComponents } from "./factories";
 import { QuotedFees } from "@/chain/relayer";
+import { handleShielderError } from "@/utils/errorHandler";
 
 export class ShielderClient {
   private accountRegistry: AccountRegistry;
@@ -22,10 +23,7 @@ export class ShielderClient {
    * @param {ShielderComponents} components - components for the shielder client
    * @param {ShielderCallbacks} callbacks - callbacks for the shielder actions
    */
-  constructor(
-    components: ShielderComponents,
-    callbacks: ShielderCallbacks = {}
-  ) {
+  constructor(components: ShielderComponents, callbacks: ShielderCallbacks) {
     this.accountRegistry = components.accountRegistry;
     this.stateSynchronizer = components.stateSynchronizer;
     this.historyFetcher = components.historyFetcher;
@@ -47,7 +45,7 @@ export class ShielderClient {
     try {
       return await this.stateSynchronizer.syncAllAccounts();
     } catch (error) {
-      this.callbacks.onError?.(error, "syncing", "sync");
+      handleShielderError(error, this.callbacks, "syncing", "sync");
       throw error;
     }
   }
@@ -87,7 +85,7 @@ export class ShielderClient {
         yield transaction;
       }
     } catch (error) {
-      this.callbacks.onError?.(error, "syncing", "sync");
+      handleShielderError(error, this.callbacks, "syncing", "sync");
       throw error;
     }
   }
