@@ -23,6 +23,7 @@ import {
 } from "@/storage/storageSchema";
 import { LocalStateTransition } from "@/state/localStateTransition";
 import { ChainStateTransition } from "@/state/sync/chainStateTransition";
+import { AccountOnchain } from "@/state/accountOnchain";
 
 // Base config with common properties
 type BaseShielderConfig = {
@@ -204,10 +205,14 @@ function createSyncComponents(
     config.cryptoClient,
     config.idManager
   );
+
+  const accountOnchain = new AccountOnchain(config.contract);
+
   const stateSynchronizer = new StateSynchronizer(
     config.accountRegistry,
     chainStateTransition,
     tokenAccountFinder,
+    accountOnchain,
     config.callbacks?.onNewTransaction
   );
   const historyFetcher = new HistoryFetcher(

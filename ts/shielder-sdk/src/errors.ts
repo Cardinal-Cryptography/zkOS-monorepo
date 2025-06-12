@@ -5,3 +5,9 @@ export class OutdatedSdkError extends CustomError {
     super(message);
   }
 }
+
+export class AccountNotOnChainError extends CustomError {
+  public constructor(message: string) {
+    super(message);
+  }
+}
