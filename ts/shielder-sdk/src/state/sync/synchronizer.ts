@@ -9,6 +9,7 @@ import {
   ShielderTransaction
 } from "../types";
 import { firstAccountIndex } from "@/constants";
+import { AccountOnchain } from "../accountOnchain";
 
 export class StateSynchronizer {
   private singleTokenMutex: Mutex = new Mutex();
@@ -17,6 +18,7 @@ export class StateSynchronizer {
     private accountRegistry: AccountRegistry,
     private chainStateTransition: ChainStateTransition,
     private tokenAccountFinder: TokenAccountFinder,
+    private accountOnchain: AccountOnchain,
     private syncCallback?: (shielderTransaction: ShielderTransaction) => unknown
   ) {}
 
@@ -48,8 +50,12 @@ export class StateSynchronizer {
    */
   async syncSingleAccount(token: Token) {
     await this.singleTokenMutex.runExclusive(async () => {
+      const stateExisting = await this.accountRegistry.getAccountState(token);
+      if (stateExisting) {
+        await this.accountOnchain.validateAccountState(stateExisting);
+      }
       let state: AccountState =
-        (await this.accountRegistry.getAccountState(token)) ??
+        stateExisting ??
         (await this.accountRegistry.createEmptyAccountState(token));
       while (true) {
         const stateTransition =

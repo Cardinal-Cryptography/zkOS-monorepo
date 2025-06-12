@@ -3,7 +3,6 @@ import { StateSynchronizer } from "../../../src/state/sync/synchronizer";
 import { AccountRegistry } from "../../../src/state/accountRegistry";
 import { TokenAccountFinder } from "../../../src/state/sync/tokenAccountFinder";
 import {
-  AccountState,
   AccountStateMerkleIndexed,
   ShielderTransaction
 } from "../../../src/state/types";
@@ -24,6 +23,7 @@ describe("StateSynchronizer", () => {
   let mockGetTokenByAccountIndex: any;
   let mockFindStateTransition: any;
   let mockFindTokenByAccountIndex: any;
+  let mockValidateAccountState: any;
 
   beforeEach(() => {
     mockState = {
@@ -55,11 +55,15 @@ describe("StateSynchronizer", () => {
     } as any;
 
     mockSyncCallback = vi.fn();
+    mockValidateAccountState = vi.fn().mockResolvedValue(undefined);
 
     stateSynchronizer = new StateSynchronizer(
       mockAccountRegistry,
       mockChainStateTransition,
       mockTokenAccountFinder,
+      {
+        validateAccountState: mockValidateAccountState
+      } as any,
       mockSyncCallback
     );
   });
@@ -90,7 +94,8 @@ describe("StateSynchronizer", () => {
         amount: 50n,
         txHash: "0x1",
         block: 1n,
-        token: nativeToken()
+        token: nativeToken(),
+        newNote: Scalar.fromBigint(100n)
       };
 
       mockGetAccountState.mockResolvedValue(null);
@@ -117,6 +122,9 @@ describe("StateSynchronizer", () => {
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(2, newState);
 
       expect(mockSyncCallback).toHaveBeenCalledWith(transaction);
+
+      // validateAccountState should NOT be called when no existing state is found
+      expect(mockValidateAccountState).not.toHaveBeenCalled();
     });
 
     it("should sync single state transition", async () => {
@@ -133,7 +141,8 @@ describe("StateSynchronizer", () => {
         amount: 50n,
         txHash: "0x1",
         block: 1n,
-        token: nativeToken()
+        token: nativeToken(),
+        newNote: Scalar.fromBigint(200n)
       };
 
       mockFindStateTransition
@@ -153,6 +162,10 @@ describe("StateSynchronizer", () => {
       expect(mockFindStateTransition).toHaveBeenNthCalledWith(2, newState);
 
       expect(mockSyncCallback).toHaveBeenCalledWith(transaction);
+
+      // validateAccountState should be called once with the existing state
+      expect(mockValidateAccountState).toHaveBeenCalledTimes(1);
+      expect(mockValidateAccountState).toHaveBeenCalledWith(mockState);
     });
 
     it("should sync multiple state transitions", async () => {
@@ -177,7 +190,8 @@ describe("StateSynchronizer", () => {
         amount: 50n,
         txHash: "0x1",
         block: 1n,
-        token: nativeToken()
+        token: nativeToken(),
+        newNote: Scalar.fromBigint(200n)
       };
 
       const tx2: ShielderTransaction = {
@@ -187,7 +201,8 @@ describe("StateSynchronizer", () => {
         relayerFee: 1n,
         txHash: "0x2",
         block: 2n,
-        token: nativeToken()
+        token: nativeToken(),
+        newNote: Scalar.fromBigint(300n)
       };
 
       mockFindStateTransition
@@ -218,6 +233,10 @@ describe("StateSynchronizer", () => {
       expect(mockSyncCallback).toHaveBeenCalledTimes(2);
       expect(mockSyncCallback).toHaveBeenNthCalledWith(1, tx1);
       expect(mockSyncCallback).toHaveBeenNthCalledWith(2, tx2);
+
+      // validateAccountState should be called once with the existing state
+      expect(mockValidateAccountState).toHaveBeenCalledTimes(1);
+      expect(mockValidateAccountState).toHaveBeenCalledWith(mockState);
     });
   });
 
