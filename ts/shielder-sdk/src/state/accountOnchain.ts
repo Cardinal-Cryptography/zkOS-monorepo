@@ -14,7 +14,7 @@ export class AccountOnchain {
       merklePath = await this.contract.getMerklePath(
         accountState.currentNoteIndex
       );
-    } catch (error) {
+    } catch {
       throw new AccountNotOnChainError(
         `Failed to fetch merkle path for account state with index ${accountState.currentNoteIndex}.`
       );

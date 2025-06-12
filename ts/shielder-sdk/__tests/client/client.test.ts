@@ -5,7 +5,10 @@ import { MockedCryptoClient } from "../helpers";
 import { ShielderClient } from "../../src/client/client";
 import { createShielderClient } from "../../src/client/factories";
 import { Contract } from "../../src/chain/contract";
-import { quotedFeesFromExpectedTokenFee, Relayer } from "../../src/chain/relayer";
+import {
+  quotedFeesFromExpectedTokenFee,
+  Relayer
+} from "../../src/chain/relayer";
 import { InjectedStorageInterface } from "../../src/storage/storageSchema";
 import {
   AccountStateMerkleIndexed,
@@ -89,7 +92,9 @@ describe("ShielderClient", () => {
     callbacks = {
       onCalldataGenerated: vitest.fn(),
       onCalldataSent: vitest.fn(),
-      onError: vitest.fn()
+      onError: vitest.fn(),
+      onSdkOutdated: vitest.fn(),
+      onAccountNotOnChain: vitest.fn()
     };
 
     // Create client instance with mocked components
@@ -141,7 +146,11 @@ describe("ShielderClient", () => {
         contractAddress: mockContractAddress,
         relayerUrl: mockRelayerUrl,
         storage: mockStorageInterface,
-        cryptoClient: mockCryptoClient
+        cryptoClient: mockCryptoClient,
+        callbacks: {
+          onSdkOutdated: vitest.fn(),
+          onAccountNotOnChain: vitest.fn()
+        }
       });
     });
 
@@ -157,7 +166,10 @@ describe("ShielderClient", () => {
     it("should create ShielderClient with default callbacks", () => {
       expect(client).toBeInstanceOf(ShielderClient);
       // Verify that the client was created with empty callbacks object
-      expect(client["callbacks"]).toEqual({});
+      expect(client["callbacks"]).toEqual({
+        onSdkOutdated: expect.any(Function),
+        onAccountNotOnChain: expect.any(Function)
+      });
     });
 
     it("should create ShielderClient with provided callbacks", () => {
@@ -165,7 +177,9 @@ describe("ShielderClient", () => {
         onCalldataGenerated: vitest.fn(),
         onCalldataSent: vitest.fn(),
         onNewTransaction: vitest.fn(),
-        onError: vitest.fn()
+        onError: vitest.fn(),
+        onAccountNotOnChain: vitest.fn(),
+        onSdkOutdated: vitest.fn()
       };
 
       client = createShielderClient({
@@ -209,7 +223,7 @@ describe("ShielderClient", () => {
       mockStateSynchronizer.syncAllAccounts.mockRejectedValue(mockError);
 
       await expect(client.syncShielder()).rejects.toThrow(mockError);
-      expect(callbacks.onError).toHaveBeenCalledWith(
+      expect(callbacks.onSdkOutdated).toHaveBeenCalledWith(
         mockError,
         "syncing",
         "sync"
