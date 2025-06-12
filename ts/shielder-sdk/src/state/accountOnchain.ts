@@ -20,7 +20,7 @@ export class AccountOnchain {
       );
     }
 
-    if (merklePath[0] !== scalarToBigint(accountState.currentNote)) {
+    if (!merklePath.includes(scalarToBigint(accountState.currentNote))) {
       throw new AccountNotOnChainError(
         `Account state with merkle index ${accountState.currentNoteIndex} does not match on-chain data.`
       );
