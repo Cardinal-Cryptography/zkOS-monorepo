@@ -1,6 +1,6 @@
 {
   "name": "@cardinal-cryptography/shielder-sdk",
-  "version": "0.2.0-beta.9",
+  "version": "0.2.0-beta.10",
   "description": "A web package for interacting with Shielder, a part of zkOS privacy engine.",
   "license": "Apache-2.0",
   "keywords": [
