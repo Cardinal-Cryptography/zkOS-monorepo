@@ -22,6 +22,18 @@ export const setupCallbacks = (): CallbacksFixture => {
         txHistory.set(token, []);
       }
       txHistory.get(token)!.push(tx);
+    },
+    onAccountNotOnChain: (error, stage, operation) => {
+      console.error(
+        `Account not on chain during ${stage} for operation ${operation}:`,
+        error
+      );
+    },
+    onSdkOutdated: (error, stage, operation) => {
+      console.warn(
+        `SDK outdated during ${stage} for operation ${operation}:`,
+        error
+      );
     }
   };
 

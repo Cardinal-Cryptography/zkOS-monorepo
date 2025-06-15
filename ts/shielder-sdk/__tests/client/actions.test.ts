@@ -176,7 +176,7 @@ describe("ShielderActions", () => {
 
     await expect(method()).rejects.toThrow(mockError);
 
-    expect(mockCallbacks.onError).toHaveBeenCalledWith(
+    expect(mockCallbacks.onSdkOutdated).toHaveBeenCalledWith(
       mockError,
       "generation",
       operation
@@ -258,7 +258,9 @@ describe("ShielderActions", () => {
     mockCallbacks = {
       onCalldataGenerated: vitest.fn(),
       onCalldataSent: vitest.fn(),
-      onError: vitest.fn()
+      onError: vitest.fn(),
+      onAccountNotOnChain: vitest.fn(),
+      onSdkOutdated: vitest.fn()
     };
 
     // Setup mock account state
