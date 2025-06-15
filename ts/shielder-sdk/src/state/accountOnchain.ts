@@ -2,6 +2,7 @@ import { IContract } from "@/chain/contract";
 import { AccountStateMerkleIndexed } from "./types";
 import { scalarToBigint } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { AccountNotOnChainError } from "@/errors";
+import { BaseError, ContractFunctionRevertedError } from "viem";
 
 export class AccountOnchain {
   constructor(private contract: IContract) {}
@@ -14,10 +15,20 @@ export class AccountOnchain {
       merklePath = await this.contract.getMerklePath(
         accountState.currentNoteIndex
       );
-    } catch {
-      throw new AccountNotOnChainError(
-        `Failed to fetch merkle path for account state with index ${accountState.currentNoteIndex}.`
-      );
+    } catch (error) {
+      if (error instanceof BaseError) {
+        const revertError = error.walk(
+          (err) => err instanceof ContractFunctionRevertedError
+        );
+        if (revertError instanceof ContractFunctionRevertedError) {
+          const errorName = revertError.data?.errorName ?? "";
+          if (errorName === "LeafNotExisting") {
+            throw new AccountNotOnChainError(
+              `Account state with index ${accountState.currentNoteIndex} does not exist on-chain.`
+            );
+          }
+        }
+      }
     }
 
     if (!merklePath.includes(scalarToBigint(accountState.currentNote))) {
