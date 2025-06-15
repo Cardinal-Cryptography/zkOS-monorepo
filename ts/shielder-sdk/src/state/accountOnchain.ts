@@ -29,6 +29,7 @@ export class AccountOnchain {
           }
         }
       }
+      throw error;
     }
 
     if (!merklePath.includes(scalarToBigint(accountState.currentNote))) {
