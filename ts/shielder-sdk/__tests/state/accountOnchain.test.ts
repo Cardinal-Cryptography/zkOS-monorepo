@@ -8,6 +8,7 @@ import {
   scalarToBigint
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { nativeToken } from "../../src/utils";
+import { ContractFunctionRevertedError, encodeErrorResult } from "viem";
 
 describe("AccountOnchain", () => {
   let accountOnchain: AccountOnchain;
@@ -95,7 +96,27 @@ describe("AccountOnchain", () => {
 
     it("should throw AccountNotOnChainError when contract getMerklePath fails", async () => {
       // Setup: Mock getMerklePath to throw an error
-      const contractError = new Error("Contract connection failed");
+      // const contractError = new Error("Contract connection failed");
+      const contractError = new ContractFunctionRevertedError({
+        abi: [
+          {
+            type: "error",
+            name: "LeafNotExisting",
+            inputs: []
+          }
+        ],
+        functionName: "getMerklePath",
+        data: encodeErrorResult({
+          abi: [
+            {
+              type: "error",
+              name: "LeafNotExisting",
+              inputs: []
+            }
+          ],
+          errorName: "LeafNotExisting"
+        })
+      });
       vi.mocked(mockContract.getMerklePath).mockRejectedValue(contractError);
 
       // Act & Assert: Should throw AccountNotOnChainError with specific message
@@ -106,7 +127,7 @@ describe("AccountOnchain", () => {
       await expect(
         accountOnchain.validateAccountState(testAccountState)
       ).rejects.toThrow(
-        `Failed to fetch merkle path for account state with index ${testAccountState.currentNoteIndex}.`
+        `Account state with index ${testAccountState.currentNoteIndex} does not exist on-chain.`
       );
 
       expect(mockContract.getMerklePath).toHaveBeenCalledWith(
