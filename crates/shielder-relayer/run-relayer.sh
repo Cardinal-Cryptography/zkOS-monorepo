@@ -96,4 +96,4 @@ if [[ "${DETACHED:-}" == "true" ]]; then
   DETACHED_FLAG="-d"
 fi
 
-docker run  --add-host=host.docker.internal:host-gateway --rm ${DETACHED_FLAG} "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
+docker run --rm ${DETACHED_FLAG} "${ARGS[@]}" "${RELAYER_DOCKER_IMAGE}"
