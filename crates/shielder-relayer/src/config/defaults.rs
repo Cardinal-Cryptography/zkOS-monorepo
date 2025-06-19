@@ -7,6 +7,7 @@ pub const DEFAULT_HOST: &str = "0.0.0.0";
 pub const DEFAULT_PORT: u16 = 4141;
 pub const DEFAULT_METRICS_PORT: u16 = 9615;
 pub const DEFAULT_BALANCE_MONITOR_INTERVAL: Duration = Duration::from_secs(15);
+pub const DEFAULT_RPC_HEALTH_CACHE_VALIDITY: Duration = Duration::from_secs(10);
 pub const DEFAULT_NONCE_POLICY: NoncePolicy = NoncePolicy::Caching;
 pub const DEFAULT_DRY_RUNNING: DryRunning = DryRunning::Always;
 pub const DEFAULT_RECHARGE_THRESHOLD: &str = "2_000_000_000_000_000_000"; // 2 TZERO

@@ -73,7 +73,7 @@ async fn _relay(app_state: AppState, query: RelayQuery) -> Result<RelayResponse,
 
     let withdraw_call = create_call(
         query.calldata,
-        app_state.fee_destination,
+        app_state.signer_info.fee_destination_address,
         fee_details.total_cost_fee_token,
     );
     let rx = app_state

@@ -47,6 +47,7 @@ pub struct ChainConfig {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct OperationalConfig {
     pub balance_monitor_interval: Duration,
+    pub rpc_health_cache_validity: Duration,
     pub nonce_policy: NoncePolicy,
     pub dry_running: DryRunning,
     pub recharge_threshold: U256,
@@ -173,6 +174,12 @@ fn resolve_config_from_cli_config(
             BALANCE_MONITOR_INTERVAL_ENV,
             parse_seconds,
             Some(DEFAULT_BALANCE_MONITOR_INTERVAL),
+        ),
+        rpc_health_cache_validity: resolve_value_map(
+            None,
+            RPC_HEALTH_CACHE_VALIDITY_ENV,
+            parse_seconds,
+            Some(DEFAULT_RPC_HEALTH_CACHE_VALIDITY),
         ),
         nonce_policy: resolve_value(nonce_policy, NONCE_POLICY_ENV, Some(DEFAULT_NONCE_POLICY)),
         dry_running: resolve_value(dry_running, DRY_RUNNING_ENV, Some(DEFAULT_DRY_RUNNING)),

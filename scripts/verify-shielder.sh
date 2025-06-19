@@ -27,7 +27,6 @@ while read -r tx; do
 
   forge verify-contract \
      --rpc-url ${NETWORK} --watch \
-     --skip-is-verified-check \
     --verifier blockscout --verifier-url ${BLOCKSCOUT_URL} \
     $LIBRARIES \
     "$CONTRACT_ADDRESS" \
@@ -37,7 +36,6 @@ while read -r tx; do
     echo "Verifying $CONTRACT_NAME at $CONTRACT_ADDRESS using etherscan"
     forge verify-contract \
         --rpc-url ${NETWORK} --watch \
-        --skip-is-verified-check \
         --verifier etherscan --etherscan-api-key "$ETHERSCAN_API_KEY" \
         $LIBRARIES \
         "$CONTRACT_ADDRESS" \
@@ -58,7 +56,6 @@ while IFS=":" read -r SOURCE_FILE CONTRACT_NAME CONTRACT_ADDRESS; do
 
   forge verify-contract \
      --rpc-url ${NETWORK} --watch \
-     --skip-is-verified-check \
     --verifier blockscout --verifier-url ${BLOCKSCOUT_URL} \
     "$CONTRACT_ADDRESS" \
     --constructor-args "0x"
@@ -67,7 +64,6 @@ while IFS=":" read -r SOURCE_FILE CONTRACT_NAME CONTRACT_ADDRESS; do
     echo "Verifying library $CONTRACT_NAME at $CONTRACT_ADDRESS on etherscan"
     forge verify-contract \
         --rpc-url ${NETWORK} --watch \
-        --skip-is-verified-check \
         --verifier etherscan --etherscan-api-key "$ETHERSCAN_API_KEY" \
         "$CONTRACT_ADDRESS" \
         --constructor-args "0x"

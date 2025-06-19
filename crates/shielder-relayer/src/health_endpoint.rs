@@ -5,7 +5,7 @@ use shielder_relayer::{
 };
 use tracing::{debug, error};
 
-use crate::{monitor::healthy, AppState};
+use crate::AppState;
 
 /// Check if the service is healthy and operational.
 #[utoipa::path(
@@ -16,9 +16,9 @@ use crate::{monitor::healthy, AppState};
         (status = SERVICE_UNAVAILABLE, description = "Cannot reach RPC node", body = SimpleServiceResponse)
     )
 )]
-pub async fn health_endpoint(app_state: State<AppState>) -> impl IntoResponse {
+pub async fn health(app_state: State<AppState>) -> impl IntoResponse {
     debug!("Healthcheck request received");
-    match healthy(&app_state.node_rpc_url).await {
+    match app_state.rpc_monitor.is_healthy().await {
         Ok(()) => success("Healthy"),
         Err(err) => {
             error!(err);

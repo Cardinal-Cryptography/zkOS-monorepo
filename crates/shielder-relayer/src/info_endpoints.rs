@@ -10,7 +10,7 @@ use crate::AppState;
     responses((status = 200, body = String))
 )]
 pub async fn fee_address(state: State<AppState>) -> impl IntoResponse {
-    Json(state.fee_destination.to_string())
+    Json(state.signer_info.fee_destination_address.to_string())
 }
 
 /// Get information about the supported tokens.
