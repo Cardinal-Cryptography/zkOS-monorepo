@@ -1,7 +1,6 @@
 use std::time::Instant;
 
-use alloy_primitives::{Address, U256};
-use alloy_provider::Provider;
+use alloy_primitives::U256;
 use anyhow::Result;
 use axum::{
     extract::{MatchedPath, Request},
@@ -9,13 +8,9 @@ use axum::{
     response::IntoResponse,
 };
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
-use shielder_contract::providers::create_simple_provider;
 use shielder_setup::native_token::NATIVE_TOKEN_DECIMALS;
 
-use crate::{
-    monitor::{healthy, Balances},
-    price_feed::Prices,
-};
+use crate::{monitor::rpc_monitor::RpcMonitor, price_feed::Prices, SignerInfo};
 
 pub const TOTAL_REQUESTS_METRIC: &str = "http_requests_total";
 pub const REQUEST_DURATION_METRIC: &str = "http_requests_duration_seconds";
@@ -30,14 +25,13 @@ pub const PRICE_AGE: &str = "price_age";
 
 pub async fn prometheus_endpoint(
     metrics_handle: PrometheusHandle,
-    node_rpc_url: String,
-    balances: Balances,
-    fee_destination: Address,
+    signer_info: SignerInfo,
+    rpc_monitor: RpcMonitor,
     prices: Prices,
 ) -> impl IntoResponse {
-    metrics::gauge!(HEALTH).set(healthy(&node_rpc_url).await.is_ok() as u8 as f64);
-    render_signer_balances(balances).await;
-    let _ = render_fee_destination_balance(&node_rpc_url, fee_destination).await;
+    metrics::gauge!(HEALTH).set(rpc_monitor.is_healthy().await.is_ok() as u8 as f64);
+    render_signer_balances(&signer_info).await;
+    render_fee_destination_balance(&signer_info).await;
     render_price_validity(&prices);
 
     metrics_handle.render()
@@ -52,23 +46,26 @@ fn u256_to_f64(value: U256) -> f64 {
         .fold(0_f64, |acc, &limb| acc * pow2_64 + limb as f64)
 }
 
-async fn render_signer_balances(balances: Balances) {
-    for (signer, balance) in balances.iter() {
-        let unit_balance = balance.read().await.unwrap_or_default();
-        metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string())
-            .set(u256_to_f64(unit_balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
+async fn render_signer_balances(signer_info: &SignerInfo) {
+    let balances = signer_info.balances.clone();
+    for signer in &signer_info.signer_addresses {
+        if let Some(balance) = balances.get(signer) {
+            let unit_balance = balance.read().await.unwrap_or_default();
+            metrics::gauge!(SIGNER_BALANCES, "address" => signer.to_string())
+                .set(u256_to_f64(unit_balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
+        }
     }
 }
 
-async fn render_fee_destination_balance(
-    node_rpc_url: &str,
-    fee_destination: Address,
-) -> Result<()> {
-    let provider = create_simple_provider(node_rpc_url).await?;
-    let balance = provider.get_balance(fee_destination).await?;
-    metrics::gauge!(FEE_DESTINATION_BALANCE)
-        .set(u256_to_f64(balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
-    Ok(())
+async fn render_fee_destination_balance(signer_info: &SignerInfo) {
+    if let Some(balance) = signer_info
+        .balances
+        .get(&signer_info.fee_destination_address)
+    {
+        let unit_balance = balance.read().await.unwrap_or_default();
+        metrics::gauge!(FEE_DESTINATION_BALANCE)
+            .set(u256_to_f64(unit_balance) / 10f64.powi(NATIVE_TOKEN_DECIMALS as i32));
+    }
 }
 
 /// Setup Prometheus metrics handle with custom histogram buckets etc.

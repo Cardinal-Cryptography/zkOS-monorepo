@@ -2,11 +2,11 @@ version: "3.8"
 
 services:
   fee-estimator:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     build:
       context: ../.. # Root of the workspace
       dockerfile: crates/fee-estimator/Dockerfile.docker
-      ssh:
-        - default
     env_file:
       - .env
     environment:

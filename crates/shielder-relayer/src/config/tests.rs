@@ -43,6 +43,7 @@ fn config_resolution() {
         },
     ];
     let price_feed_refresh_interval = DEFAULT_PRICE_FEED_REFRESH_INTERVAL;
+    let rpc_health_cache_validity = DEFAULT_RPC_HEALTH_CACHE_VALIDITY;
     let price_feed_validity = Duration::from_secs(15);
     let service_fee_percent = DEFAULT_SERVICE_FEE_PERCENT;
     let quote_validity = Duration::from_secs(11);
@@ -62,6 +63,7 @@ fn config_resolution() {
         },
         operations: OperationalConfig {
             balance_monitor_interval,    // from env
+            rpc_health_cache_validity,   // default
             nonce_policy,                // default
             dry_running,                 // from CLI
             recharge_threshold,          // default
