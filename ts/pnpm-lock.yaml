@@ -145,6 +145,9 @@ importers:
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
+      wasm-feature-detect:
+        specifier: ^1.8.0
+        version: 1.8.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.15.0
@@ -2196,6 +2199,9 @@ packages:
       jsdom:
         optional: true
 
+  wasm-feature-detect@1.8.0:
+    resolution: {integrity: sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==}
+
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
@@ -4103,6 +4109,8 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  wasm-feature-detect@1.8.0: {}
 
   which@2.0.2:
     dependencies:

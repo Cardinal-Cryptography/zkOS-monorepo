@@ -1,7 +1,8 @@
 import { expose, wrap } from "comlink";
-import { WasmClient } from "./wasmClient";
+import { Caller, WasmClient } from "./wasmClient";
 import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { CircuitParamsPkBuffer } from "./types";
+import { threads as supportsThreads } from "wasm-feature-detect";
 
 // Create worker instance
 const wasmClientWorker = new WasmClient();
@@ -50,7 +51,7 @@ expose(exposed);
  * @throws Will throw an error if the worker initialization fails.
  */
 export const initWasmWorker = async (
-  threads: number,
+  threading_mode: "single" | "multi",
   newAccountBuf: CircuitParamsPkBuffer,
   depositBuf: CircuitParamsPkBuffer,
   withdrawBuf: CircuitParamsPkBuffer,
@@ -69,7 +70,25 @@ export const initWasmWorker = async (
 
   try {
     // Initialize with single or multi-threaded mode
-    const caller = threads === 1 ? "web_singlethreaded" : "web_multithreaded";
+    let caller: Caller =
+      threading_mode === "single" ? "web_singlethreaded" : "web_multithreaded";
+
+    let threads = 1;
+    if (caller === "web_multithreaded") {
+      threads = navigator.hardwareConcurrency;
+      if (!(await supportsThreads())) {
+        console.warn(
+          "WebAssembly threads are not supported in this environment. Falling back to single-threaded mode.\n",
+          "Ensure you have the correct header flags enabled:\n",
+          "'Cross-Origin-Opener-Policy: same-origin'\n",
+          "'Cross-Origin-Embedder-Policy: require-corp'\n",
+          "See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements"
+        );
+        threads = 1;
+        caller = "web_singlethreaded";
+      }
+    }
+
     await wrappedWorker.init(
       caller,
       threads,
