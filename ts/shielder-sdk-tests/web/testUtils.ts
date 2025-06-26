@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 import type { Token } from "@cardinal-cryptography/shielder-sdk";
 
 export function tokenToKey(token: Token) {
