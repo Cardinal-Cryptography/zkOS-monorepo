@@ -28,7 +28,7 @@
 
       zkOS-monorepo-source = builtins.fetchGit {
         url = "https://github.com/Cardinal-Cryptography/zkOS-monorepo.git";
-        rev = "da70131ba57ceb678a890c1b6e553710773686a8";
+        rev = "4ff7e5a5f601581fc1e1f7bb823b7572aeba3092";
       };
     in
     rec {
@@ -61,7 +61,7 @@
           CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
 
-          postInstall = "mv $out/bin/shielder-rewards-tee $out/bin/entrypoint";
+          postInstall = "mv $out/bin/shielder-prover-tee $out/bin/entrypoint";
         };
 
         rewardTEE =
