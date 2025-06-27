@@ -533,6 +533,11 @@ contract Shielder is
         uint256 macSalt,
         uint256 macCommitment
     ) external whenNotPaused {
+        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
+        uint256 netAmount = amount - protocolFee;
+        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+        netAmount = netAmount - relayerFee;
+
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
@@ -549,29 +554,23 @@ contract Shielder is
             0
         );
 
-        uint256 receiverAmount = amount - relayerFee;
-        uint256 receiverProtocolFee = _computeProtocolWithdrawFee(
-            receiverAmount
-        );
-        uint256 relayerProtocolFee = _computeProtocolWithdrawFee(relayerFee);
-
         // return the tokens
         (bool nativeTransferSuccess, ) = withdrawalAddress.call{
-            value: receiverAmount - receiverProtocolFee,
+            value: netAmount,
             gas: GAS_LIMIT
         }("");
         if (!nativeTransferSuccess) revert NativeTransferFailed();
 
         // pay out the relayer fee
         (nativeTransferSuccess, ) = relayerAddress.call{
-            value: relayerFee - relayerProtocolFee,
+            value: relayerFee,
             gas: GAS_LIMIT
         }("");
         if (!nativeTransferSuccess) revert NativeTransferFailed();
 
         // pay out the protocol fee
         (nativeTransferSuccess, ) = protocolFeeReceiver().call{
-            value: receiverProtocolFee + relayerProtocolFee,
+            value: protocolFee,
             gas: GAS_LIMIT
         }("");
         if (!nativeTransferSuccess) revert NativeTransferFailed();
@@ -588,7 +587,7 @@ contract Shielder is
             macSalt,
             macCommitment,
             0,
-            receiverProtocolFee
+            protocolFee
         );
     }
 
@@ -607,6 +606,10 @@ contract Shielder is
         uint256 macCommitment
     ) external payable whenNotPaused {
         uint256 pocketMoney = msg.value;
+        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
+        uint256 netAmount = amount - protocolFee;
+        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+        netAmount = netAmount - relayerFee;
 
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
@@ -624,22 +627,10 @@ contract Shielder is
             pocketMoney
         );
 
-        uint256 receiverAmount = amount - relayerFee;
-        uint256 receiverProtocolFee = _computeProtocolWithdrawFee(
-            receiverAmount
-        );
-        uint256 relayerProtocolFee = _computeProtocolWithdrawFee(relayerFee);
-
         IERC20 token = IERC20(tokenAddress);
-        token.safeTransfer(
-            withdrawalAddress,
-            receiverAmount - receiverProtocolFee
-        );
-        token.safeTransfer(relayerAddress, relayerFee - relayerProtocolFee);
-        token.safeTransfer(
-            protocolFeeReceiver(),
-            receiverProtocolFee + relayerProtocolFee
-        );
+        token.safeTransfer(withdrawalAddress, netAmount);
+        token.safeTransfer(relayerAddress, relayerFee);
+        token.safeTransfer(protocolFeeReceiver(), protocolFee);
 
         // forward pocket money
         if (pocketMoney != 0) {
@@ -662,7 +653,7 @@ contract Shielder is
             macSalt,
             macCommitment,
             pocketMoney,
-            receiverProtocolFee
+            protocolFee
         );
     }
 
@@ -688,7 +679,6 @@ contract Shielder is
         returns (uint256)
     {
         if (amount == 0) revert ZeroAmount();
-        if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
 
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
