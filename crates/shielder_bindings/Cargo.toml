@@ -34,7 +34,7 @@ rand = { workspace = true, features = ["small_rng"] }
 shielder-circuits = { workspace = true }
 
 [features]
-default = ["std"]
+default = ["std", "circuits"]
 std = []
 build-wasm = ["wasm-bindgen", "getrandom/js"]
 build-uniffi = ["uniffi", "rayon", "shielder-circuits/multithreading"]
@@ -43,6 +43,7 @@ multithreading-wasm = [
     "wasm-bindgen-rayon",
     "shielder-circuits/multithreading",
 ]
+circuits = []
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ['-O4', '-g']

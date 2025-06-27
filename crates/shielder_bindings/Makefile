@@ -22,10 +22,12 @@ clean-wasm:
 build-pkg-wasm:
 	wasm-pack build --release --target web --out-dir pkg/pkg-web-singlethreaded -- \
 		--features build-wasm \
+		--features circuits \
 		--target="wasm32-unknown-unknown" \
 		-Z build-std="panic_abort,std"
 	wasm-pack build --release --target web --out-dir pkg/pkg-web-multithreaded -- \
 		--features build-wasm \
+		--features circuits \
 		--features multithreading-wasm \
 		--target="wasm32-unknown-unknown" \
 		-Z build-std="panic_abort,std"
@@ -39,6 +41,16 @@ update-package-web:
 remove-unused-files-wasm:
 	(cd pkg/pkg-web-singlethreaded && rm README.md package.json .gitignore)
 	(cd pkg/pkg-web-multithreaded && rm README.md package.json .gitignore)
+
+.PHONY: wasm-light
+wasm-light: # Build wasm bindings without circuits
+	rm -rf pkg-light
+	wasm-pack build --release --target web --out-dir pkg-light/pkg-web-singlethreaded -- \
+		--features build-wasm \
+		--target="wasm32-unknown-unknown" \
+		-Z build-std="panic_abort,std"
+	cp package-light.template.json pkg-light/package.json
+	(cd pkg-light/pkg-web-singlethreaded && rm README.md package.json .gitignore)
 
 .PHONY: test
 test:
