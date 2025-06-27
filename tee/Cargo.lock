@@ -1936,6 +1936,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "shielder-prover-common"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "tokio-vsock",
+]
+
+[[package]]
+name = "shielder-prover-server"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "clap",
+ "env_logger",
+ "log",
+ "serde",
+ "shielder-prover-common",
+ "thiserror",
+ "tokio",
+ "tokio-task-pool",
+ "vsock",
+]
+
+[[package]]
+name = "shielder-prover-tee"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "shielder-prover-common",
+ "tokio",
+ "tokio-vsock",
+]
+
+[[package]]
 name = "shielder-rewards-common"
 version = "0.1.0"
 dependencies = [

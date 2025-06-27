@@ -1,0 +1,21 @@
+[package]
+name = "shielder-prover-tee"
+version = "0.1.0"
+edition = "2021"
+authors = ["Cardinal"]
+homepage = "https://alephzero.org"
+license = "Apache-2.0"
+categories = ["cryptography"]
+repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
+
+[dependencies]
+env_logger = { workspace = true }
+log = { workspace = true }
+shielder-prover-common = { workspace = true }
+tokio = { workspace = true, features = [
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "time",
+] }
+tokio-vsock = { workspace = true }
