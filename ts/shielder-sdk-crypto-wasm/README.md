@@ -27,9 +27,9 @@ const depositPk = await fetch(depositPkUrl).then((r) => r.bytes());
 const withdrawParams = await fetch(withdrawParamsUrl).then((r) => r.bytes());
 const withdrawPk = await fetch(withdrawPkUrl).then((r) => r.bytes());
 
-// Initialize with number of threads and circuit parameters
+// Initialize multi-threaded with circuit parameters
 const wasmWorker = await initWasmWorker(
-  4,
+  "multi",
   {
     paramsBuf: newAccountParams,
     pkBuf: newAccountPk
@@ -83,7 +83,7 @@ const withdrawParams = await fetch(withdrawParamsUrl).then((r) => r.bytes());
 const withdrawPk = await fetch(withdrawPkUrl).then((r) => r.bytes());
 
 const wasmWorker = await initWasmWorker(
-  4,
+  "multi",
   {
     paramsBuf: newAccountParams,
     pkBuf: newAccountPk
@@ -122,7 +122,7 @@ The package provides several entrypoints:
 
 ```typescript
 function initWasmWorker(
-  threads: number,
+  threading_mode: "single" | "multi",
   newAccountBuf: CircuitParamsPkBuffer,
   depositBuf: CircuitParamsPkBuffer,
   withdrawBuf: CircuitParamsPkBuffer,
@@ -132,7 +132,7 @@ function initWasmWorker(
 
 Parameters:
 
-- `threads`: Number of threads to use for WASM operations
+- `threading_mode`: Single- or multi-threaded mode
 - `newAccountBuf`: Circuit parameters and proving key for new account operations
 - `depositBuf`: Circuit parameters and proving key for deposit operations
 - `withdrawBuf`: Circuit parameters and proving key for withdraw operations

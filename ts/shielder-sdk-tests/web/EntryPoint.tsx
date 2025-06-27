@@ -10,7 +10,6 @@ import {
 } from "@cardinal-cryptography/shielder-sdk";
 import type { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
-import { envThreadsNumber } from "./testUtils";
 import type { GlobalConfigFixture } from "@tests/playwrightFixtures/globalConfig";
 import {
   type ShielderTestFixture,
@@ -65,7 +64,7 @@ function EntryPoint() {
       // Wasm crypto client initialization
       window.wasmCryptoClient = window.wasmCryptoClient || {};
       window.wasmCryptoClient.cryptoClient = initWasmWorker(
-        envThreadsNumber(),
+        "multi",
         {
           paramsBuf: newAccountParams,
           pkBuf: newAccountPk
