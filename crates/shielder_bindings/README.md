@@ -27,10 +27,22 @@ make wasm
 # 4. Update package configuration
 ```
 
-The WASM build process creates two packages:
+The WASM build process creates package `pkg/` with two exports:
 
 - `pkg-web-singlethreaded`: Standard WASM build
 - `pkg-web-multithreaded`: WASM build with rayon-powered multithreading
+
+### WebAssembly Build without circuits
+
+If you want to build a light-weight WASM without proving functionality, you should use
+
+```
+make wasm-without-circuits
+```
+
+This will build package `pkg-without-circuits` with one export:
+
+- `pkg-web-singlethreaded`: Standard WASM build
 
 ### iOS Builds
 

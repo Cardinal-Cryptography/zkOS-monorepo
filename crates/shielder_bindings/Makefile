@@ -12,14 +12,11 @@ help: # Show help for each of the Makefile recipes.
 
 .PHONY: wasm
 wasm: # Build wasm bindings
-wasm: clean-wasm build-pkg-wasm update-package-web remove-unused-files-wasm
-
-.PHONY: clean-wasm
-clean-wasm:
-	rm -rf pkg*
+wasm: build-pkg-wasm update-package-web remove-unused-files-wasm
 
 .PHONY: build-pkg-wasm
 build-pkg-wasm:
+	rm -rf pkg
 	wasm-pack build --release --target web --out-dir pkg/pkg-web-singlethreaded -- \
 		--features build-wasm \
 		--features circuits \
@@ -42,15 +39,15 @@ remove-unused-files-wasm:
 	(cd pkg/pkg-web-singlethreaded && rm README.md package.json .gitignore)
 	(cd pkg/pkg-web-multithreaded && rm README.md package.json .gitignore)
 
-.PHONY: wasm-light
-wasm-light: # Build wasm bindings without circuits
-	rm -rf pkg-light
-	wasm-pack build --release --target web --out-dir pkg-light/pkg-web-singlethreaded -- \
+.PHONY: wasm-without-circuits
+wasm-without-circuits: # Build wasm bindings without circuits
+	rm -rf pkg-without-circuits
+	wasm-pack build --release --target web --out-dir pkg-without-circuits/pkg-web-singlethreaded -- \
 		--features build-wasm \
 		--target="wasm32-unknown-unknown" \
 		-Z build-std="panic_abort,std"
-	cp package-light.template.json pkg-light/package.json
-	(cd pkg-light/pkg-web-singlethreaded && rm README.md package.json .gitignore)
+	cp package-light.template.json pkg-without-circuits/package.json
+	(cd pkg-without-circuits/pkg-web-singlethreaded && rm README.md package.json .gitignore)
 
 .PHONY: test
 test:
