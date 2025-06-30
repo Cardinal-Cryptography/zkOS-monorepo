@@ -28,7 +28,7 @@
 
       zkOS-monorepo-source = builtins.fetchGit {
         url = "https://github.com/Cardinal-Cryptography/zkOS-monorepo.git";
-        rev = "da70131ba57ceb678a890c1b6e553710773686a8";
+        rev = "4ff7e5a5f601581fc1e1f7bb823b7572aeba3092";
       };
     in
     rec {
@@ -37,6 +37,7 @@
       packages = {
         all = pkgs.linkFarm "all" [
           { name = "rewardTEE"; path = packages.rewardTEE; }
+          { name = "shielderProverTEE"; path = packages.shielderProverTEE; }
         ];
 
         rewardTEE-binary = naersk'.buildPackage {
@@ -51,6 +52,18 @@
           postInstall = "mv $out/bin/shielder-rewards-tee $out/bin/entrypoint";
         };
 
+        shielderProverTEE-binary = naersk'.buildPackage {
+          src = "${zkOS-monorepo-source}/tee";
+
+          doCheck = true;
+          nativeBuildInputs = with pkgs; [ pkgsStatic.stdenv.cc ];
+          cargoBuildOptions = (x: x ++ ["-p shielder-prover-tee"] );
+          CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+          CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+
+          postInstall = "mv $out/bin/shielder-prover-tee $out/bin/entrypoint";
+        };
+
         rewardTEE =
           let
             crossArch = "x86_64";
@@ -60,6 +73,16 @@
             inherit crossArch nitro;
             entrypoint = packages.rewardTEE-binary;
           };
+
+          shielderProverTEE =
+            let
+              crossArch = "x86_64";
+              crossPkgs = import nixpkgs { inherit system; crossSystem = "${crossArch}-linux"; };
+            in
+            crossPkgs.callPackage ./enclave.nix {
+              inherit crossArch nitro;
+              entrypoint = packages.shielderProverTEE-binary;
+            };
       };
     }));
 }
