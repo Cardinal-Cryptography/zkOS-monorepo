@@ -1,5 +1,7 @@
+mod circuits;
+
 use log::info;
-use shielder_prover_common::protocol::{Request, Response, RewardServer, VSOCK_PORT};
+use shielder_prover_common::protocol::{Request, Response, ProverServer, VSOCK_PORT};
 use tokio::spawn;
 use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
 
@@ -27,7 +29,7 @@ async fn handle_client(stream: VsockStream) {
 }
 
 async fn do_handle_client(stream: VsockStream) -> Result<(), Box<dyn std::error::Error>> {
-    let mut server: RewardServer = stream.into();
+    let mut server: ProverServer = stream.into();
 
     loop {
         server

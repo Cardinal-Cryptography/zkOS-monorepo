@@ -18,6 +18,7 @@ clap = "4.5.38"
 env_logger = "0.11.8"
 futures = "0.3.31"
 log = "0.4.27"
+rand = { version = "0.8.5" }
 sea-orm = "1.1.11"
 serde = "1.0.219"
 serde_json = "1.0.140"
@@ -29,3 +30,10 @@ tokio-task-pool = "0.1.5"
 tokio-util = "0.7.15"
 tokio-vsock = "0.7.1"
 vsock = "0.5.1"
+
+shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "df31437" }
+
+# This is not ideal - one workspace depends on another, but as long as it reproducibly produces
+# the same measurements, we are good
+type-conversions = { path = "../crates/type-conversions" }
+powers-of-tau = { path = "../crates/powers-of-tau" }
