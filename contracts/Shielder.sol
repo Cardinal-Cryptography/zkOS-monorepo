@@ -69,7 +69,8 @@ contract Shielder is
         uint256 newNoteIndex,
         uint256 macSalt,
         uint256 macCommitment,
-        uint256 protocolFee
+        uint256 protocolFee,
+        bytes memo
     );
     event Deposit(
         bytes3 contractVersion,
@@ -79,7 +80,8 @@ contract Shielder is
         uint256 newNoteIndex,
         uint256 macSalt,
         uint256 macCommitment,
-        uint256 protocolFee
+        uint256 protocolFee,
+        bytes memo
     );
     event Withdraw(
         bytes3 contractVersion,
@@ -93,7 +95,8 @@ contract Shielder is
         uint256 macSalt,
         uint256 macCommitment,
         uint256 pocketMoney,
-        uint256 protocolFee
+        uint256 protocolFee,
+        bytes memo
     );
 
     // -- Errors --
@@ -208,7 +211,8 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external payable whenNotPaused {
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
@@ -231,7 +235,8 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
 
         // pay out the protocol fee
@@ -250,7 +255,8 @@ contract Shielder is
             newNoteIndex,
             macSalt,
             macCommitment,
-            protocolFee
+            protocolFee,
+            memo
         );
     }
 
@@ -271,7 +277,8 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
         if (
@@ -295,7 +302,8 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
 
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -310,7 +318,8 @@ contract Shielder is
             newNoteIndex,
             macSalt,
             macCommitment,
-            protocolFee
+            protocolFee,
+            memo
         );
     }
 
@@ -326,7 +335,8 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -346,7 +356,11 @@ contract Shielder is
         publicInputs[0] = newNote;
         publicInputs[1] = prenullifier;
         publicInputs[2] = amount;
-        publicInputs[3] = addressToUInt256(msg.sender);
+
+        bytes memory commitment = abi.encodePacked(msg.sender, memo);
+        // @dev shifting right by 4 bits so the commitment is smaller from r
+        publicInputs[3] = uint256(keccak256(commitment)) >> 4;
+
         publicInputs[4] = addressToUInt256(tokenAddress);
 
         (uint256 arX, uint256 arY) = anonymityRevokerPubkey();
@@ -381,7 +395,8 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external payable whenNotPaused {
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
@@ -400,7 +415,8 @@ contract Shielder is
             merkleRoot,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
 
         // pay out the protocol fee
@@ -418,7 +434,8 @@ contract Shielder is
             newNoteIndex,
             macSalt,
             macCommitment,
-            protocolFee
+            protocolFee,
+            memo
         );
     }
 
@@ -434,7 +451,8 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
         if (
@@ -455,7 +473,8 @@ contract Shielder is
             merkleRoot,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
 
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -469,7 +488,8 @@ contract Shielder is
             newNoteIndex,
             macSalt,
             macCommitment,
-            protocolFee
+            protocolFee,
+            memo
         );
     }
 
@@ -482,7 +502,8 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -502,7 +523,11 @@ contract Shielder is
         publicInputs[1] = oldNullifierHash;
         publicInputs[2] = newNote;
         publicInputs[3] = amount;
-        publicInputs[4] = addressToUInt256(msg.sender);
+
+        bytes memory commitment = abi.encodePacked(msg.sender, memo);
+        // @dev shifting right by 4 bits so the commitment is smaller from r
+        publicInputs[4] = uint256(keccak256(commitment)) >> 4;
+
         publicInputs[5] = addressToUInt256(tokenAddress);
         publicInputs[6] = macSalt;
         publicInputs[7] = macCommitment;
@@ -531,7 +556,8 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external whenNotPaused {
         uint256 protocolFee = _computeProtocolWithdrawFee(amount);
         uint256 netAmount = amount - protocolFee;
@@ -551,7 +577,8 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            0
+            0,
+            memo
         );
 
         // return the tokens
@@ -587,7 +614,8 @@ contract Shielder is
             macSalt,
             macCommitment,
             0,
-            protocolFee
+            protocolFee,
+            memo
         );
     }
 
@@ -603,7 +631,8 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external payable whenNotPaused {
         uint256 pocketMoney = msg.value;
         uint256 protocolFee = _computeProtocolWithdrawFee(amount);
@@ -624,7 +653,8 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            pocketMoney
+            pocketMoney,
+            memo
         );
 
         IERC20 token = IERC20(tokenAddress);
@@ -653,7 +683,8 @@ contract Shielder is
             macSalt,
             macCommitment,
             pocketMoney,
-            protocolFee
+            protocolFee,
+            memo
         );
     }
 
@@ -670,7 +701,8 @@ contract Shielder is
         uint256 relayerFee,
         uint256 macSalt,
         uint256 macCommitment,
-        uint256 pocketMoney
+        uint256 pocketMoney,
+        bytes calldata memo
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -700,7 +732,8 @@ contract Shielder is
             addressToUInt256(relayerAddress),
             relayerFee,
             chainId,
-            pocketMoney
+            pocketMoney,
+            memo
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[5] = uint256(keccak256(commitment)) >> 4;
