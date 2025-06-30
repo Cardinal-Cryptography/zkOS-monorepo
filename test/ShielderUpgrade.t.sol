@@ -13,6 +13,9 @@ contract ShielderUpgrade is Test {
 
     uint256 public anonymityRevokerPubkeyX = 42;
     uint256 public anonymityRevokerPubkeyY = 43;
+    uint256 public protocolDepositFeeBps = 5;
+    uint256 public protocolWithdrawFeeBps = 5;
+    address public protocolFeeReceiver = owner;
 
     string[] public allowedErrors;
 
@@ -75,7 +78,15 @@ contract ShielderUpgrade is Test {
             "Shielder.sol:Shielder",
             abi.encodeCall(
                 Shielder.initialize,
-                (owner, anonymityRevokerPubkeyX, anonymityRevokerPubkeyY, false)
+                (
+                    owner,
+                    anonymityRevokerPubkeyX,
+                    anonymityRevokerPubkeyY,
+                    false,
+                    protocolDepositFeeBps,
+                    protocolWithdrawFeeBps,
+                    protocolFeeReceiver
+                )
             )
         );
         Shielder shielder = Shielder(shielderProxy);

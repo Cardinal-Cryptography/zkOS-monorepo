@@ -8,6 +8,7 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
 import { MerkleTree } from "./MerkleTree.sol";
 import { Nullifiers } from "./Nullifiers.sol";
 import { AnonymityRevoker } from "./AnonymityRevoker.sol";
+import { ProtocolFee } from "./ProtocolFee.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -26,7 +27,8 @@ contract Shielder is
     PausableUpgradeable,
     MerkleTree,
     Nullifiers,
-    AnonymityRevoker
+    AnonymityRevoker,
+    ProtocolFee
 {
     // -- Constants --
 
@@ -66,7 +68,8 @@ contract Shielder is
         uint256 newNote,
         uint256 newNoteIndex,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        uint256 protocolFee
     );
     event Deposit(
         bytes3 contractVersion,
@@ -75,7 +78,8 @@ contract Shielder is
         uint256 newNote,
         uint256 newNoteIndex,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        uint256 protocolFee
     );
     event Withdraw(
         bytes3 contractVersion,
@@ -88,7 +92,8 @@ contract Shielder is
         uint256 fee,
         uint256 macSalt,
         uint256 macCommitment,
-        uint256 pocketMoney
+        uint256 pocketMoney,
+        uint256 protocolFee
     );
 
     // -- Errors --
@@ -122,7 +127,10 @@ contract Shielder is
         address initialOwner,
         uint256 _anonymityRevokerPublicKeyX,
         uint256 _anonymityRevokerPublicKeyY,
-        bool _isArbitrumChain
+        bool _isArbitrumChain,
+        uint256 _protocolDepositFeeBps,
+        uint256 _protocolWithdrawFeeBps,
+        address _protocolFeeReceiver
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
@@ -132,6 +140,11 @@ contract Shielder is
             _anonymityRevokerPublicKeyY
         );
         __Nullifiers_init(_isArbitrumChain);
+        __ProtocolFee_init(
+            _protocolDepositFeeBps,
+            _protocolWithdrawFeeBps,
+            _protocolFeeReceiver
+        );
         _pause();
     }
 
@@ -147,6 +160,24 @@ contract Shielder is
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function setProtocolFeeReceiver(
+        address newProtocolFeeReceiver
+    ) external onlyOwner {
+        _setProtocolFeeReceiver(newProtocolFeeReceiver);
+    }
+
+    function setProtocolDepositFeeBps(
+        uint256 newProtocolDepositFeeBps
+    ) external onlyOwner {
+        _setProtocolDepositFeeBps(newProtocolDepositFeeBps);
+    }
+
+    function setProtocolWithdrawFeeBps(
+        uint256 newProtocolWithdrawFeeBps
+    ) external onlyOwner {
+        _setProtocolWithdrawFeeBps(newProtocolWithdrawFeeBps);
     }
 
     /*
@@ -179,11 +210,14 @@ contract Shielder is
         uint256 macCommitment,
         bytes calldata proof
     ) external payable whenNotPaused {
-        uint256 amount = msg.value;
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
+
+        uint256 amount = msg.value;
+        uint256 protocolFee = _computeProtocolDepositFeeFromGrossAmount(amount);
+        amount = amount - protocolFee;
 
         uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
@@ -200,6 +234,13 @@ contract Shielder is
             proof
         );
 
+        // pay out the protocol fee
+        (bool nativeTransferSuccess, ) = protocolFeeReceiver().call{
+            value: protocolFee,
+            gas: GAS_LIMIT
+        }("");
+        if (!nativeTransferSuccess) revert NativeTransferFailed();
+
         emit NewAccount(
             CONTRACT_VERSION,
             prenullifier,
@@ -208,7 +249,8 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee
         );
     }
 
@@ -239,6 +281,8 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
+        uint256 protocolFee = _computeProtocolDepositFeeFromNetAmount(amount);
+
         uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             tokenAddress,
@@ -255,6 +299,7 @@ contract Shielder is
         );
 
         token.safeTransferFrom(msg.sender, address(this), amount);
+        token.safeTransferFrom(msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
             CONTRACT_VERSION,
@@ -264,7 +309,8 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee
         );
     }
 
@@ -337,10 +383,13 @@ contract Shielder is
         uint256 macCommitment,
         bytes calldata proof
     ) external payable whenNotPaused {
-        uint256 amount = msg.value;
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
+
+        uint256 amount = msg.value;
+        uint256 protocolFee = _computeProtocolDepositFeeFromGrossAmount(amount);
+        amount = amount - protocolFee;
 
         uint256 newNoteIndex = _deposit(
             expectedContractVersion,
@@ -354,6 +403,13 @@ contract Shielder is
             proof
         );
 
+        // pay out the protocol fee
+        (bool nativeTransferSuccess, ) = protocolFeeReceiver().call{
+            value: protocolFee,
+            gas: GAS_LIMIT
+        }("");
+        if (!nativeTransferSuccess) revert NativeTransferFailed();
+
         emit Deposit(
             CONTRACT_VERSION,
             NATIVE_TOKEN_NOTE_ADDRESS,
@@ -361,7 +417,8 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee
         );
     }
 
@@ -387,6 +444,8 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
+        uint256 protocolFee = _computeProtocolDepositFeeFromNetAmount(amount);
+
         uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             tokenAddress,
@@ -400,6 +459,7 @@ contract Shielder is
         );
 
         token.safeTransferFrom(msg.sender, address(this), amount);
+        token.safeTransferFrom(msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit Deposit(
             CONTRACT_VERSION,
@@ -408,7 +468,8 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee
         );
     }
 
@@ -472,6 +533,11 @@ contract Shielder is
         uint256 macSalt,
         uint256 macCommitment
     ) external whenNotPaused {
+        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
+        uint256 netAmount = amount - protocolFee;
+        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+        netAmount = netAmount - relayerFee;
+
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
@@ -490,14 +556,21 @@ contract Shielder is
 
         // return the tokens
         (bool nativeTransferSuccess, ) = withdrawalAddress.call{
-            value: amount - relayerFee,
+            value: netAmount,
             gas: GAS_LIMIT
         }("");
         if (!nativeTransferSuccess) revert NativeTransferFailed();
 
-        // pay out the fee
+        // pay out the relayer fee
         (nativeTransferSuccess, ) = relayerAddress.call{
             value: relayerFee,
+            gas: GAS_LIMIT
+        }("");
+        if (!nativeTransferSuccess) revert NativeTransferFailed();
+
+        // pay out the protocol fee
+        (nativeTransferSuccess, ) = protocolFeeReceiver().call{
+            value: protocolFee,
             gas: GAS_LIMIT
         }("");
         if (!nativeTransferSuccess) revert NativeTransferFailed();
@@ -513,7 +586,8 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            0
+            0,
+            protocolFee
         );
     }
 
@@ -532,6 +606,10 @@ contract Shielder is
         uint256 macCommitment
     ) external payable whenNotPaused {
         uint256 pocketMoney = msg.value;
+        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
+        uint256 netAmount = amount - protocolFee;
+        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+        netAmount = netAmount - relayerFee;
 
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
@@ -550,8 +628,9 @@ contract Shielder is
         );
 
         IERC20 token = IERC20(tokenAddress);
-        token.safeTransfer(withdrawalAddress, amount - relayerFee);
+        token.safeTransfer(withdrawalAddress, netAmount);
         token.safeTransfer(relayerAddress, relayerFee);
+        token.safeTransfer(protocolFeeReceiver(), protocolFee);
 
         // forward pocket money
         if (pocketMoney != 0) {
@@ -573,7 +652,8 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            pocketMoney
+            pocketMoney,
+            protocolFee
         );
     }
 
@@ -599,7 +679,6 @@ contract Shielder is
         returns (uint256)
     {
         if (amount == 0) revert ZeroAmount();
-        if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
 
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
