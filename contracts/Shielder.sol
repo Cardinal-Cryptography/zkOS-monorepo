@@ -240,11 +240,7 @@ contract Shielder is
         );
 
         // pay out the protocol fee
-        (bool nativeTransferSuccess, ) = protocolFeeReceiver().call{
-            value: protocolFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
+        _transferNative(protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
             CONTRACT_VERSION,
@@ -307,8 +303,8 @@ contract Shielder is
             memo
         );
 
-        token.safeTransferFrom(msg.sender, address(this), netAmount);
-        token.safeTransferFrom(msg.sender, protocolFeeReceiver(), protocolFee);
+        _transferERC20(token, msg.sender, address(this), netAmount);
+        _transferERC20(token, msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
             CONTRACT_VERSION,
@@ -421,11 +417,7 @@ contract Shielder is
         );
 
         // pay out the protocol fee
-        (bool nativeTransferSuccess, ) = protocolFeeReceiver().call{
-            value: protocolFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
+        _transferNative(protocolFeeReceiver(), protocolFee);
 
         emit Deposit(
             CONTRACT_VERSION,
@@ -479,8 +471,8 @@ contract Shielder is
             memo
         );
 
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        token.safeTransferFrom(msg.sender, protocolFeeReceiver(), protocolFee);
+        _transferERC20(token, msg.sender, address(this), amount);
+        _transferERC20(token, msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit Deposit(
             CONTRACT_VERSION,
@@ -584,25 +576,11 @@ contract Shielder is
         );
 
         // return the tokens
-        (bool nativeTransferSuccess, ) = withdrawalAddress.call{
-            value: netAmount,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
-
+        _transferNative(withdrawalAddress, netAmount);
         // pay out the relayer fee
-        (nativeTransferSuccess, ) = relayerAddress.call{
-            value: relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
-
+        _transferNative(relayerAddress, relayerFee);
         // pay out the protocol fee
-        (nativeTransferSuccess, ) = protocolFeeReceiver().call{
-            value: protocolFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
+        _transferNative(protocolFeeReceiver(), protocolFee);
 
         emit Withdraw(
             CONTRACT_VERSION,
@@ -660,18 +638,12 @@ contract Shielder is
         );
 
         IERC20 token = IERC20(tokenAddress);
-        token.safeTransfer(withdrawalAddress, netAmount);
-        token.safeTransfer(relayerAddress, relayerFee);
-        token.safeTransfer(protocolFeeReceiver(), protocolFee);
+        _transferERC20(token, withdrawalAddress, netAmount);
+        _transferERC20(token, relayerAddress, relayerFee);
+        _transferERC20(token, protocolFeeReceiver(), protocolFee);
 
         // forward pocket money
-        if (pocketMoney != 0) {
-            (bool nativeTransferSuccess, ) = withdrawalAddress.call{
-                value: pocketMoney,
-                gas: GAS_LIMIT
-            }("");
-            if (!nativeTransferSuccess) revert NativeTransferFailed();
-        }
+        _transferNative(withdrawalAddress, pocketMoney);
 
         emit Withdraw(
             CONTRACT_VERSION,
@@ -750,6 +722,33 @@ contract Shielder is
         _registerNullifier(oldNullifierHash);
 
         return newNoteIndex;
+    }
+
+    function _transferNative(address to, uint256 amount) private {
+        if (amount != 0) {
+            (bool nativeTransferSuccess, ) = to.call{
+                value: amount,
+                gas: GAS_LIMIT
+            }("");
+            if (!nativeTransferSuccess) revert NativeTransferFailed();
+        }
+    }
+
+    function _transferERC20(IERC20 token, address to, uint256 amount) private {
+        if (amount != 0) {
+            token.safeTransfer(to, amount);
+        }
+    }
+
+    function _transferERC20(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 amount
+    ) private {
+        if (amount != 0) {
+            token.safeTransferFrom(from, to, amount);
+        }
     }
 
     function addressToUInt256(address addr) public pure returns (uint256) {
