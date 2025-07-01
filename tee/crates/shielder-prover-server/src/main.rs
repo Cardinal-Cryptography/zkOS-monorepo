@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration};
 use axum::{extract::State, http::StatusCode, routing::get, serve, Json, Router};
 use clap::Parser;
 use log::{debug, error};
-use shielder_prover_common::protocol::{Request, Response, RewardClient, VSOCK_PORT};
+use shielder_prover_common::protocol::{Request, Response, ProverClient, VSOCK_PORT};
 use thiserror::Error;
 use tokio::net::TcpListener;
 
@@ -78,7 +78,7 @@ async fn health(State(state): State<Arc<AppState>>) -> Result<(), StatusCode> {
 async fn request(state: Arc<AppState>, request: Request) -> Result<Json<Response>, StatusCode> {
     debug!("Sending TEE request: {:?}", request);
 
-    let mut tee_client = RewardClient::new(state.options.tee_cid, VSOCK_PORT)
+    let mut tee_client = ProverClient::new(state.options.tee_cid, VSOCK_PORT)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let response = tee_client

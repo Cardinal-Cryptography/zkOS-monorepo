@@ -14,5 +14,5 @@ pub enum Response {
     Pong,
 }
 
-pub type RewardServer = VsockServer<Request, Response>;
-pub type RewardClient = VsockClient<Request, Response>;
+pub type ProverServer = VsockServer<Request, Response>;
+pub type ProverClient = VsockClient<Request, Response>;
