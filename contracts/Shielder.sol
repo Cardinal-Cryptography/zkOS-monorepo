@@ -8,6 +8,7 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
 import { MerkleTree } from "./MerkleTree.sol";
 import { Nullifiers } from "./Nullifiers.sol";
 import { AnonymityRevoker } from "./AnonymityRevoker.sol";
+import { ProtocolFee } from "./ProtocolFee.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -26,7 +27,8 @@ contract Shielder is
     PausableUpgradeable,
     MerkleTree,
     Nullifiers,
-    AnonymityRevoker
+    AnonymityRevoker,
+    ProtocolFee
 {
     // -- Constants --
 
@@ -34,7 +36,7 @@ contract Shielder is
     ///  - `v1` is the version of the note schema,
     ///  - `v1.v2` is the version of the circuits used,
     ///  - `v1.v2.v3` is the version of the contract itself.
-    bytes3 public constant CONTRACT_VERSION = 0x000100;
+    bytes3 public constant CONTRACT_VERSION = 0x010101;
 
     /// This amount of gas should be sufficient for ether transfers
     /// and simple fallback function execution, yet still protecting against reentrancy attack.
@@ -66,7 +68,9 @@ contract Shielder is
         uint256 newNote,
         uint256 newNoteIndex,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        uint256 protocolFee,
+        bytes memo
     );
     event Deposit(
         bytes3 contractVersion,
@@ -75,7 +79,9 @@ contract Shielder is
         uint256 newNote,
         uint256 newNoteIndex,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        uint256 protocolFee,
+        bytes memo
     );
     event Withdraw(
         bytes3 contractVersion,
@@ -88,7 +94,9 @@ contract Shielder is
         uint256 fee,
         uint256 macSalt,
         uint256 macCommitment,
-        uint256 pocketMoney
+        uint256 pocketMoney,
+        uint256 protocolFee,
+        bytes memo
     );
 
     // -- Errors --
@@ -122,7 +130,10 @@ contract Shielder is
         address initialOwner,
         uint256 _anonymityRevokerPublicKeyX,
         uint256 _anonymityRevokerPublicKeyY,
-        bool _isArbitrumChain
+        bool _isArbitrumChain,
+        uint256 _protocolDepositFeeBps,
+        uint256 _protocolWithdrawFeeBps,
+        address _protocolFeeReceiver
     ) public initializer {
         __Ownable_init(initialOwner);
         __Pausable_init();
@@ -132,6 +143,11 @@ contract Shielder is
             _anonymityRevokerPublicKeyY
         );
         __Nullifiers_init(_isArbitrumChain);
+        __ProtocolFee_init(
+            _protocolDepositFeeBps,
+            _protocolWithdrawFeeBps,
+            _protocolFeeReceiver
+        );
         _pause();
     }
 
@@ -147,6 +163,24 @@ contract Shielder is
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function setProtocolFeeReceiver(
+        address newProtocolFeeReceiver
+    ) external onlyOwner {
+        _setProtocolFeeReceiver(newProtocolFeeReceiver);
+    }
+
+    function setProtocolDepositFeeBps(
+        uint256 newProtocolDepositFeeBps
+    ) external onlyOwner {
+        _setProtocolDepositFeeBps(newProtocolDepositFeeBps);
+    }
+
+    function setProtocolWithdrawFeeBps(
+        uint256 newProtocolWithdrawFeeBps
+    ) external onlyOwner {
+        _setProtocolWithdrawFeeBps(newProtocolWithdrawFeeBps);
     }
 
     /*
@@ -177,18 +211,22 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external payable whenNotPaused {
-        uint256 amount = msg.value;
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
 
+        uint256 amount = msg.value;
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
+
         uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
-            amount,
+            netAmount,
             newNote,
             prenullifier,
             symKeyEncryptionC1X,
@@ -197,8 +235,12 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
+
+        // pay out the protocol fee
+        _transferNative(protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
             CONTRACT_VERSION,
@@ -208,7 +250,9 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee,
+            memo
         );
     }
 
@@ -229,7 +273,8 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
         if (
@@ -239,10 +284,13 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
+
         uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             tokenAddress,
-            amount,
+            netAmount,
             newNote,
             prenullifier,
             symKeyEncryptionC1X,
@@ -251,10 +299,12 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
 
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        _transferERC20(token, msg.sender, address(this), netAmount);
+        _transferERC20(token, msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
             CONTRACT_VERSION,
@@ -264,7 +314,9 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee,
+            memo
         );
     }
 
@@ -280,7 +332,8 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -300,7 +353,14 @@ contract Shielder is
         publicInputs[0] = newNote;
         publicInputs[1] = prenullifier;
         publicInputs[2] = amount;
-        publicInputs[3] = addressToUInt256(msg.sender);
+
+        bytes memory commitment = abi.encodePacked(
+            addressToUInt256(msg.sender),
+            memo
+        );
+        // @dev shifting right by 4 bits so the commitment is smaller from r
+        publicInputs[3] = uint256(keccak256(commitment)) >> 4;
+
         publicInputs[4] = addressToUInt256(tokenAddress);
 
         (uint256 arX, uint256 arY) = anonymityRevokerPubkey();
@@ -335,24 +395,32 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external payable whenNotPaused {
-        uint256 amount = msg.value;
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
 
+        uint256 amount = msg.value;
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
+
         uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
-            amount,
+            netAmount,
             oldNullifierHash,
             newNote,
             merkleRoot,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
+
+        // pay out the protocol fee
+        _transferNative(protocolFeeReceiver(), protocolFee);
 
         emit Deposit(
             CONTRACT_VERSION,
@@ -361,7 +429,9 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee,
+            memo
         );
     }
 
@@ -377,7 +447,8 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     ) external whenNotPaused {
         IERC20 token = IERC20(tokenAddress);
         if (
@@ -387,19 +458,24 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
+
         uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             tokenAddress,
-            amount,
+            netAmount,
             oldNullifierHash,
             newNote,
             merkleRoot,
             macSalt,
             macCommitment,
-            proof
+            proof,
+            memo
         );
 
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        _transferERC20(token, msg.sender, address(this), amount);
+        _transferERC20(token, msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit Deposit(
             CONTRACT_VERSION,
@@ -408,7 +484,9 @@ contract Shielder is
             newNote,
             newNoteIndex,
             macSalt,
-            macCommitment
+            macCommitment,
+            protocolFee,
+            memo
         );
     }
 
@@ -421,7 +499,8 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof
+        bytes calldata proof,
+        bytes calldata memo
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -441,7 +520,14 @@ contract Shielder is
         publicInputs[1] = oldNullifierHash;
         publicInputs[2] = newNote;
         publicInputs[3] = amount;
-        publicInputs[4] = addressToUInt256(msg.sender);
+
+        bytes memory commitment = abi.encodePacked(
+            addressToUInt256(msg.sender),
+            memo
+        );
+        // @dev shifting right by 4 bits so the commitment is smaller from r
+        publicInputs[4] = uint256(keccak256(commitment)) >> 4;
+
         publicInputs[5] = addressToUInt256(tokenAddress);
         publicInputs[6] = macSalt;
         publicInputs[7] = macCommitment;
@@ -470,8 +556,14 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external whenNotPaused {
+        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
+        uint256 netAmount = amount - protocolFee;
+        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+        netAmount = netAmount - relayerFee;
+
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
@@ -485,22 +577,16 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            0
+            0,
+            memo
         );
 
         // return the tokens
-        (bool nativeTransferSuccess, ) = withdrawalAddress.call{
-            value: amount - relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
-
-        // pay out the fee
-        (nativeTransferSuccess, ) = relayerAddress.call{
-            value: relayerFee,
-            gas: GAS_LIMIT
-        }("");
-        if (!nativeTransferSuccess) revert NativeTransferFailed();
+        _transferNative(withdrawalAddress, netAmount);
+        // pay out the relayer fee
+        _transferNative(relayerAddress, relayerFee);
+        // pay out the protocol fee
+        _transferNative(protocolFeeReceiver(), protocolFee);
 
         emit Withdraw(
             CONTRACT_VERSION,
@@ -513,7 +599,9 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            0
+            0,
+            protocolFee,
+            memo
         );
     }
 
@@ -529,9 +617,14 @@ contract Shielder is
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external payable whenNotPaused {
         uint256 pocketMoney = msg.value;
+        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
+        uint256 netAmount = amount - protocolFee;
+        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+        netAmount = netAmount - relayerFee;
 
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
@@ -546,21 +639,17 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            pocketMoney
+            pocketMoney,
+            memo
         );
 
         IERC20 token = IERC20(tokenAddress);
-        token.safeTransfer(withdrawalAddress, amount - relayerFee);
-        token.safeTransfer(relayerAddress, relayerFee);
+        _transferERC20(token, withdrawalAddress, netAmount);
+        _transferERC20(token, relayerAddress, relayerFee);
+        _transferERC20(token, protocolFeeReceiver(), protocolFee);
 
         // forward pocket money
-        if (pocketMoney != 0) {
-            (bool nativeTransferSuccess, ) = withdrawalAddress.call{
-                value: pocketMoney,
-                gas: GAS_LIMIT
-            }("");
-            if (!nativeTransferSuccess) revert NativeTransferFailed();
-        }
+        _transferNative(withdrawalAddress, pocketMoney);
 
         emit Withdraw(
             CONTRACT_VERSION,
@@ -573,7 +662,9 @@ contract Shielder is
             relayerFee,
             macSalt,
             macCommitment,
-            pocketMoney
+            pocketMoney,
+            protocolFee,
+            memo
         );
     }
 
@@ -590,7 +681,8 @@ contract Shielder is
         uint256 relayerFee,
         uint256 macSalt,
         uint256 macCommitment,
-        uint256 pocketMoney
+        uint256 pocketMoney,
+        bytes calldata memo
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -599,7 +691,6 @@ contract Shielder is
         returns (uint256)
     {
         if (amount == 0) revert ZeroAmount();
-        if (amount <= relayerFee) revert FeeHigherThanAmount();
         if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
 
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
@@ -621,7 +712,8 @@ contract Shielder is
             addressToUInt256(relayerAddress),
             relayerFee,
             chainId,
-            pocketMoney
+            pocketMoney,
+            memo
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[5] = uint256(keccak256(commitment)) >> 4;
@@ -636,6 +728,33 @@ contract Shielder is
         _registerNullifier(oldNullifierHash);
 
         return newNoteIndex;
+    }
+
+    function _transferNative(address to, uint256 amount) private {
+        if (amount != 0) {
+            (bool nativeTransferSuccess, ) = to.call{
+                value: amount,
+                gas: GAS_LIMIT
+            }("");
+            if (!nativeTransferSuccess) revert NativeTransferFailed();
+        }
+    }
+
+    function _transferERC20(IERC20 token, address to, uint256 amount) private {
+        if (amount != 0) {
+            token.safeTransfer(to, amount);
+        }
+    }
+
+    function _transferERC20(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 amount
+    ) private {
+        if (amount != 0) {
+            token.safeTransferFrom(from, to, amount);
+        }
     }
 
     function addressToUInt256(address addr) public pure returns (uint256) {
