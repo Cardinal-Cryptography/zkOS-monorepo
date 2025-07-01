@@ -354,7 +354,10 @@ contract Shielder is
         publicInputs[1] = prenullifier;
         publicInputs[2] = amount;
 
-        bytes memory commitment = abi.encodePacked(msg.sender, memo);
+        bytes memory commitment = abi.encodePacked(
+            addressToUInt256(msg.sender),
+            memo
+        );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[3] = uint256(keccak256(commitment)) >> 4;
 
@@ -518,7 +521,10 @@ contract Shielder is
         publicInputs[2] = newNote;
         publicInputs[3] = amount;
 
-        bytes memory commitment = abi.encodePacked(msg.sender, memo);
+        bytes memory commitment = abi.encodePacked(
+            addressToUInt256(msg.sender),
+            memo
+        );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[4] = uint256(keccak256(commitment)) >> 4;
 
