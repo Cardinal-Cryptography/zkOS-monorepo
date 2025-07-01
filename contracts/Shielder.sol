@@ -220,13 +220,13 @@ contract Shielder is
         }
 
         uint256 amount = msg.value;
-        uint256 protocolFee = _computeProtocolDepositFeeFromGrossAmount(amount);
-        amount = amount - protocolFee;
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
 
         uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
-            amount,
+            netAmount,
             newNote,
             prenullifier,
             symKeyEncryptionC1X,
@@ -288,12 +288,13 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        uint256 protocolFee = _computeProtocolDepositFeeFromNetAmount(amount);
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
 
         uint256 newNoteIndex = _newAccount(
             expectedContractVersion,
             tokenAddress,
-            amount,
+            netAmount,
             newNote,
             prenullifier,
             symKeyEncryptionC1X,
@@ -306,7 +307,7 @@ contract Shielder is
             memo
         );
 
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        token.safeTransferFrom(msg.sender, address(this), netAmount);
         token.safeTransferFrom(msg.sender, protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
@@ -403,13 +404,13 @@ contract Shielder is
         }
 
         uint256 amount = msg.value;
-        uint256 protocolFee = _computeProtocolDepositFeeFromGrossAmount(amount);
-        amount = amount - protocolFee;
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
 
         uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
-            amount,
+            netAmount,
             oldNullifierHash,
             newNote,
             merkleRoot,
@@ -462,12 +463,13 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        uint256 protocolFee = _computeProtocolDepositFeeFromNetAmount(amount);
+        uint256 protocolFee = _computeProtocolDepositFee(amount);
+        uint256 netAmount = amount - protocolFee;
 
         uint256 newNoteIndex = _deposit(
             expectedContractVersion,
             tokenAddress,
-            amount,
+            netAmount,
             oldNullifierHash,
             newNote,
             merkleRoot,

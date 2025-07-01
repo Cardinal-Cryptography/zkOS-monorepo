@@ -67,24 +67,12 @@ abstract contract ProtocolFee is Initializable {
         return $.protocolDepositFeeBps;
     }
 
-    function _computeProtocolDepositFeeFromNetAmount(
+    function _computeProtocolDepositFee(
         uint256 amount
     ) internal view returns (uint256) {
         ProtocolFeeStorage storage $ = _getProtocolFeeStorage();
         return
             amount.mulDiv($.protocolDepositFeeBps, MAX_BPS, Math.Rounding.Ceil);
-    }
-
-    function _computeProtocolDepositFeeFromGrossAmount(
-        uint256 amount
-    ) internal view returns (uint256) {
-        ProtocolFeeStorage storage $ = _getProtocolFeeStorage();
-        return
-            amount.mulDiv(
-                $.protocolDepositFeeBps,
-                MAX_BPS + $.protocolDepositFeeBps,
-                Math.Rounding.Ceil
-            );
     }
 
     function _computeProtocolWithdrawFee(
