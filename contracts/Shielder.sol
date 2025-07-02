@@ -559,9 +559,13 @@ contract Shielder is
         uint256 macCommitment,
         bytes calldata memo
     ) external whenNotPaused {
+        require(amount != 0, ZeroAmount());
+        require(amount <= MAX_TRANSACTION_AMOUNT, AmountTooHigh());
+
         uint256 protocolFee = _computeProtocolWithdrawFee(amount);
         uint256 netAmount = amount - protocolFee;
-        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+
+        require(netAmount > relayerFee, FeeHigherThanAmount());
         netAmount = netAmount - relayerFee;
 
         uint256 newNoteIndex = _withdraw(
@@ -620,11 +624,16 @@ contract Shielder is
         uint256 macCommitment,
         bytes calldata memo
     ) external payable whenNotPaused {
-        uint256 pocketMoney = msg.value;
+        require(amount != 0, ZeroAmount());
+        require(amount <= MAX_TRANSACTION_AMOUNT, AmountTooHigh());
+
         uint256 protocolFee = _computeProtocolWithdrawFee(amount);
         uint256 netAmount = amount - protocolFee;
-        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
+
+        require(netAmount > relayerFee, FeeHigherThanAmount());
         netAmount = netAmount - relayerFee;
+
+        uint256 pocketMoney = msg.value;
 
         uint256 newNoteIndex = _withdraw(
             expectedContractVersion,
@@ -690,9 +699,6 @@ contract Shielder is
         fieldElement(newNote)
         returns (uint256)
     {
-        if (amount == 0) revert ZeroAmount();
-        if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
-
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
 
