@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_provider::Provider;
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::Result;
@@ -57,7 +57,14 @@ pub async fn estimate_deposit_gas(
         .expect("Deposit mustn't be the first action");
     let (_merkle_root, merkle_path) = get_current_merkle_path(leaf_index, &user).await?;
 
-    let call = prepare_call(shielder_account, amount, token, merkle_path, user.address())?;
+    let call = prepare_call(
+        shielder_account,
+        amount,
+        token,
+        merkle_path,
+        user.address(),
+        Bytes::from(vec![]),
+    )?;
     let estimated_gas = match token {
         Token::Native => {
             user.deposit_native::<EstimateGas>(call.try_into().unwrap(), amount)
@@ -77,12 +84,14 @@ fn prepare_call(
     token: Token,
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
     caller_address: Address,
+    memo: Bytes,
 ) -> Result<DepositCall> {
     let (params, pk) = DEPOSIT_PROVING_EQUIPMENT.clone();
     let extra = DepositExtra {
         merkle_path,
         mac_salt: get_mac_salt(),
         caller_address,
+        memo,
     };
 
     Ok(shielder_account.prepare_call::<DepositCallType>(&params, &pk, token, amount, &extra))

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use alloy_primitives::{Address, TxHash, U256};
+use alloy_primitives::{Address, Bytes, TxHash, U256};
 use shielder_account::{
     call_data::{DepositCall, DepositCallType, DepositExtra},
     ShielderAccount, Token,
@@ -37,6 +37,7 @@ pub fn prepare_call(
             merkle_path,
             mac_salt: U256::ZERO,
             caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
+            memo: Bytes::from(vec![]),
         },
     );
     (calldata, note_index)
@@ -92,6 +93,7 @@ mod tests {
     use shielder_contract::ShielderContract::{
         Deposit, ShielderContractEvents, WrongContractVersion,
     };
+    use shielder_setup::version::contract_version;
 
     use crate::{
         actor_balance_decreased_by,
@@ -160,13 +162,15 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Deposit(Deposit {
-                contractVersion: FixedBytes([0, 1, 0]),
+                contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(amount),
                 newNote: calldata.new_note,
                 newNoteIndex: note_index.saturating_add(U256::from(1)),
                 macSalt: U256::ZERO,
                 macCommitment: calldata.mac_commitment,
+                protocolFee: U256::ZERO,
+                memo: calldata.memo,
             })]
         );
         assert!(actor_balance_decreased_by(
@@ -197,7 +201,7 @@ mod tests {
             result,
             Err(ShielderCallErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 1, 0]),
+                    actual: _,
                     expectedByCaller: FixedBytes([9, 8, 7])
                 }
             ))
@@ -343,13 +347,14 @@ mod tests {
         let calldata = DepositCall {
             token: token.token(&deployment),
             amount: U256::from(10),
-            expected_contract_version: FixedBytes([0, 1, 0]),
+            expected_contract_version: contract_version().to_bytes(),
             old_nullifier_hash: U256::ZERO,
             new_note: U256::ZERO,
             merkle_root: U256::ZERO,
             mac_salt: U256::ZERO,
             mac_commitment: U256::ZERO,
             proof: Bytes::from(vec![]),
+            memo: Bytes::from(vec![]),
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 

@@ -151,6 +151,8 @@ impl ContractInteractionCommand {
 pub struct NewAccountCmd {
     /// Amount of the token to be shielded.
     pub amount: u128,
+    /// Optional memo attached to the contract call.
+    pub memo: Option<Vec<u8>>,
     /// Optional seed for the ZK ID. If not provided, will be derived from the private key.
     pub zkid_seed: Option<U256>,
 }
@@ -161,6 +163,8 @@ pub struct NewAccountERC20Cmd {
     pub amount: u128,
     /// Address of the token.
     pub token_address: Address,
+    /// Optional memo attached to the contract call.
+    pub memo: Option<Vec<u8>>,
     /// Optional seed for the ZK ID. If not provided, will be derived from the private key.
     pub zkid_seed: Option<U256>,
 }
@@ -169,6 +173,8 @@ pub struct NewAccountERC20Cmd {
 pub struct DepositCmd {
     /// Amount of the token to be shielded.
     pub amount: u128,
+    /// Optional memo attached to the contract call.
+    pub memo: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -177,6 +183,8 @@ pub struct DepositERC20Cmd {
     pub amount: u128,
     /// Address of the token.
     pub token_address: Address,
+    /// Optional memo attached to the contract call.
+    pub memo: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -185,6 +193,8 @@ pub struct WithdrawCmd {
     pub amount: u128,
     /// Address to which the tokens should be sent.
     pub to: Address,
+    /// Optional memo attached to the contract call.
+    pub memo: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Args)]
@@ -197,6 +207,8 @@ pub struct WithdrawERC20Cmd {
     pub token_address: Address,
     /// Pocket money to be sent to the withdrawal address.
     pub pocket_money: u128,
+    /// Optional memo attached to the contract call.
+    pub memo: Option<Vec<u8>>,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, ValueEnum)]

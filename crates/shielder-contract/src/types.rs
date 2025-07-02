@@ -27,6 +27,8 @@ sol! {
             uint256 newNoteIndex,
             uint256 macSalt,
             uint256 macCommitment,
+            uint256 protocolFee,
+            bytes memo
         );
         event Deposit(
             bytes3 contractVersion,
@@ -36,6 +38,8 @@ sol! {
             uint256 newNoteIndex,
             uint256 macSalt,
             uint256 macCommitment,
+            uint256 protocolFee,
+            bytes memo
         );
         event Withdraw(
             bytes3 contractVersion,
@@ -49,6 +53,8 @@ sol! {
             uint256 macSalt,
             uint256 macCommitment,
             uint256 pocketMoney,
+            uint256 protocolFee,
+            bytes memo
         );
 
         error DepositVerificationFailed();
@@ -71,7 +77,10 @@ sol! {
             address initialOwner,
             uint256 _anonymityRevokerPublicKeyX,
             uint256 _anonymityRevokerPublicKeyY,
-            bool _isArbitrumChain
+            bool _isArbitrumChain,
+            uint256 _protocolDepositFeeBps,
+            uint256 _protocolWithdrawFeeBps,
+            address _protocolFeeReceiver,
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
@@ -89,7 +98,8 @@ sol! {
             uint256 symKeyEncryptionC2Y,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external payable whenNotPaused;
         function newAccountERC20(
             bytes3 expectedContractVersion,
@@ -103,7 +113,8 @@ sol! {
             uint256 symKeyEncryptionC2Y,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external whenNotPaused;
         function depositNative(
             bytes3 expectedContractVersion,
@@ -112,7 +123,8 @@ sol! {
             uint256 merkleRoot,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external payable whenNotPaused;
         function depositERC20(
             bytes3 expectedContractVersion,
@@ -123,7 +135,8 @@ sol! {
             uint256 merkleRoot,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external whenNotPaused;
         function withdrawNative(
             bytes3 expectedContractVersion,
@@ -137,6 +150,7 @@ sol! {
             uint256 relayerFee,
             uint256 macSalt,
             uint256 macCommitment,
+            bytes calldata memo
         ) external whenNotPaused;
         function withdrawERC20(
             bytes3 expectedContractVersion,
@@ -151,6 +165,7 @@ sol! {
             uint256 relayerFee,
             uint256 macSalt,
             uint256 macCommitment,
+            bytes calldata memo
         ) external whenNotPaused;
 
         function getMerklePath(

@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use anyhow::Result;
 use shielder_account::{
     call_data::{DepositCall, DepositCallType, DepositExtra},
@@ -19,8 +19,14 @@ use crate::{
     },
 };
 
-pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
+pub async fn deposit(
+    app_state: &mut AppState,
+    amount: u128,
+    token: Token,
+    memo: Vec<u8>,
+) -> Result<()> {
     let amount = U256::from(amount);
+    let memo = Bytes::from(memo);
     let leaf_index = app_state.accounts[&token.address()]
         .current_leaf_index()
         .expect("Deposit mustn't be the first action");
@@ -33,6 +39,7 @@ pub async fn deposit(app_state: &mut AppState, amount: u128, token: Token) -> Re
         token,
         merkle_path,
         shielder_user.address(),
+        memo,
     )?;
     let (tx_hash, block_hash) = match token {
         Token::Native => {
@@ -75,12 +82,14 @@ fn prepare_call(
     token: Token,
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
     caller_address: Address,
+    memo: Bytes,
 ) -> Result<DepositCall> {
     let (params, pk) = get_proving_equipment(CircuitType::Deposit)?;
     let extra = DepositExtra {
         merkle_path,
         mac_salt: get_mac_salt(),
         caller_address,
+        memo,
     };
 
     Ok(app_state.accounts[&token.address()]

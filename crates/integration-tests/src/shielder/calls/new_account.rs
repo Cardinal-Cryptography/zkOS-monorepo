@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use alloy_primitives::{Address, TxHash, U256};
+use alloy_primitives::{Address, Bytes, TxHash, U256};
 use shielder_account::{
     call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType},
     ShielderAccount, Token,
@@ -31,6 +31,7 @@ pub fn prepare_call(
             encryption_salt: U256::MAX,
             mac_salt: U256::ZERO,
             caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
+            memo: Bytes::from(vec![]),
         },
     )
 }
@@ -103,6 +104,7 @@ mod tests {
     use shielder_contract::ShielderContract::{
         NewAccount, ShielderContractEvents, WrongContractVersion,
     };
+    use shielder_setup::version::contract_version;
 
     use crate::{
         call_errors::ShielderCallErrors,
@@ -150,7 +152,7 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::NewAccount(NewAccount {
-                contractVersion: FixedBytes([0, 1, 0]),
+                contractVersion: contract_version().to_bytes(),
                 prenullifier: calldata.prenullifier,
                 tokenAddress: token.address(&deployment),
                 amount,
@@ -158,6 +160,8 @@ mod tests {
                 newNoteIndex: U256::ZERO,
                 macSalt: U256::ZERO,
                 macCommitment: calldata.mac_commitment,
+                protocolFee: U256::ZERO,
+                memo: calldata.memo,
             })]
         );
         assert!(actor_balance_decreased_by(&deployment, token, amount));
@@ -179,7 +183,7 @@ mod tests {
             result,
             Err(ShielderCallErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 1, 0]),
+                    actual: _,
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))

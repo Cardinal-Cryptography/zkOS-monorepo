@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, TxHash, U256};
+use alloy_primitives::{Address, Bytes, TxHash, U256};
 use alloy_signer_local::PrivateKeySigner;
 use anyhow::Result;
 use shielder_account::{
@@ -38,6 +38,7 @@ pub async fn estimate_new_account_gas(
         token,
         anonymity_revoker_public_key,
         user.address(),
+        Bytes::from(vec![]),
     )?;
     let estimated_gas = match token {
         Token::Native => {
@@ -59,6 +60,7 @@ fn prepare_call(
     token: Token,
     anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     caller_address: Address,
+    memo: Bytes,
 ) -> Result<NewAccountCall> {
     let (params, pk) = NEW_ACCOUNT_PROVING_EQUIPMENT.clone();
     // let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
@@ -67,6 +69,7 @@ fn prepare_call(
         encryption_salt: get_mac_salt(),
         mac_salt: get_mac_salt(),
         caller_address,
+        memo,
     };
 
     Ok(shielder_account.prepare_call::<NewAccountCallType>(&params, &pk, token, amount, &extra))
@@ -86,6 +89,7 @@ pub async fn create_new_account(
         token,
         anonymity_revoker_public_key,
         user.address(),
+        Bytes::from(vec![]),
     )?;
 
     let (tx_hash, _) = match token {

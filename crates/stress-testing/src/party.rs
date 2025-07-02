@@ -11,8 +11,10 @@ use shielder_circuits::{
     withdraw::WithdrawCircuit,
 };
 use shielder_contract::{
-    alloy_primitives::U256, merkle_path::get_current_merkle_path,
-    providers::create_simple_provider, ShielderContract::withdrawNativeCall,
+    alloy_primitives::{Bytes, U256},
+    merkle_path::get_current_merkle_path,
+    providers::create_simple_provider,
+    ShielderContract::withdrawNativeCall,
 };
 use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote};
 use shielder_setup::version::contract_version;
@@ -131,6 +133,7 @@ async fn prepare_relay_query(
                 chain_id: U256::from(chain_id),
                 mac_salt: U256::ZERO,
                 pocket_money: U256::ZERO,
+                memo: Bytes::from(vec![]),
             },
         )
         .try_into()
@@ -150,6 +153,7 @@ async fn prepare_relay_query(
             mac_salt: calldata.macSalt,
             mac_commitment: calldata.macCommitment,
             pocket_money: U256::ZERO,
+            memo: calldata.memo,
         },
         quote: RelayQuote {
             gas_price: quote.price_details.gas_price,

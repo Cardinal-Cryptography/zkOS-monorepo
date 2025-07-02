@@ -9,7 +9,7 @@ use shielder_circuits::{
     GrumpkinPointAffine,
 };
 use shielder_contract::{
-    alloy_primitives::{Address, U256},
+    alloy_primitives::{Address, Bytes, U256},
     ConnectionPolicy,
     ShielderContract::newAccountNativeCall,
     ShielderUser,
@@ -69,6 +69,7 @@ impl Actor {
                     encryption_salt: U256::MAX,
                     mac_salt: U256::ZERO,
                     caller_address: self.shielder_user.address(),
+                    memo: Bytes::from(vec![]),
                 },
             )
             .try_into()

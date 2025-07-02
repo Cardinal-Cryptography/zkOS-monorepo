@@ -34,6 +34,11 @@ pub const DEPLOYER_ADDRESS: &str = "f39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 pub const DEPLOYER_INITIAL_NATIVE_BALANCE: U256 = U256::MAX;
 pub const DEPLOYER_INITIAL_ERC20_BALANCE: U256 = U256::ZERO;
 
+/// The address of the protocol fee receiver account..
+pub const PROTOCOL_FEE_RECEIVER_ADDRESS: &str = "70997970C51812dc3A010C7d01b50e0d17dc79CB";
+pub const PROTOCOL_FEE_RECEIVER_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
+pub const PROTOCOL_FEE_RECEIVER_INITIAL_ERC20_BALANCE: U256 = U256::ZERO;
+
 /// The address of the actor account.
 ///
 /// This is one of the default accounts in the Anvil testnet.
@@ -171,7 +176,14 @@ pub fn deployment(
         Some(reverting_bytecode),
     );
 
-    let shielder_address = deploy_shielder_contract(&mut evm, owner, ANONYMITY_REVOKER_PKEY);
+    let shielder_address = deploy_shielder_contract(
+        &mut evm,
+        owner,
+        ANONYMITY_REVOKER_PKEY,
+        U256::ZERO,
+        U256::ZERO,
+        Address::from_str(PROTOCOL_FEE_RECEIVER_ADDRESS).unwrap(),
+    );
     unpause_shielder(shielder_address, &mut evm);
 
     Deployment {
@@ -245,6 +257,9 @@ fn deploy_shielder_contract(
     evm: &mut EvmRunner,
     owner: Address,
     ar_key: GrumpkinPointAffine<U256>,
+    protocol_deposit_fee_bps: U256,
+    protocol_withdraw_fee_bps: U256,
+    protocol_fee_receiver: Address,
 ) -> Address {
     let implementation_address = deploy_shielder_implementation(evm);
     let initialization_data = initializeCall {
@@ -252,6 +267,9 @@ fn deploy_shielder_contract(
         _anonymityRevokerPublicKeyX: ar_key.x,
         _anonymityRevokerPublicKeyY: ar_key.y,
         _isArbitrumChain: false,
+        _protocolDepositFeeBps: protocol_deposit_fee_bps,
+        _protocolWithdrawFeeBps: protocol_withdraw_fee_bps,
+        _protocolFeeReceiver: protocol_fee_receiver,
     }
     .abi_encode();
 
@@ -282,7 +300,7 @@ mod tests {
 
     use crate::deploy::{
         deploy_shielder_contract, deployment, Deployment, ANONYMITY_REVOKER_PKEY, DEPLOYER_ADDRESS,
-        DEPLOYER_INITIAL_NATIVE_BALANCE,
+        DEPLOYER_INITIAL_NATIVE_BALANCE, PROTOCOL_FEE_RECEIVER_ADDRESS,
     };
 
     #[rstest]
@@ -294,8 +312,10 @@ mod tests {
     fn minimal_shielder_contract_deployment_works() {
         let mut evm = EvmRunner::aleph_evm();
 
+        let owner = Address::from_str(DEPLOYER_ADDRESS).unwrap();
+
         evm.db.insert_account_info(
-            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            owner,
             AccountInfo {
                 nonce: 0_u64,
                 balance: DEPLOYER_INITIAL_NATIVE_BALANCE,
@@ -306,8 +326,11 @@ mod tests {
 
         deploy_shielder_contract(
             &mut evm,
-            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            owner,
             ANONYMITY_REVOKER_PKEY,
+            U256::ZERO,
+            U256::ZERO,
+            Address::from_str(PROTOCOL_FEE_RECEIVER_ADDRESS).unwrap(),
         );
     }
 
@@ -316,8 +339,10 @@ mod tests {
     fn deployment_fails_when_ar_key_is_not_on_curve() {
         let mut evm = EvmRunner::aleph_evm();
 
+        let owner = Address::from_str(DEPLOYER_ADDRESS).unwrap();
+
         evm.db.insert_account_info(
-            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            owner,
             AccountInfo {
                 nonce: 0_u64,
                 balance: DEPLOYER_INITIAL_NATIVE_BALANCE,
@@ -328,11 +353,14 @@ mod tests {
 
         deploy_shielder_contract(
             &mut evm,
-            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            owner,
             GrumpkinPointAffine {
                 x: U256::from(0),
                 y: U256::from(1),
             },
+            U256::ZERO,
+            U256::ZERO,
+            Address::from_str(PROTOCOL_FEE_RECEIVER_ADDRESS).unwrap(),
         );
     }
 
@@ -341,8 +369,10 @@ mod tests {
     fn deployment_fails_when_ar_coordinates_are_not_from_field() {
         let mut evm = EvmRunner::aleph_evm();
 
+        let owner = Address::from_str(DEPLOYER_ADDRESS).unwrap();
+
         evm.db.insert_account_info(
-            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            owner,
             AccountInfo {
                 nonce: 0_u64,
                 balance: DEPLOYER_INITIAL_NATIVE_BALANCE,
@@ -358,11 +388,14 @@ mod tests {
 
         deploy_shielder_contract(
             &mut evm,
-            Address::from_str(DEPLOYER_ADDRESS).unwrap(),
+            owner,
             GrumpkinPointAffine {
                 x: ANONYMITY_REVOKER_PKEY.x + field_modulus,
                 ..ANONYMITY_REVOKER_PKEY
             },
+            U256::ZERO,
+            U256::ZERO,
+            Address::from_str(PROTOCOL_FEE_RECEIVER_ADDRESS).unwrap(),
         );
     }
 }

@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use anyhow::Result;
 use shielder_account::{
     call_data::{NewAccountCall, NewAccountCallExtra, NewAccountCallType},
@@ -20,7 +20,13 @@ use crate::{
     },
 };
 
-pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -> Result<()> {
+pub async fn new_account(
+    app_state: &mut AppState,
+    amount: u128,
+    token: Token,
+    memo: Vec<u8>,
+) -> Result<()> {
+    let memo = Bytes::from(memo);
     let amount = U256::from(amount);
     let user = app_state.create_shielder_user();
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
@@ -30,6 +36,7 @@ pub async fn new_account(app_state: &mut AppState, amount: u128, token: Token) -
         token,
         anonymity_revoker_public_key,
         user.address(),
+        memo,
     )?;
 
     let (tx_hash, block_hash) = match token {
@@ -77,6 +84,7 @@ fn prepare_call(
     token: Token,
     anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     caller_address: Address,
+    memo: Bytes,
 ) -> Result<NewAccountCall> {
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
     let extra = NewAccountCallExtra {
@@ -84,6 +92,7 @@ fn prepare_call(
         encryption_salt: get_encryption_salt(),
         mac_salt: get_mac_salt(),
         caller_address,
+        memo,
     };
 
     Ok(app_state.accounts[&token.address()]

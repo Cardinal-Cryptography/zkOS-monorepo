@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
-use alloy_primitives::{Address, TxHash, U256};
+use alloy_primitives::{Address, Bytes, TxHash, U256};
 use shielder_account::{
     call_data::{WithdrawCall, WithdrawCallType, WithdrawExtra},
     ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
-use shielder_setup::version::ContractVersion;
+use shielder_setup::version::contract_version;
 
 use crate::{
     shielder::{
@@ -25,6 +25,7 @@ pub struct PrepareCallArgs {
     relayer_address: Address,
     relayer_fee: U256,
     pocket_money: U256,
+    memo: Bytes,
 }
 
 pub fn prepare_args(
@@ -32,6 +33,7 @@ pub fn prepare_args(
     amount: U256,
     relayer_fee: U256,
     pocket_money: U256,
+    memo: Vec<u8>,
 ) -> PrepareCallArgs {
     PrepareCallArgs {
         token,
@@ -40,6 +42,7 @@ pub fn prepare_args(
         relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
         relayer_fee,
         pocket_money,
+        memo: Bytes::from(memo),
     }
 }
 
@@ -69,14 +72,11 @@ pub fn prepare_call(
             to: args.withdraw_address,
             relayer_address: args.relayer_address,
             relayer_fee: args.relayer_fee,
-            contract_version: ContractVersion {
-                note_version: 0,
-                circuit_version: 1,
-                patch_version: 0,
-            },
+            contract_version: contract_version(),
             chain_id: U256::from(1),
             mac_salt: U256::ZERO,
             pocket_money: args.pocket_money,
+            memo: args.memo,
         },
     );
 
@@ -124,6 +124,7 @@ mod tests {
     use shielder_contract::ShielderContract::{
         ShielderContractEvents, Withdraw, WrongContractVersion,
     };
+    use shielder_setup::version::contract_version;
 
     use crate::{
         call_errors::ShielderCallErrors,
@@ -161,7 +162,7 @@ mod tests {
         let (withdraw_calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, vec![]),
         );
         let (_, SuccessResult { gas_used, .. }) =
             invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata).unwrap();
@@ -197,7 +198,7 @@ mod tests {
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), pocket_money),
+            prepare_args(token, U256::from(5), U256::from(1), pocket_money, vec![]),
         );
         let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
             .unwrap()
@@ -206,7 +207,7 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([0, 1, 0]),
+                contractVersion: FixedBytes([1, 1, 1]),
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -217,6 +218,8 @@ mod tests {
                 macSalt: U256::ZERO,
                 macCommitment: withdraw_calldata.mac_commitment,
                 pocketMoney: pocket_money,
+                protocolFee: U256::ZERO,
+                memo: Bytes::from(vec![]),
             })]
         );
         assert!(actor_balance_decreased_by(
@@ -279,7 +282,7 @@ mod tests {
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), pocket_money),
+            prepare_args(token, U256::from(5), U256::from(1), pocket_money, vec![]),
         );
         let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
             .unwrap()
@@ -288,7 +291,7 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([0, 1, 0]),
+                contractVersion: FixedBytes([1, 1, 1]),
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -299,6 +302,8 @@ mod tests {
                 macSalt: U256::ZERO,
                 macCommitment: withdraw_calldata.mac_commitment,
                 pocketMoney: pocket_money,
+                protocolFee: U256::ZERO,
+                memo: Bytes::from(vec![]),
             })]
         );
         assert!(actor_balance_decreased_by(
@@ -346,7 +351,7 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, vec![]),
         );
         calldata.new_note = calldata.new_note.wrapping_add(U256::from(1));
 
@@ -379,7 +384,7 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(0), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(0), U256::from(1), U256::ZERO, vec![]),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -407,7 +412,7 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(3), U256::from(3), U256::ZERO),
+            prepare_args(token, U256::from(3), U256::from(3), U256::ZERO, vec![]),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -440,6 +445,7 @@ mod tests {
                 U256::from((1u128 << 112) - 1),
                 U256::from(1),
                 U256::ZERO,
+                vec![],
             ),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -477,7 +483,7 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(2), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(2), U256::from(1), U256::ZERO, vec![]),
         );
         calldata.amount = U256::from(1u128 << 112);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -511,6 +517,7 @@ mod tests {
             mac_salt: U256::ZERO,
             mac_commitment: U256::ZERO,
             pocket_money: U256::ZERO,
+            memo: Bytes::from(vec![]),
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -518,7 +525,7 @@ mod tests {
             result,
             Err(ShielderCallErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 1, 0]),
+                    actual: FixedBytes([1, 1, 1]),
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))
@@ -546,7 +553,7 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::from(2)),
+            prepare_args(token, U256::from(5), U256::from(1), U256::from(2), vec![]),
         );
         calldata.pocket_money = U256::from(1);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -570,7 +577,7 @@ mod tests {
         let mut shielder_account = ShielderAccount::default();
 
         let calldata = WithdrawCall {
-            expected_contract_version: FixedBytes([0, 1, 0]),
+            expected_contract_version: contract_version().to_bytes(),
             token: token.token(&deployment),
             withdrawal_address: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -583,6 +590,7 @@ mod tests {
             mac_salt: U256::ZERO,
             mac_commitment: U256::ZERO,
             pocket_money: U256::ZERO,
+            memo: Bytes::from(vec![]),
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -610,7 +618,7 @@ mod tests {
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, vec![]),
         );
         assert!(invoke_call(&mut deployment, &mut shielder_account, &calldata).is_ok());
 
@@ -652,7 +660,7 @@ mod tests {
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, vec![]),
         );
         let mut swap_value = U256::from_str(Fr::MODULUS).unwrap();
 
@@ -700,7 +708,7 @@ mod tests {
             &mut shielder_account,
             PrepareCallArgs {
                 withdraw_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
-                ..prepare_args(token, U256::from(5), U256::from(1), U256::ZERO)
+                ..prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, vec![])
             },
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -739,7 +747,7 @@ mod tests {
             &mut shielder_account,
             PrepareCallArgs {
                 relayer_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
-                ..prepare_args(token, U256::from(5), U256::from(1), U256::ZERO)
+                ..prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, vec![])
             },
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use alloy_primitives::{Address, BlockHash, TxHash, U256};
+use alloy_primitives::{Address, BlockHash, Bytes, TxHash, U256};
 use alloy_provider::{network::AnyNetwork, Provider};
 use alloy_transport::BoxTransport;
 use anyhow::{anyhow, bail, Result};
@@ -34,10 +34,12 @@ pub async fn withdraw(
     to: Address,
     token: Token,
     pocket_money: u128,
+    memo: Vec<u8>,
 ) -> Result<()> {
     app_state.relayer_rpc_url.check_connection().await?;
 
     let pocket_money = U256::from(pocket_money);
+    let memo = Bytes::from(memo);
     let quoted_fee = get_relayer_total_fee(app_state, token, pocket_money).await?;
     let amount = U256::from(amount) + quoted_fee.fee_details.total_cost_fee_token;
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
@@ -48,7 +50,10 @@ pub async fn withdraw(
 
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
-        .json(&prepare_relayer_query(app_state, amount, to, token, quoted_fee, pocket_money).await?)
+        .json(
+            &prepare_relayer_query(app_state, amount, to, token, quoted_fee, pocket_money, memo)
+                .await?,
+        )
         .send()
         .await?;
 
@@ -148,6 +153,7 @@ async fn prepare_relayer_query(
     token: Token,
     quoted_fee: QuoteFeeResponse,
     pocket_money: U256,
+    memo: Bytes,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
     let leaf_index = app_state.accounts[&token.address()]
@@ -176,6 +182,7 @@ async fn prepare_relayer_query(
             chain_id: U256::from(chain_id),
             mac_salt: get_mac_salt(),
             pocket_money,
+            memo: memo.clone(),
         },
     );
 
@@ -193,6 +200,7 @@ async fn prepare_relayer_query(
             mac_salt: calldata.mac_salt,
             mac_commitment: calldata.mac_commitment,
             pocket_money,
+            memo,
         },
         quote: quoted_fee.into(),
     })

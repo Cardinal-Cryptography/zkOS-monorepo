@@ -76,7 +76,7 @@ fn main() {
             withdraw_calldata(
                 &mut deployment,
                 &mut shielder_account,
-                prepare_args(token, amount, U256::from(1), pocket_money),
+                prepare_args(token, amount, U256::from(1), pocket_money, vec![]),
             )
             .0,
         );
