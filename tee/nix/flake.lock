@@ -148,7 +148,8 @@
         "flake-utils": "flake-utils",
         "naersk": "naersk",
         "nitro-util": "nitro-util",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_3",
+        "zkOS-monorepo": "zkOS-monorepo"
       }
     },
     "rust-analyzer-src": {
@@ -196,6 +197,23 @@
         "owner": "nix-systems",
         "repo": "default",
         "type": "github"
+      }
+    },
+    "zkOS-monorepo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1751025186,
+        "narHash": "sha256-zYERxWybUg+wjPPeharOwTcuJGP6RT/tAQwo/QRXaBw=",
+        "ref": "refs/heads/main",
+        "rev": "4ff7e5a5f601581fc1e1f7bb823b7572aeba3092",
+        "revCount": 218,
+        "type": "git",
+        "url": "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
+      },
+      "original": {
+        "rev": "4ff7e5a5f601581fc1e1f7bb823b7572aeba3092",
+        "type": "git",
+        "url": "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
       }
     }
   },
