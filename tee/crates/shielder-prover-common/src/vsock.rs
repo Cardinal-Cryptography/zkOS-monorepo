@@ -7,7 +7,7 @@ use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 use tokio_vsock::{OwnedReadHalf, OwnedWriteHalf, VsockAddr, VsockStream};
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum VsockError {
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
     #[error("Serde error: {0}")]
@@ -22,14 +22,14 @@ pub struct VsockClient<Req, Resp> {
 }
 
 impl<'de, Req: Serialize, Resp: Deserialize<'de>> VsockClient<Req, Resp> {
-    pub async fn new(cid: u32, port: u32) -> Result<Self, Error> {
+    pub async fn new(cid: u32, port: u32) -> Result<Self, VsockError> {
         Ok(Self {
             vsock: Vsock::new(cid, port).await?,
             _marker: PhantomData,
         })
     }
 
-    pub async fn request(&mut self, request: &Req) -> Result<Resp, Error> {
+    pub async fn request(&mut self, request: &Req) -> Result<Resp, VsockError> {
         self.vsock.send(request).await?;
         self.vsock.recv().await
     }
@@ -44,7 +44,7 @@ impl<'de, Req: Deserialize<'de>, Resp: Serialize> VsockServer<Req, Resp> {
     pub async fn handle_request<Fut: Future<Output = Resp>, F: FnOnce(Req) -> Fut>(
         &mut self,
         handler: F,
-    ) -> Result<(), Error> {
+    ) -> Result<(), VsockError> {
         let req = self.vsock.recv().await?;
         let res = handler(req).await;
         self.vsock.send(&res).await?;
@@ -77,19 +77,19 @@ impl From<VsockStream> for Vsock {
 }
 
 impl Vsock {
-    pub async fn new(cid: u32, port: u32) -> Result<Self, Error> {
+    pub async fn new(cid: u32, port: u32) -> Result<Self, VsockError> {
         let connection = VsockStream::connect(VsockAddr::new(cid, port)).await?;
         Ok(connection.into())
     }
 
-    pub async fn send<T: Serialize>(&mut self, msg: &T) -> Result<(), Error> {
+    pub async fn send<T: Serialize>(&mut self, msg: &T) -> Result<(), VsockError> {
         let msg = serde_json::to_vec(msg)?;
         self.write.send(msg.into()).await?;
         Ok(())
     }
 
-    pub async fn recv<'de, T: Deserialize<'de>>(&mut self) -> Result<T, Error> {
-        let msg = &self.read.next().await.ok_or(Error::Closed)??;
+    pub async fn recv<'de, T: Deserialize<'de>>(&mut self) -> Result<T, VsockError> {
+        let msg = &self.read.next().await.ok_or(VsockError::Closed)??;
         let mut de = Deserializer::from_reader(msg.as_ref());
         let res = T::deserialize(&mut de)?;
 
