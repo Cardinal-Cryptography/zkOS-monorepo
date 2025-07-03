@@ -2,13 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Configuration
-const basePatterns = [
-  'from "shielder_bindings/web-singlethreaded"',
-  'from "shielder_bindings/web-multithreaded"'
-];
+const basePatterns = ['from "shielder_bindings/web-singlethreaded"'];
 const targetPaths = [
-  "crates/shielder_bindings/pkg-without-circuits/pkg-web-singlethreaded/shielder_bindings.js",
-  "crates/shielder_bindings/pkg-without-circuits/pkg-web-multithreaded/shielder_bindings.js"
+  "crates/shielder_bindings/pkg-without-circuits/pkg-web-singlethreaded/shielder_bindings.js"
 ];
 
 function getRelativePath(fromPath, toPath) {
