@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@types/cbor": "^6.0.4",
     "@types/node": "^22.10.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
@@ -46,6 +47,9 @@
   },
   "dependencies": {
     "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*",
-    "comlink": "^4.4.2"
+    "cbor": "^10.0.9",
+    "cbor-web": "^10.0.9",
+    "comlink": "^4.4.2",
+    "pkijs": "^3.2.5"
   }
 }
