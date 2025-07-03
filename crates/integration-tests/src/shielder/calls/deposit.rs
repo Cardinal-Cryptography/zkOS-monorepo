@@ -6,9 +6,11 @@ use shielder_account::{
     ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{depositERC20Call, depositNativeCall};
+use shielder_setup::protocol_fee::compute_protocol_fee_from_net;
 
 use crate::{
     deploy::ACTOR_ADDRESS,
+    protocol_fees::get_protocol_deposit_fee_bps,
     shielder::{deploy::Deployment, invoke_shielder_call, merkle::get_merkle_path, CallResult},
     TestToken,
 };
@@ -28,15 +30,21 @@ pub fn prepare_call(
         note_index,
         &mut deployment.evm,
     );
+
+    let protocol_fee_bps =
+        get_protocol_deposit_fee_bps(deployment.contract_suite.shielder, &mut deployment.evm);
+    let protocol_fee = compute_protocol_fee_from_net(amount, protocol_fee_bps);
+
     let calldata = shielder_account.prepare_call::<DepositCallType>(
         &params,
         &pk,
         token.token(deployment),
-        amount,
+        amount + protocol_fee,
         &DepositExtra {
             merkle_path,
             mac_salt: U256::ZERO,
             caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
+            protocol_fee,
             memo: Bytes::from(vec![]),
         },
     );

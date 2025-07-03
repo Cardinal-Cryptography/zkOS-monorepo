@@ -10,6 +10,7 @@ use shielder_contract::{
     events::get_event,
     ShielderContract::NewAccount,
 };
+use shielder_setup::protocol_fee::compute_protocol_fee_from_net;
 use tracing::{debug, info};
 
 use crate::{
@@ -27,15 +28,27 @@ pub async fn new_account(
     memo: Vec<u8>,
 ) -> Result<()> {
     let memo = Bytes::from(memo);
-    let amount = U256::from(amount);
     let user = app_state.create_shielder_user();
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
+
+    let protocol_fee_bps = if let Some(protocol_fee_bps) = app_state.protocol_fees.deposit_fee {
+        protocol_fee_bps
+    } else {
+        let protocol_fee_bps = user.protocol_deposit_fee_bps::<DryRun>().await?;
+        app_state.protocol_fees.deposit_fee = Some(protocol_fee_bps);
+        protocol_fee_bps
+    };
+
+    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
+    let amount = U256::from(amount) + protocol_fee;
+
     let call = prepare_call(
         app_state,
         amount,
         token,
         anonymity_revoker_public_key,
         user.address(),
+        protocol_fee,
         memo,
     )?;
 
@@ -69,6 +82,7 @@ pub async fn new_account(
             new_account_event.newNoteIndex,
             tx_hash,
             token,
+            protocol_fee,
         ));
     info!("Created new account with {amount} tokens");
     Ok(())
@@ -84,6 +98,7 @@ fn prepare_call(
     token: Token,
     anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     caller_address: Address,
+    protocol_fee: U256,
     memo: Bytes,
 ) -> Result<NewAccountCall> {
     let (params, pk) = get_proving_equipment(CircuitType::NewAccount)?;
@@ -92,6 +107,7 @@ fn prepare_call(
         encryption_salt: get_encryption_salt(),
         mac_salt: get_mac_salt(),
         caller_address,
+        protocol_fee,
         memo,
     };
 

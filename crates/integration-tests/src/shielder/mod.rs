@@ -22,6 +22,7 @@ pub mod erc1967proxy;
 pub mod erc20;
 pub mod ierc20;
 pub mod merkle;
+pub mod protocol_fees;
 
 fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     evm.call(

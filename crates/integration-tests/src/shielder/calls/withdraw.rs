@@ -6,9 +6,10 @@ use shielder_account::{
     ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
-use shielder_setup::version::contract_version;
+use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
 
 use crate::{
+    protocol_fees::get_protocol_withdraw_fee_bps,
     shielder::{
         deploy::{Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS},
         invoke_shielder_call,
@@ -51,6 +52,7 @@ pub fn prepare_call(
     shielder_account: &mut ShielderAccount,
     args: PrepareCallArgs,
 ) -> (WithdrawCall, U256) {
+    let amount = U256::from(args.amount);
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
@@ -62,11 +64,15 @@ pub fn prepare_call(
         &mut deployment.evm,
     );
 
+    let protocol_fee_bps =
+        get_protocol_withdraw_fee_bps(deployment.contract_suite.shielder, &mut deployment.evm);
+    let protocol_fee = compute_protocol_fee_from_net(amount, protocol_fee_bps);
+
     let calldata = shielder_account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
         args.token.token(deployment),
-        U256::from(args.amount),
+        amount + protocol_fee,
         &WithdrawExtra {
             merkle_path,
             to: args.withdraw_address,
@@ -76,6 +82,7 @@ pub fn prepare_call(
             chain_id: U256::from(1),
             mac_salt: U256::ZERO,
             pocket_money: args.pocket_money,
+            protocol_fee,
             memo: args.memo,
         },
     );
@@ -207,7 +214,7 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([1, 1, 1]),
+                contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -291,7 +298,7 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([1, 1, 1]),
+                contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment),
                 amount: U256::from(5),
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
@@ -525,7 +532,7 @@ mod tests {
             result,
             Err(ShielderCallErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([1, 1, 1]),
+                    actual: _,
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))

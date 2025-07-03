@@ -5,10 +5,15 @@ use shielder_account::{
     ShielderAction, Token,
 };
 use shielder_contract::{
-    call_type::Call, events::get_event, merkle_path::get_current_merkle_path,
+    call_type::{Call, DryRun},
+    events::get_event,
+    merkle_path::get_current_merkle_path,
     ShielderContract::Deposit,
 };
-use shielder_setup::consts::{ARITY, TREE_HEIGHT};
+use shielder_setup::{
+    consts::{ARITY, TREE_HEIGHT},
+    protocol_fee::compute_protocol_fee_from_net,
+};
 use tracing::{debug, info};
 
 use crate::{
@@ -25,7 +30,6 @@ pub async fn deposit(
     token: Token,
     memo: Vec<u8>,
 ) -> Result<()> {
-    let amount = U256::from(amount);
     let memo = Bytes::from(memo);
     let leaf_index = app_state.accounts[&token.address()]
         .current_leaf_index()
@@ -33,12 +37,24 @@ pub async fn deposit(
     let shielder_user = app_state.create_shielder_user();
     let (_merkle_root, merkle_path) = get_current_merkle_path(leaf_index, &shielder_user).await?;
 
+    let protocol_fee_bps = if let Some(protocol_fee_bps) = app_state.protocol_fees.deposit_fee {
+        protocol_fee_bps
+    } else {
+        let protocol_fee_bps = shielder_user.protocol_deposit_fee_bps::<DryRun>().await?;
+        app_state.protocol_fees.deposit_fee = Some(protocol_fee_bps);
+        protocol_fee_bps
+    };
+
+    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
+    let amount = U256::from(amount) + protocol_fee;
+
     let call = prepare_call(
         app_state,
         amount,
         token,
         merkle_path,
         shielder_user.address(),
+        protocol_fee,
         memo,
     )?;
     let (tx_hash, block_hash) = match token {
@@ -71,6 +87,7 @@ pub async fn deposit(
             deposit_event.newNoteIndex,
             tx_hash,
             token,
+            protocol_fee,
         ));
     info!("Deposited {amount} tokens");
     Ok(())
@@ -82,6 +99,7 @@ fn prepare_call(
     token: Token,
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
     caller_address: Address,
+    protocol_fee: U256,
     memo: Bytes,
 ) -> Result<DepositCall> {
     let (params, pk) = get_proving_equipment(CircuitType::Deposit)?;
@@ -89,6 +107,7 @@ fn prepare_call(
         merkle_path,
         mac_salt: get_mac_salt(),
         caller_address,
+        protocol_fee,
         memo,
     };
 

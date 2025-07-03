@@ -15,6 +15,8 @@ pub struct ServiceConfig {
     pub erc20_token_address: Address,
     pub fee_refresh_interval_millis: u64,
     pub server_address: String,
+    pub protocol_deposit_fee_bps: U256,
+    pub protocol_withdraw_fee_bps: U256,
 }
 
 pub fn resolve_env(env_name: &str) -> Result<String> {
@@ -48,5 +50,7 @@ pub fn config_from_env() -> Result<ServiceConfig> {
             .map_err(|_| anyhow!("Invalid ERC20 token address"))?,
         fee_refresh_interval_millis: resolve_env("FEE_REFRESH_INTERVAL_MILLIS")?.parse::<u64>()?,
         server_address: resolve_env("SERVER_ADDRESS")?,
+        protocol_deposit_fee_bps: resolve_env("PROTOCOL_DEPOSIT_FEE_BPS")?.parse::<U256>()?,
+        protocol_withdraw_fee_bps: resolve_env("PROTOCOL_WITHDRAW_FEE_BPS")?.parse::<U256>()?,
     })
 }

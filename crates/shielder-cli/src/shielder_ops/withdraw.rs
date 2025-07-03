@@ -10,13 +10,14 @@ use shielder_account::{
     ShielderAction, Token,
 };
 use shielder_contract::{
-    events::get_event, merkle_path::get_current_merkle_path, ShielderContract::Withdraw,
+    call_type::DryRun, events::get_event, merkle_path::get_current_merkle_path,
+    ShielderContract::Withdraw,
 };
 use shielder_relayer::{
     QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayResponse,
     SimpleServiceResponse,
 };
-use shielder_setup::version::contract_version;
+use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
 use tokio::time::sleep;
 use tracing::{debug, info};
 
@@ -41,7 +42,20 @@ pub async fn withdraw(
     let pocket_money = U256::from(pocket_money);
     let memo = Bytes::from(memo);
     let quoted_fee = get_relayer_total_fee(app_state, token, pocket_money).await?;
-    let amount = U256::from(amount) + quoted_fee.fee_details.total_cost_fee_token;
+
+    let protocol_fee_bps = if let Some(protocol_fee_bps) = app_state.protocol_fees.withdraw_fee {
+        protocol_fee_bps
+    } else {
+        let shielder_user = app_state.create_shielder_user();
+        let protocol_fee_bps = shielder_user.protocol_withdraw_fee_bps::<DryRun>().await?;
+        app_state.protocol_fees.withdraw_fee = Some(protocol_fee_bps);
+        protocol_fee_bps
+    };
+
+    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
+
+    let amount = U256::from(amount) + quoted_fee.fee_details.total_cost_fee_token + protocol_fee;
+
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
     if amount > shielded_amount {
@@ -51,8 +65,17 @@ pub async fn withdraw(
     let relayer_response = reqwest::Client::new()
         .post(app_state.relayer_rpc_url.relay_url())
         .json(
-            &prepare_relayer_query(app_state, amount, to, token, quoted_fee, pocket_money, memo)
-                .await?,
+            &prepare_relayer_query(
+                app_state,
+                amount,
+                to,
+                token,
+                quoted_fee,
+                pocket_money,
+                protocol_fee,
+                memo,
+            )
+            .await?,
         )
         .send()
         .await?;
@@ -82,6 +105,7 @@ pub async fn withdraw(
             tx_hash,
             to,
             token,
+            protocol_fee,
         ));
     info!("Withdrawn {amount} tokens");
     Ok(())
@@ -153,6 +177,7 @@ async fn prepare_relayer_query(
     token: Token,
     quoted_fee: QuoteFeeResponse,
     pocket_money: U256,
+    protocol_fee: U256,
     memo: Bytes,
 ) -> Result<impl Serialize> {
     let (params, pk) = get_proving_equipment(CircuitType::Withdraw)?;
@@ -182,6 +207,7 @@ async fn prepare_relayer_query(
             chain_id: U256::from(chain_id),
             mac_salt: get_mac_salt(),
             pocket_money,
+            protocol_fee,
             memo: memo.clone(),
         },
     );

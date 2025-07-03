@@ -17,6 +17,7 @@ mod connection;
 pub mod erc20;
 pub mod events;
 pub mod merkle_path;
+pub mod protocol_fee;
 pub mod providers;
 pub mod recovery;
 mod types;
@@ -79,6 +80,7 @@ pub struct WithdrawCommitment {
     pub relayer_fee: U256,
     pub chain_id: U256,
     pub pocket_money: U256,
+    pub protocol_fee: U256,
     pub memo: Bytes,
 }
 
@@ -93,6 +95,7 @@ impl WithdrawCommitment {
                 self.relayer_fee,
                 self.chain_id,
                 self.pocket_money,
+                self.protocol_fee,
                 self.memo.clone(),
             )
                 .abi_encode_packed(),
@@ -106,6 +109,7 @@ impl WithdrawCommitment {
 
 pub struct NewAccountCommitment {
     pub caller_address: Address,
+    pub protocol_fee: U256,
     pub memo: Bytes,
 }
 
@@ -113,7 +117,12 @@ impl NewAccountCommitment {
     pub fn commitment_hash(&self) -> U256 {
         // Same order as in contract
         let hash: U256 = keccak256(
-            (address_to_u256(self.caller_address), self.memo.clone()).abi_encode_packed(),
+            (
+                address_to_u256(self.caller_address),
+                self.protocol_fee,
+                self.memo.clone(),
+            )
+                .abi_encode_packed(),
         )
         .into();
         // shifting right by 4 bits, same as in the contract
@@ -123,6 +132,7 @@ impl NewAccountCommitment {
 
 pub struct DepositCommitment {
     pub caller_address: Address,
+    pub protocol_fee: U256,
     pub memo: Bytes,
 }
 
@@ -130,7 +140,12 @@ impl DepositCommitment {
     pub fn commitment_hash(&self) -> U256 {
         // Same order as in contract
         let hash: U256 = keccak256(
-            (address_to_u256(self.caller_address), self.memo.clone()).abi_encode_packed(),
+            (
+                address_to_u256(self.caller_address),
+                self.protocol_fee,
+                self.memo.clone(),
+            )
+                .abi_encode_packed(),
         )
         .into();
         // shifting right by 4 bits, same as in the contract
@@ -162,6 +177,7 @@ mod tests {
             relayer_fee: rng.gen(),
             chain_id: rng.gen(),
             pocket_money: rng.gen(),
+            protocol_fee: rng.gen(),
             memo: Bytes::from(vec![]),
         }
     }

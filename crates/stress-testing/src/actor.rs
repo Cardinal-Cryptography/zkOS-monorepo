@@ -57,6 +57,7 @@ impl Actor {
         params: &Params,
         pk: &ProvingKey,
         amount: U256,
+        protocol_fee: U256,
     ) -> newAccountNativeCall {
         self.account
             .prepare_call::<NewAccountCallType>(
@@ -69,6 +70,7 @@ impl Actor {
                     encryption_salt: U256::MAX,
                     mac_salt: U256::ZERO,
                     caller_address: self.shielder_user.address(),
+                    protocol_fee,
                     memo: Bytes::from(vec![]),
                 },
             )

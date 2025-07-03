@@ -6,10 +6,12 @@ use shielder_account::{
     ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{newAccountERC20Call, newAccountNativeCall};
+use shielder_setup::protocol_fee::compute_protocol_fee_from_net;
 
 use crate::{
     call_errors::ShielderCallErrors,
     deploy::{ACTOR_ADDRESS, ANONYMITY_REVOKER_PKEY},
+    protocol_fees::get_protocol_deposit_fee_bps,
     shielder::{invoke_shielder_call, CallResult, Deployment},
     TestToken,
 };
@@ -21,16 +23,22 @@ pub fn prepare_call(
     amount: U256,
 ) -> NewAccountCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
+
+    let protocol_fee_bps =
+        get_protocol_deposit_fee_bps(deployment.contract_suite.shielder, &mut deployment.evm);
+    let protocol_fee = compute_protocol_fee_from_net(amount, protocol_fee_bps);
+
     shielder_account.prepare_call::<NewAccountCallType>(
         &params,
         &pk,
         token.token(deployment),
-        amount,
+        amount + protocol_fee,
         &NewAccountCallExtra {
             anonymity_revoker_public_key: ANONYMITY_REVOKER_PKEY,
             encryption_salt: U256::MAX,
             mac_salt: U256::ZERO,
             caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
+            protocol_fee,
             memo: Bytes::from(vec![]),
         },
     )

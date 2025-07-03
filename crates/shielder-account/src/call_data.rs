@@ -125,6 +125,7 @@ pub struct NewAccountCallExtra {
     pub encryption_salt: U256,
     pub mac_salt: U256,
     pub caller_address: Address,
+    pub protocol_fee: U256,
     pub memo: Bytes,
 }
 
@@ -142,6 +143,7 @@ impl CallType for NewAccountCallType {
     ) -> Self::ProverKnowledge {
         let commitment = NewAccountCommitment {
             caller_address: extra.caller_address,
+            protocol_fee: extra.protocol_fee,
             memo: extra.memo.clone(),
         }
         .commitment_hash();
@@ -149,7 +151,7 @@ impl CallType for NewAccountCallType {
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
             nullifier: u256_to_field(account.next_nullifier()),
-            initial_deposit: u256_to_field(amount),
+            initial_deposit: u256_to_field(amount - extra.protocol_fee),
             commitment: u256_to_field(commitment),
             token_address: address_to_field(token.address()),
             encryption_salt: field_element_to_le_bits::<Fr>(u256_to_field(extra.encryption_salt)),
@@ -168,7 +170,7 @@ impl CallType for NewAccountCallType {
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
         NewAccountCall {
-            amount: field_to_u256(prover_knowledge.initial_deposit),
+            amount: field_to_u256(prover_knowledge.initial_deposit) + extra.protocol_fee,
             token: field_to_address(prover_knowledge.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
@@ -249,6 +251,7 @@ pub struct DepositExtra {
     pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
     pub mac_salt: U256,
     pub caller_address: Address,
+    pub protocol_fee: U256,
     pub memo: Bytes,
 }
 
@@ -273,6 +276,7 @@ impl CallType for DepositCallType {
 
         let commitment = DepositCommitment {
             caller_address: extra.caller_address,
+            protocol_fee: extra.protocol_fee,
             memo: extra.memo.clone(),
         }
         .commitment_hash();
@@ -284,7 +288,7 @@ impl CallType for DepositCallType {
             commitment: u256_to_field(commitment),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
-            deposit_value: u256_to_field(amount),
+            deposit_value: u256_to_field(amount - extra.protocol_fee),
             nullifier_new: u256_to_field(nullifier_new),
             mac_salt: u256_to_field(extra.mac_salt),
         }
@@ -297,7 +301,7 @@ impl CallType for DepositCallType {
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
         DepositCall {
-            amount: field_to_u256(pk.deposit_value),
+            amount: field_to_u256(pk.deposit_value) + extra.protocol_fee,
             token: field_to_address(pk.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
             old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
@@ -387,6 +391,7 @@ pub struct WithdrawExtra {
     pub chain_id: U256,
     pub mac_salt: U256,
     pub pocket_money: U256,
+    pub protocol_fee: U256,
     pub memo: Bytes,
 }
 
@@ -415,6 +420,7 @@ impl CallType for WithdrawCallType {
             relayer_fee: extra.relayer_fee,
             chain_id: extra.chain_id,
             pocket_money: extra.pocket_money,
+            protocol_fee: extra.protocol_fee,
             memo: extra.memo.clone(),
         }
         .commitment_hash();

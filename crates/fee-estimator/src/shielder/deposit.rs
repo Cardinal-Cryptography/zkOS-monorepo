@@ -14,7 +14,10 @@ use shielder_contract::{
     recovery::get_shielder_action,
     ConnectionPolicy, NoProvider, ShielderUser,
 };
-use shielder_setup::consts::{ARITY, TREE_HEIGHT};
+use shielder_setup::{
+    consts::{ARITY, TREE_HEIGHT},
+    protocol_fee::compute_protocol_fee_from_net,
+};
 use tracing::info;
 use type_conversions::{field_to_u256, u256_to_field};
 
@@ -29,6 +32,7 @@ pub async fn estimate_deposit_gas(
     contract_address: Address,
     token: Token,
     amount: U256,
+    protocol_fee_bps: U256,
 ) -> Result<u64> {
     let signer = PrivateKeySigner::from_bytes(&private_key.into())
         .expect("Invalid key format - cannot cast to PrivateKeySigner");
@@ -42,6 +46,9 @@ pub async fn estimate_deposit_gas(
         },
     );
 
+    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
+    let amount = U256::from(amount) + protocol_fee;
+
     ensure_account_created(
         contract_address,
         &mut shielder_account,
@@ -49,6 +56,7 @@ pub async fn estimate_deposit_gas(
         token,
         amount,
         &rpc_url,
+        protocol_fee,
     )
     .await?;
 
@@ -63,6 +71,7 @@ pub async fn estimate_deposit_gas(
         token,
         merkle_path,
         user.address(),
+        protocol_fee,
         Bytes::from(vec![]),
     )?;
     let estimated_gas = match token {
@@ -84,6 +93,7 @@ fn prepare_call(
     token: Token,
     merkle_path: [[U256; ARITY]; TREE_HEIGHT],
     caller_address: Address,
+    protocol_fee: U256,
     memo: Bytes,
 ) -> Result<DepositCall> {
     let (params, pk) = DEPOSIT_PROVING_EQUIPMENT.clone();
@@ -91,6 +101,7 @@ fn prepare_call(
         merkle_path,
         mac_salt: get_mac_salt(),
         caller_address,
+        protocol_fee,
         memo,
     };
 
@@ -104,6 +115,7 @@ async fn ensure_account_created(
     token: Token,
     amount: U256,
     rpc_url: &str,
+    protocol_fee: U256,
 ) -> Result<()> {
     recover_state(account, shielder_user, rpc_url).await?;
     let provider = create_simple_provider(rpc_url).await?;
@@ -120,7 +132,8 @@ async fn ensure_account_created(
                 .await?
                 .expect("Transaction receipt not found");
         }
-        let tx_hash = create_new_account(account, shielder_user, amount, token).await?;
+        let tx_hash =
+            create_new_account(account, shielder_user, amount, token, protocol_fee).await?;
 
         provider
             .get_transaction_receipt(tx_hash)

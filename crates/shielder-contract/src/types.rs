@@ -177,6 +177,9 @@ sol! {
             uint256 anonymityRevokerPubkeyX,
             uint256 anonymityRevokerPubkeyY
         ) external;
+
+        function protocolDepositFeeBps() public view returns (uint256);
+        function protocolWithdrawFeeBps() public view returns (uint256);
     }
 }
 
@@ -279,5 +282,19 @@ impl ShielderContractCall for anonymityRevokerPubkeyCall {
             x: pubkey._0,
             y: pubkey._1,
         }
+    }
+}
+
+impl ShielderContractCall for protocolDepositFeeBpsCall {
+    type UnwrappedResult = U256;
+    fn unwrap_result(fee: protocolDepositFeeBpsReturn) -> Self::UnwrappedResult {
+        fee._0
+    }
+}
+
+impl ShielderContractCall for protocolWithdrawFeeBpsCall {
+    type UnwrappedResult = U256;
+    fn unwrap_result(fee: protocolWithdrawFeeBpsReturn) -> Self::UnwrappedResult {
+        fee._0
     }
 }

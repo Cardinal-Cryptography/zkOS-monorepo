@@ -80,3 +80,79 @@ pub mod version {
         }
     }
 }
+
+pub mod protocol_fee {
+    use alloy_primitives::{U256, U512};
+
+    /// Compute protocol fee from an amount that already includes the protocol fee
+    pub fn compute_protocol_fee_from_gross(amount: U256, protocol_fee_bps: U256) -> U256 {
+        let r = (U512::from(amount) * U512::from(protocol_fee_bps) + (U512::from(10000 - 1)))
+            / U512::from(10000);
+        if r > U512::from(U256::MAX) {
+            panic!("Protocol fee amount overflow");
+        }
+        U256::from(r)
+    }
+
+    /// Compute protocol fee from an amount that excludes the protocol fee
+    pub fn compute_protocol_fee_from_net(amount: U256, protocol_fee_bps: U256) -> U256 {
+        let denom = U512::from(10000) - U512::from(protocol_fee_bps);
+        let r = (U512::from(amount) * U512::from(protocol_fee_bps) + denom - U512::from(1)) / denom;
+        if r > U512::from(U256::MAX) {
+            panic!("Protocol fee amount overflow");
+        }
+        U256::from(r)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use alloy_primitives::U256;
+
+        use crate::protocol_fee::{compute_protocol_fee_from_gross, compute_protocol_fee_from_net};
+
+        #[test]
+        pub fn zero_fee() {
+            let amount = U256::from(100_000);
+            let protocol_fee_bps = U256::ZERO;
+            let expected = U256::ZERO;
+            assert_eq!(
+                expected,
+                compute_protocol_fee_from_gross(amount, protocol_fee_bps)
+            );
+            assert_eq!(
+                expected,
+                compute_protocol_fee_from_net(amount - expected, protocol_fee_bps)
+            );
+        }
+
+        #[test]
+        pub fn non_zero_fee() {
+            let amount = U256::from(100_000);
+            let protocol_fee_bps = U256::from(500);
+            let expected = U256::from(5000);
+            assert_eq!(
+                expected,
+                compute_protocol_fee_from_gross(amount, protocol_fee_bps)
+            );
+            assert_eq!(
+                expected,
+                compute_protocol_fee_from_net(amount - expected, protocol_fee_bps)
+            );
+        }
+
+        #[test]
+        pub fn non_zero_fee_rounding() {
+            let amount = U256::from(99_997);
+            let protocol_fee_bps = U256::from(500);
+            let expected = U256::from(5000);
+            assert_eq!(
+                expected,
+                compute_protocol_fee_from_gross(amount, protocol_fee_bps)
+            );
+            assert_eq!(
+                expected,
+                compute_protocol_fee_from_net(amount - expected, protocol_fee_bps)
+            );
+        }
+    }
+}

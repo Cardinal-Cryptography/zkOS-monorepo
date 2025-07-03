@@ -9,7 +9,9 @@ use shielder_contract::{
     call_type::{Call, DryRun, EstimateGas},
     ConnectionPolicy, NoProvider, ShielderUser,
 };
-use shielder_setup::shielder_circuits::GrumpkinPointAffine;
+use shielder_setup::{
+    protocol_fee::compute_protocol_fee_from_net, shielder_circuits::GrumpkinPointAffine,
+};
 
 use crate::shielder::{get_mac_salt, pk::NEW_ACCOUNT_PROVING_EQUIPMENT};
 
@@ -20,6 +22,7 @@ pub async fn estimate_new_account_gas(
     contract_address: Address,
     token: Token,
     amount: U256,
+    protocol_fee_bps: U256,
 ) -> Result<u64> {
     let signer = PrivateKeySigner::from_bytes(&private_key.into())
         .expect("Invalid key format - cannot cast to PrivateKeySigner");
@@ -32,12 +35,16 @@ pub async fn estimate_new_account_gas(
 
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
 
+    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
+    let amount = U256::from(amount) + protocol_fee;
+
     let call = prepare_call(
         &shielder_account,
         amount,
         token,
         anonymity_revoker_public_key,
         user.address(),
+        protocol_fee,
         Bytes::from(vec![]),
     )?;
     let estimated_gas = match token {
@@ -60,6 +67,7 @@ fn prepare_call(
     token: Token,
     anonymity_revoker_public_key: GrumpkinPointAffine<U256>,
     caller_address: Address,
+    protocol_fee: U256,
     memo: Bytes,
 ) -> Result<NewAccountCall> {
     let (params, pk) = NEW_ACCOUNT_PROVING_EQUIPMENT.clone();
@@ -69,6 +77,7 @@ fn prepare_call(
         encryption_salt: get_mac_salt(),
         mac_salt: get_mac_salt(),
         caller_address,
+        protocol_fee,
         memo,
     };
 
@@ -80,6 +89,7 @@ pub async fn create_new_account(
     user: &ShielderUser,
     amount: U256,
     token: Token,
+    protocol_fee: U256,
 ) -> Result<TxHash> {
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
 
@@ -89,6 +99,7 @@ pub async fn create_new_account(
         token,
         anonymity_revoker_public_key,
         user.address(),
+        protocol_fee,
         Bytes::from(vec![]),
     )?;
 

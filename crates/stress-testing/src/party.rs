@@ -13,11 +13,12 @@ use shielder_circuits::{
 use shielder_contract::{
     alloy_primitives::{Bytes, U256},
     merkle_path::get_current_merkle_path,
+    protocol_fee::get_protocol_withdraw_fee_bps,
     providers::create_simple_provider,
     ShielderContract::withdrawNativeCall,
 };
 use shielder_relayer::{QuoteFeeQuery, QuoteFeeResponse, RelayCalldata, RelayQuery, RelayQuote};
-use shielder_setup::version::contract_version;
+use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
 
 use crate::{actor::Actor, config::Config, util::proving_keys, WITHDRAW_AMOUNT};
 
@@ -115,7 +116,10 @@ async fn prepare_relay_query(
         .await?
         .get_chain_id()
         .await?;
-    let amount = U256::from(WITHDRAW_AMOUNT) + quote.fee_details.total_cost_native;
+
+    let protocol_fee_bps = get_protocol_withdraw_fee_bps(&actor.shielder_user).await?;
+    let protocol_fee = compute_protocol_fee_from_net(U256::from(WITHDRAW_AMOUNT), protocol_fee_bps);
+    let amount = U256::from(WITHDRAW_AMOUNT) + protocol_fee + quote.fee_details.total_cost_native;
 
     let calldata: withdrawNativeCall = actor
         .account
@@ -133,6 +137,7 @@ async fn prepare_relay_query(
                 chain_id: U256::from(chain_id),
                 mac_salt: U256::ZERO,
                 pocket_money: U256::ZERO,
+                protocol_fee,
                 memo: Bytes::from(vec![]),
             },
         )
