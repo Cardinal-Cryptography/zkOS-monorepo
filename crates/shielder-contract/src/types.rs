@@ -88,6 +88,9 @@ sol! {
         function pause() external;
         function unpause() external;
 
+        function setProtocolDepositFeeBps(uint256) external;
+        function setProtocolWithdrawFeeBps(uint256) external;
+
         function newAccountNative(
             bytes3 expectedContractVersion,
             uint256 newNote,
@@ -253,6 +256,9 @@ macro_rules! impl_unit_call {
 
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
+
+impl_unit_call!(setProtocolDepositFeeBpsCall);
+impl_unit_call!(setProtocolWithdrawFeeBpsCall);
 
 impl_unit_call!(newAccountNativeCall);
 impl_unit_call!(depositNativeCall);

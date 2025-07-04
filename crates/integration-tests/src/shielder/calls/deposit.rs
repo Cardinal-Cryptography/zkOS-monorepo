@@ -101,13 +101,14 @@ mod tests {
     use shielder_contract::ShielderContract::{
         Deposit, ShielderContractEvents, WrongContractVersion,
     };
-    use shielder_setup::version::contract_version;
+    use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
 
     use crate::{
         actor_balance_decreased_by,
         call_errors::ShielderCallErrors,
         calls::deposit::{invoke_call, prepare_call},
-        recipient_balance_increased_by,
+        deploy::deployment_with_protocol_fees,
+        protocol_fee_receiver_balance_increased_by, recipient_balance_increased_by,
         shielder::{
             calls::new_account,
             deploy::{deployment, Deployment},
@@ -187,6 +188,73 @@ mod tests {
             U256::from(15)
         ));
         assert_eq!(shielder_account.shielded_amount, U256::from(15))
+    }
+
+    #[rstest]
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::ERC20)]
+    fn succeeds_with_protocol_fee(
+        mut deployment_with_protocol_fees: Deployment,
+        #[case] token: TestToken,
+    ) {
+        let initial_amount = U256::from(100000);
+        let initial_protocol_fee = compute_protocol_fee_from_net(
+            initial_amount,
+            deployment_with_protocol_fees.protocol_deposit_fee_bps,
+        );
+
+        let mut shielder_account = new_account::create_account_and_call(
+            &mut deployment_with_protocol_fees,
+            token,
+            U256::from(1),
+            initial_amount,
+        )
+        .unwrap();
+
+        let amount = U256::from(50000);
+        let protocol_fee = compute_protocol_fee_from_net(
+            amount,
+            deployment_with_protocol_fees.protocol_deposit_fee_bps,
+        );
+        let (calldata, note_index) = prepare_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            token,
+            amount,
+        );
+        let events = invoke_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            &calldata,
+        )
+        .unwrap()
+        .0;
+
+        assert_eq!(
+            events,
+            vec![ShielderContractEvents::Deposit(Deposit {
+                contractVersion: contract_version().to_bytes(),
+                tokenAddress: token.address(&deployment_with_protocol_fees),
+                amount: amount + protocol_fee,
+                newNote: calldata.new_note,
+                newNoteIndex: note_index.saturating_add(U256::from(1)),
+                macSalt: U256::ZERO,
+                macCommitment: calldata.mac_commitment,
+                protocolFee: protocol_fee,
+                memo: calldata.memo,
+            })]
+        );
+        assert!(actor_balance_decreased_by(
+            &deployment_with_protocol_fees,
+            token,
+            initial_amount + initial_protocol_fee + amount + protocol_fee
+        ));
+        assert_eq!(shielder_account.shielded_amount, amount + initial_amount);
+        assert!(protocol_fee_receiver_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            initial_protocol_fee + protocol_fee
+        ));
     }
 
     #[rstest]

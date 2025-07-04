@@ -170,6 +170,7 @@ async fn get_relayer_address(relayer_rpc_url: &RelayerRpcUrl) -> Result<Address>
     Ok(Address::from_str(&address)?)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn prepare_relayer_query(
     app_state: &AppState,
     amount: U256,

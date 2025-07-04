@@ -5,13 +5,17 @@ use alloy_sol_types::{SolCall, SolEventInterface};
 use call_errors::{decode_call_errors, ShielderCallErrors};
 use deploy::{
     Deployment, ACTOR_ADDRESS, ACTOR_INITIAL_ERC20_BALANCE, ACTOR_INITIAL_NATIVE_BALANCE,
-    DEPLOYER_ADDRESS, RECIPIENT_ADDRESS, RECIPIENT_INITIAL_ERC20_BALANCE,
-    RECIPIENT_INITIAL_NATIVE_BALANCE, RELAYER_ADDRESS, RELAYER_INITIAL_ERC20_BALANCE,
-    RELAYER_INITIAL_NATIVE_BALANCE,
+    DEPLOYER_ADDRESS, PROTOCOL_FEE_RECEIVER_ADDRESS, PROTOCOL_FEE_RECEIVER_INITIAL_ERC20_BALANCE,
+    PROTOCOL_FEE_RECEIVER_INITIAL_NATIVE_BALANCE, RECIPIENT_ADDRESS,
+    RECIPIENT_INITIAL_ERC20_BALANCE, RECIPIENT_INITIAL_NATIVE_BALANCE, RELAYER_ADDRESS,
+    RELAYER_INITIAL_ERC20_BALANCE, RELAYER_INITIAL_NATIVE_BALANCE,
 };
 use evm_utils::{EvmRunner, EvmRunnerError, SuccessResult};
 use shielder_account::Token;
-use shielder_contract::ShielderContract::{unpauseCall, ShielderContractEvents};
+use shielder_contract::ShielderContract::{
+    setProtocolDepositFeeBpsCall, setProtocolWithdrawFeeBpsCall, unpauseCall,
+    ShielderContractEvents,
+};
 
 pub mod address_conversion;
 pub mod ar_pubkey;
@@ -28,6 +32,26 @@ fn unpause_shielder(shielder: Address, evm: &mut EvmRunner) {
     evm.call(
         shielder,
         unpauseCall {}.abi_encode(),
+        Some(Address::from_str(DEPLOYER_ADDRESS).unwrap()),
+        None,
+    )
+    .expect("Call failed");
+}
+
+fn set_protocol_deposit_fee(shielder: Address, protocol_fee: U256, evm: &mut EvmRunner) {
+    evm.call(
+        shielder,
+        setProtocolDepositFeeBpsCall { _0: protocol_fee }.abi_encode(),
+        Some(Address::from_str(DEPLOYER_ADDRESS).unwrap()),
+        None,
+    )
+    .expect("Call failed");
+}
+
+fn set_protocol_withdraw_fee(shielder: Address, protocol_fee: U256, evm: &mut EvmRunner) {
+    evm.call(
+        shielder,
+        setProtocolWithdrawFeeBpsCall { _0: protocol_fee }.abi_encode(),
         Some(Address::from_str(DEPLOYER_ADDRESS).unwrap()),
         None,
     )
@@ -151,6 +175,18 @@ pub fn relayer_balance_increased_by(
         TestToken::ERC20 => RELAYER_INITIAL_ERC20_BALANCE,
     };
     get_balance(deployment, token, RELAYER_ADDRESS) == initial_balance + amount
+}
+
+pub fn protocol_fee_receiver_balance_increased_by(
+    deployment: &Deployment,
+    token: TestToken,
+    amount: U256,
+) -> bool {
+    let initial_balance = match token {
+        TestToken::Native => PROTOCOL_FEE_RECEIVER_INITIAL_NATIVE_BALANCE,
+        TestToken::ERC20 => PROTOCOL_FEE_RECEIVER_INITIAL_ERC20_BALANCE,
+    };
+    get_balance(deployment, token, PROTOCOL_FEE_RECEIVER_ADDRESS) == initial_balance + amount
 }
 
 pub fn destination_balances_unchanged(deployment: &Deployment, token: TestToken) -> bool {

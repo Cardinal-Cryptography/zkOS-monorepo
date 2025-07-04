@@ -71,7 +71,7 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
     let shielded_amount = U256::from(SHIELDED_BALANCE);
     let provider = create_simple_provider(&config.node_rpc_url).await?;
 
-    let protocol_fee = if let Some(actor) = actors.get(0) {
+    let protocol_fee = if let Some(actor) = actors.first() {
         let protocol_fee_bps = actor
             .shielder_user
             .protocol_deposit_fee_bps::<DryRun>()

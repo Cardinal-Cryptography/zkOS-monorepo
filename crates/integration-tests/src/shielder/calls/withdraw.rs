@@ -131,7 +131,7 @@ mod tests {
     use shielder_contract::ShielderContract::{
         ShielderContractEvents, Withdraw, WrongContractVersion,
     };
-    use shielder_setup::version::contract_version;
+    use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
 
     use crate::{
         call_errors::ShielderCallErrors,
@@ -143,10 +143,11 @@ mod tests {
             actor_balance_decreased_by,
             calls::new_account,
             deploy::{
-                deployment, Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS, REVERTING_ADDRESS,
+                deployment, deployment_with_protocol_fees, Deployment, RECIPIENT_ADDRESS,
+                RELAYER_ADDRESS, REVERTING_ADDRESS,
             },
-            destination_balances_unchanged, recipient_balance_increased_by,
-            relayer_balance_increased_by,
+            destination_balances_unchanged, protocol_fee_receiver_balance_increased_by,
+            recipient_balance_increased_by, relayer_balance_increased_by,
         },
         TestToken,
     };
@@ -263,6 +264,107 @@ mod tests {
     #[rstest]
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
+    fn succeeds_with_protocol_fee(
+        mut deployment_with_protocol_fees: Deployment,
+        #[case] token: TestToken,
+    ) {
+        let initial_amount = U256::from(100000);
+        let initial_protocol_fee = compute_protocol_fee_from_net(
+            initial_amount,
+            deployment_with_protocol_fees.protocol_deposit_fee_bps,
+        );
+        let mut shielder_account = new_account::create_account_and_call(
+            &mut deployment_with_protocol_fees,
+            token,
+            U256::from(1),
+            initial_amount,
+        )
+        .unwrap();
+
+        let pocket_money = match token {
+            TestToken::Native => U256::from(0),
+            TestToken::ERC20 => U256::from(1),
+        };
+
+        let relayer_fee = U256::from(1);
+        let withdraw_amount = U256::from(50000);
+        let withdraw_protocol_fee = compute_protocol_fee_from_net(
+            withdraw_amount,
+            deployment_with_protocol_fees.protocol_withdraw_fee_bps,
+        );
+        let (withdraw_calldata, withdraw_note_index) = prepare_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            prepare_args(token, withdraw_amount, relayer_fee, pocket_money, vec![]),
+        );
+        let events = invoke_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            &withdraw_calldata,
+        )
+        .unwrap()
+        .0;
+
+        assert_eq!(
+            events,
+            vec![ShielderContractEvents::Withdraw(Withdraw {
+                contractVersion: contract_version().to_bytes(),
+                tokenAddress: token.address(&deployment_with_protocol_fees),
+                amount: withdraw_amount + withdraw_protocol_fee,
+                withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                newNote: withdraw_calldata.new_note,
+                relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+                newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+                fee: relayer_fee,
+                macSalt: U256::ZERO,
+                macCommitment: withdraw_calldata.mac_commitment,
+                pocketMoney: pocket_money,
+                protocolFee: withdraw_protocol_fee,
+                memo: Bytes::from(vec![]),
+            })]
+        );
+        assert!(actor_balance_decreased_by(
+            &deployment_with_protocol_fees,
+            token,
+            initial_amount + initial_protocol_fee
+        ));
+        assert!(recipient_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            withdraw_amount - relayer_fee
+        ));
+
+        if let TestToken::ERC20 = token {
+            assert!(actor_balance_decreased_by(
+                &deployment_with_protocol_fees,
+                TestToken::Native,
+                pocket_money
+            ));
+            assert!(recipient_balance_increased_by(
+                &deployment_with_protocol_fees,
+                TestToken::Native,
+                pocket_money
+            ));
+        }
+        assert!(relayer_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            relayer_fee
+        ));
+        assert_eq!(
+            shielder_account.shielded_amount,
+            initial_amount - (withdraw_amount + withdraw_protocol_fee)
+        );
+        assert!(protocol_fee_receiver_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            initial_protocol_fee + withdraw_protocol_fee
+        ));
+    }
+
+    #[rstest]
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::ERC20)]
     fn succeeds_after_deposit(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
@@ -341,6 +443,126 @@ mod tests {
             U256::from(1)
         ));
         assert_eq!(shielder_account.shielded_amount, U256::from(25))
+    }
+
+    #[rstest]
+    #[case::native(TestToken::Native)]
+    #[case::erc20(TestToken::ERC20)]
+    fn succeeds_with_protocol_fee_after_deposit(
+        mut deployment_with_protocol_fees: Deployment,
+        #[case] token: TestToken,
+    ) {
+        let initial_amount = U256::from(20000);
+        let initial_protocol_fee = compute_protocol_fee_from_net(
+            initial_amount,
+            deployment_with_protocol_fees.protocol_deposit_fee_bps,
+        );
+        let mut shielder_account = new_account::create_account_and_call(
+            &mut deployment_with_protocol_fees,
+            token,
+            U256::from(1),
+            initial_amount,
+        )
+        .unwrap();
+
+        let deposit_amount = U256::from(10000);
+        let deposit_protocol_fee = compute_protocol_fee_from_net(
+            deposit_amount,
+            deployment_with_protocol_fees.protocol_deposit_fee_bps,
+        );
+        let (deposit_calldata, _) = deposit::prepare_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            token,
+            deposit_amount,
+        );
+        deposit::invoke_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            &deposit_calldata,
+        )
+        .unwrap();
+
+        let pocket_money = match token {
+            TestToken::Native => U256::from(0),
+            TestToken::ERC20 => U256::from(1),
+        };
+
+        let relayer_fee = U256::from(1);
+
+        let withdraw_amount = U256::from(5000);
+        let withdraw_protocol_fee = compute_protocol_fee_from_net(
+            withdraw_amount,
+            deployment_with_protocol_fees.protocol_withdraw_fee_bps,
+        );
+
+        let (withdraw_calldata, withdraw_note_index) = prepare_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            prepare_args(token, withdraw_amount, relayer_fee, pocket_money, vec![]),
+        );
+        let events = invoke_call(
+            &mut deployment_with_protocol_fees,
+            &mut shielder_account,
+            &withdraw_calldata,
+        )
+        .unwrap()
+        .0;
+
+        assert_eq!(
+            events,
+            vec![ShielderContractEvents::Withdraw(Withdraw {
+                contractVersion: contract_version().to_bytes(),
+                tokenAddress: token.address(&deployment_with_protocol_fees),
+                amount: withdraw_amount + withdraw_protocol_fee,
+                withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
+                newNote: withdraw_calldata.new_note,
+                relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
+                newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
+                fee: relayer_fee,
+                macSalt: U256::ZERO,
+                macCommitment: withdraw_calldata.mac_commitment,
+                pocketMoney: pocket_money,
+                protocolFee: withdraw_protocol_fee,
+                memo: Bytes::from(vec![]),
+            })]
+        );
+        assert!(actor_balance_decreased_by(
+            &deployment_with_protocol_fees,
+            token,
+            initial_amount + initial_protocol_fee + deposit_amount + deposit_protocol_fee
+        ));
+        assert!(recipient_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            withdraw_amount - relayer_fee
+        ));
+        if let TestToken::ERC20 = token {
+            assert!(actor_balance_decreased_by(
+                &deployment_with_protocol_fees,
+                TestToken::Native,
+                pocket_money
+            ));
+            assert!(recipient_balance_increased_by(
+                &deployment_with_protocol_fees,
+                TestToken::Native,
+                pocket_money
+            ));
+        }
+        assert!(relayer_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            relayer_fee
+        ));
+        assert_eq!(
+            shielder_account.shielded_amount,
+            initial_amount + deposit_amount - (withdraw_amount + withdraw_protocol_fee)
+        );
+        assert!(protocol_fee_receiver_balance_increased_by(
+            &deployment_with_protocol_fees,
+            token,
+            initial_protocol_fee + deposit_protocol_fee + withdraw_protocol_fee,
+        ));
     }
 
     #[rstest]

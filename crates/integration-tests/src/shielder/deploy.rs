@@ -20,7 +20,7 @@ use crate::{
     read_contract,
     shielder::{
         erc1967proxy::{self, ERC_1967_PROXY_BYTECODE},
-        unpause_shielder,
+        set_protocol_deposit_fee, set_protocol_withdraw_fee, unpause_shielder,
     },
     verifier::deploy_verifiers,
 };
@@ -118,6 +118,8 @@ pub struct Deployment {
     pub new_account_proving_params: ProvingParams,
     pub deposit_proving_params: ProvingParams,
     pub withdraw_proving_params: ProvingParams,
+    pub protocol_deposit_fee_bps: U256,
+    pub protocol_withdraw_fee_bps: U256,
 }
 
 /// Deploy whole Shielder suite.
@@ -195,7 +197,38 @@ pub fn deployment(
         new_account_proving_params: new_account_proving_params.clone(),
         deposit_proving_params: deposit_proving_params.clone(),
         withdraw_proving_params: withdraw_proving_params.clone(),
+        protocol_deposit_fee_bps: U256::ZERO,
+        protocol_withdraw_fee_bps: U256::ZERO,
     }
+}
+
+/// Deploy whole Shielder suite.
+#[fixture]
+pub fn deployment_with_protocol_fees(
+    new_account_proving_params: &ProvingParams,
+    deposit_proving_params: &ProvingParams,
+    withdraw_proving_params: &ProvingParams,
+) -> Deployment {
+    let deposit_fee = U256::from(50);
+    let withdraw_fee = U256::from(70);
+    let mut deployment = deployment(
+        new_account_proving_params,
+        deposit_proving_params,
+        withdraw_proving_params,
+    );
+    set_protocol_deposit_fee(
+        deployment.contract_suite.shielder,
+        deposit_fee,
+        &mut deployment.evm,
+    );
+    deployment.protocol_deposit_fee_bps = deposit_fee;
+    set_protocol_withdraw_fee(
+        deployment.contract_suite.shielder,
+        withdraw_fee,
+        &mut deployment.evm,
+    );
+    deployment.protocol_withdraw_fee_bps = withdraw_fee;
+    deployment
 }
 
 /// Deploys the Shielder implementation contract.
