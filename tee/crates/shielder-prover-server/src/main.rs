@@ -1,27 +1,21 @@
+mod error;
+mod handlers;
+
 use std::{sync::Arc, time::Duration};
 
-use axum::{extract::State, http::StatusCode, routing::get, serve, Json, Router};
+use axum::{routing::get, serve, Router};
 use clap::Parser;
-use log::{debug, error};
-use shielder_prover_common::protocol::{Request, Response, ProverClient, VSOCK_PORT};
-use thiserror::Error;
+use log::{info};
 use tokio::net::TcpListener;
-
-#[derive(Error, Debug)]
-enum Error {
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-
-    #[error("VSOCK error: {0}")]
-    Vsock(#[from] shielder_prover_common::vsock::Error),
-}
+use error::ShielderProverServerError as Error;
+use crate::handlers as server_handlers;
 
 #[derive(Parser, Debug, Clone)]
 struct Options {
     #[arg(short, long, default_value = "3000")]
     port: u16,
 
-    #[arg(short, long, default_value = "0.0.0.0")]
+    #[arg(short, long, default_value = "127.0.0.1")]
     bind_address: String,
 
     #[clap(long, default_value_t = vsock::VMADDR_CID_HOST)]
@@ -44,7 +38,7 @@ struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let options = Options::parse();
 
@@ -55,38 +49,14 @@ async fn main() -> Result<(), Error> {
         .into();
 
     let app = Router::new()
-        .route("/health", get(health))
+        .route("/health", get(server_handlers::health::health))
+        .route("/public_key", get(server_handlers::tee_public_key::tee_public_key))
         .with_state(AppState { options, task_pool }.into());
 
+    info!("Starting local server on {}", listener.local_addr()?);
     serve(listener, app).await?;
 
     Ok(())
 }
 
-#[axum::debug_handler]
-async fn health(State(state): State<Arc<AppState>>) -> Result<(), StatusCode> {
-    let task_pool = state.task_pool.clone();
 
-    task_pool
-        .spawn(async move { request(state, Request::Ping).await })
-        .await
-        .map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
-
-    Ok(())
-}
-
-async fn request(state: Arc<AppState>, request: Request) -> Result<Json<Response>, StatusCode> {
-    debug!("Sending TEE request: {:?}", request);
-
-    let mut tee_client = ProverClient::new(state.options.tee_cid, VSOCK_PORT)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let response = tee_client
-        .request(&request)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    debug!("Got TEE response: {:?}", response);
-
-    Ok(Json(response))
-}

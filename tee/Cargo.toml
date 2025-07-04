@@ -20,6 +20,9 @@ log = "0.4.27"
 rand = { version = "0.8.5" }
 serde = "1.0.219"
 serde_json = "1.0.140"
+shielder-prover-common = { path = "crates/shielder-prover-common" }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2.0.12"
 tokio = "1.45.0"
 tokio-task-pool = "0.1.5"
@@ -27,9 +30,8 @@ tokio-util = "0.7.15"
 tokio-vsock = "0.7.1"
 vsock = "0.5.1"
 
-shielder-prover-common = { path = "crates/shielder-prover-common" }
-
 shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "df31437" }
+ecies-encryption-lib = { git = "https://github.com/Cardinal-Cryptography/ecies-encryption-lib", branch = "main" }
 
 # This is not ideal - one workspace depends on another, but as long as it reproducibly produces
 # the same measurements, we are good
