@@ -16,7 +16,7 @@ use shielder_contract::{
 };
 use shielder_setup::{
     consts::{ARITY, TREE_HEIGHT},
-    protocol_fee::compute_protocol_fee_from_net,
+    protocol_fee::compute_protocol_fee_from_gross,
 };
 use tracing::info;
 use type_conversions::{field_to_u256, u256_to_field};
@@ -34,6 +34,7 @@ pub async fn estimate_deposit_gas(
     amount: U256,
     protocol_fee_bps: U256,
 ) -> Result<u64> {
+    let amount = U256::from(amount);
     let signer = PrivateKeySigner::from_bytes(&private_key.into())
         .expect("Invalid key format - cannot cast to PrivateKeySigner");
     let mut shielder_account = ShielderAccount::new(shielder_seed, token);
@@ -46,8 +47,7 @@ pub async fn estimate_deposit_gas(
         },
     );
 
-    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
-    let amount = U256::from(amount) + protocol_fee;
+    let protocol_fee = compute_protocol_fee_from_gross(U256::from(amount), protocol_fee_bps);
 
     ensure_account_created(
         contract_address,

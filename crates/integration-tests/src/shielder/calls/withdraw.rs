@@ -6,7 +6,7 @@ use shielder_account::{
     ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
-use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
+use shielder_setup::{protocol_fee::compute_protocol_fee_from_gross, version::contract_version};
 
 use crate::{
     protocol_fees::get_protocol_withdraw_fee_bps,
@@ -66,13 +66,13 @@ pub fn prepare_call(
 
     let protocol_fee_bps =
         get_protocol_withdraw_fee_bps(deployment.contract_suite.shielder, &mut deployment.evm);
-    let protocol_fee = compute_protocol_fee_from_net(amount, protocol_fee_bps);
+    let protocol_fee = compute_protocol_fee_from_gross(amount, protocol_fee_bps);
 
     let calldata = shielder_account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
         args.token.token(deployment),
-        amount + protocol_fee,
+        amount,
         &WithdrawExtra {
             merkle_path,
             to: args.withdraw_address,
@@ -131,7 +131,9 @@ mod tests {
     use shielder_contract::ShielderContract::{
         ShielderContractEvents, Withdraw, WrongContractVersion,
     };
-    use shielder_setup::{protocol_fee::compute_protocol_fee_from_net, version::contract_version};
+    use shielder_setup::{
+        protocol_fee::compute_protocol_fee_from_gross, version::contract_version,
+    };
 
     use crate::{
         call_errors::ShielderCallErrors,
@@ -269,7 +271,7 @@ mod tests {
         #[case] token: TestToken,
     ) {
         let initial_amount = U256::from(100000);
-        let initial_protocol_fee = compute_protocol_fee_from_net(
+        let initial_protocol_fee = compute_protocol_fee_from_gross(
             initial_amount,
             deployment_with_protocol_fees.protocol_deposit_fee_bps,
         );
@@ -288,7 +290,7 @@ mod tests {
 
         let relayer_fee = U256::from(1);
         let withdraw_amount = U256::from(50000);
-        let withdraw_protocol_fee = compute_protocol_fee_from_net(
+        let withdraw_protocol_fee = compute_protocol_fee_from_gross(
             withdraw_amount,
             deployment_with_protocol_fees.protocol_withdraw_fee_bps,
         );
@@ -310,7 +312,7 @@ mod tests {
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment_with_protocol_fees),
-                amount: withdraw_amount + withdraw_protocol_fee,
+                amount: withdraw_amount,
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.new_note,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -326,12 +328,12 @@ mod tests {
         assert!(actor_balance_decreased_by(
             &deployment_with_protocol_fees,
             token,
-            initial_amount + initial_protocol_fee
+            initial_amount
         ));
         assert!(recipient_balance_increased_by(
             &deployment_with_protocol_fees,
             token,
-            withdraw_amount - relayer_fee
+            withdraw_amount - relayer_fee - withdraw_protocol_fee
         ));
 
         if let TestToken::ERC20 = token {
@@ -353,7 +355,7 @@ mod tests {
         ));
         assert_eq!(
             shielder_account.shielded_amount,
-            initial_amount - (withdraw_amount + withdraw_protocol_fee)
+            initial_amount - initial_protocol_fee - withdraw_amount,
         );
         assert!(protocol_fee_receiver_balance_increased_by(
             &deployment_with_protocol_fees,
@@ -453,7 +455,7 @@ mod tests {
         #[case] token: TestToken,
     ) {
         let initial_amount = U256::from(20000);
-        let initial_protocol_fee = compute_protocol_fee_from_net(
+        let initial_protocol_fee = compute_protocol_fee_from_gross(
             initial_amount,
             deployment_with_protocol_fees.protocol_deposit_fee_bps,
         );
@@ -466,7 +468,7 @@ mod tests {
         .unwrap();
 
         let deposit_amount = U256::from(10000);
-        let deposit_protocol_fee = compute_protocol_fee_from_net(
+        let deposit_protocol_fee = compute_protocol_fee_from_gross(
             deposit_amount,
             deployment_with_protocol_fees.protocol_deposit_fee_bps,
         );
@@ -491,7 +493,7 @@ mod tests {
         let relayer_fee = U256::from(1);
 
         let withdraw_amount = U256::from(5000);
-        let withdraw_protocol_fee = compute_protocol_fee_from_net(
+        let withdraw_protocol_fee = compute_protocol_fee_from_gross(
             withdraw_amount,
             deployment_with_protocol_fees.protocol_withdraw_fee_bps,
         );
@@ -514,7 +516,7 @@ mod tests {
             vec![ShielderContractEvents::Withdraw(Withdraw {
                 contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment_with_protocol_fees),
-                amount: withdraw_amount + withdraw_protocol_fee,
+                amount: withdraw_amount,
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.new_note,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -530,12 +532,12 @@ mod tests {
         assert!(actor_balance_decreased_by(
             &deployment_with_protocol_fees,
             token,
-            initial_amount + initial_protocol_fee + deposit_amount + deposit_protocol_fee
+            initial_amount + deposit_amount
         ));
         assert!(recipient_balance_increased_by(
             &deployment_with_protocol_fees,
             token,
-            withdraw_amount - relayer_fee
+            withdraw_amount - relayer_fee - withdraw_protocol_fee
         ));
         if let TestToken::ERC20 = token {
             assert!(actor_balance_decreased_by(
@@ -556,7 +558,9 @@ mod tests {
         ));
         assert_eq!(
             shielder_account.shielded_amount,
-            initial_amount + deposit_amount - (withdraw_amount + withdraw_protocol_fee)
+            initial_amount - initial_protocol_fee + deposit_amount
+                - deposit_protocol_fee
+                - withdraw_amount,
         );
         assert!(protocol_fee_receiver_balance_increased_by(
             &deployment_with_protocol_fees,

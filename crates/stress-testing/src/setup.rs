@@ -83,7 +83,7 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
     let total_amount = shielded_amount + protocol_fee;
 
     println!(
-        "⏳ Creating shielder accounts. Every account will shield {} plus the {} protocol fee.",
+        "⏳ Creating shielder accounts. Every account will shield {}, additionally paying {} protocol fee.",
         shielded_amount, protocol_fee
     );
     for actor in actors {

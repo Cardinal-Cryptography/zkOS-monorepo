@@ -10,7 +10,7 @@ use shielder_contract::{
     ConnectionPolicy, NoProvider, ShielderUser,
 };
 use shielder_setup::{
-    protocol_fee::compute_protocol_fee_from_net, shielder_circuits::GrumpkinPointAffine,
+    protocol_fee::compute_protocol_fee_from_gross, shielder_circuits::GrumpkinPointAffine,
 };
 
 use crate::shielder::{get_mac_salt, pk::NEW_ACCOUNT_PROVING_EQUIPMENT};
@@ -24,6 +24,7 @@ pub async fn estimate_new_account_gas(
     amount: U256,
     protocol_fee_bps: U256,
 ) -> Result<u64> {
+    let amount = U256::from(amount);
     let signer = PrivateKeySigner::from_bytes(&private_key.into())
         .expect("Invalid key format - cannot cast to PrivateKeySigner");
     let shielder_account = ShielderAccount::new(shielder_seed, token);
@@ -35,8 +36,7 @@ pub async fn estimate_new_account_gas(
 
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
 
-    let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
-    let amount = U256::from(amount) + protocol_fee;
+    let protocol_fee = compute_protocol_fee_from_gross(amount, protocol_fee_bps);
 
     let call = prepare_call(
         &shielder_account,
