@@ -14,6 +14,7 @@ use shielder_contract::ShielderContract::initializeCall;
 use crate::{
     deploy_contract,
     erc20::TestERC20,
+    protocol_fees::ProtocolFeesBps,
     proving_utils::{
         deposit_proving_params, new_account_proving_params, withdraw_proving_params, ProvingParams,
     },
@@ -62,6 +63,18 @@ pub const RELAYER_INITIAL_ERC20_BALANCE: U256 = U256::ZERO;
 pub const REVERTING_ADDRESS: &str = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 pub const REVERTING_ADDRESS_INITIAL_NATIVE_BALANCE: U256 = U256::ZERO;
 pub const REVERTING_BYTECODE: [u8; 4] = [0x60, 0x00, 0x80, 0xfd]; // PUSH1 0x00 DUP1 REVERT
+
+pub const ZERO_MEMO_BYTES: Bytes = Bytes::from_static(&[]);
+pub const MEMO_BYTES: Bytes = Bytes::from_static(&[0xb2; 32]);
+
+pub const ZERO_PROTOCOL_FEES: ProtocolFeesBps = ProtocolFeesBps {
+    protocol_deposit_fee_bps: U256::ZERO,
+    protocol_withdraw_fee_bps: U256::ZERO,
+};
+pub const PROTOCOL_FEES: ProtocolFeesBps = ProtocolFeesBps {
+    protocol_deposit_fee_bps: U256::from_limbs([30, 0, 0, 0]),
+    protocol_withdraw_fee_bps: U256::from_limbs([70, 0, 0, 0]),
+};
 
 pub const ANONYMITY_REVOKER_PKEY: GrumpkinPointAffine<U256> = GrumpkinPointAffine {
     x: U256::from_limbs([1, 0, 0, 0]),
@@ -118,8 +131,21 @@ pub struct Deployment {
     pub new_account_proving_params: ProvingParams,
     pub deposit_proving_params: ProvingParams,
     pub withdraw_proving_params: ProvingParams,
-    pub protocol_deposit_fee_bps: U256,
-    pub protocol_withdraw_fee_bps: U256,
+}
+
+impl Deployment {
+    pub fn set_protocol_fees(&mut self, protocol_fees_bps: &ProtocolFeesBps) {
+        set_protocol_deposit_fee(
+            self.contract_suite.shielder,
+            protocol_fees_bps.protocol_deposit_fee_bps,
+            &mut self.evm,
+        );
+        set_protocol_withdraw_fee(
+            self.contract_suite.shielder,
+            protocol_fees_bps.protocol_withdraw_fee_bps,
+            &mut self.evm,
+        );
+    }
 }
 
 /// Deploy whole Shielder suite.
@@ -142,6 +168,14 @@ pub fn deployment(
         DEPLOYER_ADDRESS,
         DEPLOYER_INITIAL_NATIVE_BALANCE,
         Some(DEPLOYER_INITIAL_ERC20_BALANCE),
+        None,
+    );
+    prepare_account(
+        &mut evm,
+        &test_erc20,
+        PROTOCOL_FEE_RECEIVER_ADDRESS,
+        PROTOCOL_FEE_RECEIVER_INITIAL_NATIVE_BALANCE,
+        Some(PROTOCOL_FEE_RECEIVER_INITIAL_ERC20_BALANCE),
         None,
     );
     prepare_account(
@@ -197,38 +231,7 @@ pub fn deployment(
         new_account_proving_params: new_account_proving_params.clone(),
         deposit_proving_params: deposit_proving_params.clone(),
         withdraw_proving_params: withdraw_proving_params.clone(),
-        protocol_deposit_fee_bps: U256::ZERO,
-        protocol_withdraw_fee_bps: U256::ZERO,
     }
-}
-
-/// Deploy whole Shielder suite.
-#[fixture]
-pub fn deployment_with_protocol_fees(
-    new_account_proving_params: &ProvingParams,
-    deposit_proving_params: &ProvingParams,
-    withdraw_proving_params: &ProvingParams,
-) -> Deployment {
-    let deposit_fee = U256::from(50);
-    let withdraw_fee = U256::from(70);
-    let mut deployment = deployment(
-        new_account_proving_params,
-        deposit_proving_params,
-        withdraw_proving_params,
-    );
-    set_protocol_deposit_fee(
-        deployment.contract_suite.shielder,
-        deposit_fee,
-        &mut deployment.evm,
-    );
-    deployment.protocol_deposit_fee_bps = deposit_fee;
-    set_protocol_withdraw_fee(
-        deployment.contract_suite.shielder,
-        withdraw_fee,
-        &mut deployment.evm,
-    );
-    deployment.protocol_withdraw_fee_bps = withdraw_fee;
-    deployment
 }
 
 /// Deploys the Shielder implementation contract.

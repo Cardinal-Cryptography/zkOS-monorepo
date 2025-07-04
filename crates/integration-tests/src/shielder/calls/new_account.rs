@@ -21,6 +21,7 @@ pub fn prepare_call(
     shielder_account: &mut ShielderAccount,
     token: TestToken,
     amount: U256,
+    memo: Bytes,
 ) -> NewAccountCall {
     let (params, pk) = deployment.new_account_proving_params.clone();
 
@@ -39,7 +40,7 @@ pub fn prepare_call(
             mac_salt: U256::ZERO,
             caller_address: Address::from_str(ACTOR_ADDRESS).unwrap(),
             protocol_fee,
-            memo: Bytes::from(vec![]),
+            memo,
         },
     )
 }
@@ -87,10 +88,17 @@ pub fn create_account_and_call(
     token: TestToken,
     id: U256,
     initial_amount: U256,
+    memo: Bytes,
 ) -> Result<ShielderAccount, ShielderCallErrors> {
     let mut shielder_account = ShielderAccount::new(id, token.token(deployment));
 
-    let calldata = prepare_call(deployment, &mut shielder_account, token, initial_amount);
+    let calldata = prepare_call(
+        deployment,
+        &mut shielder_account,
+        token,
+        initial_amount,
+        memo,
+    );
     let result = invoke_call(deployment, &mut shielder_account, &calldata);
 
     match result {
@@ -103,7 +111,7 @@ pub fn create_account_and_call(
 mod tests {
     use std::{assert_matches::assert_matches, mem, str::FromStr};
 
-    use alloy_primitives::{FixedBytes, U256};
+    use alloy_primitives::{Bytes, FixedBytes, U256};
     use evm_utils::SuccessResult;
     use halo2_proofs::halo2curves::ff::PrimeField;
     use rstest::rstest;
@@ -119,8 +127,9 @@ mod tests {
     use crate::{
         call_errors::ShielderCallErrors,
         calls::new_account::{create_account_and_call, invoke_call, prepare_call, TestToken},
-        deploy::{deployment, deployment_with_protocol_fees},
+        deploy::{deployment, MEMO_BYTES, PROTOCOL_FEES, ZERO_MEMO_BYTES, ZERO_PROTOCOL_FEES},
         protocol_fee_receiver_balance_increased_by,
+        protocol_fees::ProtocolFeesBps,
         shielder::{actor_balance_decreased_by, Deployment},
     };
 
@@ -128,12 +137,28 @@ mod tests {
     const GAS_CONSUMPTION_ERC20: u64 = 2024678;
 
     #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn gas_consumption_regression(mut deployment: Deployment, #[case] token: TestToken) {
+    #[case::native(TestToken::Native, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20(TestToken::ERC20, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_fees(TestToken::Native, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20_fees(TestToken::ERC20, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_memo(TestToken::Native, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    #[case::erc20_memo(TestToken::ERC20, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    fn gas_consumption_regression(
+        mut deployment: Deployment,
+        #[case] token: TestToken,
+        #[case] protocol_fees_bps: ProtocolFeesBps,
+        #[case] memo: Bytes,
+    ) {
+        deployment.set_protocol_fees(&protocol_fees_bps);
         let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from(10);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
+        let calldata = prepare_call(
+            &mut deployment,
+            &mut shielder_account,
+            token,
+            amount,
+            Bytes::from(memo),
+        );
 
         let (_, SuccessResult { gas_used, .. }) =
             invoke_call(&mut deployment, &mut shielder_account, &calldata).unwrap();
@@ -149,12 +174,32 @@ mod tests {
     }
 
     #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn succeeds(mut deployment: Deployment, #[case] token: TestToken) {
+    #[case::native(TestToken::Native, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20(TestToken::ERC20, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_fees(TestToken::Native, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20_fees(TestToken::ERC20, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_memo(TestToken::Native, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    #[case::erc20_memo(TestToken::ERC20, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    fn succeeds(
+        mut deployment: Deployment,
+        #[case] token: TestToken,
+        #[case] protocol_fees_bps: ProtocolFeesBps,
+        #[case] memo: Bytes,
+    ) {
+        deployment.set_protocol_fees(&protocol_fees_bps);
         let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
-        let amount = U256::from(10);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
+        let initial_amount = U256::from(100000);
+        let initial_protocol_fee = compute_protocol_fee_from_gross(
+            initial_amount,
+            protocol_fees_bps.protocol_deposit_fee_bps,
+        );
+        let calldata = prepare_call(
+            &mut deployment,
+            &mut shielder_account,
+            token,
+            initial_amount,
+            memo,
+        );
 
         let events = invoke_call(&mut deployment, &mut shielder_account, &calldata)
             .unwrap()
@@ -166,54 +211,6 @@ mod tests {
                 contractVersion: contract_version().to_bytes(),
                 prenullifier: calldata.prenullifier,
                 tokenAddress: token.address(&deployment),
-                amount,
-                newNote: calldata.new_note,
-                newNoteIndex: U256::ZERO,
-                macSalt: U256::ZERO,
-                macCommitment: calldata.mac_commitment,
-                protocolFee: U256::ZERO,
-                memo: calldata.memo,
-            })]
-        );
-        assert!(actor_balance_decreased_by(&deployment, token, amount));
-        assert_eq!(shielder_account.shielded_amount, U256::from(amount))
-    }
-
-    #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn succeeds_with_protocol_fee(
-        mut deployment_with_protocol_fees: Deployment,
-        #[case] token: TestToken,
-    ) {
-        let mut shielder_account =
-            ShielderAccount::new(U256::from(1), token.token(&deployment_with_protocol_fees));
-        let initial_amount = U256::from(100000);
-        let initial_protocol_fee = compute_protocol_fee_from_gross(
-            initial_amount,
-            deployment_with_protocol_fees.protocol_deposit_fee_bps,
-        );
-        let calldata = prepare_call(
-            &mut deployment_with_protocol_fees,
-            &mut shielder_account,
-            token,
-            initial_amount,
-        );
-
-        let events = invoke_call(
-            &mut deployment_with_protocol_fees,
-            &mut shielder_account,
-            &calldata,
-        )
-        .unwrap()
-        .0;
-
-        assert_eq!(
-            events,
-            vec![ShielderContractEvents::NewAccount(NewAccount {
-                contractVersion: contract_version().to_bytes(),
-                prenullifier: calldata.prenullifier,
-                tokenAddress: token.address(&deployment_with_protocol_fees),
                 amount: initial_amount,
                 newNote: calldata.new_note,
                 newNoteIndex: U256::ZERO,
@@ -224,7 +221,7 @@ mod tests {
             })]
         );
         assert!(actor_balance_decreased_by(
-            &deployment_with_protocol_fees,
+            &deployment,
             token,
             initial_amount,
         ));
@@ -233,7 +230,7 @@ mod tests {
             initial_amount - initial_protocol_fee
         );
         assert!(protocol_fee_receiver_balance_increased_by(
-            &deployment_with_protocol_fees,
+            &deployment,
             token,
             initial_protocol_fee
         ));
@@ -243,9 +240,11 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn fails_if_incorrect_expected_version(mut deployment: Deployment, #[case] token: TestToken) {
+        let memo = ZERO_MEMO_BYTES;
         let mut shielder_account = ShielderAccount::default();
         let amount = U256::from(10);
-        let mut calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
+        let mut calldata =
+            prepare_call(&mut deployment, &mut shielder_account, token, amount, memo);
         calldata.expected_contract_version = FixedBytes([9, 8, 7]);
 
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -266,11 +265,22 @@ mod tests {
     #[case::native(TestToken::Native)]
     #[case::erc20(TestToken::ERC20)]
     fn cannot_use_same_id_twice(mut deployment: Deployment, #[case] token: TestToken) {
-        assert!(
-            create_account_and_call(&mut deployment, token, U256::from(1), U256::from(10)).is_ok()
-        );
+        assert!(create_account_and_call(
+            &mut deployment,
+            token,
+            U256::from(1),
+            U256::from(10),
+            ZERO_MEMO_BYTES
+        )
+        .is_ok());
 
-        let result = create_account_and_call(&mut deployment, token, U256::from(1), U256::from(10));
+        let result = create_account_and_call(
+            &mut deployment,
+            token,
+            U256::from(1),
+            U256::from(10),
+            ZERO_MEMO_BYTES,
+        );
 
         assert_matches!(result, Err(ShielderCallErrors::DuplicatedNullifier(_)));
         assert!(actor_balance_decreased_by(
@@ -295,6 +305,7 @@ mod tests {
             &mut shielder_account,
             token,
             initial_amount,
+            ZERO_MEMO_BYTES,
         );
         let mut swap_value = U256::from_str(Fr::MODULUS).unwrap();
 
@@ -324,7 +335,13 @@ mod tests {
     ) {
         let mut shielder_account = ShielderAccount::new(U256::from(1), token.token(&deployment));
         let amount = U256::from((1u128 << 112) - 1);
-        let calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
+        let calldata = prepare_call(
+            &mut deployment,
+            &mut shielder_account,
+            token,
+            amount,
+            ZERO_MEMO_BYTES,
+        );
 
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -343,10 +360,23 @@ mod tests {
         #[case] token: TestToken,
     ) {
         let amount_1 = U256::from((1u128 << 112) - 1);
-        assert!(create_account_and_call(&mut deployment, token, U256::from(1), amount_1).is_ok());
+        assert!(create_account_and_call(
+            &mut deployment,
+            token,
+            U256::from(1),
+            amount_1,
+            ZERO_MEMO_BYTES
+        )
+        .is_ok());
 
         let amount_2 = U256::from(1);
-        let result_2 = create_account_and_call(&mut deployment, token, U256::from(2), amount_2);
+        let result_2 = create_account_and_call(
+            &mut deployment,
+            token,
+            U256::from(2),
+            amount_2,
+            ZERO_MEMO_BYTES,
+        );
 
         assert_matches!(
             result_2,
@@ -361,7 +391,13 @@ mod tests {
     fn fails_if_proof_incorrect(mut deployment: Deployment, #[case] token: TestToken) {
         let mut shielder_account = ShielderAccount::default();
         let amount = U256::from(10);
-        let mut calldata = prepare_call(&mut deployment, &mut shielder_account, token, amount);
+        let mut calldata = prepare_call(
+            &mut deployment,
+            &mut shielder_account,
+            token,
+            amount,
+            ZERO_MEMO_BYTES,
+        );
         calldata.prenullifier = calldata.prenullifier.wrapping_add(U256::from(1));
 
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);

@@ -7,7 +7,9 @@ use integration_tests::{
         new_account::{invoke_call as new_account_call, prepare_call as new_account_calldata},
         withdraw::{invoke_call as withdraw_call, prepare_args, prepare_call as withdraw_calldata},
     },
-    deploy::{deployment, Deployment},
+    deploy::{
+        deployment, Deployment, MEMO_BYTES, PROTOCOL_FEES, ZERO_MEMO_BYTES, ZERO_PROTOCOL_FEES,
+    },
     deposit_proving_params, new_account_proving_params, withdraw_proving_params, TestToken,
 };
 use shielder_account::{
@@ -33,23 +35,58 @@ fn main() {
         &withdraw_proving_params(),
     );
 
+    let mut shielder_account =
+        ShielderAccount::new(U256::MAX, TestToken::Native.token(&deployment));
+    let calldata = new_account_calldata(
+        &mut deployment,
+        &mut shielder_account,
+        TestToken::Native,
+        U256::from(1),
+        ZERO_MEMO_BYTES.into(),
+    );
+    let _ = new_account_call(&mut deployment, &mut shielder_account, &calldata);
+
     let mut content: Vec<u8> = vec![];
 
-    for token in [TestToken::Native, TestToken::ERC20].into_iter() {
-        // Ensure separate ids for each token.
-        let account_id = U256::from(token as u64);
-
-        let mut shielder_account = ShielderAccount::new(account_id, token.token(&deployment));
+    for (account_id, (token, protocol_fees_bps, memo)) in [
+        (TestToken::Native, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES),
+        (TestToken::ERC20, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES),
+        (TestToken::Native, PROTOCOL_FEES, ZERO_MEMO_BYTES),
+        (TestToken::ERC20, PROTOCOL_FEES, ZERO_MEMO_BYTES),
+        (TestToken::Native, ZERO_PROTOCOL_FEES, MEMO_BYTES),
+        (TestToken::ERC20, ZERO_PROTOCOL_FEES, MEMO_BYTES),
+        (TestToken::Native, PROTOCOL_FEES, MEMO_BYTES),
+        (TestToken::ERC20, PROTOCOL_FEES, MEMO_BYTES),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let label = format!(
+            "{}{}{}",
+            token,
+            if protocol_fees_bps.protocol_deposit_fee_bps != U256::ZERO
+                && protocol_fees_bps.protocol_withdraw_fee_bps != U256::ZERO
+            {
+                "Fees"
+            } else {
+                ""
+            },
+            if !memo.is_empty() { "Memo" } else { "" }
+        );
+        deployment.set_protocol_fees(&protocol_fees_bps);
+        let mut shielder_account =
+            ShielderAccount::new(U256::from(account_id.pow(2)), token.token(&deployment));
         let amount = U256::from(10);
         let calldata = Calldata::NewAccount(new_account_calldata(
             &mut deployment,
             &mut shielder_account,
             token,
             amount,
+            memo.clone(),
         ));
 
         measure_gas(
-            &format!("NewAccount{}", token),
+            &format!("NewAccount{}", label),
             &calldata,
             &mut deployment,
             &mut shielder_account,
@@ -57,11 +94,18 @@ fn main() {
         );
 
         let calldata = Calldata::Deposit(
-            deposit_calldata(&mut deployment, &mut shielder_account, token, amount).0,
+            deposit_calldata(
+                &mut deployment,
+                &mut shielder_account,
+                token,
+                amount,
+                memo.clone(),
+            )
+            .0,
         );
 
         measure_gas(
-            &format!("Deposit{}", token),
+            &format!("Deposit{}", label),
             &calldata,
             &mut deployment,
             &mut shielder_account,
@@ -76,13 +120,13 @@ fn main() {
             withdraw_calldata(
                 &mut deployment,
                 &mut shielder_account,
-                prepare_args(token, amount, U256::from(1), pocket_money, vec![]),
+                prepare_args(token, amount, U256::from(1), pocket_money, memo.clone()),
             )
             .0,
         );
 
         measure_gas(
-            &format!("Withdraw{}", token),
+            &format!("Withdraw{}", label),
             &calldata,
             &mut deployment,
             &mut shielder_account,
