@@ -24,3 +24,5 @@ shielder_block_number.txt
 
 *.bin
 *.db3
+
+tee/nix/result
