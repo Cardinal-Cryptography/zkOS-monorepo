@@ -42,7 +42,7 @@ fn main() {
         &mut shielder_account,
         TestToken::Native,
         U256::from(1),
-        ZERO_MEMO_BYTES.into(),
+        ZERO_MEMO_BYTES,
     );
     let _ = new_account_call(&mut deployment, &mut shielder_account, &calldata);
 
