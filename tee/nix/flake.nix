@@ -6,32 +6,32 @@
     nitro-util.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-utils.url = "github:numtide/flake-utils";
-    fenix.url = "github:nix-community/fenix";
-    naersk.url = "github:nix-community/naersk";
+    crane.url = "github:ipetkov/crane";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     zkOS-monorepo = {
-      url = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a5f601581fc1e1f7bb823b7572aeba3092";
+      url = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=1852b2809325e1e089def6dbdf34c03640c06c0c";
       flake = false;
     };
   };
-  outputs = { nitro-util, nixpkgs, flake-utils, naersk, fenix, zkOS-monorepo, ... }: (flake-utils.lib.eachDefaultSystem (system:
+  outputs = { nitro-util, nixpkgs, flake-utils, crane, rust-overlay, zkOS-monorepo, ... }: (flake-utils.lib.eachDefaultSystem (system:
     let
-      pkgs = nixpkgs.legacyPackages.${system};
-      nitro = nitro-util.lib.${system};
-
-      toolchain = with fenix.packages.${system};
-        combine [
-          minimal.rustc
-          minimal.cargo
-          targets.x86_64-unknown-linux-musl.latest.rust-std
-        ];
-
-      naersk' = naersk.lib.${system}.override {
-        cargo = toolchain;
-        rustc = toolchain;
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [ (import rust-overlay) ];
       };
 
-      zkOS-monorepo-source = builtins.fetchGit zkOS-monorepo;
+      craneLib = (crane.mkLib pkgs).overrideToolchain (
+        p:
+        p.rust-bin.stable.latest.default.override {
+          targets = [ "x86_64-unknown-linux-musl" ];
+        }
+      );
+
+      nitro = nitro-util.lib.${system};
     in
     rec {
       defaultPackage = packages.all;
@@ -41,27 +41,30 @@
           { name = "shielderProverTEE"; path = packages.shielderProverTEE; }
         ];
 
-        shielderProverTEE-binary = naersk'.buildPackage {
-          src = "${zkOS-monorepo}/tee";
+        shielderProverTEE-binary = craneLib.buildPackage {
+          pname = "shielder-prover-tee";
+          cargoExtraArgs = "-p shielder-prover-tee";
+          version = "0.1.0";
 
-          doCheck = true;
-          nativeBuildInputs = with pkgs; [ pkgsStatic.stdenv.cc ];
-          cargoBuildOptions = (x: x ++ ["-p shielder-prover-tee"] );
+          src = "${zkOS-monorepo}/tee";
+          strictDeps = true;
+
           CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+          PTAU_RESOURCES_DIR = "${zkOS-monorepo}/resources";
 
           postInstall = "mv $out/bin/shielder-prover-tee $out/bin/entrypoint";
         };
 
-          shielderProverTEE =
-            let
-              crossArch = "x86_64";
-              crossPkgs = import nixpkgs { inherit system; crossSystem = "${crossArch}-linux"; };
-            in
-            crossPkgs.callPackage ./enclave.nix {
-              inherit crossArch nitro;
-              entrypoint = packages.shielderProverTEE-binary;
-            };
+        shielderProverTEE =
+          let
+            crossArch = "x86_64";
+            crossPkgs = import nixpkgs { inherit system; crossSystem = "${crossArch}-linux"; };
+          in
+          crossPkgs.callPackage ./enclave.nix {
+            inherit crossArch nitro;
+            entrypoint = packages.shielderProverTEE-binary;
+          };
       };
     }));
 }
