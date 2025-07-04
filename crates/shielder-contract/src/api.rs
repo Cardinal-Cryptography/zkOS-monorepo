@@ -10,8 +10,8 @@ use crate::{
     ContractResult,
     ShielderContract::{
         anonymityRevokerPubkeyCall, depositERC20Call, depositNativeCall, getMerklePathCall,
-        newAccountERC20Call, newAccountNativeCall, nullifiersCall, withdrawERC20Call,
-        withdrawNativeCall,
+        newAccountERC20Call, newAccountNativeCall, nullifiersCall, protocolDepositFeeBpsCall,
+        protocolWithdrawFeeBpsCall, withdrawERC20Call, withdrawNativeCall,
     },
 };
 
@@ -118,6 +118,22 @@ impl<P: Provider + Clone> ShielderUser<P> {
     ) -> ContractResult<C::Result> {
         self.connection
             .call::<C, _>(anonymityRevokerPubkeyCall::new(()))
+            .await
+    }
+
+    pub async fn protocol_deposit_fee_bps<C: CallType<protocolDepositFeeBpsCall>>(
+        &self,
+    ) -> ContractResult<C::Result> {
+        self.connection
+            .call::<C, _>(protocolDepositFeeBpsCall::new(()))
+            .await
+    }
+
+    pub async fn protocol_withdraw_fee_bps<C: CallType<protocolWithdrawFeeBpsCall>>(
+        &self,
+    ) -> ContractResult<C::Result> {
+        self.connection
+            .call::<C, _>(protocolWithdrawFeeBpsCall::new(()))
             .await
     }
 

@@ -14,7 +14,8 @@ contract AcceptingShielder {
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external {}
 
     function withdrawERC20(
@@ -29,6 +30,7 @@ contract AcceptingShielder {
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external payable {}
 }

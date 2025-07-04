@@ -1,14 +1,15 @@
 use std::str::FromStr;
 
-use alloy_primitives::{Address, TxHash, U256};
+use alloy_primitives::{Address, Bytes, TxHash, U256};
 use shielder_account::{
     call_data::{WithdrawCall, WithdrawCallType, WithdrawExtra},
     ShielderAccount, Token,
 };
 use shielder_contract::ShielderContract::{withdrawERC20Call, withdrawNativeCall};
-use shielder_setup::version::ContractVersion;
+use shielder_setup::{protocol_fee::compute_protocol_fee_from_gross, version::contract_version};
 
 use crate::{
+    protocol_fees::get_protocol_withdraw_fee_bps,
     shielder::{
         deploy::{Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS},
         invoke_shielder_call,
@@ -25,6 +26,7 @@ pub struct PrepareCallArgs {
     relayer_address: Address,
     relayer_fee: U256,
     pocket_money: U256,
+    memo: Bytes,
 }
 
 pub fn prepare_args(
@@ -32,6 +34,7 @@ pub fn prepare_args(
     amount: U256,
     relayer_fee: U256,
     pocket_money: U256,
+    memo: Bytes,
 ) -> PrepareCallArgs {
     PrepareCallArgs {
         token,
@@ -40,6 +43,7 @@ pub fn prepare_args(
         relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
         relayer_fee,
         pocket_money,
+        memo,
     }
 }
 
@@ -48,6 +52,7 @@ pub fn prepare_call(
     shielder_account: &mut ShielderAccount,
     args: PrepareCallArgs,
 ) -> (WithdrawCall, U256) {
+    let amount = U256::from(args.amount);
     let note_index = shielder_account
         .current_leaf_index()
         .expect("No leaf index");
@@ -59,24 +64,26 @@ pub fn prepare_call(
         &mut deployment.evm,
     );
 
+    let protocol_fee_bps =
+        get_protocol_withdraw_fee_bps(deployment.contract_suite.shielder, &mut deployment.evm);
+    let protocol_fee = compute_protocol_fee_from_gross(amount, protocol_fee_bps);
+
     let calldata = shielder_account.prepare_call::<WithdrawCallType>(
         &params,
         &pk,
         args.token.token(deployment),
-        U256::from(args.amount),
+        amount,
         &WithdrawExtra {
             merkle_path,
             to: args.withdraw_address,
             relayer_address: args.relayer_address,
             relayer_fee: args.relayer_fee,
-            contract_version: ContractVersion {
-                note_version: 0,
-                circuit_version: 1,
-                patch_version: 0,
-            },
+            contract_version: contract_version(),
             chain_id: U256::from(1),
             mac_salt: U256::ZERO,
             pocket_money: args.pocket_money,
+            protocol_fee,
+            memo: args.memo,
         },
     );
 
@@ -124,6 +131,9 @@ mod tests {
     use shielder_contract::ShielderContract::{
         ShielderContractEvents, Withdraw, WrongContractVersion,
     };
+    use shielder_setup::{
+        protocol_fee::compute_protocol_fee_from_gross, version::contract_version,
+    };
 
     use crate::{
         call_errors::ShielderCallErrors,
@@ -131,14 +141,16 @@ mod tests {
             deposit,
             withdraw::{invoke_call, prepare_args, prepare_call, PrepareCallArgs},
         },
+        deploy::{MEMO_BYTES, PROTOCOL_FEES, ZERO_MEMO_BYTES, ZERO_PROTOCOL_FEES},
+        protocol_fees::ProtocolFeesBps,
         shielder::{
             actor_balance_decreased_by,
             calls::new_account,
             deploy::{
                 deployment, Deployment, RECIPIENT_ADDRESS, RELAYER_ADDRESS, REVERTING_ADDRESS,
             },
-            destination_balances_unchanged, recipient_balance_increased_by,
-            relayer_balance_increased_by,
+            destination_balances_unchanged, protocol_fee_receiver_balance_increased_by,
+            recipient_balance_increased_by, relayer_balance_increased_by,
         },
         TestToken,
     };
@@ -147,21 +159,32 @@ mod tests {
     const GAS_CONSUMPTION_ERC20: u64 = 1853288;
 
     #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn gas_consumption_regression(mut deployment: Deployment, #[case] token: TestToken) {
+    #[case::native(TestToken::Native, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20(TestToken::ERC20, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_fees(TestToken::Native, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20_fees(TestToken::ERC20, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_memo(TestToken::Native, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    #[case::erc20_memo(TestToken::ERC20, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    fn gas_consumption_regression(
+        mut deployment: Deployment,
+        #[case] token: TestToken,
+        #[case] protocol_fees_bps: ProtocolFeesBps,
+        #[case] memo: Bytes,
+    ) {
+        deployment.set_protocol_fees(&protocol_fees_bps);
         let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
             token,
             U256::from(1),
             U256::from(20),
+            memo.clone(),
         )
         .unwrap();
 
         let (withdraw_calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO, memo),
         );
         let (_, SuccessResult { gas_used, .. }) =
             invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata).unwrap();
@@ -178,14 +201,30 @@ mod tests {
     }
 
     #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn succeeds(mut deployment: Deployment, #[case] token: TestToken) {
+    #[case::native(TestToken::Native, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20(TestToken::ERC20, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_fees(TestToken::Native, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20_fees(TestToken::ERC20, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_memo(TestToken::Native, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    #[case::erc20_memo(TestToken::ERC20, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    fn succeeds(
+        mut deployment: Deployment,
+        #[case] token: TestToken,
+        #[case] protocol_fees_bps: ProtocolFeesBps,
+        #[case] memo: Bytes,
+    ) {
+        deployment.set_protocol_fees(&protocol_fees_bps);
+        let initial_amount = U256::from(100000);
+        let initial_protocol_fee = compute_protocol_fee_from_gross(
+            initial_amount,
+            protocol_fees_bps.protocol_deposit_fee_bps,
+        );
         let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
             token,
             U256::from(1),
-            U256::from(20),
+            initial_amount,
+            memo.clone(),
         )
         .unwrap();
 
@@ -194,10 +233,22 @@ mod tests {
             TestToken::ERC20 => U256::from(1),
         };
 
+        let relayer_fee = U256::from(1);
+        let withdraw_amount = U256::from(50000);
+        let withdraw_protocol_fee = compute_protocol_fee_from_gross(
+            withdraw_amount,
+            protocol_fees_bps.protocol_withdraw_fee_bps,
+        );
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), pocket_money),
+            prepare_args(
+                token,
+                withdraw_amount,
+                relayer_fee,
+                pocket_money,
+                memo.clone(),
+            ),
         );
         let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
             .unwrap()
@@ -206,28 +257,30 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([0, 1, 0]),
+                contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment),
-                amount: U256::from(5),
+                amount: withdraw_amount,
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.new_note,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
-                fee: U256::from(1),
+                fee: relayer_fee,
                 macSalt: U256::ZERO,
                 macCommitment: withdraw_calldata.mac_commitment,
                 pocketMoney: pocket_money,
+                protocolFee: withdraw_protocol_fee,
+                memo,
             })]
         );
         assert!(actor_balance_decreased_by(
             &deployment,
             token,
-            U256::from(20)
+            initial_amount
         ));
         assert!(recipient_balance_increased_by(
             &deployment,
             token,
-            U256::from(4)
+            withdraw_amount - relayer_fee - withdraw_protocol_fee
         ));
 
         if let TestToken::ERC20 = token {
@@ -245,29 +298,58 @@ mod tests {
         assert!(relayer_balance_increased_by(
             &deployment,
             token,
-            U256::from(1)
+            relayer_fee
         ));
-        assert_eq!(shielder_account.shielded_amount, U256::from(15))
+        assert_eq!(
+            shielder_account.shielded_amount,
+            initial_amount - initial_protocol_fee - withdraw_amount,
+        );
+        assert!(protocol_fee_receiver_balance_increased_by(
+            &deployment,
+            token,
+            initial_protocol_fee + withdraw_protocol_fee
+        ));
     }
 
     #[rstest]
-    #[case::native(TestToken::Native)]
-    #[case::erc20(TestToken::ERC20)]
-    fn succeeds_after_deposit(mut deployment: Deployment, #[case] token: TestToken) {
+    #[case::native(TestToken::Native, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20(TestToken::ERC20, ZERO_PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_fees(TestToken::Native, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::erc20_fees(TestToken::ERC20, PROTOCOL_FEES, ZERO_MEMO_BYTES)]
+    #[case::native_memo(TestToken::Native, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    #[case::erc20_memo(TestToken::ERC20, ZERO_PROTOCOL_FEES, MEMO_BYTES)]
+    fn succeeds_after_deposit(
+        mut deployment: Deployment,
+        #[case] token: TestToken,
+        #[case] protocol_fees_bps: ProtocolFeesBps,
+        #[case] memo: Bytes,
+    ) {
+        deployment.set_protocol_fees(&protocol_fees_bps);
+        let initial_amount = U256::from(20000);
+        let initial_protocol_fee = compute_protocol_fee_from_gross(
+            initial_amount,
+            protocol_fees_bps.protocol_deposit_fee_bps,
+        );
         let mut shielder_account = new_account::create_account_and_call(
             &mut deployment,
             token,
             U256::from(1),
-            U256::from(20),
+            initial_amount,
+            memo.clone(),
         )
         .unwrap();
 
-        let deposit_amount = U256::from(10);
+        let deposit_amount = U256::from(10000);
+        let deposit_protocol_fee = compute_protocol_fee_from_gross(
+            deposit_amount,
+            protocol_fees_bps.protocol_deposit_fee_bps,
+        );
         let (deposit_calldata, _) = deposit::prepare_call(
             &mut deployment,
             &mut shielder_account,
             token,
             deposit_amount,
+            memo.clone(),
         );
         deposit::invoke_call(&mut deployment, &mut shielder_account, &deposit_calldata).unwrap();
 
@@ -276,10 +358,24 @@ mod tests {
             TestToken::ERC20 => U256::from(1),
         };
 
+        let relayer_fee = U256::from(1);
+
+        let withdraw_amount = U256::from(5000);
+        let withdraw_protocol_fee = compute_protocol_fee_from_gross(
+            withdraw_amount,
+            protocol_fees_bps.protocol_withdraw_fee_bps,
+        );
+
         let (withdraw_calldata, withdraw_note_index) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), pocket_money),
+            prepare_args(
+                token,
+                withdraw_amount,
+                relayer_fee,
+                pocket_money,
+                memo.clone(),
+            ),
         );
         let events = invoke_call(&mut deployment, &mut shielder_account, &withdraw_calldata)
             .unwrap()
@@ -288,28 +384,30 @@ mod tests {
         assert_eq!(
             events,
             vec![ShielderContractEvents::Withdraw(Withdraw {
-                contractVersion: FixedBytes([0, 1, 0]),
+                contractVersion: contract_version().to_bytes(),
                 tokenAddress: token.address(&deployment),
-                amount: U256::from(5),
+                amount: withdraw_amount,
                 withdrawalAddress: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
                 newNote: withdraw_calldata.new_note,
                 relayerAddress: Address::from_str(RELAYER_ADDRESS).unwrap(),
                 newNoteIndex: withdraw_note_index.saturating_add(U256::from(1)),
-                fee: U256::from(1),
+                fee: relayer_fee,
                 macSalt: U256::ZERO,
                 macCommitment: withdraw_calldata.mac_commitment,
                 pocketMoney: pocket_money,
+                protocolFee: withdraw_protocol_fee,
+                memo,
             })]
         );
         assert!(actor_balance_decreased_by(
             &deployment,
             token,
-            U256::from(30)
+            initial_amount + deposit_amount
         ));
         assert!(recipient_balance_increased_by(
             &deployment,
             token,
-            U256::from(4)
+            withdraw_amount - relayer_fee - withdraw_protocol_fee
         ));
         if let TestToken::ERC20 = token {
             assert!(actor_balance_decreased_by(
@@ -326,9 +424,19 @@ mod tests {
         assert!(relayer_balance_increased_by(
             &deployment,
             token,
-            U256::from(1)
+            relayer_fee
         ));
-        assert_eq!(shielder_account.shielded_amount, U256::from(25))
+        assert_eq!(
+            shielder_account.shielded_amount,
+            initial_amount - initial_protocol_fee + deposit_amount
+                - deposit_protocol_fee
+                - withdraw_amount,
+        );
+        assert!(protocol_fee_receiver_balance_increased_by(
+            &deployment,
+            token,
+            initial_protocol_fee + deposit_protocol_fee + withdraw_protocol_fee,
+        ));
     }
 
     #[rstest]
@@ -340,13 +448,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(
+                token,
+                U256::from(5),
+                U256::from(1),
+                U256::ZERO,
+                ZERO_MEMO_BYTES,
+            ),
         );
         calldata.new_note = calldata.new_note.wrapping_add(U256::from(1));
 
@@ -373,13 +488,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(0), U256::from(1), U256::ZERO),
+            prepare_args(
+                token,
+                U256::from(0),
+                U256::from(1),
+                U256::ZERO,
+                ZERO_MEMO_BYTES,
+            ),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -401,13 +523,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(3), U256::from(3), U256::ZERO),
+            prepare_args(
+                token,
+                U256::from(3),
+                U256::from(3),
+                U256::ZERO,
+                ZERO_MEMO_BYTES,
+            ),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -429,6 +558,7 @@ mod tests {
             token,
             U256::from(1),
             U256::from((1u128 << 112) - 1),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
@@ -440,6 +570,7 @@ mod tests {
                 U256::from((1u128 << 112) - 1),
                 U256::from(1),
                 U256::ZERO,
+                ZERO_MEMO_BYTES,
             ),
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -471,13 +602,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(2), U256::from(1), U256::ZERO),
+            prepare_args(
+                token,
+                U256::from(2),
+                U256::from(1),
+                U256::ZERO,
+                ZERO_MEMO_BYTES,
+            ),
         );
         calldata.amount = U256::from(1u128 << 112);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -511,6 +649,7 @@ mod tests {
             mac_salt: U256::ZERO,
             mac_commitment: U256::ZERO,
             pocket_money: U256::ZERO,
+            memo: ZERO_MEMO_BYTES,
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -518,7 +657,7 @@ mod tests {
             result,
             Err(ShielderCallErrors::WrongContractVersion(
                 WrongContractVersion {
-                    actual: FixedBytes([0, 1, 0]),
+                    actual: _,
                     expectedByCaller: FixedBytes([9, 8, 7]),
                 }
             ))
@@ -540,13 +679,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::from(2)),
+            prepare_args(
+                token,
+                U256::from(5),
+                U256::from(1),
+                U256::from(2),
+                ZERO_MEMO_BYTES,
+            ),
         );
         calldata.pocket_money = U256::from(1);
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -570,7 +716,7 @@ mod tests {
         let mut shielder_account = ShielderAccount::default();
 
         let calldata = WithdrawCall {
-            expected_contract_version: FixedBytes([0, 1, 0]),
+            expected_contract_version: contract_version().to_bytes(),
             token: token.token(&deployment),
             withdrawal_address: Address::from_str(RECIPIENT_ADDRESS).unwrap(),
             relayer_address: Address::from_str(RELAYER_ADDRESS).unwrap(),
@@ -583,6 +729,7 @@ mod tests {
             mac_salt: U256::ZERO,
             mac_commitment: U256::ZERO,
             pocket_money: U256::ZERO,
+            memo: ZERO_MEMO_BYTES,
         };
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
 
@@ -604,13 +751,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(
+                token,
+                U256::from(5),
+                U256::from(1),
+                U256::ZERO,
+                ZERO_MEMO_BYTES,
+            ),
         );
         assert!(invoke_call(&mut deployment, &mut shielder_account, &calldata).is_ok());
 
@@ -646,13 +800,20 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
         let (mut calldata, _) = prepare_call(
             &mut deployment,
             &mut shielder_account,
-            prepare_args(token, U256::from(5), U256::from(1), U256::ZERO),
+            prepare_args(
+                token,
+                U256::from(5),
+                U256::from(1),
+                U256::ZERO,
+                ZERO_MEMO_BYTES,
+            ),
         );
         let mut swap_value = U256::from_str(Fr::MODULUS).unwrap();
 
@@ -692,6 +853,7 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
@@ -700,7 +862,13 @@ mod tests {
             &mut shielder_account,
             PrepareCallArgs {
                 withdraw_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
-                ..prepare_args(token, U256::from(5), U256::from(1), U256::ZERO)
+                ..prepare_args(
+                    token,
+                    U256::from(5),
+                    U256::from(1),
+                    U256::ZERO,
+                    ZERO_MEMO_BYTES,
+                )
             },
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);
@@ -731,6 +899,7 @@ mod tests {
             token,
             U256::from(1),
             U256::from(20),
+            ZERO_MEMO_BYTES,
         )
         .unwrap();
 
@@ -739,7 +908,13 @@ mod tests {
             &mut shielder_account,
             PrepareCallArgs {
                 relayer_address: Address::from_str(REVERTING_ADDRESS).unwrap(),
-                ..prepare_args(token, U256::from(5), U256::from(1), U256::ZERO)
+                ..prepare_args(
+                    token,
+                    U256::from(5),
+                    U256::from(1),
+                    U256::ZERO,
+                    ZERO_MEMO_BYTES,
+                )
             },
         );
         let result = invoke_call(&mut deployment, &mut shielder_account, &calldata);

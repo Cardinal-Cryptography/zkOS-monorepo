@@ -14,7 +14,8 @@ contract RevertingShielder {
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external {
         revert();
     }
@@ -31,7 +32,8 @@ contract RevertingShielder {
         address relayerAddress,
         uint256 relayerFee,
         uint256 macSalt,
-        uint256 macCommitment
+        uint256 macCommitment,
+        bytes calldata memo
     ) external payable {
         revert();
     }

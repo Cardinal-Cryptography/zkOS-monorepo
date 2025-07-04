@@ -127,6 +127,7 @@ impl TestContext {
                     mac_salt: U256::ZERO,
                     mac_commitment: U256::ZERO,
                     pocket_money: U256::ZERO,
+                    memo: Bytes::from(vec![]),
                 },
                 quote,
             })

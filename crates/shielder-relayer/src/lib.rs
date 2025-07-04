@@ -51,6 +51,8 @@ pub struct RelayCalldata {
     pub mac_commitment: U256,
     #[schema(value_type = String)]
     pub pocket_money: U256,
+    #[schema(value_type = Object)]
+    pub memo: Bytes,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
