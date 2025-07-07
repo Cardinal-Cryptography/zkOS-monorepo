@@ -1,22 +1,37 @@
+## Overview
+
+The `tee/` subfolder contains Rust crates required to build Shielder Prover Server, a TEE-based REST server which
+computes ZK-proofs:
+* The user wants to generate a proof for relation `R` with witness `w` and statement `s`
+* The user generates a symmetric encryption key `sk` (think AES) to get a response back from the server
+* The user queries the server for their asymmetric encryption keys and encrypts `ciphertext=(R, w, s, sk)` 
+and sends `e = Enc(ciphertext)` to the server
+* The server decrypts and unpacks the ciphertext. Then it generates the proof `π` and output `Enc_sk(π)`
+* The user receives encrypted `π` and decrypts it.
+
+* The proof `π` can be then used in further part of the Shielder workflow, ie submitting the proof to the Shielder contract.
+
+### Packages
+
+There are three Rust crates:
+* `shielder-prover-common` - contains common definitions between the `shielder-prover-server` and `shielder-prover-tee`,
+* `shielder-prover-server` - a host (EC-2) part of the server. This is the server that is exposed to the Internet, and most
+of its function is to forward requests to TEE and limit maximum concurrent requests amount
+* `shielder-prover-tee` - main part of the Server which computes ZK-proofs, runs entirerely in TEE. Communicates with
+`shielder-prover-server` via vsock
+
 ## Building
 
-To build the enclave images you will need `nix` installed (see https://nixos.org/download/#download-nix), and then:
+To build the enclave image of `shielder-prover-tee` (and measurements) you will need `nix` installed 
+(see https://nixos.org/download/#download-nix), and then:
 
 ```bash
 cd nix
 nix build
 ```
 
-To make sure builds are reproducible, the commit hash of source is hardcoded in nix flake files. To override the commit hash, run:
+To make sure builds are reproducible, the commit hash of `zkOS-monorepo` source is hardcoded in nix flake files. To override the commit hash, run:
 ```bash
 cd nix
 nix build --override-input zkOS-monorepo 'github:Cardinal-Cryptography/zkOS-monorepo/NEW_COMMIT_HASH_HERE'
 ```
-
-## Setup
-
-Copy (or create your own) `.env.example` to `.env`.
-
-## Migrations
-
-To setup the DB with no fuss, just `make migrate`. To rerun from an empty state `make migrate-fresh`.
