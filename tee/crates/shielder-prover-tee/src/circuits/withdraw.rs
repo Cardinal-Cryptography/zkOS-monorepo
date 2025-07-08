@@ -1,5 +1,5 @@
 use std::vec::Vec;
-
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     withdraw::{WithdrawInstance, WithdrawProverKnowledge},
     Fr, PublicInputProvider,
@@ -7,7 +7,7 @@ use shielder_circuits::{
 use type_conversions::field_to_bytes;
 use crate::circuits::{vec_to_f, vec_to_path};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WithdrawPubInputsBytes {
     pub merkle_root: Vec<u8>,
     pub h_nullifier_old: Vec<u8>,
@@ -52,7 +52,7 @@ impl From<WithdrawProverKnowledge<Fr>> for WithdrawPubInputsBytes {
 pub struct WithdrawCircuit(super::WithdrawCircuit);
 
 impl WithdrawCircuit {
-    pub fn new_pronto() -> Self {
+    pub fn new() -> Self {
         WithdrawCircuit(super::WithdrawCircuit::new_pronto(
             include_bytes!("../../artifacts/withdraw/params.bin"),
             include_bytes!("../../artifacts/withdraw/pk.bin"),
@@ -60,7 +60,7 @@ impl WithdrawCircuit {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WithdrawProveInputsBytes {
     id: Vec<u8>,
     nullifier_old: Vec<u8>,

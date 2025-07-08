@@ -1,5 +1,5 @@
 use std::vec::Vec;
-
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     deposit::{DepositInstance, DepositProverKnowledge},
     Fr, PublicInputProvider,
@@ -7,7 +7,7 @@ use shielder_circuits::{
 use type_conversions::field_to_bytes;
 use crate::circuits::{vec_to_f, vec_to_path};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DepositPubInputsBytes {
     pub merkle_root: Vec<u8>,
     pub h_nullifier_old: Vec<u8>,
@@ -50,7 +50,7 @@ impl From<DepositProverKnowledge<Fr>> for DepositPubInputsBytes {
 pub struct DepositCircuit(super::DepositCircuit);
 
 impl DepositCircuit {
-    pub fn new_pronto() -> Self {
+    pub fn new() -> Self {
         DepositCircuit(super::DepositCircuit::new_pronto(
             include_bytes!("../../artifacts/deposit/params.bin"),
             include_bytes!("../../artifacts/deposit/pk.bin"),
@@ -58,7 +58,7 @@ impl DepositCircuit {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DepositProveInputBytes {
     id: Vec<u8>,
     nullifier_old: Vec<u8>,

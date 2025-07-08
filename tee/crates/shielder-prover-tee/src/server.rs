@@ -3,8 +3,12 @@ use log::{debug, info};
 use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
 use shielder_prover_common::protocol::{ProverServer, Request, Response};
 use shielder_prover_common::vsock::VsockError;
-use ecies_encryption_lib::{generate_keypair};
-use ecies_encryption_lib::utils::to_hex;
+use ecies_encryption_lib::{generate_keypair, PrivKey, PubKey};
+use ecies_encryption_lib::utils::{from_hex, to_hex};
+use serde::{Deserialize};
+use serde_json::Deserializer;
+use crate::circuits;
+use crate::circuits::CircuitType;
 
 pub struct Server {
     private_key: Vec<u8>,
@@ -50,12 +54,84 @@ impl Server {
 
         loop {
             server
-                .handle_request(async |request| match request {
-                    Request::Ping => Response::Pong,
-                    Request::TeePublicKey => Response::TeePublicKey(self.public_key()),
+                .handle_request(|request| match request {
+                    Request::Ping => Ok(Response::Pong),
+                    Request::TeePublicKey => Ok(Response::TeePublicKey(self.public_key())),
+                    Request::GenerateProof {payload, user_public_key} => {
+                            let (proof, pub_inputs) = self.encrypted_proof_response(payload, user_public_key)?;
+                            Ok(Response::EncryptedProof{
+                                proof,
+                                pub_inputs,
+                            })
+                        }
                 })
                 .await?;
         }
+    }
+
+    fn encrypted_proof_response(&self, request_payload: Vec<u8>, user_public_key: String) -> Result<(Vec<u8>, Vec<u8>), VsockError>  {
+        let decrypted_payload = self.decrypt_request_payload(&request_payload)?;
+
+        let circuit_type = Self::extract_circuit_type(&decrypted_payload)?;
+        let (proof, pub_inputs) = Self::compute_proof(&decrypted_payload[1..], circuit_type)?;
+        let encrypted_proof = Self::encrypt_proof(&user_public_key, proof)?;
+        // TODO: does pub_inputs needs to be encrypted?
+
+        Ok((encrypted_proof, pub_inputs))
+    }
+
+    fn encrypt_proof(user_public_key: &String, proof: Vec<u8>) -> Result<Vec<u8>, VsockError> {
+        let user_public_key = from_hex(&user_public_key)
+            .map_err(|conversion_error| VsockError::Protocol(conversion_error.to_string()))?;
+        let pub_key = PubKey::from_bytes(&user_public_key)
+            .map_err(|error| VsockError::Protocol(error.to_string()))?;
+        let encrypted_proof = ecies_encryption_lib::encrypt(proof.as_slice(), &pub_key);
+        Ok(encrypted_proof)
+    }
+
+    fn compute_proof(input_bytes: &[u8], circuit_type: CircuitType) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
+        let mut de = Deserializer::from_reader(input_bytes);
+        let (proof, pub_inputs) = match circuit_type {
+            CircuitType::NewAccount => {
+                let circuit_pub_inputs_bytes = circuits::new_account::NewAccountProveInputsBytes::deserialize(&mut de)
+                    .map_err(|error| VsockError::Protocol(error.to_string()))?;
+                let deposit_pub_inputs = circuits::new_account::new_account_pub_inputs(circuit_pub_inputs_bytes.clone());
+                // prove() might panic, which won't be caught here, however default behaviour of this server is to ignore panic
+                // see https://docs.rs/tokio/latest/tokio/runtime/enum.UnhandledPanic.html#variant.Ignore
+                (circuits::new_account::NewAccountCircuit::new().prove(circuit_pub_inputs_bytes), serde_json::to_vec(&deposit_pub_inputs)?)
+            },
+            CircuitType::Deposit => {
+                let circuit_pub_inputs_bytes = circuits::deposit::DepositProveInputBytes::deserialize(&mut de)
+                    .map_err(|error| VsockError::Protocol(error.to_string()))?;
+                let pub_inputs_bytes = circuits::deposit::deposit_pub_inputs(circuit_pub_inputs_bytes.clone());
+                (circuits::deposit::DepositCircuit::new().prove(circuit_pub_inputs_bytes), serde_json::to_vec(&pub_inputs_bytes)?)
+            },
+            CircuitType::Withdraw => {
+                let circuit_pub_inputs_bytes = circuits::withdraw::WithdrawProveInputsBytes::deserialize(&mut de)
+                    .map_err(|error| VsockError::Protocol(error.to_string()))?;
+                let pub_inputs_bytes = circuits::withdraw::withdraw_pub_inputs(circuit_pub_inputs_bytes.clone());
+                (circuits::withdraw::WithdrawCircuit::new().prove(circuit_pub_inputs_bytes), serde_json::to_vec(&pub_inputs_bytes)?)
+            },
+        };
+        Ok((proof, pub_inputs))
+    }
+
+    fn extract_circuit_type(decrypted_payload: &Vec<u8>) -> Result<CircuitType, VsockError> {
+        if decrypted_payload.is_empty() {
+            return Err(VsockError::Protocol(String::from("Decrypted payload is empty.")));
+        }
+        let payload_first_byte = decrypted_payload[0];
+        let circuit_type = CircuitType::try_from(payload_first_byte)
+            .map_err(|error| VsockError::Protocol(error.to_string()))?;
+        Ok(circuit_type)
+    }
+
+    fn decrypt_request_payload(&self, request_payload: &Vec<u8>) -> Result<Vec<u8>, VsockError> {
+        let private_key = PrivKey::from_bytes(self.private_key.as_slice())
+            .map_err(|error| VsockError::Protocol(error.to_string()))?;
+        let decrypted_payload = ecies_encryption_lib::decrypt(&request_payload, &private_key)
+            .map_err(|error| VsockError::Protocol(error.to_string()))?;
+        Ok(decrypted_payload)
     }
 }
 

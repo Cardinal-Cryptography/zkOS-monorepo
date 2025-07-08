@@ -1,5 +1,5 @@
 use std::vec::Vec;
-
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     field_element_to_le_bits,
     new_account::{NewAccountInstance, NewAccountProverKnowledge},
@@ -8,7 +8,7 @@ use shielder_circuits::{
 use type_conversions::field_to_bytes;
 use crate::circuits::vec_to_f;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct NewAccountPubInputsBytes {
     pub hashed_note: Vec<u8>,
     pub prenullifier: Vec<u8>,
@@ -73,8 +73,7 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
 pub struct NewAccountCircuit(super::NewAccountCircuit);
 
 impl NewAccountCircuit {
-    pub fn new_pronto() -> Self {
-        // this needs to be generated bu custom build.rs
+    pub fn new() -> Self {
         NewAccountCircuit(super::NewAccountCircuit::new_pronto(
             include_bytes!("../../artifacts/new_account/params.bin"),
             include_bytes!("../../artifacts/new_account/pk.bin"),
@@ -82,7 +81,7 @@ impl NewAccountCircuit {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct NewAccountProveInputsBytes {
     id: Vec<u8>,
     nullifier: Vec<u8>,
