@@ -84,10 +84,12 @@ pub mod version {
 pub mod protocol_fee {
     use alloy_primitives::{U256, U512};
 
+    pub const MAX_BPS: u16 = 10000;
+
     /// Compute protocol fee from an amount that already includes the protocol fee
     pub fn compute_protocol_fee_from_gross(amount: U256, protocol_fee_bps: U256) -> U256 {
-        let r = (U512::from(amount) * U512::from(protocol_fee_bps) + (U512::from(10000 - 1)))
-            / U512::from(10000);
+        let r = (U512::from(amount) * U512::from(protocol_fee_bps) + (U512::from(MAX_BPS - 1)))
+            / U512::from(MAX_BPS);
         if r > U512::from(U256::MAX) {
             panic!("Protocol fee amount overflow");
         }
@@ -96,7 +98,7 @@ pub mod protocol_fee {
 
     /// Compute protocol fee from an amount that excludes the protocol fee
     pub fn compute_protocol_fee_from_net(amount: U256, protocol_fee_bps: U256) -> U256 {
-        let denom = U512::from(10000) - U512::from(protocol_fee_bps);
+        let denom = U512::from(MAX_BPS) - U512::from(protocol_fee_bps);
         let r = (U512::from(amount) * U512::from(protocol_fee_bps) + denom - U512::from(1)) / denom;
         if r > U512::from(U256::MAX) {
             panic!("Protocol fee amount overflow");
