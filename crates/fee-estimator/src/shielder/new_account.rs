@@ -22,7 +22,6 @@ pub async fn estimate_new_account_gas(
     contract_address: Address,
     token: Token,
     amount: U256,
-    protocol_fee_bps: U256,
 ) -> Result<u64> {
     let amount = U256::from(amount);
     let signer = PrivateKeySigner::from_bytes(&private_key.into())
@@ -35,6 +34,7 @@ pub async fn estimate_new_account_gas(
     );
 
     let anonymity_revoker_public_key = user.anonymity_revoker_pubkey::<DryRun>().await?;
+    let protocol_fee_bps = user.protocol_deposit_fee_bps::<DryRun>().await?;
 
     let protocol_fee = compute_protocol_fee_from_gross(amount, protocol_fee_bps);
 

@@ -37,7 +37,6 @@ pub async fn get_fee_values(config: ServiceConfig) -> Result<FeeResponse> {
             config.contract_address,
             Token::Native,
             U256::from(1),
-            config.protocol_deposit_fee_bps,
         ),
         estimate_new_account_gas(
             config.account_pk,
@@ -46,7 +45,6 @@ pub async fn get_fee_values(config: ServiceConfig) -> Result<FeeResponse> {
             config.contract_address,
             Token::ERC20(config.erc20_token_address),
             U256::from(1),
-            config.protocol_deposit_fee_bps,
         ),
         estimate_deposit_gas(
             config.account_pk,
@@ -55,7 +53,6 @@ pub async fn get_fee_values(config: ServiceConfig) -> Result<FeeResponse> {
             config.contract_address,
             Token::Native,
             U256::from(1),
-            config.protocol_deposit_fee_bps,
         ),
         estimate_deposit_gas(
             config.account_pk,
@@ -64,7 +61,6 @@ pub async fn get_fee_values(config: ServiceConfig) -> Result<FeeResponse> {
             config.contract_address,
             Token::ERC20(config.erc20_token_address),
             U256::from(1),
-            config.protocol_deposit_fee_bps,
         ),
         provider.get_gas_price()
     );

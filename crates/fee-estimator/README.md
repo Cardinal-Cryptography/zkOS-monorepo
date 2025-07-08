@@ -26,8 +26,6 @@ The fee estimator can now be run using Docker and Docker Compose, replacing the 
    - `CONTRACT_ADDRESS` - Shielder contract address (40-character hex string starting with 0x)
    - `ERC20_TOKEN_ADDRESS` - ERC20 token address (40-character hex string starting with 0x)
    - `ACCOUNT_PK` - Account private key, must have at least 2 gwei of native token and 4 smallest points of erc20-token at the first start.
-   - `PROTOCOL_DEPOSIT_FEE_BPS` - Protocol deposit fee (0 - 10000)
-   - `PROTOCOL_WITHDRAW_FEE_BPS` - Protocol withdraw fee (0 - 10000)
 
 3. Optional environment variables:
    - `FEE_REFRESH_INTERVAL_MILLIS` - Fee refresh interval in milliseconds (default: 60000)

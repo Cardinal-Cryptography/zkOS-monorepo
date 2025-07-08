@@ -8,7 +8,7 @@ use shielder_account::{
 };
 use shielder_circuits::poseidon::off_circuit::hash;
 use shielder_contract::{
-    call_type::{Call, EstimateGas},
+    call_type::{Call, DryRun, EstimateGas},
     merkle_path::get_current_merkle_path,
     providers::create_simple_provider,
     recovery::get_shielder_action,
@@ -32,7 +32,6 @@ pub async fn estimate_deposit_gas(
     contract_address: Address,
     token: Token,
     amount: U256,
-    protocol_fee_bps: U256,
 ) -> Result<u64> {
     let amount = U256::from(amount);
     let signer = PrivateKeySigner::from_bytes(&private_key.into())
@@ -47,6 +46,7 @@ pub async fn estimate_deposit_gas(
         },
     );
 
+    let protocol_fee_bps = user.protocol_deposit_fee_bps::<DryRun>().await?;
     let protocol_fee = compute_protocol_fee_from_gross(U256::from(amount), protocol_fee_bps);
 
     ensure_account_created(
