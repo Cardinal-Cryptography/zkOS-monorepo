@@ -8,11 +8,11 @@ use rand::RngCore;
 use shielder_circuits::{
     circuits::{Params, ProvingKey, VerifyingKey},
     deposit::DepositProverKnowledge,
-    generate_keys_with_min_k, generate_proof, generate_setup_params,
+    generate_proof,
     marshall::{unmarshall_params, unmarshall_pk},
     new_account::NewAccountProverKnowledge,
     withdraw::WithdrawProverKnowledge,
-    Fr, ProverKnowledge, PublicInputProvider, MAX_K,
+    Fr, ProverKnowledge,
 };
 use shielder_circuits::consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT};
 use type_conversions::bytes_to_field;
