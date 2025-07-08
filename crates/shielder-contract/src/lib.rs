@@ -1,6 +1,6 @@
 use alloy_contract::Error;
 pub use alloy_primitives;
-use alloy_primitives::{keccak256, Address, TxHash, U256};
+use alloy_primitives::{keccak256, Address, Bytes, TxHash, U256};
 use alloy_signer_local::LocalSignerError;
 use alloy_sol_types::SolValue;
 use alloy_transport::TransportError;
@@ -17,6 +17,7 @@ mod connection;
 pub mod erc20;
 pub mod events;
 pub mod merkle_path;
+pub mod protocol_fee;
 pub mod providers;
 pub mod recovery;
 mod types;
@@ -79,6 +80,8 @@ pub struct WithdrawCommitment {
     pub relayer_fee: U256,
     pub chain_id: U256,
     pub pocket_money: U256,
+    pub protocol_fee: U256,
+    pub memo: Bytes,
 }
 
 impl WithdrawCommitment {
@@ -92,6 +95,8 @@ impl WithdrawCommitment {
                 self.relayer_fee,
                 self.chain_id,
                 self.pocket_money,
+                self.protocol_fee,
+                self.memo.clone(),
             )
                 .abi_encode_packed(),
         )
@@ -102,11 +107,45 @@ impl WithdrawCommitment {
     }
 }
 
+pub struct NewAccountCommitment {
+    pub caller_address: Address,
+    pub protocol_fee: U256,
+}
+
+impl NewAccountCommitment {
+    pub fn commitment_hash(&self) -> U256 {
+        // Same order as in contract
+        let hash: U256 = keccak256(
+            (address_to_u256(self.caller_address), self.protocol_fee).abi_encode_packed(),
+        )
+        .into();
+        // shifting right by 4 bits, same as in the contract
+        hash >> 4
+    }
+}
+
+pub struct DepositCommitment {
+    pub caller_address: Address,
+    pub protocol_fee: U256,
+}
+
+impl DepositCommitment {
+    pub fn commitment_hash(&self) -> U256 {
+        // Same order as in contract
+        let hash: U256 = keccak256(
+            (address_to_u256(self.caller_address), self.protocol_fee).abi_encode_packed(),
+        )
+        .into();
+        // shifting right by 4 bits, same as in the contract
+        hash >> 4
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
 
-    use alloy_primitives::{Address, U256};
+    use alloy_primitives::{Address, Bytes, U256};
     use halo2curves::ff::PrimeField;
     use rand::{thread_rng, Rng};
     use shielder_setup::version::ContractVersion;
@@ -126,6 +165,8 @@ mod tests {
             relayer_fee: rng.gen(),
             chain_id: rng.gen(),
             pocket_money: rng.gen(),
+            protocol_fee: rng.gen(),
+            memo: Bytes::from(vec![]),
         }
     }
 

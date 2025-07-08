@@ -27,6 +27,8 @@ sol! {
             uint256 newNoteIndex,
             uint256 macSalt,
             uint256 macCommitment,
+            uint256 protocolFee,
+            bytes memo
         );
         event Deposit(
             bytes3 contractVersion,
@@ -36,6 +38,8 @@ sol! {
             uint256 newNoteIndex,
             uint256 macSalt,
             uint256 macCommitment,
+            uint256 protocolFee,
+            bytes memo
         );
         event Withdraw(
             bytes3 contractVersion,
@@ -49,6 +53,8 @@ sol! {
             uint256 macSalt,
             uint256 macCommitment,
             uint256 pocketMoney,
+            uint256 protocolFee,
+            bytes memo
         );
 
         error DepositVerificationFailed();
@@ -71,13 +77,19 @@ sol! {
             address initialOwner,
             uint256 _anonymityRevokerPublicKeyX,
             uint256 _anonymityRevokerPublicKeyY,
-            bool _isArbitrumChain
+            bool _isArbitrumChain,
+            uint256 _protocolDepositFeeBps,
+            uint256 _protocolWithdrawFeeBps,
+            address _protocolFeeReceiver,
         ) public;
 
         function nullifiers(uint256 nullifierHash) public view returns (uint256);
 
         function pause() external;
         function unpause() external;
+
+        function setProtocolDepositFeeBps(uint256) external;
+        function setProtocolWithdrawFeeBps(uint256) external;
 
         function newAccountNative(
             bytes3 expectedContractVersion,
@@ -89,7 +101,8 @@ sol! {
             uint256 symKeyEncryptionC2Y,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external payable whenNotPaused;
         function newAccountERC20(
             bytes3 expectedContractVersion,
@@ -103,7 +116,8 @@ sol! {
             uint256 symKeyEncryptionC2Y,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external whenNotPaused;
         function depositNative(
             bytes3 expectedContractVersion,
@@ -112,7 +126,8 @@ sol! {
             uint256 merkleRoot,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external payable whenNotPaused;
         function depositERC20(
             bytes3 expectedContractVersion,
@@ -123,7 +138,8 @@ sol! {
             uint256 merkleRoot,
             uint256 macSalt,
             uint256 macCommitment,
-            bytes calldata proof
+            bytes calldata proof,
+            bytes calldata memo
         ) external whenNotPaused;
         function withdrawNative(
             bytes3 expectedContractVersion,
@@ -137,6 +153,7 @@ sol! {
             uint256 relayerFee,
             uint256 macSalt,
             uint256 macCommitment,
+            bytes calldata memo
         ) external whenNotPaused;
         function withdrawERC20(
             bytes3 expectedContractVersion,
@@ -151,6 +168,7 @@ sol! {
             uint256 relayerFee,
             uint256 macSalt,
             uint256 macCommitment,
+            bytes calldata memo
         ) external whenNotPaused;
 
         function getMerklePath(
@@ -162,6 +180,9 @@ sol! {
             uint256 anonymityRevokerPubkeyX,
             uint256 anonymityRevokerPubkeyY
         ) external;
+
+        function protocolDepositFeeBps() public view returns (uint256);
+        function protocolWithdrawFeeBps() public view returns (uint256);
     }
 }
 
@@ -236,6 +257,9 @@ macro_rules! impl_unit_call {
 impl_unit_call!(pauseCall);
 impl_unit_call!(unpauseCall);
 
+impl_unit_call!(setProtocolDepositFeeBpsCall);
+impl_unit_call!(setProtocolWithdrawFeeBpsCall);
+
 impl_unit_call!(newAccountNativeCall);
 impl_unit_call!(depositNativeCall);
 impl_unit_call!(withdrawNativeCall);
@@ -264,5 +288,19 @@ impl ShielderContractCall for anonymityRevokerPubkeyCall {
             x: pubkey._0,
             y: pubkey._1,
         }
+    }
+}
+
+impl ShielderContractCall for protocolDepositFeeBpsCall {
+    type UnwrappedResult = U256;
+    fn unwrap_result(fee: protocolDepositFeeBpsReturn) -> Self::UnwrappedResult {
+        fee._0
+    }
+}
+
+impl ShielderContractCall for protocolWithdrawFeeBpsCall {
+    type UnwrappedResult = U256;
+    fn unwrap_result(fee: protocolWithdrawFeeBpsReturn) -> Self::UnwrappedResult {
+        fee._0
     }
 }

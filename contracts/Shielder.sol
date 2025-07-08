@@ -36,7 +36,7 @@ contract Shielder is
     ///  - `v1` is the version of the note schema,
     ///  - `v1.v2` is the version of the circuits used,
     ///  - `v1.v2.v3` is the version of the contract itself.
-    bytes3 public constant CONTRACT_VERSION = 0x010101;
+    bytes3 public constant CONTRACT_VERSION = 0x000101;
 
     /// This amount of gas should be sufficient for ether transfers
     /// and simple fallback function execution, yet still protecting against reentrancy attack.
@@ -214,19 +214,16 @@ contract Shielder is
         bytes calldata proof,
         bytes calldata memo
     ) external payable whenNotPaused {
+        uint256 amount = msg.value;
         // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
 
-        uint256 amount = msg.value;
-        uint256 protocolFee = _computeProtocolDepositFee(amount);
-        uint256 netAmount = amount - protocolFee;
-
-        uint256 newNoteIndex = _newAccount(
+        (uint256 newNoteIndex, uint256 protocolFee) = _newAccount(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
-            netAmount,
+            amount,
             newNote,
             prenullifier,
             symKeyEncryptionC1X,
@@ -235,8 +232,7 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         // pay out the protocol fee
@@ -284,13 +280,10 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        uint256 protocolFee = _computeProtocolDepositFee(amount);
-        uint256 netAmount = amount - protocolFee;
-
-        uint256 newNoteIndex = _newAccount(
+        (uint256 newNoteIndex, uint256 protocolFee) = _newAccount(
             expectedContractVersion,
             tokenAddress,
-            netAmount,
+            amount,
             newNote,
             prenullifier,
             symKeyEncryptionC1X,
@@ -299,12 +292,11 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
-        _transferERC20(token, msg.sender, address(this), netAmount);
-        _transferERC20(token, msg.sender, protocolFeeReceiver(), protocolFee);
+        _transferERC20(token, msg.sender, address(this), amount);
+        _transferERC20(token, protocolFeeReceiver(), protocolFee);
 
         emit NewAccount(
             CONTRACT_VERSION,
@@ -332,8 +324,7 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof,
-        bytes calldata memo
+        bytes calldata proof
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -345,18 +336,21 @@ contract Shielder is
         fieldElement(symKeyEncryptionC2Y)
         fieldElement(macSalt)
         fieldElement(macCommitment)
-        returns (uint256)
+        returns (uint256 newNoteIndex, uint256 protocolFee)
     {
         if (nullifiers(prenullifier) != 0) revert DuplicatedNullifier();
+
+        protocolFee = _computeProtocolDepositFee(amount);
+
         // @dev must follow the same order as in the circuit
         uint256[] memory publicInputs = new uint256[](13);
         publicInputs[0] = newNote;
         publicInputs[1] = prenullifier;
-        publicInputs[2] = amount;
+        publicInputs[2] = amount - protocolFee;
 
         bytes memory commitment = abi.encodePacked(
             addressToUInt256(msg.sender),
-            memo
+            protocolFee
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[3] = uint256(keccak256(commitment)) >> 4;
@@ -379,10 +373,8 @@ contract Shielder is
 
         if (!success) revert NewAccountVerificationFailed();
 
-        uint256 newNoteIndex = _addNote(newNote);
+        newNoteIndex = _addNote(newNote);
         _registerNullifier(prenullifier);
-
-        return newNoteIndex;
     }
 
     /*
@@ -398,25 +390,22 @@ contract Shielder is
         bytes calldata proof,
         bytes calldata memo
     ) external payable whenNotPaused {
+        uint256 amount = msg.value;
+        // `address(this).balance` already includes `msg.value`.
         if (address(this).balance > MAX_CONTRACT_BALANCE) {
             revert ContractBalanceLimitReached();
         }
 
-        uint256 amount = msg.value;
-        uint256 protocolFee = _computeProtocolDepositFee(amount);
-        uint256 netAmount = amount - protocolFee;
-
-        uint256 newNoteIndex = _deposit(
+        (uint256 newNoteIndex, uint256 protocolFee) = _deposit(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
-            netAmount,
+            amount,
             oldNullifierHash,
             newNote,
             merkleRoot,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         // pay out the protocol fee
@@ -458,24 +447,20 @@ contract Shielder is
             revert ContractBalanceLimitReached();
         }
 
-        uint256 protocolFee = _computeProtocolDepositFee(amount);
-        uint256 netAmount = amount - protocolFee;
-
-        uint256 newNoteIndex = _deposit(
+        (uint256 newNoteIndex, uint256 protocolFee) = _deposit(
             expectedContractVersion,
             tokenAddress,
-            netAmount,
+            amount,
             oldNullifierHash,
             newNote,
             merkleRoot,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         _transferERC20(token, msg.sender, address(this), amount);
-        _transferERC20(token, msg.sender, protocolFeeReceiver(), protocolFee);
+        _transferERC20(token, protocolFeeReceiver(), protocolFee);
 
         emit Deposit(
             CONTRACT_VERSION,
@@ -499,8 +484,7 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof,
-        bytes calldata memo
+        bytes calldata proof
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -508,22 +492,24 @@ contract Shielder is
         fieldElement(newNote)
         fieldElement(macSalt)
         fieldElement(macCommitment)
-        returns (uint256)
+        returns (uint256 newNoteIndex, uint256 protocolFee)
     {
         if (amount == 0) revert ZeroAmount();
         if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
         if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
+
+        protocolFee = _computeProtocolDepositFee(amount);
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](8);
         publicInputs[0] = merkleRoot;
         publicInputs[1] = oldNullifierHash;
         publicInputs[2] = newNote;
-        publicInputs[3] = amount;
+        publicInputs[3] = amount - protocolFee;
 
         bytes memory commitment = abi.encodePacked(
             addressToUInt256(msg.sender),
-            memo
+            protocolFee
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[4] = uint256(keccak256(commitment)) >> 4;
@@ -536,10 +522,8 @@ contract Shielder is
 
         if (!success) revert DepositVerificationFailed();
 
-        uint256 newNoteIndex = _addNote(newNote);
+        newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
-
-        return newNoteIndex;
     }
 
     /*
@@ -559,12 +543,7 @@ contract Shielder is
         uint256 macCommitment,
         bytes calldata memo
     ) external whenNotPaused {
-        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
-        uint256 netAmount = amount - protocolFee;
-        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
-        netAmount = netAmount - relayerFee;
-
-        uint256 newNoteIndex = _withdraw(
+        (uint256 newNoteIndex, uint256 protocolFee) = _withdraw(
             expectedContractVersion,
             NATIVE_TOKEN_NOTE_ADDRESS,
             amount,
@@ -581,12 +560,9 @@ contract Shielder is
             memo
         );
 
-        // return the tokens
-        _transferNative(withdrawalAddress, netAmount);
-        // pay out the relayer fee
-        _transferNative(relayerAddress, relayerFee);
-        // pay out the protocol fee
+        _transferNative(withdrawalAddress, amount - protocolFee - relayerFee);
         _transferNative(protocolFeeReceiver(), protocolFee);
+        _transferNative(relayerAddress, relayerFee);
 
         emit Withdraw(
             CONTRACT_VERSION,
@@ -621,12 +597,8 @@ contract Shielder is
         bytes calldata memo
     ) external payable whenNotPaused {
         uint256 pocketMoney = msg.value;
-        uint256 protocolFee = _computeProtocolWithdrawFee(amount);
-        uint256 netAmount = amount - protocolFee;
-        if (netAmount <= relayerFee) revert FeeHigherThanAmount();
-        netAmount = netAmount - relayerFee;
 
-        uint256 newNoteIndex = _withdraw(
+        (uint256 newNoteIndex, uint256 protocolFee) = _withdraw(
             expectedContractVersion,
             tokenAddress,
             amount,
@@ -644,9 +616,13 @@ contract Shielder is
         );
 
         IERC20 token = IERC20(tokenAddress);
-        _transferERC20(token, withdrawalAddress, netAmount);
-        _transferERC20(token, relayerAddress, relayerFee);
+        _transferERC20(
+            token,
+            withdrawalAddress,
+            amount - protocolFee - relayerFee
+        );
         _transferERC20(token, protocolFeeReceiver(), protocolFee);
+        _transferERC20(token, relayerAddress, relayerFee);
 
         // forward pocket money
         _transferNative(withdrawalAddress, pocketMoney);
@@ -688,13 +664,16 @@ contract Shielder is
         restrictContractVersion(expectedContractVersion)
         fieldElement(oldNullifierHash)
         fieldElement(newNote)
-        returns (uint256)
+        returns (uint256 newNoteIndex, uint256 protocolFee)
     {
-        if (amount == 0) revert ZeroAmount();
-        if (amount > MAX_TRANSACTION_AMOUNT) revert AmountTooHigh();
+        require(amount != 0, ZeroAmount());
+        require(amount <= MAX_TRANSACTION_AMOUNT, AmountTooHigh());
 
-        if (!_merkleRootExists(merkleRoot)) revert MerkleRootDoesNotExist();
-        if (nullifiers(oldNullifierHash) != 0) revert DuplicatedNullifier();
+        protocolFee = _computeProtocolWithdrawFee(amount);
+
+        require(amount - protocolFee > relayerFee, FeeHigherThanAmount());
+        require(_merkleRootExists(merkleRoot), MerkleRootDoesNotExist());
+        require(nullifiers(oldNullifierHash) == 0, DuplicatedNullifier());
 
         // @dev needs to match the order in the circuit
         uint256[] memory publicInputs = new uint256[](8);
@@ -713,6 +692,7 @@ contract Shielder is
             relayerFee,
             chainId,
             pocketMoney,
+            protocolFee,
             memo
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
@@ -724,10 +704,8 @@ contract Shielder is
 
         if (!success) revert WithdrawVerificationFailed();
 
-        uint256 newNoteIndex = _addNote(newNote);
+        newNoteIndex = _addNote(newNote);
         _registerNullifier(oldNullifierHash);
-
-        return newNoteIndex;
     }
 
     function _transferNative(address to, uint256 amount) private {
