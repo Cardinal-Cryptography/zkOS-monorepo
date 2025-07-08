@@ -36,7 +36,7 @@ contract Shielder is
     ///  - `v1` is the version of the note schema,
     ///  - `v1.v2` is the version of the circuits used,
     ///  - `v1.v2.v3` is the version of the contract itself.
-    bytes3 public constant CONTRACT_VERSION = 0x010101;
+    bytes3 public constant CONTRACT_VERSION = 0x000101;
 
     /// This amount of gas should be sufficient for ether transfers
     /// and simple fallback function execution, yet still protecting against reentrancy attack.

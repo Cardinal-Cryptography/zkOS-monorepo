@@ -74,7 +74,7 @@ pub mod version {
     /// The contract version. Currently set to 1.1.1
     pub const fn contract_version() -> ContractVersion {
         ContractVersion {
-            note_version: 1,
+            note_version: 0,
             circuit_version: 1,
             patch_version: 1,
         }
