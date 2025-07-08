@@ -110,19 +110,13 @@ impl WithdrawCommitment {
 pub struct NewAccountCommitment {
     pub caller_address: Address,
     pub protocol_fee: U256,
-    pub memo: Bytes,
 }
 
 impl NewAccountCommitment {
     pub fn commitment_hash(&self) -> U256 {
         // Same order as in contract
         let hash: U256 = keccak256(
-            (
-                address_to_u256(self.caller_address),
-                self.protocol_fee,
-                self.memo.clone(),
-            )
-                .abi_encode_packed(),
+            (address_to_u256(self.caller_address), self.protocol_fee).abi_encode_packed(),
         )
         .into();
         // shifting right by 4 bits, same as in the contract
@@ -133,19 +127,13 @@ impl NewAccountCommitment {
 pub struct DepositCommitment {
     pub caller_address: Address,
     pub protocol_fee: U256,
-    pub memo: Bytes,
 }
 
 impl DepositCommitment {
     pub fn commitment_hash(&self) -> U256 {
         // Same order as in contract
         let hash: U256 = keccak256(
-            (
-                address_to_u256(self.caller_address),
-                self.protocol_fee,
-                self.memo.clone(),
-            )
-                .abi_encode_packed(),
+            (address_to_u256(self.caller_address), self.protocol_fee).abi_encode_packed(),
         )
         .into();
         // shifting right by 4 bits, same as in the contract

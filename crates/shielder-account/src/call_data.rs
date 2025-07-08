@@ -144,7 +144,6 @@ impl CallType for NewAccountCallType {
         let commitment = NewAccountCommitment {
             caller_address: extra.caller_address,
             protocol_fee: extra.protocol_fee,
-            memo: extra.memo.clone(),
         }
         .commitment_hash();
 
@@ -277,7 +276,6 @@ impl CallType for DepositCallType {
         let commitment = DepositCommitment {
             caller_address: extra.caller_address,
             protocol_fee: extra.protocol_fee,
-            memo: extra.memo.clone(),
         }
         .commitment_hash();
 

@@ -232,8 +232,7 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         // pay out the protocol fee
@@ -293,8 +292,7 @@ contract Shielder is
             symKeyEncryptionC2Y,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         _transferERC20(token, msg.sender, address(this), amount);
@@ -326,8 +324,7 @@ contract Shielder is
         uint256 symKeyEncryptionC2Y,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof,
-        bytes calldata memo
+        bytes calldata proof
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -353,8 +350,7 @@ contract Shielder is
 
         bytes memory commitment = abi.encodePacked(
             addressToUInt256(msg.sender),
-            protocolFee,
-            memo
+            protocolFee
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[3] = uint256(keccak256(commitment)) >> 4;
@@ -409,8 +405,7 @@ contract Shielder is
             merkleRoot,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         // pay out the protocol fee
@@ -461,8 +456,7 @@ contract Shielder is
             merkleRoot,
             macSalt,
             macCommitment,
-            proof,
-            memo
+            proof
         );
 
         _transferERC20(token, msg.sender, address(this), amount);
@@ -490,8 +484,7 @@ contract Shielder is
         uint256 merkleRoot,
         uint256 macSalt,
         uint256 macCommitment,
-        bytes calldata proof,
-        bytes calldata memo
+        bytes calldata proof
     )
         private
         restrictContractVersion(expectedContractVersion)
@@ -516,8 +509,7 @@ contract Shielder is
 
         bytes memory commitment = abi.encodePacked(
             addressToUInt256(msg.sender),
-            protocolFee,
-            memo
+            protocolFee
         );
         // @dev shifting right by 4 bits so the commitment is smaller from r
         publicInputs[4] = uint256(keccak256(commitment)) >> 4;
