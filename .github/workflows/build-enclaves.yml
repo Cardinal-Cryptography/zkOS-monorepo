@@ -3,9 +3,6 @@
 name: "Build enclaves"
 on:
   pull_request:
-  push:
-    branches:
-      - "main"
 jobs:
   build-and-check:
     runs-on: ubuntu-22.04
@@ -13,7 +10,20 @@ jobs:
       run:
         working-directory: "tee/nix"
     steps:
-      - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v31
-      - run: nix build
-      - run: nix flake check
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Call action get-ref-properties
+        id: get-ref-properties
+        uses: Cardinal-Cryptography/github-actions/get-ref-properties@v7
+
+      - name: Install nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Check nix inputs
+        run: nix flake check
+
+      - name: Build enclave for shielder-prover-tee
+        # yamllint disable rule:line-length
+        run: |
+          nix build --override-input zkOS-monorepo 'github:Cardinal-Cryptography/zkOS-monorepo/${{ steps.get-ref-properties.outputs.full-sha }}'
