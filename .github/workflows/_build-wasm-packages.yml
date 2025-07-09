@@ -22,13 +22,20 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build shielder_bindings
-        run: cd crates/shielder_bindings && make wasm
+        run: cd crates/shielder_bindings && make wasm && make wasm-without-circuits
 
       - name: Upload generated wasm to artifacts
         uses: actions/upload-artifact@v4
         with:
           name: wasm-pkg
           path: crates/shielder_bindings/pkg
+          retention-days: 1
+
+      - name: Upload generated wasm without circuits to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-pkg-without-circuits
+          path: crates/shielder_bindings/pkg-without-circuits
           retention-days: 1
 
       - name: Upload generated proving keys to artifacts
