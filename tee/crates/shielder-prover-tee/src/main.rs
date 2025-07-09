@@ -1,41 +1,26 @@
 mod circuits;
-
+mod server;
 use log::info;
-use shielder_prover_common::protocol::{Request, Response, ProverServer, VSOCK_PORT};
-use tokio::spawn;
-use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
+use shielder_prover_common::protocol::{VSOCK_PORT};
+use shielder_prover_common::vsock::VsockError;
 
 #[tokio::main]
-async fn main() {
-    env_logger::init();
+async fn main() -> Result<(), VsockError> {
+    tracing_subscriber::fmt::init();
 
-    if let Err(e) = run_server().await {
-        eprintln!("VSOCK Server error: {}", e);
-    }
-}
-
-async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
-    let listener = VsockListener::bind(VsockAddr::new(VMADDR_CID_ANY, VSOCK_PORT))?;
+    let server = server::Server::new(VSOCK_PORT)?;
+    info!("Server listening on: {:?}", server.local_addr()?);
 
     loop {
-        let (stream, _) = listener.accept().await?;
-        spawn(handle_client(stream));
+        let (stream, _) = server.listener().accept().await?;
+
+        let server_clone = server.clone();
+        tokio::spawn(async move {
+            server_clone.handle_client(stream).await;
+        });
     }
 }
 
-async fn handle_client(stream: VsockStream) {
-    let result = do_handle_client(stream).await;
-    info!("Client disconnected: {:?}", result);
-}
 
-async fn do_handle_client(stream: VsockStream) -> Result<(), Box<dyn std::error::Error>> {
-    let mut server: ProverServer = stream.into();
 
-    loop {
-        server
-            .handle_request(async |request| match request {
-                Request::Ping => Response::Pong,
-            })
-            .await?;
-    }
-}
+

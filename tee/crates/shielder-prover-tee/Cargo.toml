@@ -9,7 +9,6 @@ categories = ["cryptography"]
 repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [dependencies]
-env_logger = { workspace = true }
 log = { workspace = true }
 shielder-prover-common = { workspace = true }
 tokio = { workspace = true, features = [
@@ -22,6 +21,10 @@ tokio-vsock = { workspace = true }
 shielder-circuits = { workspace = true }
 rand = { workspace = true }
 type-conversions = { workspace = true }
+ecies-encryption-lib  = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true}
+serde_json = { workspace = true}
 
 [build-dependencies]
 powers-of-tau = { workspace = true }

@@ -45,5 +45,6 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           file: ./crates/fee-estimator/Dockerfile
           push: true
+          # yamllint disable rule:line-length
           tags: |
              ${{ secrets.ECR_PRIVATE_HOST }}/fee-estimator:${{ steps.get-ref-properties.outputs.sha }}

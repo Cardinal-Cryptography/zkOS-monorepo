@@ -72,6 +72,10 @@ jobs:
       - name: Run integration tests
         run: make deps && cargo test --release -p integration-tests
 
+      - name: Check tee crates
+        run: |
+          cd tee && cargo check --workspace
+
   # Run heavy tests for shielder-relayer and e2e tooling tests.
   full-testing:
     name: Run heavy tests
