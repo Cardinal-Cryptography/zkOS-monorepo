@@ -35,6 +35,12 @@ jobs:
           name: wasm-pkg
           path: crates/shielder_bindings/pkg
 
+      - name: Download generated wasm from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-pkg-without-circuits
+          path: crates/shielder_bindings/pkg-without-circuits
+
       - name: Download generated proving keys from artifacts
         uses: actions/download-artifact@v4
         with:
@@ -120,6 +126,12 @@ jobs:
         with:
           name: wasm-pkg
           path: crates/shielder_bindings/pkg
+
+      - name: Download generated wasm from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-pkg-without-circuits
+          path: crates/shielder_bindings/pkg-without-circuits
 
       - name: Download generated proving keys from artifacts
         uses: actions/download-artifact@v4
