@@ -5,6 +5,7 @@ use std::vec::Vec;
 use core::marker::PhantomData;
 
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
     deposit::DepositProverKnowledge,
@@ -130,4 +131,13 @@ impl TryFrom<u8> for CircuitType {
             _ => Err("Invalid u8 value for CircuitType"),
         }
     }
+}
+
+pub trait SerializableCircuit {
+    type Input: Serialize + for<'de> Deserialize<'de> + Clone;
+    type Output: Serialize + for<'de> Deserialize<'de>;
+
+    fn prove(&self, input: Self::Input) -> Vec<u8>;
+
+    fn pub_inputs(input: Self::Input) -> Self::Output;
 }

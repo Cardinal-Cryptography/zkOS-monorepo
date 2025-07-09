@@ -4,6 +4,7 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 use shielder_prover_common::protocol::{ProverClient, Request, Response, VSOCK_PORT};
 use shielder_prover_common::vsock::VsockError;
+use shielder_prover_common::base64_serialization;
 use crate::AppState;
 
 pub mod health;
@@ -28,7 +29,7 @@ async fn request(state: Arc<AppState>, request: Request) -> Result<Json<Response
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GenerateProofPayload {
     /// encrypted circuit inputs. The first byte after decryption signifies circuit type, see ['CircuitType`]
-    #[serde(with = "base64_bytes")]
+    #[serde(with = "base64_serialization")]
     payload: Vec<u8>,
 
     /// User's public key which should be used to encrypt generated proof, expressed as a hexstring
@@ -43,25 +44,4 @@ pub enum CircuitType {
     NewAccount = 1,
     Deposit = 2,
     Withdraw = 4,
-}
-
-mod base64_bytes {
-    use serde::{Serializer, Deserializer, Deserialize};
-    use base64::{engine::general_purpose, Engine as _};
-
-    pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let s = general_purpose::STANDARD.encode(bytes);
-        serializer.serialize_str(&s)
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        general_purpose::STANDARD.decode(s.as_bytes()).map_err(serde::de::Error::custom)
-    }
 }

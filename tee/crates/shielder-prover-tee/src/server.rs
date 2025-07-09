@@ -7,8 +7,10 @@ use ecies_encryption_lib::{generate_keypair, PrivKey, PubKey};
 use ecies_encryption_lib::utils::{from_hex, to_hex};
 use serde::{Deserialize};
 use serde_json::Deserializer;
-use crate::circuits;
-use crate::circuits::CircuitType;
+use crate::circuits::{CircuitType, SerializableCircuit};
+use crate::circuits::deposit::SerializableDepositCircuit;
+use crate::circuits::new_account::SerializableNewAccountCircuit;
+use crate::circuits::withdraw::SerializableWithdrawCircuit;
 
 pub struct Server {
     private_key: Vec<u8>,
@@ -56,7 +58,7 @@ impl Server {
             server
                 .handle_request(|request| match request {
                     Request::Ping => Ok(Response::Pong),
-                    Request::TeePublicKey => Ok(Response::TeePublicKey(self.public_key())),
+                    Request::TeePublicKey => Ok(Response::TeePublicKey{ public_key : to_hex(&self.public_key())}),
                     Request::GenerateProof {payload, user_public_key} => {
                             let (proof, pub_inputs) = self.encrypted_proof_response(payload, user_public_key)?;
                             Ok(Response::EncryptedProof{
@@ -90,30 +92,28 @@ impl Server {
     }
 
     fn compute_proof(input_bytes: &[u8], circuit_type: CircuitType) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
-        let mut de = Deserializer::from_reader(input_bytes);
         let (proof, pub_inputs) = match circuit_type {
-            CircuitType::NewAccount => {
-                let circuit_pub_inputs_bytes = circuits::new_account::NewAccountProveInputsBytes::deserialize(&mut de)
-                    .map_err(|error| VsockError::Protocol(error.to_string()))?;
-                let deposit_pub_inputs = circuits::new_account::new_account_pub_inputs(circuit_pub_inputs_bytes.clone());
-                // prove() might panic, which won't be caught here, however default behaviour of this server is to ignore panic
-                // see https://docs.rs/tokio/latest/tokio/runtime/enum.UnhandledPanic.html#variant.Ignore
-                (circuits::new_account::NewAccountCircuit::new().prove(circuit_pub_inputs_bytes), serde_json::to_vec(&deposit_pub_inputs)?)
-            },
-            CircuitType::Deposit => {
-                let circuit_pub_inputs_bytes = circuits::deposit::DepositProveInputBytes::deserialize(&mut de)
-                    .map_err(|error| VsockError::Protocol(error.to_string()))?;
-                let pub_inputs_bytes = circuits::deposit::deposit_pub_inputs(circuit_pub_inputs_bytes.clone());
-                (circuits::deposit::DepositCircuit::new().prove(circuit_pub_inputs_bytes), serde_json::to_vec(&pub_inputs_bytes)?)
-            },
-            CircuitType::Withdraw => {
-                let circuit_pub_inputs_bytes = circuits::withdraw::WithdrawProveInputsBytes::deserialize(&mut de)
-                    .map_err(|error| VsockError::Protocol(error.to_string()))?;
-                let pub_inputs_bytes = circuits::withdraw::withdraw_pub_inputs(circuit_pub_inputs_bytes.clone());
-                (circuits::withdraw::WithdrawCircuit::new().prove(circuit_pub_inputs_bytes), serde_json::to_vec(&pub_inputs_bytes)?)
-            },
+            CircuitType::NewAccount =>
+                Self::compute_proof_for_circuit(input_bytes, SerializableNewAccountCircuit::new())?,
+            CircuitType::Deposit =>
+                Self::compute_proof_for_circuit(input_bytes, SerializableDepositCircuit::new())?,
+            CircuitType::Withdraw =>
+                Self::compute_proof_for_circuit(input_bytes, SerializableWithdrawCircuit::new())?,
         };
         Ok((proof, pub_inputs))
+    }
+
+    fn compute_proof_for_circuit<C>(input_bytes: &[u8], circuit: C) -> Result<(Vec<u8>, Vec<u8>), VsockError>
+    where
+        C: SerializableCircuit,
+    {
+        let mut de = Deserializer::from_reader(input_bytes);
+        let circuit_pub_inputs_bytes = C::Input::deserialize(&mut de)
+            .map_err(|error| VsockError::Protocol(error.to_string()))?;
+        let pub_inputs_bytes = C::pub_inputs(circuit_pub_inputs_bytes.clone());
+        // prove() might panic, which won't be caught here, however default behaviour of this server is to ignore panic
+        // see https://docs.rs/tokio/latest/tokio/runtime/enum.UnhandledPanic.html#variant.Ignore
+        Ok((circuit.prove(circuit_pub_inputs_bytes), serde_json::to_vec(&pub_inputs_bytes)?))
     }
 
     fn extract_circuit_type(decrypted_payload: &Vec<u8>) -> Result<CircuitType, VsockError> {

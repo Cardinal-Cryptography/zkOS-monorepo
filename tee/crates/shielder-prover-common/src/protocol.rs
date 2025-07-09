@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::base64_serialization;
 
 use crate::vsock::{VsockClient, VsockServer};
 
@@ -27,12 +28,17 @@ pub enum Response {
     Pong,
 
     /// TEE Server public key, used to encrypt payload sent in [`Request::GenerateProof`]
-    TeePublicKey(Vec<u8>),
+    TeePublicKey{
+        public_key: String,
+    },
 
     /// A ZK-proof computed on the [`Request::GenerateProof`] request. It is encrypted using
     /// a public key sent in the request. Also returns circuit pub_inputs, required for client
     EncryptedProof {
+        #[serde(with = "base64_serialization")]
         proof: Vec<u8>,
+
+        #[serde(with = "base64_serialization")]
         pub_inputs: Vec<u8>,
     }
 }

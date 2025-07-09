@@ -6,7 +6,7 @@ use shielder_circuits::{
     Fr, GrumpkinPointAffine, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
-use crate::circuits::vec_to_f;
+use crate::circuits::{vec_to_f, SerializableCircuit};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct NewAccountPubInputsBytes {
@@ -94,8 +94,11 @@ pub struct NewAccountProveInputsBytes {
     anonymity_revoker_public_key_y: Vec<u8>,
 }
 
-impl NewAccountCircuit {
-    pub fn prove(
+impl SerializableCircuit for NewAccountCircuit {
+    type Input = NewAccountProveInputsBytes;
+    type Output = NewAccountPubInputsBytes;
+
+    fn prove(
         &self,
         new_account_bytes: NewAccountProveInputsBytes,
     ) -> Vec<u8> {
@@ -116,24 +119,28 @@ impl NewAccountCircuit {
             &mut rand::thread_rng(),
         )
     }
+
+    fn pub_inputs(
+        new_account_prove_inputs_bytes: NewAccountProveInputsBytes,
+    ) -> NewAccountPubInputsBytes {
+        let knowledge = NewAccountProverKnowledge {
+            id: vec_to_f(new_account_prove_inputs_bytes.id),
+            nullifier: vec_to_f(new_account_prove_inputs_bytes.nullifier),
+            initial_deposit: vec_to_f(new_account_prove_inputs_bytes.initial_deposit),
+            caller_address: vec_to_f(new_account_prove_inputs_bytes.caller_address),
+            token_address: vec_to_f(new_account_prove_inputs_bytes.token_address),
+            encryption_salt: field_element_to_le_bits(vec_to_f(new_account_prove_inputs_bytes.encryption_salt)),
+            mac_salt: vec_to_f(new_account_prove_inputs_bytes.mac_salt),
+            anonymity_revoker_public_key: GrumpkinPointAffine {
+                x: vec_to_f(new_account_prove_inputs_bytes.anonymity_revoker_public_key_x),
+                y: vec_to_f(new_account_prove_inputs_bytes.anonymity_revoker_public_key_y),
+            },
+        };
+
+        knowledge.into()
+    }
 }
 
-pub fn new_account_pub_inputs(
-    new_account_prove_inputs_bytes: NewAccountProveInputsBytes,
-) -> NewAccountPubInputsBytes {
-    let knowledge = NewAccountProverKnowledge {
-        id: vec_to_f(new_account_prove_inputs_bytes.id),
-        nullifier: vec_to_f(new_account_prove_inputs_bytes.nullifier),
-        initial_deposit: vec_to_f(new_account_prove_inputs_bytes.initial_deposit),
-        caller_address: vec_to_f(new_account_prove_inputs_bytes.caller_address),
-        token_address: vec_to_f(new_account_prove_inputs_bytes.token_address),
-        encryption_salt: field_element_to_le_bits(vec_to_f(new_account_prove_inputs_bytes.encryption_salt)),
-        mac_salt: vec_to_f(new_account_prove_inputs_bytes.mac_salt),
-        anonymity_revoker_public_key: GrumpkinPointAffine {
-            x: vec_to_f(new_account_prove_inputs_bytes.anonymity_revoker_public_key_x),
-            y: vec_to_f(new_account_prove_inputs_bytes.anonymity_revoker_public_key_y),
-        },
-    };
+pub type SerializableNewAccountCircuit = NewAccountCircuit;
 
-    knowledge.into()
-}
+
