@@ -58,7 +58,7 @@ export const initWasmWorker = async (
 
   try {
     await wrappedWorker.init(prover_service_url, wasm_url);
-    return wrappedWorker;
+    return wrappedWorker as unknown as CryptoClient;
   } catch (error) {
     console.error("Failed to initialize WASM worker:", error);
     worker.terminate();

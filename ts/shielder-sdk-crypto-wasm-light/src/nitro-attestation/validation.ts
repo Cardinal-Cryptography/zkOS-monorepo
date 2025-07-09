@@ -116,7 +116,7 @@ function validateFieldValues(doc: AttestationDocument): void {
     throw new Error("Invalid timestamp: must be positive number");
   }
 
-  if (!SUPPORTED_DIGEST_ALGORITHMS.includes(doc.digest as any)) {
+  if (!SUPPORTED_DIGEST_ALGORITHMS.includes(doc.digest)) {
     throw new Error(
       `Unsupported digest algorithm: ${doc.digest} (supported: ${SUPPORTED_DIGEST_ALGORITHMS.join(", ")})`
     );

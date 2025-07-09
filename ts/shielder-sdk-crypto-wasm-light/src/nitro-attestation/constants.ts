@@ -45,7 +45,7 @@ export const CBOR_SIGNATURE_FIX_VALUE = 64;
 /**
  * Supported digest algorithms for PCR calculations
  */
-export const SUPPORTED_DIGEST_ALGORITHMS = ["SHA384"] as const;
+export const SUPPORTED_DIGEST_ALGORITHMS = ["SHA384"];
 
 /**
  * Maximum number of PCRs that can be present in an attestation document

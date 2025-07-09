@@ -14,7 +14,7 @@
  * Based on: https://github.com/aws/aws-nitro-enclaves-nsm-api/blob/main/docs/attestation_process.md
  */
 
-import { AttestationResult } from "./types";
+import { AttestationDocument, AttestationResult } from "./types";
 import { base64ToBytes, bytesToBase64 } from "./utils";
 import {
   decodeCOSESignature,
@@ -98,7 +98,7 @@ export function extractPCRs(
  * @param doc - The validated attestation document
  * @returns Structured attestation result
  */
-function buildAttestationResult(doc: any): AttestationResult {
+function buildAttestationResult(doc: AttestationDocument): AttestationResult {
   return {
     pcrs: doc.pcrs,
     timestamp: doc.timestamp,
