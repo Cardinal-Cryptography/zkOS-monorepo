@@ -2,14 +2,14 @@
 
 The `tee/` subfolder contains Rust crates required to build Shielder Prover Server, a TEE-based REST server which
 computes ZK-proofs:
-* The user wants to generate a proof for relation `R` with witness `w` and statement `s`
-* The user generates a symmetric encryption key `sk` (think AES) to get a response back from the server
-* The user queries the server for their asymmetric encryption keys and encrypts `ciphertext=(R, w, s, sk)` 
+1. The user wants to generate a proof for relation `R` with witness `w` and statement `s`
+2. The user generates an asymmetric encryption key (`pub_sk`, `sk`) to get a response back from the server
+3. The user queries the server for their asymmetric encryption keys (different pair than point 2.) and encrypts `ciphertext=(R, w, s, pub_sk)` 
 and sends `e = Enc(ciphertext)` to the server
-* The server decrypts and unpacks the ciphertext. Then it generates the proof `π` and output `Enc_sk(π)`
-* The user receives encrypted `π` and decrypts it.
+4. The server decrypts and unpacks the ciphertext. Then it generates the proof `π` and `pub_inputs`, and outputs `pub_sk(π)`, `pub_sk(pub_inputs)`
+5. The user receives encrypted (`π`, `pub_inputs`) and decrypts it.
 
-* The proof `π` can be then used in further part of the Shielder workflow, ie submitting the proof to the Shielder contract.
+The proof `π` and `pub_inputs` can be then used in further part of the Shielder workflow, ie submitting the proof to the Shielder contract.
 
 ### Packages
 

@@ -76,19 +76,19 @@ impl Server {
 
         let circuit_type = Self::extract_circuit_type(&decrypted_payload)?;
         let (proof, pub_inputs) = Self::compute_proof(&decrypted_payload[1..], circuit_type)?;
-        let encrypted_proof = Self::encrypt_proof(&user_public_key, proof)?;
-        // TODO: does pub_inputs needs to be encrypted?
+        let encrypted_proof = Self::encrypt_bytes(&user_public_key, proof)?;
+        let encrypted_pub_inputs = Self::encrypt_bytes(&user_public_key, pub_inputs)?;
 
-        Ok((encrypted_proof, pub_inputs))
+        Ok((encrypted_proof, encrypted_pub_inputs))
     }
 
-    fn encrypt_proof(user_public_key: &String, proof: Vec<u8>) -> Result<Vec<u8>, VsockError> {
+    fn encrypt_bytes(user_public_key: &String, bytes: Vec<u8>) -> Result<Vec<u8>, VsockError> {
         let user_public_key = from_hex(&user_public_key)
             .map_err(|conversion_error| VsockError::Protocol(conversion_error.to_string()))?;
         let pub_key = PubKey::from_bytes(&user_public_key)
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
-        let encrypted_proof = ecies_encryption_lib::encrypt(proof.as_slice(), &pub_key);
-        Ok(encrypted_proof)
+        let encrypted_bytes = ecies_encryption_lib::encrypt(bytes.as_slice(), &pub_key);
+        Ok(encrypted_bytes)
     }
 
     fn compute_proof(input_bytes: &[u8], circuit_type: CircuitType) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
