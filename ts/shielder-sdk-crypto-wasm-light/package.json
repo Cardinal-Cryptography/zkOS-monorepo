@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*",
+    "asn1js": "^3.0.6",
     "cbor": "^10.0.9",
     "cbor-web": "^10.0.9",
     "comlink": "^4.4.2",
