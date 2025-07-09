@@ -12,7 +12,7 @@ async fn main() -> Result<(), VsockError> {
     info!("Server listening on: {:?}", server.local_addr()?);
 
     loop {
-        let (stream, _) = server.listener().accept().await?; // This borrows server_instance.listener
+        let (stream, _) = server.listener().accept().await?;
 
         let server_clone = server.clone();
         tokio::spawn(async move {

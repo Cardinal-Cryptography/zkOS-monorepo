@@ -5,8 +5,9 @@ use std::vec::Vec;
 use core::marker::PhantomData;
 
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
-    circuits::{Params, ProvingKey, VerifyingKey},
+    circuits::{Params, ProvingKey},
     deposit::DepositProverKnowledge,
     generate_proof,
     marshall::{unmarshall_params, unmarshall_pk},
@@ -29,8 +30,6 @@ pub trait WasmCircuit {
 pub struct Circuit<PK: ProverKnowledge> {
     params: Params,
     pk: ProvingKey,
-    vk: VerifyingKey,
-    k: u32,
     _phantom: PhantomData<PK>,
 }
 
@@ -57,33 +56,13 @@ impl<PK: ProverKnowledge> Circuit<PK>
 where
     Circuit<PK>: WasmCircuit,
 {
-    pub fn k(&self) -> u32 {
-        self.k
-    }
-
-    pub fn vk(&self) -> VerifyingKey {
-        self.vk.clone()
-    }
-
-    pub fn pk(&self) -> ProvingKey {
-        self.pk.clone()
-    }
-
-    pub fn params(&self) -> Params {
-        self.params.clone()
-    }
-
     /// Create a new DepositCircuit with hardcoded keys, which is faster than generating new keys.
     pub fn new_pronto(params_buf: &[u8], pk_buf: &[u8]) -> Self {
-        let (params, pk, k) = Self::decode_from_bytes(params_buf, pk_buf);
-
-        let vk = pk.get_vk().clone();
+        let (params, pk, _) = Self::decode_from_bytes(params_buf, pk_buf);
 
         Circuit {
             params,
             pk,
-            vk,
-            k,
             _phantom: PhantomData,
         }
     }
@@ -131,4 +110,34 @@ pub fn vec_to_path(v: Vec<u8>) -> [[Fr; ARITY]; NOTE_TREE_HEIGHT] {
     }
 
     result
+}
+
+#[derive(Debug)]
+#[repr(u8)]
+pub enum CircuitType {
+    NewAccount = 1,
+    Deposit = 2,
+    Withdraw = 4,
+}
+
+impl TryFrom<u8> for CircuitType {
+    type Error = &'static str;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(CircuitType::NewAccount),
+            2 => Ok(CircuitType::Deposit),
+            4 => Ok(CircuitType::Withdraw),
+            _ => Err("Invalid u8 value for CircuitType"),
+        }
+    }
+}
+
+pub trait SerializableCircuit {
+    type Input: Serialize + for<'de> Deserialize<'de> + Clone;
+    type Output: Serialize + for<'de> Deserialize<'de>;
+
+    fn prove(&self, input: Self::Input) -> Vec<u8>;
+
+    fn pub_inputs(input: Self::Input) -> Self::Output;
 }

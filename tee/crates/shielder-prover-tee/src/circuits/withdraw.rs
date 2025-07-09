@@ -1,13 +1,13 @@
 use std::vec::Vec;
-
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     withdraw::{WithdrawInstance, WithdrawProverKnowledge},
     Fr, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
-use crate::circuits::{vec_to_f, vec_to_path};
+use crate::circuits::{vec_to_f, vec_to_path, SerializableCircuit};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WithdrawPubInputsBytes {
     pub merkle_root: Vec<u8>,
     pub h_nullifier_old: Vec<u8>,
@@ -52,7 +52,7 @@ impl From<WithdrawProverKnowledge<Fr>> for WithdrawPubInputsBytes {
 pub struct WithdrawCircuit(super::WithdrawCircuit);
 
 impl WithdrawCircuit {
-    pub fn new_pronto() -> Self {
+    pub fn new() -> Self {
         WithdrawCircuit(super::WithdrawCircuit::new_pronto(
             include_bytes!("../../artifacts/withdraw/params.bin"),
             include_bytes!("../../artifacts/withdraw/pk.bin"),
@@ -60,7 +60,7 @@ impl WithdrawCircuit {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WithdrawProveInputsBytes {
     id: Vec<u8>,
     nullifier_old: Vec<u8>,
@@ -73,8 +73,11 @@ pub struct WithdrawProveInputsBytes {
     mac_salt: Vec<u8>,
 }
 
-impl WithdrawCircuit {
-    pub fn prove(
+impl SerializableCircuit for WithdrawCircuit {
+    type Input = WithdrawProveInputsBytes;
+    type Output = WithdrawPubInputsBytes;
+
+    fn prove(
         &self,
        withdraw_prove_inputs_bytes: WithdrawProveInputsBytes,
     ) -> Vec<u8> {
@@ -93,22 +96,24 @@ impl WithdrawCircuit {
             &mut rand::thread_rng(),
         )
     }
+
+    fn pub_inputs(
+        withdraw_prove_inputs_bytes: WithdrawProveInputsBytes,
+    ) -> WithdrawPubInputsBytes {
+        let knowledge = WithdrawProverKnowledge {
+            id: vec_to_f(withdraw_prove_inputs_bytes.id),
+            nullifier_old: vec_to_f(withdraw_prove_inputs_bytes.nullifier_old),
+            account_old_balance: vec_to_f(withdraw_prove_inputs_bytes.account_balance_old),
+            token_address: vec_to_f(withdraw_prove_inputs_bytes.token_address),
+            path: vec_to_path(withdraw_prove_inputs_bytes.path),
+            withdrawal_value: vec_to_f(withdraw_prove_inputs_bytes.value),
+            nullifier_new: vec_to_f(withdraw_prove_inputs_bytes.nullifier_new),
+            commitment: vec_to_f(withdraw_prove_inputs_bytes.commitment),
+            mac_salt: vec_to_f(withdraw_prove_inputs_bytes.mac_salt),
+        };
+
+        knowledge.into()
+    }
 }
 
-pub fn withdraw_pub_inputs(
-    withdraw_prove_inputs_bytes: WithdrawProveInputsBytes,
-) -> WithdrawPubInputsBytes {
-    let knowledge = WithdrawProverKnowledge {
-        id: vec_to_f(withdraw_prove_inputs_bytes.id),
-        nullifier_old: vec_to_f(withdraw_prove_inputs_bytes.nullifier_old),
-        account_old_balance: vec_to_f(withdraw_prove_inputs_bytes.account_balance_old),
-        token_address: vec_to_f(withdraw_prove_inputs_bytes.token_address),
-        path: vec_to_path(withdraw_prove_inputs_bytes.path),
-        withdrawal_value: vec_to_f(withdraw_prove_inputs_bytes.value),
-        nullifier_new: vec_to_f(withdraw_prove_inputs_bytes.nullifier_new),
-        commitment: vec_to_f(withdraw_prove_inputs_bytes.commitment),
-        mac_salt: vec_to_f(withdraw_prove_inputs_bytes.mac_salt),
-    };
-
-    knowledge.into()
-}
+pub type SerializableWithdrawCircuit = WithdrawCircuit;

@@ -1,4 +1,4 @@
-use std::{future::Future, marker::PhantomData};
+use std::{marker::PhantomData};
 
 use futures::{SinkExt as _, StreamExt as _};
 use serde::{Deserialize, Serialize};
@@ -10,8 +10,13 @@ use tokio_vsock::{OwnedReadHalf, OwnedWriteHalf, VsockAddr, VsockStream};
 pub enum VsockError {
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
+
     #[error("Serde error: {0}")]
     Serde(#[from] serde_json::Error),
+
+    #[error("Protocol error: {0}")]
+    Protocol(String),
+
     #[error("Connection closed")]
     Closed,
 }
@@ -41,12 +46,12 @@ pub struct VsockServer<Req, Resp> {
 }
 
 impl<'de, Req: Deserialize<'de>, Resp: Serialize> VsockServer<Req, Resp> {
-    pub async fn handle_request<Fut: Future<Output = Resp>, F: FnOnce(Req) -> Fut>(
+    pub async fn handle_request<F: FnOnce(Req) -> Result<Resp, VsockError>>(
         &mut self,
         handler: F,
     ) -> Result<(), VsockError> {
         let req = self.vsock.recv().await?;
-        let res = handler(req).await;
+        let res = handler(req)?;
         self.vsock.send(&res).await?;
         Ok(())
     }

@@ -4,6 +4,8 @@ mod handlers;
 use std::{sync::Arc, time::Duration};
 
 use axum::{routing::get, serve, Router};
+use axum::extract::DefaultBodyLimit;
+use axum::routing::post;
 use clap::Parser;
 use log::{info};
 use tokio::net::TcpListener;
@@ -23,6 +25,10 @@ struct Options {
 
     #[clap(long, default_value_t = 100)]
     task_pool_capacity: usize,
+
+    /// Maximum request size (in bytes) sent to server
+    #[clap(long, default_value_t = 100 * 1024)]
+    maximum_request_size: usize,
 
     #[clap(long, default_value_t = 5)]
     task_pool_timeout_secs: u64,
@@ -51,6 +57,8 @@ async fn main() -> Result<(), Error> {
     let app = Router::new()
         .route("/health", get(server_handlers::health::health))
         .route("/public_key", get(server_handlers::tee_public_key::tee_public_key))
+        .route("/proof", post(server_handlers::generate_proof::generate_proof))
+        .layer(DefaultBodyLimit::max(options.maximum_request_size))
         .with_state(AppState { options, task_pool }.into());
 
     info!("Starting local server on {}", listener.local_addr()?);
