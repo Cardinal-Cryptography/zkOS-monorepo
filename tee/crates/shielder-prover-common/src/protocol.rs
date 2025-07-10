@@ -30,6 +30,8 @@ pub enum Response {
     /// TEE Server public key, used to encrypt payload sent in [`Request::GenerateProof`]
     TeePublicKey{
         public_key: String,
+        #[serde(with = "base64_serialization")]
+        attestation_document: Vec<u8>,
     },
 
     /// A ZK-proof computed on the [`Request::GenerateProof`] request. It is encrypted using

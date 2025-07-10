@@ -12,9 +12,17 @@ use crate::circuits::deposit::SerializableDepositCircuit;
 use crate::circuits::new_account::SerializableNewAccountCircuit;
 use crate::circuits::withdraw::SerializableWithdrawCircuit;
 
+#[cfg(not(feature = "without_attestation"))]
+use aws_nitro_enclaves_nsm_api::{api::Request as NsmRequest,
+                                 driver::{nsm_process_request, nsm_init, nsm_exit},
+                                 api::Response as NsmResponse,};
+
 pub struct Server {
     private_key: Vec<u8>,
     public_key: Vec<u8>,
+
+    #[cfg(not(feature = "without_attestation"))]
+    nsm_fd: i32,
 
     listener: VsockListener,
 }
@@ -28,10 +36,19 @@ impl Server {
         let (private_key, public_key) = generate_keypair();
         info!("Server's public key: {}", to_hex(&public_key.to_bytes()));
 
+        #[cfg(not(feature = "without_attestation"))]
+        let nsm_fd = Self::init_nsm_driver()?;
+
+        #[cfg(feature = "without_attestation")]
+        info!("Running server without attestation (TEST BUILD).");
+
         Ok(Arc::new(Self {
             listener,
             private_key: private_key.to_bytes(),
             public_key: public_key.to_bytes(),
+
+            #[cfg(not(feature = "without_attestation"))]
+            nsm_fd,
         }))
     }
 
@@ -58,7 +75,7 @@ impl Server {
             server
                 .handle_request(|request| match request {
                     Request::Ping => Ok(Response::Pong),
-                    Request::TeePublicKey => Ok(Response::TeePublicKey{ public_key : to_hex(&self.public_key())}),
+                    Request::TeePublicKey => self.public_key_response(),
                     Request::GenerateProof {payload, user_public_key} => {
                             let (proof, pub_inputs) = self.encrypted_proof_response(payload, user_public_key)?;
                             Ok(Response::EncryptedProof{
@@ -68,6 +85,34 @@ impl Server {
                         }
                 })
                 .await?;
+        }
+    }
+
+    fn public_key_response(&self) -> Result<Response, VsockError> {
+        let public_key = self.public_key();
+        let public_key_hex = to_hex(&public_key);
+
+        #[cfg(not(feature = "without_attestation"))]
+        let attestation_document = self.request_attestation_from_nsm_driver(public_key)?;
+
+        #[cfg(feature = "without_attestation")]
+        let attestation_document = Vec::new();
+
+        Ok(Response::TeePublicKey {
+            public_key: public_key_hex,
+            attestation_document,
+        })
+    }
+
+    #[cfg(not(feature = "without_attestation"))]
+    fn request_attestation_from_nsm_driver(&self, tee_public_key: Vec<u8>) -> Result<Vec<u8>, VsockError> {
+        match nsm_process_request(self.nsm_fd, NsmRequest::Attestation {
+            user_data: None,
+            public_key: Some(tee_public_key.into()),
+            nonce: None
+        }) {
+            NsmResponse::Attestation { document } => Ok(document),
+            _ => Err(VsockError::Protocol(String::from("NSM driver failed to compute attestation."))),
         }
     }
 
@@ -133,6 +178,24 @@ impl Server {
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
         Ok(decrypted_payload)
     }
+
+    #[cfg(not(feature = "without_attestation"))]
+    fn init_nsm_driver() -> Result<i32, VsockError> {
+        info!("Opening file descriptor to /dev/nsm driver.");
+        let nsm_fd = nsm_init();
+
+        if nsm_fd < 0 {
+            return Err(VsockError::Protocol(String::from("Failed to initialize NSM driver.")));
+        }
+
+        Ok(nsm_fd)
+    }
 }
 
-
+#[cfg(not(feature = "without_attestation"))]
+impl Drop for Server {
+    fn drop(&mut self) {
+        info!("Closing file descriptor to /dev/nsm driver.");
+        nsm_exit(self.nsm_fd);
+    }
+}
