@@ -1,13 +1,13 @@
 use std::vec::Vec;
-
+use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     deposit::{DepositInstance, DepositProverKnowledge},
     Fr, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
-use crate::circuits::{vec_to_f, vec_to_path};
+use crate::circuits::{vec_to_f, vec_to_path, SerializableCircuit};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DepositPubInputsBytes {
     pub merkle_root: Vec<u8>,
     pub h_nullifier_old: Vec<u8>,
@@ -50,7 +50,7 @@ impl From<DepositProverKnowledge<Fr>> for DepositPubInputsBytes {
 pub struct DepositCircuit(super::DepositCircuit);
 
 impl DepositCircuit {
-    pub fn new_pronto() -> Self {
+    pub fn new() -> Self {
         DepositCircuit(super::DepositCircuit::new_pronto(
             include_bytes!("../../artifacts/deposit/params.bin"),
             include_bytes!("../../artifacts/deposit/pk.bin"),
@@ -58,7 +58,7 @@ impl DepositCircuit {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct DepositProveInputBytes {
     id: Vec<u8>,
     nullifier_old: Vec<u8>,
@@ -71,8 +71,11 @@ pub struct DepositProveInputBytes {
     mac_salt: Vec<u8>,
 }
 
-impl DepositCircuit {
-    pub fn prove(
+impl SerializableCircuit for DepositCircuit {
+    type Input = DepositProveInputBytes;
+    type Output = DepositPubInputsBytes;
+
+    fn prove(
         &self,
         deposit_prove_input_bytes: DepositProveInputBytes,
     ) -> Vec<u8> {
@@ -91,22 +94,24 @@ impl DepositCircuit {
             &mut rand::thread_rng(),
         )
     }
+
+    fn pub_inputs(
+        deposit_prove_input_bytes: DepositProveInputBytes,
+    ) -> DepositPubInputsBytes {
+        let knowledge = DepositProverKnowledge {
+            id: vec_to_f(deposit_prove_input_bytes.id),
+            nullifier_old: vec_to_f(deposit_prove_input_bytes.nullifier_old),
+            account_old_balance: vec_to_f(deposit_prove_input_bytes.account_balance_old),
+            token_address: vec_to_f(deposit_prove_input_bytes.token_address),
+            path: vec_to_path(deposit_prove_input_bytes.path),
+            deposit_value: vec_to_f(deposit_prove_input_bytes.value),
+            caller_address: vec_to_f(deposit_prove_input_bytes.caller_address),
+            nullifier_new: vec_to_f(deposit_prove_input_bytes.nullifier_new),
+            mac_salt: vec_to_f(deposit_prove_input_bytes. mac_salt),
+        };
+
+        knowledge.into()
+    }
 }
 
-pub fn deposit_pub_inputs(
-    deposit_prove_input_bytes: DepositProveInputBytes,
-) -> DepositPubInputsBytes {
-    let knowledge = DepositProverKnowledge {
-        id: vec_to_f(deposit_prove_input_bytes.id),
-        nullifier_old: vec_to_f(deposit_prove_input_bytes.nullifier_old),
-        account_old_balance: vec_to_f(deposit_prove_input_bytes.account_balance_old),
-        token_address: vec_to_f(deposit_prove_input_bytes.token_address),
-        path: vec_to_path(deposit_prove_input_bytes.path),
-        deposit_value: vec_to_f(deposit_prove_input_bytes.value),
-        caller_address: vec_to_f(deposit_prove_input_bytes.caller_address),
-        nullifier_new: vec_to_f(deposit_prove_input_bytes.nullifier_new),
-        mac_salt: vec_to_f(deposit_prove_input_bytes. mac_salt),
-    };
-
-    knowledge.into()
-}
+pub type SerializableDepositCircuit = DepositCircuit;

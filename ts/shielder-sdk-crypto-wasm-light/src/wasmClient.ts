@@ -2,10 +2,10 @@ import * as singlethreaded_wasm from "shielder_bindings/web-singlethreaded";
 import { Hasher } from "@/hasher";
 import { SecretGenerator } from "@/secretGenerator";
 import { NoteTreeConfig } from "@/noteTreeConfig";
-import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { Converter } from "@/conversion";
 
-export class WasmClient implements CryptoClient {
+// TODO: implements CryptoClient
+export class WasmClient {
   threads: number | undefined;
   // newAccountCircuit: NewAccountCircuit;
   // depositCircuit: DepositCircuit;
