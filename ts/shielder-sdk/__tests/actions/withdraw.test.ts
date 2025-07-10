@@ -37,6 +37,9 @@ describe("WithdrawAction", () => {
   const mockedPath = [0n, 1n];
   let mockedMerkleRoot: Scalar;
 
+  const mockProtocolFee = 0n;
+  const mockMemo = new Uint8Array();
+
   beforeEach(async () => {
     cryptoClient = new MockedCryptoClient();
     mockedMerkleRoot = await cryptoClient.hasher.poseidonHash([
@@ -138,7 +141,9 @@ describe("WithdrawAction", () => {
         quotedFeesFromExpectedTokenFee(totalFee),
         address,
         expectedVersion,
-        pocketMoney
+        pocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
       // Verify the proof
@@ -168,7 +173,9 @@ describe("WithdrawAction", () => {
           quotedFeesFromExpectedTokenFee(totalFee),
           mockAddress,
           expectedVersion,
-          pocketMoney
+          pocketMoney,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow("Insufficient funds");
     });
@@ -186,7 +193,9 @@ describe("WithdrawAction", () => {
           quotedFeesFromExpectedTokenFee(totalFee),
           mockAddress,
           expectedVersion,
-          pocketMoney
+          pocketMoney,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow("Pocket money is not supported for native withdrawal");
     });
@@ -204,7 +213,9 @@ describe("WithdrawAction", () => {
           quotedFeesFromExpectedTokenFee(totalFee),
           mockAddress,
           expectedVersion,
-          pocketMoney
+          pocketMoney,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow("Amount must be greater than the relayer fee: 2");
     });
@@ -227,7 +238,9 @@ describe("WithdrawAction", () => {
           quotedFeesFromExpectedTokenFee(totalFee),
           mockAddress,
           expectedVersion,
-          pocketMoney
+          pocketMoney,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow("Failed to prove withdrawal:");
     });
@@ -255,7 +268,9 @@ describe("WithdrawAction", () => {
           quotedFeesFromExpectedTokenFee(totalFee),
           mockAddress,
           expectedVersion,
-          pocketMoney
+          pocketMoney,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow("Withdrawal proof verification failed");
     });
@@ -274,7 +289,9 @@ describe("WithdrawAction", () => {
         quotedFeesFromExpectedTokenFee(totalFee),
         mockAddress,
         expectedVersion,
-        pocketMoney
+        pocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
       const txHash = await action.sendCalldataWithRelayer(calldata);
@@ -291,7 +308,8 @@ describe("WithdrawAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.macSalt),
         scalarToBigint(calldata.calldata.pubInputs.macCommitment),
         calldata.pocketMoney,
-        quotedFeesFromExpectedTokenFee(totalFee)
+        quotedFeesFromExpectedTokenFee(totalFee),
+        calldata.memo
       );
 
       expect(txHash).toBe("0xtxHash");
@@ -309,7 +327,9 @@ describe("WithdrawAction", () => {
         quotedFeesFromExpectedTokenFee(totalFee),
         mockAddress,
         expectedVersion,
-        pocketMoney
+        pocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -348,7 +368,9 @@ describe("WithdrawAction", () => {
         quotedFeesFromExpectedTokenFee(totalFee),
         mockAddress,
         expectedVersion,
-        pocketMoney
+        pocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
       relayer.withdraw = vitest

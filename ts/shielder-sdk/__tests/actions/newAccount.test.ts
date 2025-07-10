@@ -28,6 +28,8 @@ describe("NewAccountAction", () => {
   const mockedId = Scalar.fromBigint(123n);
   const mockAddress =
     "0x1234567890123456789012345678901234567890" as `0x${string}`;
+  const mockProtocolFee = 0n;
+  const mockMemo = new Uint8Array();
 
   beforeEach(() => {
     cryptoClient = new MockedCryptoClient();
@@ -99,7 +101,9 @@ describe("NewAccountAction", () => {
         mockedState,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       // Verify the proof
@@ -126,7 +130,9 @@ describe("NewAccountAction", () => {
           mockedState,
           amount,
           expectedVersion,
-          mockAddress
+          mockAddress,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow(
         "Failed to prove new account: Error: mocked prove failure"
@@ -151,7 +157,9 @@ describe("NewAccountAction", () => {
           mockedState,
           amount,
           expectedVersion,
-          mockAddress
+          mockAddress,
+        mockProtocolFee,
+        mockMemo
         )
       ).rejects.toThrow("New account proof verification failed");
     });
@@ -165,7 +173,9 @@ describe("NewAccountAction", () => {
         mockedState,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockSendTransaction = vitest
@@ -190,7 +200,8 @@ describe("NewAccountAction", () => {
         scalarToBigint(calldata.calldata.pubInputs.symKeyEncryption2Y),
         scalarToBigint(calldata.calldata.pubInputs.macSalt),
         scalarToBigint(calldata.calldata.pubInputs.macCommitment),
-        calldata.calldata.proof
+        calldata.calldata.proof,
+        calldata.memo
       );
 
       expect(mockSendTransaction).toHaveBeenCalledWith({
@@ -210,7 +221,9 @@ describe("NewAccountAction", () => {
         mockedState,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -250,7 +263,9 @@ describe("NewAccountAction", () => {
         mockedState,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockSendTransaction = vitest

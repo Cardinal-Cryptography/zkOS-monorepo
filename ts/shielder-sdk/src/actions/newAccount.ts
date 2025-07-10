@@ -13,7 +13,7 @@ import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
 import { AccountState } from "@/state/types";
 import { SendShielderTransaction } from "@/client/types";
-import { Address } from "viem";
+import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 
 export interface NewAccountCalldata {
   calldata: {
@@ -24,6 +24,7 @@ export interface NewAccountCalldata {
   provingTimeMillis: number;
   amount: bigint;
   token: Token;
+  memo: Uint8Array;
 }
 
 export class NewAccountAction extends NoteAction {
@@ -52,10 +53,24 @@ export class NewAccountAction extends NoteAction {
     );
   }
 
+  calculateCommitment(callerAddress: Address, protocolFee: bigint): Scalar {
+    const encodingHash = hexToBigInt(
+      keccak256(
+        encodePacked(["address", "uint256"], [callerAddress, protocolFee])
+      )
+    );
+
+    // Truncating to fit in the field size, as in the contract.
+    const commitment = encodingHash >> 4n;
+
+    return Scalar.fromBigint(commitment);
+  }
+
   async prepareAdvice(
     state: AccountState,
     amount: bigint,
-    callerAddress: Address
+    callerAddress: Address,
+    protocolFee: bigint
   ): Promise<NewAccountAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
     const { nullifier } = await this.cryptoClient.secretManager.getSecrets(
@@ -64,12 +79,14 @@ export class NewAccountAction extends NoteAction {
     );
     const [anonymityRevokerPublicKeyX, anonymityRevokerPublicKeyY] =
       await this.contract.anonymityRevokerPubkey();
+
+    const commitment = this.calculateCommitment(callerAddress, protocolFee);
     return {
       id: state.id,
       nullifier,
       tokenAddress: Scalar.fromAddress(tokenAddress),
       initialDeposit: Scalar.fromBigint(amount),
-      callerAddress: Scalar.fromAddress(callerAddress),
+      commitment,
       encryptionSalt: await this.randomSalt(),
       anonymityRevokerPublicKeyX: Scalar.fromBigint(anonymityRevokerPublicKeyX),
       anonymityRevokerPublicKeyY: Scalar.fromBigint(anonymityRevokerPublicKeyY),
@@ -89,11 +106,18 @@ export class NewAccountAction extends NoteAction {
     state: AccountState,
     amount: bigint,
     expectedContractVersion: `0x${string}`,
-    callerAddress: Address
+    callerAddress: Address,
+    protocolFee: bigint,
+    memo: Uint8Array
   ): Promise<NewAccountCalldata> {
     const time = Date.now();
 
-    const advice = await this.prepareAdvice(state, amount, callerAddress);
+    const advice = await this.prepareAdvice(
+      state,
+      amount,
+      callerAddress,
+      protocolFee
+    );
 
     const proof = await this.cryptoClient.newAccountCircuit
       .prove(advice)
@@ -115,7 +139,8 @@ export class NewAccountAction extends NoteAction {
       },
       provingTimeMillis: provingTime,
       amount,
-      token: state.token
+      token: state.token,
+      memo
     };
   }
 
@@ -135,7 +160,8 @@ export class NewAccountAction extends NoteAction {
     const {
       calldata: { pubInputs, proof },
       expectedContractVersion,
-      amount
+      amount,
+      memo
     } = calldata;
 
     const encodedCalldata =
@@ -152,7 +178,8 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.symKeyEncryption2Y),
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
-            proof
+            proof,
+            memo
           )
         : await this.contract.newAccountTokenCalldata(
             expectedContractVersion,
@@ -167,7 +194,8 @@ export class NewAccountAction extends NoteAction {
             scalarToBigint(pubInputs.symKeyEncryption2Y),
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
-            proof
+            proof,
+            memo
           );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata.calldata,

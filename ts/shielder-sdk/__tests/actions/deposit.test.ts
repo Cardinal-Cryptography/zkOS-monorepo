@@ -25,6 +25,8 @@ describe("DepositAction", () => {
   const prevNullifier = Scalar.fromBigint(2n);
   const mockAddress =
     "0x1234567890123456789012345678901234567890" as `0x${string}`;
+  const mockProtocolFee = 0n;
+  const mockMemo = new Uint8Array();
 
   const mockedPath = [0n, 1n];
   let mockedMerkleRoot: Scalar;
@@ -103,7 +105,9 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo,
       );
 
       // Verify the proof
@@ -127,7 +131,7 @@ describe("DepositAction", () => {
         .fn<(idx: bigint) => Promise<readonly bigint[]>>()
         .mockResolvedValue([0n]);
       await expect(
-        action.generateCalldata(state, amount, expectedVersion, mockAddress)
+        action.generateCalldata(state, amount, expectedVersion, mockAddress, mockProtocolFee, mockMemo)
       ).rejects.toThrow("Wrong path length");
     });
 
@@ -141,7 +145,7 @@ describe("DepositAction", () => {
         .mockRejectedValue("error");
 
       await expect(
-        action.generateCalldata(state, amount, expectedVersion, mockAddress)
+        action.generateCalldata(state, amount, expectedVersion, mockAddress, mockProtocolFee, mockMemo)
       ).rejects.toThrow("Failed to prove deposit:");
     });
 
@@ -160,7 +164,7 @@ describe("DepositAction", () => {
         .mockResolvedValue(false);
 
       await expect(
-        action.generateCalldata(state, amount, expectedVersion, mockAddress)
+        action.generateCalldata(state, amount, expectedVersion, mockAddress, mockProtocolFee, mockMemo)
       ).rejects.toThrow("Deposit proof verification failed");
     });
   });
@@ -173,7 +177,9 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockSendTransaction = vitest
@@ -195,7 +201,8 @@ describe("DepositAction", () => {
         calldata.amount,
         scalarToBigint(calldata.calldata.pubInputs.macSalt),
         scalarToBigint(calldata.calldata.pubInputs.macCommitment),
-        calldata.calldata.proof
+        calldata.calldata.proof,
+        calldata.memo
       );
 
       expect(mockSendTransaction).toHaveBeenCalledWith({
@@ -216,7 +223,9 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -253,7 +262,9 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockedErr = new OutdatedSdkError("123");
@@ -274,7 +285,9 @@ describe("DepositAction", () => {
         state,
         amount,
         expectedVersion,
-        mockAddress
+        mockAddress,
+        mockProtocolFee,
+        mockMemo
       );
 
       const mockSendTransaction = vitest

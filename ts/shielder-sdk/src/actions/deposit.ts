@@ -14,7 +14,7 @@ import { getAddressByToken } from "@/utils";
 import { OutdatedSdkError } from "@/errors";
 import { AccountState, AccountStateMerkleIndexed } from "@/state/types";
 import { SendShielderTransaction } from "@/client/types";
-import { Address } from "viem";
+import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
 
 export interface DepositCalldata extends Calldata {
   calldata: {
@@ -24,6 +24,7 @@ export interface DepositCalldata extends Calldata {
   expectedContractVersion: `0x${string}`;
   amount: bigint;
   token: Token;
+  memo: Uint8Array;
 }
 
 export class DepositAction extends NoteAction {
@@ -52,11 +53,25 @@ export class DepositAction extends NoteAction {
     );
   }
 
+  calculateCommitment(callerAddress: Address, protocolFee: bigint): Scalar {
+    const encodingHash = hexToBigInt(
+      keccak256(
+        encodePacked(["address", "uint256"], [callerAddress, protocolFee])
+      )
+    );
+
+    // Truncating to fit in the field size, as in the contract.
+    const commitment = encodingHash >> 4n;
+
+    return Scalar.fromBigint(commitment);
+  }
+
   async prepareAdvice(
     state: AccountStateMerkleIndexed,
     amount: bigint,
     merklePath: Uint8Array,
-    callerAddress: Address
+    callerAddress: Address,
+    protocolFee: bigint
   ): Promise<DepositAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
 
@@ -70,6 +85,9 @@ export class DepositAction extends NoteAction {
         state.id,
         Number(state.nonce)
       );
+
+    const commitment = this.calculateCommitment(callerAddress, protocolFee);
+
     return {
       id: state.id,
       nullifierOld,
@@ -77,7 +95,7 @@ export class DepositAction extends NoteAction {
       tokenAddress: Scalar.fromAddress(tokenAddress),
       path: merklePath,
       value: Scalar.fromBigint(amount),
-      callerAddress: Scalar.fromAddress(callerAddress),
+      commitment,
       nullifierNew,
       macSalt: await this.randomSalt()
     };
@@ -95,7 +113,9 @@ export class DepositAction extends NoteAction {
     state: AccountStateMerkleIndexed,
     amount: bigint,
     expectedContractVersion: `0x${string}`,
-    callerAddress: Address
+    callerAddress: Address,
+    protocolFee: bigint,
+    memo: Uint8Array
   ): Promise<DepositCalldata> {
     const lastNodeIndex = state.currentNoteIndex;
     const [merklePath] = await this.merklePathAndRoot(
@@ -108,7 +128,8 @@ export class DepositAction extends NoteAction {
       state,
       amount,
       merklePath,
-      callerAddress
+      callerAddress,
+      protocolFee
     );
 
     const proof = await this.cryptoClient.depositCircuit
@@ -130,7 +151,8 @@ export class DepositAction extends NoteAction {
       expectedContractVersion,
       provingTimeMillis: provingTime,
       amount,
-      token: state.token
+      token: state.token,
+      memo
     };
   }
 
@@ -139,43 +161,46 @@ export class DepositAction extends NoteAction {
    * Calls the contract through RPC endpoint to perform the deposit on the blockchain.
    * @param calldata calldata for deposit action
    * @param sendShielderTransaction function to send the transaction to the blockchain
-   * @param from address of the caller
+   * @param callerAddress address of the caller
    * @returns transaction hash of the deposit transaction
    * @throws VersionRejectedByContract
    */
   async sendCalldata(
     calldata: DepositCalldata,
     sendShielderTransaction: SendShielderTransaction,
-    from: `0x${string}`
+    callerAddress: `0x${string}`
   ) {
     const {
       calldata: { pubInputs, proof },
-      amount
+      amount,
+      memo
     } = calldata;
     const encodedCalldata =
       calldata.token.type === "native"
         ? await this.contract.depositNativeCalldata(
             calldata.expectedContractVersion,
-            from,
+            callerAddress,
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
             amount,
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
-            proof
+            proof,
+            memo
           )
         : await this.contract.depositTokenCalldata(
             calldata.expectedContractVersion,
             calldata.token.address,
-            from,
+            callerAddress,
             scalarToBigint(pubInputs.hNullifierOld),
             scalarToBigint(pubInputs.hNoteNew),
             scalarToBigint(pubInputs.merkleRoot),
             amount,
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
-            proof
+            proof,
+            memo
           );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata.calldata,

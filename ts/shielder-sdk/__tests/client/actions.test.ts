@@ -49,6 +49,8 @@ describe("ShielderActions", () => {
   const mockRelayerAddress =
     "0x1234567890123456789012345678901234567890" as Address;
   const mockPocketMoney = 0n;
+  const mockProtocolFee = 0n;
+  const mockMemo = new Uint8Array;
 
   const mockSendTransaction: SendShielderTransaction = vitest
     .fn()
@@ -61,7 +63,7 @@ describe("ShielderActions", () => {
         hNote: Scalar.fromBigint(0n),
         prenullifier: Scalar.fromBigint(0n),
         initialDeposit: Scalar.fromBigint(0n),
-        callerAddress: Scalar.fromBigint(0n),
+        commitment: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
@@ -77,7 +79,8 @@ describe("ShielderActions", () => {
     expectedContractVersion: contractVersion,
     provingTimeMillis: 100,
     amount: mockAmount,
-    token: mockToken
+    token: mockToken,
+    memo: mockMemo
   });
 
   const createMockDepositCalldata = (): DepositCalldata => ({
@@ -87,7 +90,7 @@ describe("ShielderActions", () => {
         hNullifierOld: Scalar.fromBigint(0n),
         hNoteNew: Scalar.fromBigint(0n),
         value: Scalar.fromBigint(0n),
-        callerAddress: Scalar.fromBigint(0n),
+        commitment: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         macSalt: Scalar.fromBigint(0n),
         macCommitment: Scalar.fromBigint(0n)
@@ -97,7 +100,8 @@ describe("ShielderActions", () => {
     expectedContractVersion: contractVersion,
     provingTimeMillis: 100,
     amount: mockAmount,
-    token: mockToken
+    token: mockToken,
+    memo: mockMemo
   });
 
   const createMockWithdrawCalldata = (
@@ -122,7 +126,8 @@ describe("ShielderActions", () => {
     withdrawalAddress: mockAddress,
     quotedFees: quotedFeesFromExpectedTokenFee(totalFee),
     token: mockToken,
-    pocketMoney: mockPocketMoney
+    pocketMoney: mockPocketMoney,
+    memo: mockMemo
   });
 
   // Helper function for testing error scenarios
@@ -324,7 +329,7 @@ describe("ShielderActions", () => {
 
   describe("shield", () => {
     const shieldMethod = () =>
-      actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom);
+      actions.shield(mockToken, mockAmount, mockSendTransaction, mockFrom, mockProtocolFee, mockMemo);
 
     describe("new account creation", () => {
       beforeEach(() => {
@@ -351,7 +356,9 @@ describe("ShielderActions", () => {
           mockAccountState,
           mockAmount,
           contractVersion,
-          mockFrom
+          mockFrom,
+          mockProtocolFee,
+          mockMemo
         );
         expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
           mockCalldata,
@@ -438,7 +445,9 @@ describe("ShielderActions", () => {
           mockAccountState,
           mockAmount,
           contractVersion,
-          mockFrom
+          mockFrom,
+          mockProtocolFee,
+          mockMemo
         );
         expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
           mockCalldata,
@@ -511,7 +520,9 @@ describe("ShielderActions", () => {
         mockAmount,
         quotedFeesFromExpectedTokenFee(mockTotalFee),
         mockAddress,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
     it("should throw error when account not found", async () => {
@@ -545,7 +556,9 @@ describe("ShielderActions", () => {
         quotedFeesFromExpectedTokenFee(mockTotalFee),
         mockAddress,
         contractVersion,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
       expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
         mockCalldata,
@@ -604,7 +617,9 @@ describe("ShielderActions", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
 
     it("should throw error when account not found", async () => {
@@ -636,7 +651,9 @@ describe("ShielderActions", () => {
         quotedFeesFromExpectedTokenFee(0n),
         mockAddress,
         contractVersion,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
       expect(mockCallbacks.onCalldataGenerated).toHaveBeenCalledWith(
         mockCalldata,

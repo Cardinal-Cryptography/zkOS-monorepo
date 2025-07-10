@@ -58,13 +58,29 @@ export class ShielderActions {
     token: Token,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
-    from: `0x${string}`
+    from: `0x${string}`,
+    protocolFee: bigint,
+    memo: Uint8Array
   ) {
     const state = await this.accountRegistry.getAccountState(token);
     const txHash =
       state === null
-        ? await this.newAccount(token, amount, sendShielderTransaction, from)
-        : await this.deposit(state, amount, sendShielderTransaction, from);
+        ? await this.newAccount(
+            token,
+            amount,
+            sendShielderTransaction,
+            from,
+            protocolFee,
+            memo
+          )
+        : await this.deposit(
+            state,
+            amount,
+            sendShielderTransaction,
+            from,
+            protocolFee,
+            memo
+          );
 
     await this.waitAndSync(token, txHash);
 
@@ -88,7 +104,9 @@ export class ShielderActions {
     amount: bigint,
     quotedFees: QuotedFees,
     withdrawalAddress: `0x${string}`,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    protocolFee: bigint,
+    memo: Uint8Array
   ) {
     const state = await this.accountRegistry.getAccountState(token);
     if (!state) {
@@ -104,7 +122,9 @@ export class ShielderActions {
           quotedFees,
           withdrawalAddress,
           contractVersion,
-          pocketMoney
+          pocketMoney,
+          protocolFee,
+          memo
         ),
       (calldata) => this.withdrawAction.sendCalldataWithRelayer(calldata),
       "withdraw"
@@ -134,7 +154,9 @@ export class ShielderActions {
     amount: bigint,
     withdrawalAddress: `0x${string}`,
     sendShielderTransaction: SendShielderTransaction,
-    from: `0x${string}`
+    from: `0x${string}`,
+    protocolFee: bigint,
+    memo: Uint8Array
   ) {
     const state = await this.accountRegistry.getAccountState(token);
     if (!state) {
@@ -149,7 +171,9 @@ export class ShielderActions {
           quotedFeesFromExpectedTokenFee(0n),
           withdrawalAddress,
           contractVersion,
-          0n // pocketMoney is 0, as it is not used in this case
+          0n, // pocketMoney is 0, as it is not used in this case
+          protocolFee,
+          memo
         ),
       (calldata) =>
         this.withdrawAction.sendCalldata(
@@ -169,7 +193,9 @@ export class ShielderActions {
     token: Token,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
-    from: `0x${string}`
+    from: `0x${string}`,
+    protocolFee: bigint,
+    memo: Uint8Array
   ) {
     const state = await this.accountRegistry.createEmptyAccountState(token);
     const txHash = await this.handleCalldata(
@@ -178,7 +204,9 @@ export class ShielderActions {
           state,
           amount,
           contractVersion,
-          from
+          from,
+          protocolFee,
+          memo
         ),
       (calldata) =>
         this.newAccountAction.sendCalldata(
@@ -195,7 +223,9 @@ export class ShielderActions {
     state: AccountStateMerkleIndexed,
     amount: bigint,
     sendShielderTransaction: SendShielderTransaction,
-    from: `0x${string}`
+    from: `0x${string}`,
+    protocolFee: bigint,
+    memo: Uint8Array
   ) {
     const txHash = await this.handleCalldata(
       () =>
@@ -203,7 +233,9 @@ export class ShielderActions {
           state,
           amount,
           contractVersion,
-          from
+          from,
+          protocolFee,
+          memo
         ),
       (calldata) =>
         this.depositAction.sendCalldata(

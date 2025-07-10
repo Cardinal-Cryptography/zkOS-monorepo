@@ -11,38 +11,101 @@ import {
 } from "@tests/types";
 
 const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
+const protocolFee = 0n;
+const memo = new Uint8Array();
 
 [
   {
     id: 1,
     actions: [
-      { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
-      { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
-      { op: shieldOp(nativeToken(), 2n * 10n ** 17n), actor: "bob" },
-      { op: shieldOp(ercToken, 2n * 10n ** 17n), actor: "bob" },
+      {
+        op: shieldOp(nativeToken(), 10n ** 17n, protocolFee, memo),
+        actor: "alice"
+      },
+      { op: shieldOp(ercToken, 10n ** 17n, protocolFee, memo), actor: "alice" },
+      {
+        op: shieldOp(nativeToken(), 2n * 10n ** 17n, protocolFee, memo),
+        actor: "bob"
+      },
+      {
+        op: shieldOp(ercToken, 2n * 10n ** 17n, protocolFee, memo),
+        actor: "bob"
+      },
       { op: clearStorageOp(), actor: "alice" },
       { op: clearStorageOp(), actor: "bob" },
       { op: recoverOp(), actor: "alice" },
       { op: recoverOp(), actor: "bob" },
-      { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
-      { op: shieldOp(ercToken, 10n ** 17n), actor: "alice" },
-      { op: shieldOp(nativeToken(), 2n * 10n ** 17n), actor: "bob" },
-      { op: shieldOp(ercToken, 2n * 10n ** 17n), actor: "bob" },
-      { op: withdrawOp(nativeToken(), 10n ** 17n, "dave", 0n), actor: "alice" },
       {
-        op: withdrawOp(nativeToken(), 2n * 10n ** 17n, "dave", 0n),
+        op: shieldOp(nativeToken(), 10n ** 17n, protocolFee, memo),
+        actor: "alice"
+      },
+      { op: shieldOp(ercToken, 10n ** 17n, protocolFee, memo), actor: "alice" },
+      {
+        op: shieldOp(nativeToken(), 2n * 10n ** 17n, protocolFee, memo),
         actor: "bob"
       },
-      { op: shieldOp(nativeToken(), 3n * 10n ** 17n), actor: "charlie" },
-      { op: shieldOp(ercToken, 3n * 10n ** 17n), actor: "charlie" },
-      { op: shieldOp(nativeToken(), 3n * 10n ** 17n), actor: "charlie" },
-      { op: shieldOp(ercToken, 3n * 10n ** 17n), actor: "charlie" },
       {
-        op: withdrawOp(ercToken, 10n ** 17n, "dave", 10n ** 17n),
+        op: shieldOp(ercToken, 2n * 10n ** 17n, protocolFee, memo),
+        actor: "bob"
+      },
+      {
+        op: withdrawOp(
+          nativeToken(),
+          10n ** 17n,
+          "dave",
+          0n,
+          protocolFee,
+          memo
+        ),
+        actor: "alice"
+      },
+      {
+        op: withdrawOp(
+          nativeToken(),
+          2n * 10n ** 17n,
+          "dave",
+          0n,
+          protocolFee,
+          memo
+        ),
+        actor: "bob"
+      },
+      {
+        op: shieldOp(nativeToken(), 3n * 10n ** 17n, protocolFee, memo),
         actor: "charlie"
       },
       {
-        op: withdrawOp(nativeToken(), 3n * 10n ** 17n, "dave", 0n),
+        op: shieldOp(ercToken, 3n * 10n ** 17n, protocolFee, memo),
+        actor: "charlie"
+      },
+      {
+        op: shieldOp(nativeToken(), 3n * 10n ** 17n, protocolFee, memo),
+        actor: "charlie"
+      },
+      {
+        op: shieldOp(ercToken, 3n * 10n ** 17n, protocolFee, memo),
+        actor: "charlie"
+      },
+      {
+        op: withdrawOp(
+          ercToken,
+          10n ** 17n,
+          "dave",
+          10n ** 17n,
+          protocolFee,
+          memo
+        ),
+        actor: "charlie"
+      },
+      {
+        op: withdrawOp(
+          nativeToken(),
+          3n * 10n ** 17n,
+          "dave",
+          0n,
+          protocolFee,
+          memo
+        ),
         actor: "charlie"
       }
     ]

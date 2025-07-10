@@ -78,7 +78,8 @@ export type IRelayer = {
     macSalt: bigint,
     macCommitment: bigint,
     pocketMoney: bigint,
-    quotedFees: QuotedFees
+    quotedFees: QuotedFees,
+    memo: Uint8Array
   ) => Promise<WithdrawResponse>;
   quoteFees: (token: Token, pocketMoney: bigint) => Promise<QuotedFees>;
 };

@@ -47,6 +47,8 @@ export type NoteEvent = {
   block: bigint;
   tokenAddress: `0x${string}`;
   pocketMoney?: bigint;
+  protocolFee: bigint;
+  memo: `0x${string}`;
 };
 
 export type NewAccountEvent = {
@@ -86,7 +88,8 @@ export type IContract = {
     symKeyEncryption2Y: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => Promise<CalldataWithGas>;
   newAccountTokenCalldata: (
     expectedContractVersion: `0x${string}`,
@@ -101,7 +104,8 @@ export type IContract = {
     symKeyEncryption2Y: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => Promise<CalldataWithGas>;
   depositNativeCalldata: (
     expectedContractVersion: `0x${string}`,
@@ -112,7 +116,8 @@ export type IContract = {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => Promise<CalldataWithGas>;
   depositTokenCalldata: (
     expectedContractVersion: `0x${string}`,
@@ -124,7 +129,8 @@ export type IContract = {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => Promise<CalldataWithGas>;
   withdrawNativeCalldata: (
     expectedContractVersion: `0x${string}`,
@@ -138,7 +144,8 @@ export type IContract = {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => Promise<CalldataWithGas>;
   withdrawTokenCalldata: (
     expectedContractVersion: `0x${string}`,
@@ -154,11 +161,14 @@ export type IContract = {
     macSalt: bigint,
     macCommitment: bigint,
     pocketMoney: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => Promise<CalldataWithGas>;
   nullifierBlock: (nullifierHash: bigint) => Promise<bigint | null>;
   getNoteEventsFromBlock: (block: bigint) => Promise<NoteEvent[]>;
   getNewAccountEventsFromBlock: (block: bigint) => Promise<NewAccountEvent[]>;
+  protocolDepositFeeBps: () => Promise<bigint>;
+  protocolWithdrawFeeBps: () => Promise<bigint>;
 };
 
 export class Contract implements IContract {
@@ -197,7 +207,8 @@ export class Contract implements IContract {
     symKeyEncryption2Y: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
@@ -209,7 +220,8 @@ export class Contract implements IContract {
       symKeyEncryption2Y,
       macSalt,
       macCommitment,
-      bytesToHex(proof)
+      bytesToHex(proof),
+      bytesToHex(memo)
     ] as const;
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
@@ -249,7 +261,8 @@ export class Contract implements IContract {
     symKeyEncryption2Y: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
@@ -263,7 +276,8 @@ export class Contract implements IContract {
       symKeyEncryption2Y,
       macSalt,
       macCommitment,
-      bytesToHex(proof)
+      bytesToHex(proof),
+      bytesToHex(memo)
     ] as const;
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
@@ -297,7 +311,8 @@ export class Contract implements IContract {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
@@ -306,7 +321,8 @@ export class Contract implements IContract {
       merkleRoot,
       macSalt,
       macCommitment,
-      bytesToHex(proof)
+      bytesToHex(proof),
+      bytesToHex(memo)
     ] as const;
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
@@ -343,7 +359,8 @@ export class Contract implements IContract {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
@@ -354,7 +371,8 @@ export class Contract implements IContract {
       merkleRoot,
       macSalt,
       macCommitment,
-      bytesToHex(proof)
+      bytesToHex(proof),
+      bytesToHex(memo)
     ] as const;
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
@@ -391,7 +409,8 @@ export class Contract implements IContract {
     amount: bigint,
     macSalt: bigint,
     macCommitment: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
@@ -404,7 +423,8 @@ export class Contract implements IContract {
       relayerAddress,
       relayerFee,
       macSalt,
-      macCommitment
+      macCommitment,
+      bytesToHex(memo)
     ] as const;
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
@@ -449,7 +469,8 @@ export class Contract implements IContract {
     macSalt: bigint,
     macCommitment: bigint,
     pocketMoney: bigint,
-    proof: Uint8Array
+    proof: Uint8Array,
+    memo: Uint8Array
   ) => {
     const args = [
       expectedContractVersion,
@@ -463,7 +484,8 @@ export class Contract implements IContract {
       relayerAddress,
       relayerFee,
       macSalt,
-      macCommitment
+      macCommitment,
+      bytesToHex(memo)
     ] as const;
     const gas = safe_gas(
       await handleWrongContractVersionError(() =>
@@ -510,7 +532,7 @@ export class Contract implements IContract {
    * @param block
    * @returns event array
    */
-  getNoteEventsFromBlock = async (block: bigint) => {
+  getNoteEventsFromBlock = async (block: bigint): Promise<NoteEvent[]> => {
     const fromBlock = block;
     const toBlock = block;
     const newAccountEvents = await this.contract.getEvents.NewAccount({
@@ -550,8 +572,10 @@ export class Contract implements IContract {
         pocketMoney:
           event.eventName === "Withdraw"
             ? (event.args.pocketMoney as bigint)
-            : undefined
-      };
+            : undefined,
+        protocolFee: event.args.protocolFee!,
+        memo: event.args.memo!
+      } as NoteEvent;
     });
     return mergedIndices;
   };
@@ -571,6 +595,14 @@ export class Contract implements IContract {
         tokenAddress: event.args.tokenAddress!
       };
     });
+  };
+
+  protocolDepositFeeBps = async (): Promise<bigint> => {
+    return await this.contract.read.protocolDepositFeeBps();
+  };
+
+  protocolWithdrawFeeBps = async (): Promise<bigint> => {
+    return await this.contract.read.protocolWithdrawFeeBps();
   };
 }
 

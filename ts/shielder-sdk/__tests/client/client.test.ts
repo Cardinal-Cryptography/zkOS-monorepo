@@ -1,6 +1,6 @@
 import { describe, it, expect, vitest, beforeEach, Mocked } from "vitest";
 
-import { Address, Hash, PublicClient } from "viem";
+import { Address, bytesToHex, Hash, hexToBytes, PublicClient } from "viem";
 import { MockedCryptoClient } from "../helpers";
 import { ShielderClient } from "../../src/client/client";
 import { createShielderClient } from "../../src/client/factories";
@@ -22,6 +22,7 @@ import { AccountRegistry } from "../../src/state/accountRegistry";
 import { StateSynchronizer } from "../../src/state/sync/synchronizer";
 import { HistoryFetcher } from "../../src/state/sync/historyFetcher";
 import { ShielderComponents } from "../../src/client/factories";
+import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 vitest.mock("../../src/chain/contract");
 vitest.mock("../../src/chain/relayer");
@@ -264,14 +265,20 @@ describe("ShielderClient", () => {
           amount: 1000n,
           txHash: "0x123" as Hash,
           block: 1n,
-          token: nativeToken()
+          newNote: undefined as any,
+          token: nativeToken(),
+          protocolFee: 0n,
+          memo: bytesToHex(new Uint8Array())
         },
         {
           type: "Deposit",
           amount: 2000n,
           txHash: "0x456" as Hash,
           block: 2n,
-          token: nativeToken()
+          newNote: undefined as any,
+          token: nativeToken(),
+          protocolFee: 0n,
+          memo: bytesToHex(new Uint8Array())
         }
       ];
 
@@ -331,6 +338,8 @@ describe("ShielderClient", () => {
       const mockFrom = "0x1234567890123456789012345678901234567890" as const;
       const mockTxHash = "0x9876543210" as Hash;
       const mockSendTransaction = vitest.fn().mockResolvedValue(mockTxHash);
+      const mockProtocolFee = 0n;
+      const mockMemo = Uint8Array.from([]);
 
       mockShielderActions.shield.mockResolvedValue(mockTxHash);
 
@@ -338,7 +347,9 @@ describe("ShielderClient", () => {
         nativeToken(),
         mockAmount,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -346,7 +357,9 @@ describe("ShielderClient", () => {
         nativeToken(),
         mockAmount,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
     });
   });
@@ -359,6 +372,8 @@ describe("ShielderClient", () => {
         "0x1234567890123456789012345678901234567890" as Address;
       const mockTxHash = "0x9876543210" as Hash;
       const mockPocketMoney = 0n;
+      const mockProtocolFee = 0n;
+      const mockMemo = Uint8Array.from([]);
 
       mockShielderActions.withdraw.mockResolvedValue(mockTxHash);
 
@@ -367,7 +382,9 @@ describe("ShielderClient", () => {
         mockAmount,
         quotedFeesFromExpectedTokenFee(mockExpectedFee),
         mockAddress,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -376,7 +393,9 @@ describe("ShielderClient", () => {
         mockAmount,
         quotedFeesFromExpectedTokenFee(mockExpectedFee),
         mockAddress,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
     });
   });
@@ -389,6 +408,8 @@ describe("ShielderClient", () => {
       const mockFrom = "0x1234567890123456789012345678901234567890" as const;
       const mockTxHash = "0x9876543210" as Hash;
       const mockSendTransaction = vitest.fn().mockResolvedValue(mockTxHash);
+      const mockProtocolFee = 0n;
+      const mockMemo = Uint8Array.from([]);
 
       mockShielderActions.withdrawManual.mockResolvedValue(mockTxHash);
 
@@ -397,7 +418,9 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -406,7 +429,9 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
     });
   });

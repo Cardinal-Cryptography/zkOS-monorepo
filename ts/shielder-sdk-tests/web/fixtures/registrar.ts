@@ -3,13 +3,14 @@ import type { ShortTx } from "@tests/types";
 import { setupBalanceRecorder } from "./balanceRecorder";
 
 export interface RegistrarFixture {
-  registerShield(token: Token, amount: bigint): void;
+  registerShield(token: Token, amount: bigint, protocolFee: bigint): void;
 
   registerWithdrawal(
     token: Token,
     to: `0x${string}`,
     amount: bigint,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    protocolFee: bigint
   ): void;
 
   recordedBalance(token: Token): bigint;
@@ -21,7 +22,11 @@ export const setupRegistrar = (): RegistrarFixture => {
   const balanceRecorder = setupBalanceRecorder();
   const tokenTxHistory = new Map<"native" | `0x${string}`, ShortTx[]>();
 
-  const registerShield = (token: Token, amount: bigint) => {
+  const registerShield = (
+    token: Token,
+    amount: bigint,
+    protocolFee: bigint
+  ) => {
     balanceRecorder.add(token, amount);
 
     const key =
@@ -36,10 +41,13 @@ export const setupRegistrar = (): RegistrarFixture => {
       tokenTxHistory.get(key)!.push({
         type: "NewAccount",
         token,
-        amount
+        amount,
+        protocolFee
       });
     } else {
-      tokenTxHistory.get(key)!.push({ type: "Deposit", token, amount });
+      tokenTxHistory
+        .get(key)!
+        .push({ type: "Deposit", token, amount, protocolFee });
     }
   };
 
@@ -47,7 +55,8 @@ export const setupRegistrar = (): RegistrarFixture => {
     token: Token,
     to: `0x${string}`,
     amount: bigint,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    protocolFee: bigint
   ) => {
     balanceRecorder.add(token, -amount);
 
@@ -63,7 +72,8 @@ export const setupRegistrar = (): RegistrarFixture => {
       token,
       amount,
       to,
-      pocketMoney
+      pocketMoney,
+      protocolFee
     });
   };
 
