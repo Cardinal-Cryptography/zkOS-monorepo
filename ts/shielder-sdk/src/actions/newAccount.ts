@@ -56,7 +56,10 @@ export class NewAccountAction extends NoteAction {
   calculateCommitment(callerAddress: Address, protocolFee: bigint): Scalar {
     const encodingHash = hexToBigInt(
       keccak256(
-        encodePacked(["address", "uint256"], [callerAddress, protocolFee])
+        encodePacked(
+          ["uint256", "uint256"],
+          [scalarToBigint(Scalar.fromAddress(callerAddress)), protocolFee]
+        )
       )
     );
 

@@ -27,7 +27,7 @@ export const setupRegistrar = (): RegistrarFixture => {
     amount: bigint,
     protocolFee: bigint
   ) => {
-    balanceRecorder.add(token, amount);
+    balanceRecorder.add(token, amount - protocolFee);
 
     const key =
       token.type === "native"
