@@ -37,13 +37,14 @@ expose(exposed);
  * Returns a Comlink-wrapped worker that implements CryptoClient.
  * Pass `wasm_url` only if you need the special setup (such as vite-patched distribution).
  *
- * @param wasm_url - Optional URL to the WASM binary.
+ * @param wasmUrl - Optional URL to the WASM binary.
  * @returns A promise that resolves to a Comlink-wrapped worker implementing CryptoClient.
  * @throws Will throw an error if the worker initialization fails.
  */
 export const initWasmWorker = async (
-  prover_service_url: string,
-  wasm_url?: string
+  proverServiceUrl: string,
+  withoutAttestation?: boolean,
+  wasmUrl?: string
 ): Promise<CryptoClient> => {
   // Create a new worker instance
   const worker = new Worker(new URL("./wasmClientWorker", import.meta.url), {
@@ -57,8 +58,8 @@ export const initWasmWorker = async (
   const wrappedWorker = wrap<WasmClient>(worker) as unknown as WasmClient;
 
   try {
-    await wrappedWorker.init(prover_service_url, wasm_url);
-    return wrappedWorker as unknown as CryptoClient;
+    await wrappedWorker.init(proverServiceUrl, withoutAttestation, wasmUrl);
+    return wrappedWorker;
   } catch (error) {
     console.error("Failed to initialize WASM worker:", error);
     worker.terminate();
