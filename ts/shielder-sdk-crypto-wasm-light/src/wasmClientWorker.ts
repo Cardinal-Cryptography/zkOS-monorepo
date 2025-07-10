@@ -37,6 +37,8 @@ expose(exposed);
  * Returns a Comlink-wrapped worker that implements CryptoClient.
  * Pass `wasm_url` only if you need the special setup (such as vite-patched distribution).
  *
+ * @param proverServiceUrl - URL of the prover service to connect to.
+ * @param withoutAttestation - Optional flag to disable attestation.
  * @param wasmUrl - Optional URL to the WASM binary.
  * @returns A promise that resolves to a Comlink-wrapped worker implementing CryptoClient.
  * @throws Will throw an error if the worker initialization fails.
