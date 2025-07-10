@@ -127,7 +127,8 @@ export class Relayer implements IRelayer {
                 token.type === "native" ? "Native" : { ERC20: token.address },
               fee_amount: quotedFees.fee_details.total_cost_fee_token,
               proof: Array.from(proof),
-              pocket_money: pocketMoney
+              pocket_money: pocketMoney,
+              memo: Array.from(proof)
             },
             quote: {
               gas_price: quotedFees.price_details.gas_price,
