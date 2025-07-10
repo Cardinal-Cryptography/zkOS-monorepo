@@ -4,7 +4,7 @@ use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
 use shielder_prover_common::protocol::{ProverServer, Request, Response};
 use shielder_prover_common::vsock::VsockError;
 use ecies_encryption_lib::{generate_keypair, PrivKey, PubKey};
-use ecies_encryption_lib::utils::{from_hex, to_hex};
+use ecies_encryption_lib::utils::to_hex;
 use serde::{Deserialize};
 use serde_json::Deserializer;
 use crate::circuits::{CircuitType, SerializableCircuit};
@@ -116,20 +116,20 @@ impl Server {
         }
     }
 
-    fn encrypted_proof_response(&self, request_payload: Vec<u8>, user_public_key: String) -> Result<(Vec<u8>, Vec<u8>), VsockError>  {
-        let decrypted_payload = self.decrypt_request_payload(&request_payload)?;
+    fn encrypted_proof_response(&self, request_payload: Vec<u8>, user_public_key: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), VsockError>  {
+        let decrypted_payload = self.decrypt_using_servers_private_key(&request_payload)?;
+        let decrypted_user_public_key_bytes = self.decrypt_using_servers_private_key(&user_public_key)?;
+
 
         let circuit_type = Self::extract_circuit_type(&decrypted_payload)?;
         let (proof, pub_inputs) = Self::compute_proof(&decrypted_payload[1..], circuit_type)?;
-        let encrypted_proof = Self::encrypt_bytes(&user_public_key, proof)?;
-        let encrypted_pub_inputs = Self::encrypt_bytes(&user_public_key, pub_inputs)?;
+        let encrypted_proof = Self::encrypt_bytes(&decrypted_user_public_key_bytes, proof)?;
+        let encrypted_pub_inputs = Self::encrypt_bytes(&decrypted_user_public_key_bytes, pub_inputs)?;
 
         Ok((encrypted_proof, encrypted_pub_inputs))
     }
 
-    fn encrypt_bytes(user_public_key: &String, bytes: Vec<u8>) -> Result<Vec<u8>, VsockError> {
-        let user_public_key = from_hex(&user_public_key)
-            .map_err(|conversion_error| VsockError::Protocol(conversion_error.to_string()))?;
+    fn encrypt_bytes(user_public_key: &[u8], bytes: Vec<u8>) -> Result<Vec<u8>, VsockError> {
         let pub_key = PubKey::from_bytes(&user_public_key)
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
         let encrypted_bytes = ecies_encryption_lib::encrypt(bytes.as_slice(), &pub_key);
@@ -171,7 +171,7 @@ impl Server {
         Ok(circuit_type)
     }
 
-    fn decrypt_request_payload(&self, request_payload: &Vec<u8>) -> Result<Vec<u8>, VsockError> {
+    fn decrypt_using_servers_private_key(&self, request_payload: &Vec<u8>) -> Result<Vec<u8>, VsockError> {
         let private_key = PrivKey::from_bytes(self.private_key.as_slice())
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
         let decrypted_payload = ecies_encryption_lib::decrypt(&request_payload, &private_key)

@@ -32,9 +32,10 @@ pub struct GenerateProofPayload {
     #[serde(with = "base64_serialization")]
     payload: Vec<u8>,
 
-    /// User's public key which should be used to encrypt generated proof, expressed as a hexstring
-    /// (without "0x" prefix)
-    user_public_key: String,
+    /// User's public key which should be used to encrypt generated proof, encrypted by TEE's
+    /// public key
+    #[serde(with = "base64_serialization")]
+    user_public_key: Vec<u8>,
 }
 
 #[allow(dead_code)]
