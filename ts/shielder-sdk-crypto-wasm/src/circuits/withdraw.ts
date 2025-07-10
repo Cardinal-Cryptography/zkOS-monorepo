@@ -29,12 +29,15 @@ export class WithdrawCircuit
     );
   }
 
-  prove(values: WithdrawAdvice<Scalar>): Promise<Proof> {
+  prove(values: WithdrawAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: WithdrawPubInputs<Scalar>;
+  }> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    return Promise.resolve(
-      this.wasmCircuit.prove(
+    return Promise.resolve({
+      proof: this.wasmCircuit.prove(
         values.id.bytes,
         values.nullifierOld.bytes,
         values.accountBalanceOld.bytes,
@@ -44,13 +47,12 @@ export class WithdrawCircuit
         values.nullifierNew.bytes,
         values.commitment.bytes,
         values.macSalt.bytes
-      )
-    );
+      ),
+      pubInputs: this.pubInputs(values)
+    });
   }
 
-  async pubInputs(
-    values: WithdrawAdvice<Scalar>
-  ): Promise<WithdrawPubInputs<Scalar>> {
+  private pubInputs(values: WithdrawAdvice<Scalar>): WithdrawPubInputs<Scalar> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -69,7 +71,7 @@ export class WithdrawCircuit
       values.macSalt.bytes
     );
 
-    return Promise.resolve({
+    return {
       merkleRoot: new Scalar(pubInputsBytes.merkle_root),
       hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
       hNoteNew: new Scalar(pubInputsBytes.h_note_new),
@@ -78,7 +80,7 @@ export class WithdrawCircuit
       tokenAddress: new Scalar(pubInputsBytes.token_address),
       macSalt: new Scalar(pubInputsBytes.mac_salt),
       macCommitment: new Scalar(pubInputsBytes.mac_commitment)
-    });
+    };
   }
 
   async verify(

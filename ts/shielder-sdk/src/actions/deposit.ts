@@ -111,12 +111,11 @@ export class DepositAction extends NoteAction {
       callerAddress
     );
 
-    const proof = await this.cryptoClient.depositCircuit
+    const { proof, pubInputs } = await this.cryptoClient.depositCircuit
       .prove(advice)
       .catch((e) => {
         throw new Error(`Failed to prove deposit: ${e}`);
       });
-    const pubInputs = await this.cryptoClient.depositCircuit.pubInputs(advice);
     if (!(await this.cryptoClient.depositCircuit.verify(proof, pubInputs))) {
       throw new Error("Deposit proof verification failed");
     }
