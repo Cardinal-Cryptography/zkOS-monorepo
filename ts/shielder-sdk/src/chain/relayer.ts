@@ -103,7 +103,8 @@ export class Relayer implements IRelayer {
     macSalt: bigint,
     macCommitment: bigint,
     pocketMoney: bigint,
-    quotedFees: QuotedFees
+    quotedFees: QuotedFees,
+    memo: Uint8Array,
   ): Promise<WithdrawResponse> => {
     let response;
     try {
@@ -128,7 +129,7 @@ export class Relayer implements IRelayer {
               fee_amount: quotedFees.fee_details.total_cost_fee_token,
               proof: Array.from(proof),
               pocket_money: pocketMoney,
-              memo: Array.from(proof)
+              memo: Array.from(memo)
             },
             quote: {
               gas_price: quotedFees.price_details.gas_price,
