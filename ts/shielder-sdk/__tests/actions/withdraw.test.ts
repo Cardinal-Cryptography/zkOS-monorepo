@@ -217,7 +217,7 @@ describe("WithdrawAction", () => {
         mockProtocolFee,
         mockMemo
         )
-      ).rejects.toThrow("Amount must be greater than the relayer fee: 2");
+      ).rejects.toThrow(`Amount must be greater than the sum of fees: Relayer Fee: ${totalFee}, Protocol Fee: ${mockProtocolFee}`);
     });
 
     it("should throw on incorrect prover inputs", async () => {
