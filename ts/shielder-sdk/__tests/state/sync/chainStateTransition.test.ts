@@ -10,6 +10,7 @@ import {
 import { OutdatedSdkError } from "../../../src/errors";
 import { LocalStateTransition } from "../../../src/state/localStateTransition";
 import { ChainStateTransition } from "../../../src/state/sync/chainStateTransition";
+import { bytesToHex } from "viem";
 
 describe("ChainStateTransition", () => {
   let chainStateTransition: ChainStateTransition;
@@ -65,10 +66,12 @@ describe("ChainStateTransition", () => {
         amount: 50n,
         newNote: 789n,
         newNoteIndex: 2n,
-        contractVersion: "0x000100", // Use the supported version from constants
+        contractVersion: "0x000101", // Use the supported version from constants
         txHash: "0x123",
         block: 1n,
-        tokenAddress: nativeTokenAddress
+        tokenAddress: nativeTokenAddress,
+        protocolFee: 0n,
+        memo: bytesToHex(new Uint8Array()),
       };
 
       const mockNewState: AccountStateMerkleIndexed = {
@@ -104,6 +107,8 @@ describe("ChainStateTransition", () => {
         block: 1n,
         token: nativeToken(),
         newNote: Scalar.fromBigint(789n),
+        protocolFee: 0n,
+        memo: bytesToHex(new Uint8Array()),
       });
 
       expect(mockNullifierBlock).toHaveBeenCalledWith(
@@ -172,7 +177,9 @@ describe("ChainStateTransition", () => {
         contractVersion: "0xFFFFFF", // Unsupported version
         txHash: "0x123",
         block: 1n,
-        tokenAddress: nativeTokenAddress
+        tokenAddress: nativeTokenAddress,
+        protocolFee: 0n,
+        memo: bytesToHex(new Uint8Array())
       };
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({
@@ -222,10 +229,12 @@ describe("ChainStateTransition", () => {
         amount: 50n,
         newNote: 789n,
         newNoteIndex: 2n,
-        contractVersion: "0x000100", // Use the supported version from constants
+        contractVersion: "0x000101", // Use the supported version from constants
         txHash: "0x123",
         block: 1n,
-        tokenAddress: "0x123"
+        tokenAddress: "0x123",
+        protocolFee: 0n,
+        memo: bytesToHex(new Uint8Array())
       };
 
       vi.spyOn(mockCryptoClient.secretManager, "getSecrets").mockResolvedValue({

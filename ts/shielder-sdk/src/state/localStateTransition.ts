@@ -27,10 +27,13 @@ export class LocalStateTransition {
         case "NewAccount":
           return await this.newAccountAction.rawNewAccount(
             state,
-            noteEvent.amount
+            noteEvent.amount - noteEvent.protocolFee
           );
         case "Deposit":
-          return await this.depositAction.rawDeposit(state, noteEvent.amount);
+          return await this.depositAction.rawDeposit(
+            state,
+            noteEvent.amount - noteEvent.protocolFee
+          );
         case "Withdraw":
           return await this.withdrawAction.rawWithdraw(state, noteEvent.amount);
       }

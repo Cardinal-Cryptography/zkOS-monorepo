@@ -5,24 +5,31 @@ import { sdkTest } from "@tests/playwrightTestConfig";
 import { clearStorageOp, shieldOp, type TestDescription } from "@tests/types";
 
 const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
+const memo = new Uint8Array();
 
 [
   {
     id: 1,
     actions: [
       // create native account
-      { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
+      {
+        op: shieldOp(nativeToken(), 10n ** 17n, memo),
+        actor: "alice"
+      },
       // create erc20 account
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "alice"
       },
       // clear storage, don't recover
       { op: clearStorageOp(), actor: "alice" },
       // new shield will throw
-      { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
+        op: shieldOp(nativeToken(), 10n ** 17n, memo),
+        actor: "alice"
+      },
+      {
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "alice"
       }
     ]
@@ -31,25 +38,34 @@ const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
     id: 2,
     actions: [
       // create native account
-      { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
+      {
+        op: shieldOp(nativeToken(), 10n ** 17n, memo),
+        actor: "alice"
+      },
       // deposit into native account
-      { op: shieldOp(nativeToken(), 2n * 10n ** 17n), actor: "alice" },
+      {
+        op: shieldOp(nativeToken(), 2n * 10n ** 17n, memo),
+        actor: "alice"
+      },
       // create erc20 account
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "alice"
       },
       // deposit into erc20 account
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "alice"
       },
       // clear storage, don't recover
       { op: clearStorageOp(), actor: "alice" },
       // new shield will throw
-      { op: shieldOp(nativeToken(), 10n ** 17n), actor: "alice" },
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n),
+        op: shieldOp(nativeToken(), 10n ** 17n, memo),
+        actor: "alice"
+      },
+      {
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "alice"
       }
     ]

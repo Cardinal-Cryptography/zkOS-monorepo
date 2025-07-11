@@ -9,6 +9,7 @@ export type ShieldOp = {
   type: "shield";
   token: Token;
   amount: bigint;
+  memo: Uint8Array;
 };
 
 export type WithdrawOp = {
@@ -17,6 +18,7 @@ export type WithdrawOp = {
   amount: bigint;
   to: AccountNames;
   pocketMoney: bigint;
+  memo: Uint8Array;
 };
 
 export type WithdrawManualOp = {
@@ -24,6 +26,7 @@ export type WithdrawManualOp = {
   token: Token;
   amount: bigint;
   to: AccountNames;
+  memo: Uint8Array;
 };
 
 export type ClearStorageOp = {
@@ -44,11 +47,16 @@ export type TestDescription = {
   actions: TestAction[];
 };
 
-export function shieldOp(token: Token, amount: bigint): ShieldOp {
+export function shieldOp(
+  token: Token,
+  amount: bigint,
+  memo: Uint8Array
+): ShieldOp {
   return {
     type: "shield",
     amount,
-    token
+    token,
+    memo
   };
 }
 
@@ -56,27 +64,31 @@ export function withdrawOp(
   token: Token,
   amount: bigint,
   to: AccountNames,
-  pocketMoney: bigint
+  pocketMoney: bigint,
+  memo: Uint8Array
 ): WithdrawOp {
   return {
     type: "withdraw",
     amount,
     to,
     token,
-    pocketMoney
+    pocketMoney,
+    memo
   };
 }
 
 export function withdrawManualOp(
   token: Token,
   amount: bigint,
-  to: AccountNames
+  to: AccountNames,
+  memo: Uint8Array
 ): WithdrawManualOp {
   return {
     type: "withdrawManual",
     amount,
     to,
-    token
+    token,
+    memo
   };
 }
 
@@ -99,4 +111,5 @@ export type ShortTx = {
   amount: bigint;
   to?: `0x${string}`;
   pocketMoney?: bigint;
+  protocolFee: bigint;
 };

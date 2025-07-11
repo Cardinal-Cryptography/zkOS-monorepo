@@ -23,7 +23,7 @@ test("note version", () => {
 });
 
 test("isVersionSupported", () => {
-  expect(isVersionSupported("0x000100")).toBe(true);
+  expect(isVersionSupported("0x000101")).toBe(true);
   expect(isVersionSupported("0x000002")).toBe(false);
 });
 

@@ -70,7 +70,7 @@ The SDK interacts with Shielder smart contracts. To compile these locally:
 
 ```bash
 # Navigate to the monorepo root
-cd ..
+cd ../..
 
 # Compile the contracts
 make compile-contracts

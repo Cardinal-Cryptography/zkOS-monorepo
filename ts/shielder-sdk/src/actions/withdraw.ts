@@ -7,7 +7,13 @@ import {
   WithdrawAdvice,
   WithdrawPubInputs
 } from "@cardinal-cryptography/shielder-sdk-crypto";
-import { Address, encodePacked, hexToBigInt, keccak256 } from "viem";
+import {
+  Address,
+  bytesToHex,
+  encodePacked,
+  hexToBigInt,
+  keccak256
+} from "viem";
 import { IRelayer, QuotedFees } from "@/chain/relayer";
 import { NoteAction } from "@/actions/utils";
 import { Token } from "@/types";
@@ -28,6 +34,7 @@ export interface WithdrawCalldata {
   quotedFees: QuotedFees;
   token: Token;
   pocketMoney: bigint;
+  memo: Uint8Array;
 }
 
 export class WithdrawAction extends NoteAction {
@@ -70,19 +77,32 @@ export class WithdrawAction extends NoteAction {
     address: `0x${string}`,
     relayerAddress: `0x${string}`,
     relayerFee: bigint,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    protocolFee: bigint,
+    memo: `0x${string}`
   ): Scalar {
     const encodingHash = hexToBigInt(
       keccak256(
         encodePacked(
-          ["bytes3", "uint256", "uint256", "uint256", "uint256", "uint256"],
+          [
+            "bytes3",
+            "uint256",
+            "uint256",
+            "uint256",
+            "uint256",
+            "uint256",
+            "uint256",
+            "bytes"
+          ],
           [
             expectedContractVersion,
             hexToBigInt(address),
             hexToBigInt(relayerAddress),
             relayerFee,
             this.chainId,
-            pocketMoney
+            pocketMoney,
+            protocolFee,
+            memo
           ]
         )
       )
@@ -100,9 +120,11 @@ export class WithdrawAction extends NoteAction {
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
     relayerAddress: `0x${string}`,
-    totalFee: bigint,
+    relayerFee: bigint,
     merklePath: Uint8Array,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    protocolFee: bigint,
+    memo: Uint8Array
   ): Promise<WithdrawAdvice<Scalar>> {
     const tokenAddress = getAddressByToken(state.token);
 
@@ -121,8 +143,10 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      totalFee,
-      pocketMoney
+      relayerFee,
+      pocketMoney,
+      protocolFee,
+      bytesToHex(memo)
     );
 
     return {
@@ -158,14 +182,16 @@ export class WithdrawAction extends NoteAction {
     quotedFees: QuotedFees,
     withdrawalAddress: Address,
     expectedContractVersion: `0x${string}`,
-    pocketMoney: bigint
+    pocketMoney: bigint,
+    protocolFee: bigint,
+    memo: Uint8Array
   ): Promise<WithdrawCalldata> {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < quotedFees.fee_details.total_cost_fee_token) {
+    if (amount < protocolFee + quotedFees.fee_details.total_cost_fee_token) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${quotedFees.fee_details.total_cost_fee_token.toString()}`
+        `Amount must be greater than the sum of fees: Relayer Fee: ${quotedFees.fee_details.total_cost_fee_token.toString()}, Protocol Fee: ${protocolFee}`
       );
     }
     if (state.token.type === "native" && pocketMoney > 0) {
@@ -187,7 +213,9 @@ export class WithdrawAction extends NoteAction {
       relayerAddress,
       quotedFees.fee_details.total_cost_fee_token,
       merklePath,
-      pocketMoney
+      pocketMoney,
+      protocolFee,
+      memo
     );
 
     const { proof, pubInputs } = await this.cryptoClient.withdrawCircuit
@@ -210,7 +238,8 @@ export class WithdrawAction extends NoteAction {
       withdrawalAddress,
       quotedFees,
       token: state.token,
-      pocketMoney
+      pocketMoney,
+      memo
     };
   }
 
@@ -228,7 +257,8 @@ export class WithdrawAction extends NoteAction {
       amount,
       withdrawalAddress,
       pocketMoney,
-      quotedFees
+      quotedFees,
+      memo
     } = calldata;
     const { tx_hash: txHash } = await this.relayer
       .withdraw(
@@ -243,7 +273,8 @@ export class WithdrawAction extends NoteAction {
         scalarToBigint(pubInputs.macSalt),
         scalarToBigint(pubInputs.macCommitment),
         pocketMoney,
-        quotedFees
+        quotedFees,
+        memo
       )
       .catch((e) => {
         if (e instanceof OutdatedSdkError) {
@@ -264,7 +295,8 @@ export class WithdrawAction extends NoteAction {
       amount,
       withdrawalAddress,
       quotedFees,
-      pocketMoney
+      pocketMoney,
+      memo
     } = calldata;
     const encodedCalldata =
       calldata.token.type === "native"
@@ -280,7 +312,8 @@ export class WithdrawAction extends NoteAction {
             amount,
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
-            proof
+            proof,
+            memo
           )
         : await this.contract.withdrawTokenCalldata(
             calldata.expectedContractVersion,
@@ -296,7 +329,8 @@ export class WithdrawAction extends NoteAction {
             scalarToBigint(pubInputs.macSalt),
             scalarToBigint(pubInputs.macCommitment),
             pocketMoney,
-            proof
+            proof,
+            memo
           );
     const txHash = await sendShielderTransaction({
       data: encodedCalldata.calldata,

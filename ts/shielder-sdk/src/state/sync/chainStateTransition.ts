@@ -107,6 +107,8 @@ const eventToTransaction = (
     block: event.block,
     token,
     pocketMoney: event.pocketMoney,
-    newNote: Scalar.fromBigint(event.newNote)
+    newNote: Scalar.fromBigint(event.newNote),
+    protocolFee: event.protocolFee,
+    memo: event.memo
   };
 };
