@@ -3,32 +3,43 @@ import { Hasher } from "@/hasher";
 import { SecretGenerator } from "@/secretGenerator";
 import { NoteTreeConfig } from "@/noteTreeConfig";
 import { Converter } from "@/conversion";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { NewAccountTeeCircuit } from "./circuits/newAccount";
+import { DepositTeeCircuit } from "./circuits/deposit";
+import { WithdrawTeeCircuit } from "./circuits/withdraw";
+import { TeeClient } from "./circuits/teeClient";
 
-// TODO: implements CryptoClient
-export class WasmClient {
+export class WasmClient implements CryptoClient {
   threads: number | undefined;
-  // newAccountCircuit: NewAccountCircuit;
-  // depositCircuit: DepositCircuit;
-  // withdrawCircuit: WithdrawCircuit;
+  newAccountCircuit: NewAccountTeeCircuit;
+  depositCircuit: DepositTeeCircuit;
+  withdrawCircuit: WithdrawTeeCircuit;
   hasher: Hasher;
   secretManager: SecretGenerator;
   noteTreeConfig: NoteTreeConfig;
   converter: Converter;
+  teeClient: TeeClient;
   initialized: boolean = false;
 
   constructor() {
-    // this.newAccountCircuit = new NewAccountCircuit(prover_service_url);
-    // this.depositCircuit = new DepositCircuit(prover_service_url);
-    // this.withdrawCircuit = new WithdrawCircuit(prover_service_url);
+    this.teeClient = new TeeClient();
+    this.newAccountCircuit = new NewAccountTeeCircuit();
+    this.depositCircuit = new DepositTeeCircuit();
+    this.withdrawCircuit = new WithdrawTeeCircuit();
     this.hasher = new Hasher();
     this.secretManager = new SecretGenerator();
     this.noteTreeConfig = new NoteTreeConfig();
     this.converter = new Converter();
   }
 
-  async init(prover_service_url: string, wasm_url?: string): Promise<void> {
+  async init(
+    proverServiceUrl: string,
+    withoutAttestation?: boolean,
+    wasmUrl?: string
+  ): Promise<void> {
     const time = Date.now();
-    await singlethreaded_wasm.default(wasm_url);
+    await singlethreaded_wasm.default(wasmUrl);
+    await this.teeClient.init(proverServiceUrl, withoutAttestation ?? false);
     this.initialized = true;
     console.log(`Initialized shielder_bindings in ${Date.now() - time}ms`);
   }
