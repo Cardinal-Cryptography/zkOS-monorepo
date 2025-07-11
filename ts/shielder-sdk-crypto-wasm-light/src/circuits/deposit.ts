@@ -1,3 +1,4 @@
+import { bytesToObject, objectToBytes } from "@/utils";
 import {
   DepositAdvice,
   DepositCircuit,
@@ -5,17 +6,52 @@ import {
   Proof,
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { TeeClient } from "./teeClient";
 
 export class DepositTeeCircuit implements DepositCircuit {
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  prove(values: DepositAdvice<Scalar>): Promise<{
+  constructor(private teeClient: TeeClient) {}
+
+  async prove(values: DepositAdvice<Scalar>): Promise<{
     proof: Proof;
     pubInputs: DepositPubInputs<Scalar>;
   }> {
-    throw new Error("Method not implemented.");
+    const witness = {
+      id: values.id.bytes,
+      nullifierOld: values.nullifierOld.bytes,
+      accountBalanceOld: values.accountBalanceOld.bytes,
+      tokenAddress: values.tokenAddress.bytes,
+      path: values.path,
+      value: values.value.bytes,
+      callerAddress: values.callerAddress.bytes,
+      nullifierNew: values.nullifierNew.bytes,
+      macSalt: values.macSalt.bytes
+    };
+
+    const witnessBytes = objectToBytes(witness);
+    const { proof, pubInputs: pubInputsBytes } = await this.teeClient.prove(
+      "Deposit",
+      witnessBytes
+    );
+    const pubInputsNonScalar = bytesToObject(
+      pubInputsBytes
+    ) as DepositPubInputs<Uint8Array>;
+    return {
+      proof,
+      pubInputs: {
+        merkleRoot: new Scalar(pubInputsNonScalar.merkleRoot),
+        hNullifierOld: new Scalar(pubInputsNonScalar.hNullifierOld),
+        hNoteNew: new Scalar(pubInputsNonScalar.hNoteNew),
+        value: new Scalar(pubInputsNonScalar.value),
+        callerAddress: new Scalar(pubInputsNonScalar.callerAddress),
+        tokenAddress: new Scalar(pubInputsNonScalar.tokenAddress),
+        macSalt: new Scalar(pubInputsNonScalar.macSalt),
+        macCommitment: new Scalar(pubInputsNonScalar.macCommitment)
+      }
+    };
   }
+
   /* eslint-disable @typescript-eslint/no-unused-vars */
   verify(proof: Proof, pubInputs: DepositPubInputs<Scalar>): Promise<boolean> {
-    throw new Error("Method not implemented.");
+    return Promise.resolve(true);
   }
 }

@@ -8,9 +8,18 @@ import { NewAccountTeeCircuit } from "./circuits/newAccount";
 import { DepositTeeCircuit } from "./circuits/deposit";
 import { WithdrawTeeCircuit } from "./circuits/withdraw";
 import { TeeClient } from "./circuits/teeClient";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { NewAccountTeeCircuit } from "./circuits/newAccount";
+import { DepositTeeCircuit } from "./circuits/deposit";
+import { WithdrawTeeCircuit } from "./circuits/withdraw";
+import { TeeClient } from "./circuits/teeClient";
 
 export class WasmClient implements CryptoClient {
+export class WasmClient implements CryptoClient {
   threads: number | undefined;
+  newAccountCircuit: NewAccountTeeCircuit;
+  depositCircuit: DepositTeeCircuit;
+  withdrawCircuit: WithdrawTeeCircuit;
   newAccountCircuit: NewAccountTeeCircuit;
   depositCircuit: DepositTeeCircuit;
   withdrawCircuit: WithdrawTeeCircuit;
@@ -19,13 +28,14 @@ export class WasmClient implements CryptoClient {
   noteTreeConfig: NoteTreeConfig;
   converter: Converter;
   teeClient: TeeClient;
+  teeClient: TeeClient;
   initialized: boolean = false;
 
   constructor() {
     this.teeClient = new TeeClient();
-    this.newAccountCircuit = new NewAccountTeeCircuit();
-    this.depositCircuit = new DepositTeeCircuit();
-    this.withdrawCircuit = new WithdrawTeeCircuit();
+    this.newAccountCircuit = new NewAccountTeeCircuit(this.teeClient);
+    this.depositCircuit = new DepositTeeCircuit(this.teeClient);
+    this.withdrawCircuit = new WithdrawTeeCircuit(this.teeClient);
     this.hasher = new Hasher();
     this.secretManager = new SecretGenerator();
     this.noteTreeConfig = new NoteTreeConfig();
@@ -37,7 +47,14 @@ export class WasmClient implements CryptoClient {
     withoutAttestation?: boolean,
     wasmUrl?: string
   ): Promise<void> {
+  async init(
+    proverServiceUrl: string,
+    withoutAttestation?: boolean,
+    wasmUrl?: string
+  ): Promise<void> {
     const time = Date.now();
+    await singlethreaded_wasm.default(wasmUrl);
+    await this.teeClient.init(proverServiceUrl, withoutAttestation ?? false);
     await singlethreaded_wasm.default(wasmUrl);
     await this.teeClient.init(proverServiceUrl, withoutAttestation ?? false);
     this.initialized = true;
