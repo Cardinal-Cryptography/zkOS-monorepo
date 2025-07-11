@@ -23,9 +23,9 @@ export class WasmClient implements CryptoClient {
 
   constructor() {
     this.teeClient = new TeeClient();
-    this.newAccountCircuit = new NewAccountTeeCircuit();
-    this.depositCircuit = new DepositTeeCircuit();
-    this.withdrawCircuit = new WithdrawTeeCircuit();
+    this.newAccountCircuit = new NewAccountTeeCircuit(this.teeClient);
+    this.depositCircuit = new DepositTeeCircuit(this.teeClient);
+    this.withdrawCircuit = new WithdrawTeeCircuit(this.teeClient);
     this.hasher = new Hasher();
     this.secretManager = new SecretGenerator();
     this.noteTreeConfig = new NoteTreeConfig();
