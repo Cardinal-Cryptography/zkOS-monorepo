@@ -117,7 +117,12 @@ describe("NewAccountAction", () => {
       const amount = 100n;
       const expectedVersion = "0xversion" as `0x${string}`;
       const mockProve = vitest
-        .fn<(values: NewAccountAdvice<Scalar>) => Promise<Uint8Array>>()
+        .fn<
+          (values: NewAccountAdvice<Scalar>) => Promise<{
+            proof: Uint8Array;
+            pubInputs: NewAccountPubInputs<Scalar>;
+          }>
+        >()
         .mockRejectedValue(new Error("mocked prove failure"));
       cryptoClient.newAccountCircuit.prove = mockProve;
 

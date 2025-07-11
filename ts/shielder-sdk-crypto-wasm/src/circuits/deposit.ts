@@ -29,12 +29,15 @@ export class DepositCircuit
     );
   }
 
-  prove(values: DepositAdvice<Scalar>): Promise<Proof> {
+  prove(values: DepositAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: DepositPubInputs<Scalar>;
+  }> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    return Promise.resolve(
-      this.wasmCircuit.prove(
+    return Promise.resolve({
+      proof: this.wasmCircuit.prove(
         values.id.bytes,
         values.nullifierOld.bytes,
         values.accountBalanceOld.bytes,
@@ -44,13 +47,12 @@ export class DepositCircuit
         values.callerAddress.bytes,
         values.nullifierNew.bytes,
         values.macSalt.bytes
-      )
-    );
+      ),
+      pubInputs: this.pubInputs(values)
+    });
   }
 
-  async pubInputs(
-    values: DepositAdvice<Scalar>
-  ): Promise<DepositPubInputs<Scalar>> {
+  private pubInputs(values: DepositAdvice<Scalar>): DepositPubInputs<Scalar> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -68,7 +70,7 @@ export class DepositCircuit
       values.nullifierNew.bytes,
       values.macSalt.bytes
     );
-    return Promise.resolve({
+    return {
       merkleRoot: new Scalar(pubInputsBytes.merkle_root),
       hNullifierOld: new Scalar(pubInputsBytes.h_nullifier_old),
       hNoteNew: new Scalar(pubInputsBytes.h_note_new),
@@ -77,7 +79,7 @@ export class DepositCircuit
       tokenAddress: new Scalar(pubInputsBytes.token_address),
       macSalt: new Scalar(pubInputsBytes.mac_salt),
       macCommitment: new Scalar(pubInputsBytes.mac_commitment)
-    });
+    };
   }
 
   async verify(

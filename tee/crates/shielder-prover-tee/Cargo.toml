@@ -9,6 +9,7 @@ categories = ["cryptography"]
 repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [dependencies]
+aws-nitro-enclaves-nsm-api = { workspace = true, optional = true }
 log = { workspace = true }
 shielder-prover-common = { workspace = true }
 tokio = { workspace = true, features = [
@@ -26,7 +27,13 @@ tracing-subscriber = { workspace = true }
 serde = { workspace = true}
 serde_json = { workspace = true}
 
+
 [build-dependencies]
 powers-of-tau = { workspace = true }
 rand = { workspace = true, features = ["small_rng"] }
 shielder-circuits = { workspace = true }
+
+[features]
+default = ["dep:aws-nitro-enclaves-nsm-api"]
+# if enabled, TEE server does not query /dev/nsm driver, so enable this feature for local tests
+without_attestation = []

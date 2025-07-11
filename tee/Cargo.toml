@@ -12,6 +12,7 @@ categories = ["cryptography"]
 repository = "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
 
 [workspace.dependencies]
+aws-nitro-enclaves-nsm-api = "0.4.0"
 axum = "0.8.4"
 base64 = "0.22.1"
 clap = "4.5.38"
