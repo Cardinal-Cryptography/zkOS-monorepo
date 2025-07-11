@@ -137,27 +137,27 @@ class MockedNoteTreeConfig implements NoteTreeConfig {
 }
 
 class MockedNewAccountCircuit implements NewAccountCircuit {
-  prove(values: NewAccountAdvice<Scalar>): Promise<Proof> {
-    return Promise.resolve(new Uint8Array());
-  }
-
-  pubInputs(
-    values: NewAccountAdvice<Scalar>
-  ): Promise<NewAccountPubInputs<Scalar>> {
+  prove(values: NewAccountAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: NewAccountPubInputs<Scalar>;
+  }> {
     return Promise.resolve({
-      hNote: Scalar.fromBigint(0n),
-      prenullifier: Scalar.fromBigint(0n),
-      initialDeposit: Scalar.fromBigint(0n),
-      callerAddress: Scalar.fromBigint(0n),
-      tokenAddress: Scalar.fromBigint(0n),
-      anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
-      anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
-      symKeyEncryption1X: Scalar.fromBigint(0n),
-      symKeyEncryption1Y: Scalar.fromBigint(0n),
-      symKeyEncryption2X: Scalar.fromBigint(0n),
-      symKeyEncryption2Y: Scalar.fromBigint(0n),
-      macSalt: Scalar.fromBigint(0n),
-      macCommitment: Scalar.fromBigint(0n)
+      proof: new Uint8Array(),
+      pubInputs: {
+        hNote: Scalar.fromBigint(0n),
+        prenullifier: Scalar.fromBigint(0n),
+        initialDeposit: Scalar.fromBigint(0n),
+        callerAddress: Scalar.fromBigint(0n),
+        tokenAddress: Scalar.fromBigint(0n),
+        anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
+        anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
+        symKeyEncryption1X: Scalar.fromBigint(0n),
+        symKeyEncryption1Y: Scalar.fromBigint(0n),
+        symKeyEncryption2X: Scalar.fromBigint(0n),
+        symKeyEncryption2Y: Scalar.fromBigint(0n),
+        macSalt: Scalar.fromBigint(0n),
+        macCommitment: Scalar.fromBigint(0n)
+      }
     });
   }
 
@@ -170,20 +170,22 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
 }
 
 class MockedDepositCircuit implements DepositCircuit {
-  prove(values: DepositAdvice<Scalar>): Promise<Proof> {
-    return Promise.resolve(new Uint8Array());
-  }
-
-  pubInputs(values: DepositAdvice<Scalar>): Promise<DepositPubInputs<Scalar>> {
+  prove(values: DepositAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: DepositPubInputs<Scalar>;
+  }> {
     return Promise.resolve({
-      merkleRoot: Scalar.fromBigint(0n),
-      hNullifierOld: Scalar.fromBigint(0n),
-      hNoteNew: Scalar.fromBigint(0n),
-      value: Scalar.fromBigint(0n),
-      callerAddress: Scalar.fromBigint(0n),
-      tokenAddress: Scalar.fromBigint(0n),
-      macSalt: Scalar.fromBigint(0n),
-      macCommitment: Scalar.fromBigint(0n)
+      proof: new Uint8Array(),
+      pubInputs: {
+        merkleRoot: Scalar.fromBigint(0n),
+        hNullifierOld: Scalar.fromBigint(0n),
+        hNoteNew: Scalar.fromBigint(0n),
+        value: Scalar.fromBigint(0n),
+        callerAddress: Scalar.fromBigint(0n),
+        tokenAddress: Scalar.fromBigint(0n),
+        macSalt: Scalar.fromBigint(0n),
+        macCommitment: Scalar.fromBigint(0n)
+      }
     });
   }
 
@@ -196,22 +198,22 @@ class MockedDepositCircuit implements DepositCircuit {
 }
 
 class MockedWithdrawCircuit implements WithdrawCircuit {
-  prove(): Promise<Proof> {
-    return Promise.resolve(new Uint8Array());
-  }
-
-  pubInputs(
-    values: WithdrawAdvice<Scalar>
-  ): Promise<WithdrawPubInputs<Scalar>> {
+  prove(): Promise<{
+    proof: Proof;
+    pubInputs: WithdrawPubInputs<Scalar>;
+  }> {
     return Promise.resolve({
-      merkleRoot: Scalar.fromBigint(0n),
-      hNullifierOld: Scalar.fromBigint(0n),
-      hNoteNew: Scalar.fromBigint(0n),
-      value: Scalar.fromBigint(0n),
-      tokenAddress: Scalar.fromBigint(0n),
-      commitment: Scalar.fromBigint(0n),
-      macSalt: Scalar.fromBigint(0n),
-      macCommitment: Scalar.fromBigint(0n)
+      proof: new Uint8Array(),
+      pubInputs: {
+        merkleRoot: Scalar.fromBigint(0n),
+        hNullifierOld: Scalar.fromBigint(0n),
+        hNoteNew: Scalar.fromBigint(0n),
+        value: Scalar.fromBigint(0n),
+        tokenAddress: Scalar.fromBigint(0n),
+        commitment: Scalar.fromBigint(0n),
+        macSalt: Scalar.fromBigint(0n),
+        macCommitment: Scalar.fromBigint(0n)
+      }
     });
   }
 

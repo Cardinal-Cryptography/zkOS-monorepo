@@ -30,12 +30,15 @@ export class NewAccountCircuit
     );
   }
 
-  prove(values: NewAccountAdvice<Scalar>): Promise<Proof> {
+  prove(values: NewAccountAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: NewAccountPubInputs<Scalar>;
+  }> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
-    return Promise.resolve(
-      this.wasmCircuit.prove(
+    return Promise.resolve({
+      proof: this.wasmCircuit.prove(
         values.id.bytes,
         values.nullifier.bytes,
         values.initialDeposit.bytes,
@@ -45,13 +48,14 @@ export class NewAccountCircuit
         values.macSalt.bytes,
         values.anonymityRevokerPublicKeyX.bytes,
         values.anonymityRevokerPublicKeyY.bytes
-      )
-    );
+      ),
+      pubInputs: this.pubInputs(values)
+    });
   }
 
-  async pubInputs(
+  private pubInputs(
     values: NewAccountAdvice<Scalar>
-  ): Promise<NewAccountPubInputs<Scalar>> {
+  ): NewAccountPubInputs<Scalar> {
     if (!this.wasmCircuit) {
       throw new Error("Circuit not initialized");
     }
@@ -70,7 +74,7 @@ export class NewAccountCircuit
       values.anonymityRevokerPublicKeyY.bytes
     );
 
-    return Promise.resolve({
+    return {
       hNote: new Scalar(pubInputsBytes.hashed_note),
       prenullifier: new Scalar(pubInputsBytes.prenullifier),
       initialDeposit: new Scalar(pubInputsBytes.initial_deposit),
@@ -88,7 +92,7 @@ export class NewAccountCircuit
       symKeyEncryption2Y: new Scalar(pubInputsBytes.sym_key_encryption_2_y),
       macSalt: new Scalar(pubInputsBytes.mac_salt),
       macCommitment: new Scalar(pubInputsBytes.mac_commitment)
-    });
+    };
   }
 
   async verify(

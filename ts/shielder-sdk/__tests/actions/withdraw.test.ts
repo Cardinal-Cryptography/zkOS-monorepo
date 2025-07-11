@@ -216,7 +216,12 @@ describe("WithdrawAction", () => {
       const pocketMoney = 0n;
 
       cryptoClient.withdrawCircuit.prove = vitest
-        .fn<(values: WithdrawAdvice<Scalar>) => Promise<Uint8Array>>()
+        .fn<
+          (values: WithdrawAdvice<Scalar>) => Promise<{
+            proof: Uint8Array;
+            pubInputs: WithdrawPubInputs<Scalar>;
+          }>
+        >()
         .mockRejectedValue("error");
 
       await expect(
