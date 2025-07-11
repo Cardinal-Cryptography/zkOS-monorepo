@@ -293,7 +293,7 @@ describe("ShielderActions", () => {
     );
   });
 
-  describe("getWithdrawFees", () => {
+  describe("getRelayerFees", () => {
     it("should return quoted fees from relayer", async () => {
       const mockFees = {
         fee_details: {
@@ -317,7 +317,7 @@ describe("ShielderActions", () => {
 
       mockRelayer.quoteFees.mockResolvedValue(mockFees);
 
-      const fees = await actions.getWithdrawFees(mockToken, mockPocketMoney);
+      const fees = await actions.getRelayerFees(mockToken, mockPocketMoney);
 
       expect(fees).toEqual(mockFees);
       expect(mockRelayer.quoteFees).toHaveBeenCalledWith(

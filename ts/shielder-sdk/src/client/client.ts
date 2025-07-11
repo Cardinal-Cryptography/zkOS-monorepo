@@ -97,11 +97,8 @@ export class ShielderClient {
    * Get the fees for the withdraw operation.
    * @returns quoted fees for the withdraw operation
    */
-  async getWithdrawFees(
-    token: Token,
-    pocketMoney: bigint
-  ): Promise<QuotedFees> {
-    return await this.shielderActions.getWithdrawFees(token, pocketMoney);
+  async getRelayerFees(token: Token, pocketMoney: bigint): Promise<QuotedFees> {
+    return await this.shielderActions.getRelayerFees(token, pocketMoney);
   }
 
   /**

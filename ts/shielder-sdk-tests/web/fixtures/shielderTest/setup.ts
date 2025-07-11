@@ -63,33 +63,31 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
       const shielderClient = shielderClients[action.actor];
       const registrar = registrars[action.actor];
       if (action.op.type === "shield") {
-        await shielderClient.shield(
+        const {protocolFee} = await shielderClient.shield(
           action.op.token,
           action.op.amount,
-          action.op.protocolFee,
           action.op.memo
         );
         registrar.registerShield(
           action.op.token,
-          action.op.amount,
-          action.op.protocolFee
+          action.op.amount + protocolFee,
+          protocolFee
         );
         usedTokens.add(tokenToKey(action.op.token));
       } else if (action.op.type === "withdraw") {
-        const { totalFee } = await shielderClient.withdraw(
+        const { relayerFee, protocolFee } = await shielderClient.withdraw(
           action.op.token,
           action.op.amount,
           withdrawalAccounts[action.op.to].address,
           action.op.pocketMoney,
-          action.op.protocolFee,
           action.op.memo
         );
         registrar.registerWithdrawal(
           action.op.token,
           withdrawalAccounts[action.op.to].address,
-          action.op.amount + totalFee,
+          action.op.amount + relayerFee + protocolFee,
           action.op.pocketMoney,
-          action.op.protocolFee
+          protocolFee
         );
         withdrawnBalance[action.op.to].add(action.op.token, action.op.amount);
         usedTokens.add(tokenToKey(action.op.token));
@@ -101,19 +99,18 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
           );
         }
       } else if (action.op.type === "withdrawManual") {
-        await shielderClient.withdrawManual(
+        const {protocolFee} = await shielderClient.withdrawManual(
           action.op.token,
           action.op.amount,
           withdrawalAccounts[action.op.to].address,
-          action.op.protocolFee,
           action.op.memo
         );
         registrar.registerWithdrawal(
           action.op.token,
           withdrawalAccounts[action.op.to].address,
-          action.op.amount,
+          action.op.amount + protocolFee,
           0n,
-          action.op.protocolFee
+          protocolFee
         );
         withdrawnBalance[action.op.to].add(action.op.token, action.op.amount);
         usedTokens.add(tokenToKey(action.op.token));

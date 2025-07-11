@@ -18,11 +18,11 @@ import { OutdatedSdkError } from "../../src/errors";
 import { ShielderCallbacks } from "../../src/client/types";
 import { nativeToken } from "../../src/utils";
 import { ShielderActions } from "../../src/client/actions";
+import { ProtocolFees } from "../../src/protocol-fees/protocolFees";
 import { AccountRegistry } from "../../src/state/accountRegistry";
 import { StateSynchronizer } from "../../src/state/sync/synchronizer";
 import { HistoryFetcher } from "../../src/state/sync/historyFetcher";
 import { ShielderComponents } from "../../src/client/factories";
-import { Scalar } from "@cardinal-cryptography/shielder-sdk-crypto";
 
 vitest.mock("../../src/chain/contract");
 vitest.mock("../../src/chain/relayer");
@@ -46,6 +46,7 @@ describe("ShielderClient", () => {
   let mockStateSynchronizer: Mocked<StateSynchronizer>;
   let mockHistoryFetcher: Mocked<HistoryFetcher>;
   let mockShielderActions: Mocked<ShielderActions>;
+  let mockProtocolFees: Mocked<ProtocolFees>;
   let callbacks: ShielderCallbacks;
   let mockState: AccountStateMerkleIndexed;
   const mockedRelayerAddress =
@@ -84,7 +85,7 @@ describe("ShielderClient", () => {
     } as unknown as Mocked<HistoryFetcher>;
 
     mockShielderActions = {
-      getWithdrawFees: vitest.fn(),
+      getRelayerFees: vitest.fn(),
       shield: vitest.fn(),
       withdraw: vitest.fn(),
       withdrawManual: vitest.fn()
@@ -98,12 +99,20 @@ describe("ShielderClient", () => {
       onAccountNotOnChain: vitest.fn()
     };
 
+    mockProtocolFees = {
+        getProtocolDepositFee: vitest.fn(),
+        getProtocolWithdrawFee: vitest.fn(),
+        syncProtocolDepositFeeBps: vitest.fn(),
+        syncProtocolWithdrawFeeBps: vitest.fn()
+    } as unknown as Mocked<ProtocolFees>
+
     // Create client instance with mocked components
     const components: ShielderComponents = {
       accountRegistry: mockAccountRegistry,
       stateSynchronizer: mockStateSynchronizer,
       historyFetcher: mockHistoryFetcher,
-      shielderActions: mockShielderActions
+      shielderActions: mockShielderActions,
+      protocolFees: mockProtocolFees
     };
 
     client = new ShielderClient(components, callbacks);
@@ -317,15 +326,15 @@ describe("ShielderClient", () => {
     });
   });
 
-  describe("getWithdrawFees", () => {
+  describe("getRelayerFees", () => {
     it("should delegate to shielderActions", async () => {
       const mockFees = quotedFeesFromExpectedTokenFee(100n);
-      mockShielderActions.getWithdrawFees.mockResolvedValue(mockFees);
+      mockShielderActions.getRelayerFees.mockResolvedValue(mockFees);
 
-      const fees = await client.getWithdrawFees(nativeToken(), 0n);
+      const fees = await client.getRelayerFees(nativeToken(), 0n);
 
       expect(fees).toEqual(mockFees);
-      expect(mockShielderActions.getWithdrawFees).toHaveBeenCalledWith(
+      expect(mockShielderActions.getRelayerFees).toHaveBeenCalledWith(
         nativeToken(),
         0n
       );

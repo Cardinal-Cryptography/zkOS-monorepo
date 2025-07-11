@@ -11,7 +11,6 @@ import {
 } from "@tests/types";
 
 const ercToken = erc20Token(tokenContractAddresses[0] as `0x${string}`);
-const protocolFee = 0n;
 const memo = new Uint8Array();
 
 [
@@ -19,16 +18,16 @@ const memo = new Uint8Array();
     id: 1,
     actions: [
       {
-        op: shieldOp(nativeToken(), 10n ** 17n, protocolFee, memo),
+        op: shieldOp(nativeToken(), 10n ** 17n, memo),
         actor: "alice"
       },
-      { op: shieldOp(ercToken, 10n ** 17n, protocolFee, memo), actor: "alice" },
+      { op: shieldOp(ercToken, 10n ** 17n, memo), actor: "alice" },
       {
-        op: shieldOp(nativeToken(), 2n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(nativeToken(), 2n * 10n ** 17n, memo),
         actor: "bob"
       },
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "bob"
       },
       { op: clearStorageOp(), actor: "alice" },
@@ -36,16 +35,16 @@ const memo = new Uint8Array();
       { op: recoverOp(), actor: "alice" },
       { op: recoverOp(), actor: "bob" },
       {
-        op: shieldOp(nativeToken(), 10n ** 17n, protocolFee, memo),
+        op: shieldOp(nativeToken(), 10n ** 17n, memo),
         actor: "alice"
       },
-      { op: shieldOp(ercToken, 10n ** 17n, protocolFee, memo), actor: "alice" },
+      { op: shieldOp(ercToken, 10n ** 17n, memo), actor: "alice" },
       {
-        op: shieldOp(nativeToken(), 2n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(nativeToken(), 2n * 10n ** 17n, memo),
         actor: "bob"
       },
       {
-        op: shieldOp(ercToken, 2n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(ercToken, 2n * 10n ** 17n, memo),
         actor: "bob"
       },
       {
@@ -54,7 +53,6 @@ const memo = new Uint8Array();
           10n ** 17n,
           "dave",
           0n,
-          protocolFee,
           memo
         ),
         actor: "alice"
@@ -65,25 +63,24 @@ const memo = new Uint8Array();
           2n * 10n ** 17n,
           "dave",
           0n,
-          protocolFee,
           memo
         ),
         actor: "bob"
       },
       {
-        op: shieldOp(nativeToken(), 3n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(nativeToken(), 3n * 10n ** 17n, memo),
         actor: "charlie"
       },
       {
-        op: shieldOp(ercToken, 3n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(ercToken, 3n * 10n ** 17n, memo),
         actor: "charlie"
       },
       {
-        op: shieldOp(nativeToken(), 3n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(nativeToken(), 3n * 10n ** 17n, memo),
         actor: "charlie"
       },
       {
-        op: shieldOp(ercToken, 3n * 10n ** 17n, protocolFee, memo),
+        op: shieldOp(ercToken, 3n * 10n ** 17n, memo),
         actor: "charlie"
       },
       {
@@ -92,7 +89,6 @@ const memo = new Uint8Array();
           10n ** 17n,
           "dave",
           10n ** 17n,
-          protocolFee,
           memo
         ),
         actor: "charlie"
@@ -103,7 +99,6 @@ const memo = new Uint8Array();
           3n * 10n ** 17n,
           "dave",
           0n,
-          protocolFee,
           memo
         ),
         actor: "charlie"

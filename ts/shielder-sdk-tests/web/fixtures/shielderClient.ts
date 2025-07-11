@@ -23,27 +23,31 @@ export interface ShielderClientFixture {
   shield: (
     token: Token,
     amount: bigint,
-    protocolFee: bigint,
     memo: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<{
+    tx: `0x${string}`;
+    protocolFee: bigint;
+  }>;
   withdraw: (
     token: Token,
     amount: bigint,
     to: `0x${string}`,
     pocketMoney: bigint,
-    protocolFee: bigint,
     memo: Uint8Array
   ) => Promise<{
     tx: `0x${string}`;
-    totalFee: bigint;
+    relayerFee: bigint;
+    protocolFee: bigint;
   }>;
   withdrawManual: (
     token: Token,
     amount: bigint,
     to: `0x${string}`,
-    protocolFee: bigint,
     memo: Uint8Array
-  ) => Promise<`0x${string}`>;
+  ) => Promise<{
+    tx: `0x${string}`;
+    protocolFee: bigint;
+  }>;
   shieldedBalance: (token: Token) => Promise<bigint | null>;
 }
 
@@ -93,47 +97,63 @@ export const setupShielderClient = async (
     storage,
     sendingTransaction,
     callbacks,
-    shield: async (token, amount, protocolFee, memo) => {
+    shield: async (token, amount, memo) => {
+      const { amount: totalAmount, protocolFee } = await shielderClient.getProtocolShieldFee(amount,false);
       if (token.type === "erc20")
         await chainAccount.approveERC20(
           token.address,
           chainConfig.contractAddress,
-          amount
+          totalAmount
         );
-      return shielderClient.shield(
-        token,
-        amount,
-        sendingTransaction,
-        chainAccount.account.address,
-        protocolFee,
-        memo
-      );
+      return {
+        tx: await shielderClient.shield(
+          token,
+          totalAmount,
+          sendingTransaction,
+          chainAccount.account.address,
+          protocolFee,
+          memo
+        ),
+        protocolFee
+      };
     },
-    withdraw: async (token, amount, to, pocketMoney, protocolFee, memo) => {
-      const fees = await shielderClient.getWithdrawFees(token, pocketMoney);
+    withdraw: async (token, amount, to, pocketMoney, memo) => {
+      const relayerFees = await shielderClient.getRelayerFees(
+        token,
+        pocketMoney
+      );
+      const relayerFee = relayerFees.fee_details.total_cost_fee_token;
+      const { amount: totalAmount, protocolFee } =
+        await shielderClient.getProtocolWithdrawFee(amount + relayerFee, false);
       return {
         tx: await shielderClient.withdraw(
           token,
-          amount + fees.fee_details.total_cost_fee_token,
-          fees,
+          totalAmount,
+          relayerFees,
           to,
           pocketMoney,
           protocolFee,
           memo
         ),
-        totalFee: fees.fee_details.total_cost_fee_token
+        protocolFee,
+        relayerFee,
       };
     },
-    withdrawManual: async (token, amount, to, protocolFee, memo) => {
-      return shielderClient.withdrawManual(
-        token,
-        amount,
-        to,
-        sendingTransaction,
-        chainAccount.account.address,
-        protocolFee,
-        memo
-      );
+    withdrawManual: async (token, amount, to, memo) => {
+      let { amount: totalAmount, protocolFee } =
+        await shielderClient.getProtocolWithdrawFee(amount, false);
+      return {
+        tx: await shielderClient.withdrawManual(
+          token,
+          totalAmount,
+          to,
+          sendingTransaction,
+          chainAccount.account.address,
+          protocolFee,
+          memo
+        ),
+        protocolFee
+      };
     },
     shieldedBalance: async (token) => {
       return shielderClient

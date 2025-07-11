@@ -33,13 +33,10 @@ export class ShielderActions {
   ) {}
 
   /**
-   * Get the fees for the withdraw operation.
-   * @returns quoted fees for the withdraw operation
+   * Get the fees for the relayer operation.
+   * @returns quoted fees for the relayer operation
    */
-  async getWithdrawFees(
-    token: Token,
-    pocketMoney: bigint
-  ): Promise<QuotedFees> {
+  async getRelayerFees(token: Token, pocketMoney: bigint): Promise<QuotedFees> {
     return await this.relayer.quoteFees(token, pocketMoney);
   }
 
