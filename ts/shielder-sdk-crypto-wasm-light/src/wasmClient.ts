@@ -8,9 +8,18 @@ import { NewAccountTeeCircuit } from "./circuits/newAccount";
 import { DepositTeeCircuit } from "./circuits/deposit";
 import { WithdrawTeeCircuit } from "./circuits/withdraw";
 import { TeeClient } from "./circuits/teeClient";
+import { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
+import { NewAccountTeeCircuit } from "./circuits/newAccount";
+import { DepositTeeCircuit } from "./circuits/deposit";
+import { WithdrawTeeCircuit } from "./circuits/withdraw";
+import { TeeClient } from "./circuits/teeClient";
 
 export class WasmClient implements CryptoClient {
+export class WasmClient implements CryptoClient {
   threads: number | undefined;
+  newAccountCircuit: NewAccountTeeCircuit;
+  depositCircuit: DepositTeeCircuit;
+  withdrawCircuit: WithdrawTeeCircuit;
   newAccountCircuit: NewAccountTeeCircuit;
   depositCircuit: DepositTeeCircuit;
   withdrawCircuit: WithdrawTeeCircuit;
@@ -18,6 +27,7 @@ export class WasmClient implements CryptoClient {
   secretManager: SecretGenerator;
   noteTreeConfig: NoteTreeConfig;
   converter: Converter;
+  teeClient: TeeClient;
   teeClient: TeeClient;
   initialized: boolean = false;
 
@@ -37,7 +47,14 @@ export class WasmClient implements CryptoClient {
     withoutAttestation?: boolean,
     wasmUrl?: string
   ): Promise<void> {
+  async init(
+    proverServiceUrl: string,
+    withoutAttestation?: boolean,
+    wasmUrl?: string
+  ): Promise<void> {
     const time = Date.now();
+    await singlethreaded_wasm.default(wasmUrl);
+    await this.teeClient.init(proverServiceUrl, withoutAttestation ?? false);
     await singlethreaded_wasm.default(wasmUrl);
     await this.teeClient.init(proverServiceUrl, withoutAttestation ?? false);
     this.initialized = true;
