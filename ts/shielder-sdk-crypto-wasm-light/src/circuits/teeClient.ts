@@ -20,7 +20,7 @@ export class TeeClient {
     this.provingServiceUrl = provingServiceUrl;
 
     const response = await fetch(`${this.provingServiceUrl}/public_key`, {
-      method: "POST",
+      method: "GET",
       headers: {
         "Content-Type": "application/json"
       }
