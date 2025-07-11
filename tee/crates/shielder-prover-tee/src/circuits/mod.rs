@@ -112,27 +112,6 @@ pub fn vec_to_path(v: Vec<u8>) -> [[Fr; ARITY]; NOTE_TREE_HEIGHT] {
     result
 }
 
-#[derive(Debug)]
-#[repr(u8)]
-pub enum CircuitType {
-    NewAccount = 1,
-    Deposit = 2,
-    Withdraw = 4,
-}
-
-impl TryFrom<u8> for CircuitType {
-    type Error = &'static str;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(CircuitType::NewAccount),
-            2 => Ok(CircuitType::Deposit),
-            4 => Ok(CircuitType::Withdraw),
-            _ => Err("Invalid u8 value for CircuitType"),
-        }
-    }
-}
-
 pub trait SerializableCircuit {
     type Input: Serialize + for<'de> Deserialize<'de> + Clone;
     type Output: Serialize + for<'de> Deserialize<'de>;

@@ -141,7 +141,12 @@ describe("DepositAction", () => {
 
       // mock cryptoClient to throw on cryptoClient.depositCircuit.prove
       cryptoClient.depositCircuit.prove = vitest
-        .fn<(values: DepositAdvice<Scalar>) => Promise<Uint8Array>>()
+        .fn<
+          (values: DepositAdvice<Scalar>) => Promise<{
+            proof: Uint8Array;
+            pubInputs: DepositPubInputs<Scalar>;
+          }>
+        >()
         .mockRejectedValue("error");
 
       await expect(

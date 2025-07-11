@@ -12,8 +12,7 @@ pub async fn generate_proof(State(state): State<Arc<AppState>>,
 
     task_pool
         .spawn(async move { request(state, Request::GenerateProof {
-            payload: generate_proof_payload.payload,
-            user_public_key: generate_proof_payload.user_public_key}).await
+            payload: generate_proof_payload.payload}).await
         })
         .await
         .map_err(|e| ShielderProverServerError::TaskPool(e))?

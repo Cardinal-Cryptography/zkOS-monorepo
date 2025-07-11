@@ -122,13 +122,11 @@ export class NewAccountAction extends NoteAction {
       protocolFee
     );
 
-    const proof = await this.cryptoClient.newAccountCircuit
+    const { proof, pubInputs } = await this.cryptoClient.newAccountCircuit
       .prove(advice)
       .catch((e) => {
         throw new Error(`Failed to prove new account: ${e}`);
       });
-    const pubInputs =
-      await this.cryptoClient.newAccountCircuit.pubInputs(advice);
     if (!(await this.cryptoClient.newAccountCircuit.verify(proof, pubInputs))) {
       throw new Error("New account proof verification failed");
     }
