@@ -97,7 +97,7 @@ export class DepositAction extends NoteAction {
       accountBalanceOld: Scalar.fromBigint(state.balance),
       tokenAddress: Scalar.fromAddress(tokenAddress),
       path: merklePath,
-      value: Scalar.fromBigint(amount),
+      value: Scalar.fromBigint(amount - protocolFee),
       commitment,
       nullifierNew,
       macSalt: await this.randomSalt()

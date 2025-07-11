@@ -120,7 +120,7 @@ export class WithdrawAction extends NoteAction {
     expectedContractVersion: `0x${string}`,
     withdrawalAddress: `0x${string}`,
     relayerAddress: `0x${string}`,
-    totalFee: bigint,
+    relayerFee: bigint,
     merklePath: Uint8Array,
     pocketMoney: bigint,
     protocolFee: bigint,
@@ -143,7 +143,7 @@ export class WithdrawAction extends NoteAction {
       expectedContractVersion,
       withdrawalAddress,
       relayerAddress,
-      totalFee,
+      relayerFee,
       pocketMoney,
       protocolFee,
       bytesToHex(memo)
@@ -189,9 +189,9 @@ export class WithdrawAction extends NoteAction {
     if (state.balance < amount) {
       throw new Error("Insufficient funds");
     }
-    if (amount < quotedFees.fee_details.total_cost_fee_token) {
+    if (amount < protocolFee + quotedFees.fee_details.total_cost_fee_token) {
       throw new Error(
-        `Amount must be greater than the relayer fee: ${quotedFees.fee_details.total_cost_fee_token.toString()}`
+        `Amount must be greater than the sum of fees: Relayer Fee: ${quotedFees.fee_details.total_cost_fee_token.toString()}, Protocol Fee: ${protocolFee}`
       );
     }
     if (state.token.type === "native" && pocketMoney > 0) {

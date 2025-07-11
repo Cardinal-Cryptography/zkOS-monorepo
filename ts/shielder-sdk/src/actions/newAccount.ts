@@ -88,7 +88,7 @@ export class NewAccountAction extends NoteAction {
       id: state.id,
       nullifier,
       tokenAddress: Scalar.fromAddress(tokenAddress),
-      initialDeposit: Scalar.fromBigint(amount),
+      initialDeposit: Scalar.fromBigint(amount - protocolFee),
       commitment,
       encryptionSalt: await this.randomSalt(),
       anonymityRevokerPublicKeyX: Scalar.fromBigint(anonymityRevokerPublicKeyX),
