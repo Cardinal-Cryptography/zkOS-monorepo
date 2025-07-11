@@ -190,12 +190,11 @@ export class WithdrawAction extends NoteAction {
       pocketMoney
     );
 
-    const proof = await this.cryptoClient.withdrawCircuit
+    const { proof, pubInputs } = await this.cryptoClient.withdrawCircuit
       .prove(advice)
       .catch((e) => {
         throw new Error(`Failed to prove withdrawal: ${e}`);
       });
-    const pubInputs = await this.cryptoClient.withdrawCircuit.pubInputs(advice);
     if (!(await this.cryptoClient.withdrawCircuit.verify(proof, pubInputs))) {
       throw new Error("Withdrawal proof verification failed");
     }

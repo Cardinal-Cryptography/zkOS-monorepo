@@ -11,10 +11,10 @@ import {
 } from "./types";
 
 export interface NewAccountCircuit {
-  prove(values: NewAccountAdvice<Scalar>): Promise<Proof>;
-  pubInputs(
-    values: NewAccountAdvice<Scalar>
-  ): Promise<NewAccountPubInputs<Scalar>>;
+  prove(values: NewAccountAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: NewAccountPubInputs<Scalar>;
+  }>;
   verify(
     proof: Proof,
     pubInputs: NewAccountPubInputs<Scalar>
@@ -22,14 +22,18 @@ export interface NewAccountCircuit {
 }
 
 export interface DepositCircuit {
-  prove(values: DepositAdvice<Scalar>): Promise<Proof>;
-  pubInputs(values: DepositAdvice<Scalar>): Promise<DepositPubInputs<Scalar>>;
+  prove(values: DepositAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: DepositPubInputs<Scalar>;
+  }>;
   verify(proof: Proof, pubInputs: DepositPubInputs<Scalar>): Promise<boolean>;
 }
 
 export interface WithdrawCircuit {
-  prove(values: WithdrawAdvice<Scalar>): Promise<Proof>;
-  pubInputs(values: WithdrawAdvice<Scalar>): Promise<WithdrawPubInputs<Scalar>>;
+  prove(values: WithdrawAdvice<Scalar>): Promise<{
+    proof: Proof;
+    pubInputs: WithdrawPubInputs<Scalar>;
+  }>;
   verify(proof: Proof, pubInputs: WithdrawPubInputs<Scalar>): Promise<boolean>;
 }
 
