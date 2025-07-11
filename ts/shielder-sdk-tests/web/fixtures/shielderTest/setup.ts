@@ -63,7 +63,7 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
       const shielderClient = shielderClients[action.actor];
       const registrar = registrars[action.actor];
       if (action.op.type === "shield") {
-        const {protocolFee} = await shielderClient.shield(
+        const { protocolFee } = await shielderClient.shield(
           action.op.token,
           action.op.amount,
           action.op.memo
@@ -99,7 +99,7 @@ export const setupShielderTest = async (globalConfig: GlobalConfigFixture) => {
           );
         }
       } else if (action.op.type === "withdrawManual") {
-        const {protocolFee} = await shielderClient.withdrawManual(
+        const { protocolFee } = await shielderClient.withdrawManual(
           action.op.token,
           action.op.amount,
           withdrawalAccounts[action.op.to].address,

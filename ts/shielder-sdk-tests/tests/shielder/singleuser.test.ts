@@ -32,12 +32,7 @@ const ercTokenLowercase = erc20Token(
         actor: "alice"
       },
       {
-        op: withdrawManualOp(
-          nativeToken(),
-          5n ** 17n,
-          "bob",
-          memo
-        ),
+        op: withdrawManualOp(nativeToken(), 5n ** 17n, "bob", memo),
         actor: "alice"
       },
       {
@@ -56,13 +51,7 @@ const ercTokenLowercase = erc20Token(
         actor: "alice"
       },
       {
-        op: withdrawOp(
-          ercToken,
-          7n ** 17n,
-          "bob",
-          10n ** 17n,
-          memo
-        ),
+        op: withdrawOp(ercToken, 7n ** 17n, "bob", 10n ** 17n, memo),
         actor: "alice"
       },
 
@@ -79,13 +68,7 @@ const ercTokenLowercase = erc20Token(
 
       // withdraw again via relayer
       {
-        op: withdrawOp(
-          nativeToken(),
-          10n ** 17n,
-          "charlie",
-          0n,
-          memo
-        ),
+        op: withdrawOp(nativeToken(), 10n ** 17n, "charlie", 0n, memo),
         actor: "alice"
       },
       {

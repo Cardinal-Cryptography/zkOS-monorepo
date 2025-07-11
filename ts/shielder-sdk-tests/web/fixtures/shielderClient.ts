@@ -98,7 +98,8 @@ export const setupShielderClient = async (
     sendingTransaction,
     callbacks,
     shield: async (token, amount, memo) => {
-      const { amount: totalAmount, protocolFee } = await shielderClient.getProtocolShieldFee(amount,false);
+      const { amount: totalAmount, protocolFee } =
+        await shielderClient.getProtocolShieldFee(amount, false);
       if (token.type === "erc20")
         await chainAccount.approveERC20(
           token.address,
@@ -136,11 +137,11 @@ export const setupShielderClient = async (
           memo
         ),
         protocolFee,
-        relayerFee,
+        relayerFee
       };
     },
     withdrawManual: async (token, amount, to, memo) => {
-      let { amount: totalAmount, protocolFee } =
+      const { amount: totalAmount, protocolFee } =
         await shielderClient.getProtocolWithdrawFee(amount, false);
       return {
         tx: await shielderClient.withdrawManual(

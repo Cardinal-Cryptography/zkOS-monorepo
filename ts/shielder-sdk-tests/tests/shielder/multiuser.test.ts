@@ -48,23 +48,11 @@ const memo = new Uint8Array();
         actor: "bob"
       },
       {
-        op: withdrawOp(
-          nativeToken(),
-          10n ** 17n,
-          "dave",
-          0n,
-          memo
-        ),
+        op: withdrawOp(nativeToken(), 10n ** 17n, "dave", 0n, memo),
         actor: "alice"
       },
       {
-        op: withdrawOp(
-          nativeToken(),
-          2n * 10n ** 17n,
-          "dave",
-          0n,
-          memo
-        ),
+        op: withdrawOp(nativeToken(), 2n * 10n ** 17n, "dave", 0n, memo),
         actor: "bob"
       },
       {
@@ -84,23 +72,11 @@ const memo = new Uint8Array();
         actor: "charlie"
       },
       {
-        op: withdrawOp(
-          ercToken,
-          10n ** 17n,
-          "dave",
-          10n ** 17n,
-          memo
-        ),
+        op: withdrawOp(ercToken, 10n ** 17n, "dave", 10n ** 17n, memo),
         actor: "charlie"
       },
       {
-        op: withdrawOp(
-          nativeToken(),
-          3n * 10n ** 17n,
-          "dave",
-          0n,
-          memo
-        ),
+        op: withdrawOp(nativeToken(), 3n * 10n ** 17n, "dave", 0n, memo),
         actor: "charlie"
       }
     ]

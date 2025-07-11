@@ -104,7 +104,7 @@ export class Relayer implements IRelayer {
     macCommitment: bigint,
     pocketMoney: bigint,
     quotedFees: QuotedFees,
-    memo: Uint8Array,
+    memo: Uint8Array
   ): Promise<WithdrawResponse> => {
     let response;
     try {
