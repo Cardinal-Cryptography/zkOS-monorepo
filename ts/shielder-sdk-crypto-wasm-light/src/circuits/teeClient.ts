@@ -6,7 +6,7 @@ import {
 } from "@/nitro-attestation";
 import * as secp from "@noble/secp256k1";
 import { decrypt, encrypt, generateKeypair } from "./crypto";
-import { objectToBytes } from "@/utils";
+import { hexToUint8, objectToBytes } from "@/utils";
 
 type TeePublicKeyResponse = {
   // secp256k1 public key in hex format
@@ -56,7 +56,7 @@ export class TeeClient {
   }
 
   async prove(
-    circuitType: number,
+    circuitType: "NewAccount" | "Deposit" | "Withdraw",
     witness: Uint8Array
   ): Promise<{
     proof: Uint8Array;
@@ -112,8 +112,15 @@ export class TeeClient {
     }
 
     return {
-      proof: base64ToBytes(await decrypt(data.proof, uint8ToHex(sk))),
-      pubInputs: base64ToBytes(await decrypt(data.pub_inputs, uint8ToHex(sk)))
+      proof: hexToUint8(
+        await decrypt(uint8ToHex(base64ToBytes(data.proof)), uint8ToHex(sk))
+      ),
+      pubInputs: hexToUint8(
+        await decrypt(
+          uint8ToHex(base64ToBytes(data.pub_inputs)),
+          uint8ToHex(sk)
+        )
+      )
     };
   }
 }

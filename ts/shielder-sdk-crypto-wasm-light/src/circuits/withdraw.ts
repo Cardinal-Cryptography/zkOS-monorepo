@@ -29,7 +29,7 @@ export class WithdrawTeeCircuit implements WithdrawCircuit {
 
     const witnessBytes = objectToBytes(witness);
     const { proof, pubInputs: pubInputsBytes } = await this.teeClient.prove(
-      4,
+      "Withdraw",
       witnessBytes
     );
     const pubInputsNonScalar = bytesToObject(

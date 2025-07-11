@@ -29,7 +29,7 @@ export class NewAccountTeeCircuit implements NewAccountCircuit {
 
     const witnessBytes = objectToBytes(witness);
     const { proof, pubInputs: pubInputsBytes } = await this.teeClient.prove(
-      1,
+      "NewAccount",
       witnessBytes
     );
     const pubInputsNonScalar = bytesToObject(

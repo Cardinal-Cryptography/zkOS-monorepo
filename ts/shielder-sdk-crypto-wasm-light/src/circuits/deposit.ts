@@ -29,7 +29,7 @@ export class DepositTeeCircuit implements DepositCircuit {
 
     const witnessBytes = objectToBytes(witness);
     const { proof, pubInputs: pubInputsBytes } = await this.teeClient.prove(
-      2,
+      "Deposit",
       witnessBytes
     );
     const pubInputsNonScalar = bytesToObject(
