@@ -28,14 +28,9 @@ async fn request(state: Arc<AppState>, request: Request) -> Result<Json<Response
 /// When requesting proof generation, user sends this struct as a JSON
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GenerateProofPayload {
-    /// encrypted circuit inputs. The first byte after decryption signifies circuit type, see ['CircuitType`]
+    /// Encrypted payload. See [`shielder_prover_common::protocol::Payload`]
     #[serde(with = "base64_serialization")]
     payload: Vec<u8>,
-
-    /// User's public key which should be used to encrypt generated proof, encrypted by TEE's
-    /// public key
-    #[serde(with = "base64_serialization")]
-    user_public_key: Vec<u8>,
 }
 
 #[allow(dead_code)]
