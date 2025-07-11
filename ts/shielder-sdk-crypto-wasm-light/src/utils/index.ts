@@ -4,14 +4,14 @@ export function flatUint8(arr: Uint8Array[]) {
   );
 }
 
-export function objectToBytes(object: Record<string, any>): Uint8Array {
+export function objectToBytes(object: unknown): Uint8Array {
   const jsonString = JSON.stringify(object);
   return new TextEncoder().encode(jsonString);
 }
 
-export function bytesToObject(bytes: Uint8Array): Record<string, any> {
+export function bytesToObject(bytes: Uint8Array): unknown {
   const jsonString = new TextDecoder().decode(bytes);
-  return JSON.parse(jsonString);
+  return JSON.parse(jsonString) as unknown;
 }
 
 /**

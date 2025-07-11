@@ -79,7 +79,7 @@ export async function decrypt(
   const skBytes = hexToUint8(recipientSkHex);
   const skBigInt = BigInt("0x" + uint8ToHex(skBytes));
   const shared_point = ephPk.multiply(skBigInt);
-  let shared = shared_point.toRawBytes(true);
+  const shared = shared_point.toRawBytes(true);
   const aesKey = await hkdf(shared, cryptoAPI);
 
   const plaintextBuffer = await cryptoAPI.subtle.decrypt(
