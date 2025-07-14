@@ -22,7 +22,7 @@ export {
 } from "./constants";
 
 // Utility functions
-export { bytesToBase64, base64ToBytes, uint8ToHex } from "./utils";
+export { bytesToBase64, base64ToBytes, uint8ToHex } from "@/utils";
 
 // Individual verification components (for advanced use cases)
 export {

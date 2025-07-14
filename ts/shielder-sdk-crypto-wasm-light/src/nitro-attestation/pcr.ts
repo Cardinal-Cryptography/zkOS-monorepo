@@ -3,7 +3,7 @@
  */
 
 import { EXPECTED_PCR_MEASUREMENTS } from "./constants";
-import { uint8ToHex } from "./utils";
+import { uint8ToHex } from "@/utils";
 
 /**
  * Verify PCR measurements against expected values
