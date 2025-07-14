@@ -31,6 +31,8 @@ export class TeeClient {
       headers: {
         "Content-Type": "application/json"
       }
+    }).catch((e) => {
+      throw new Error(`Failed to fetch public key from TEE service: ${e}`);
     });
     if (!response.ok) {
       throw new Error(
