@@ -29,7 +29,7 @@ pub struct Server {
 
 impl Server {
     pub fn new(port: u32) -> Result<Arc<Self>, VsockError> {
-        let address = VsockAddr::new(VMADDR_CID_ANY, port);
+        let address = VsockAddr::new(4, port);
         let listener = VsockListener::bind(address)?;
         info!("Generating server's asymmetric keys...");
 
