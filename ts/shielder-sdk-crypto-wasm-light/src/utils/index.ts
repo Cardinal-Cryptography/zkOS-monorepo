@@ -5,7 +5,12 @@ export function flatUint8(arr: Uint8Array[]) {
 }
 
 export function objectToBytes(object: unknown): Uint8Array {
-  const jsonString = JSON.stringify(object);
+  const jsonString = JSON.stringify(object, (key, value) => {
+    if (value instanceof Uint8Array) {
+      return Array.from(value);
+    }
+    return value;
+  });
   return new TextEncoder().encode(jsonString);
 }
 
@@ -38,9 +43,18 @@ export function base64ToBytes(base64: string): Uint8Array {
 }
 
 export function uint8ToHex(uint8: Uint8Array): string {
-  return Buffer.from(uint8).toString("hex");
+  return Array.from(uint8)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export function hexToUint8(hex: string): Uint8Array {
-  return new Uint8Array(Buffer.from(hex, "hex"));
+  if (hex.length % 2 !== 0) {
+    throw new Error("Hex string must have an even length");
+  }
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  }
+  return bytes;
 }

@@ -1,8 +1,7 @@
 mod circuits;
 mod server;
 use log::info;
-use shielder_prover_common::protocol::{VSOCK_PORT};
-use shielder_prover_common::vsock::VsockError;
+use shielder_prover_common::{protocol::VSOCK_PORT, vsock::VsockError};
 
 #[tokio::main]
 async fn main() -> Result<(), VsockError> {
@@ -20,7 +19,3 @@ async fn main() -> Result<(), VsockError> {
         });
     }
 }
-
-
-
-

@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
           "../../shielder-sdk",
           "../../shielder-sdk-crypto",
           "../../shielder-sdk-crypto-wasm",
+          "../../shielder-sdk-crypto-wasm-light",
           "../../shielder-sdk-tests",
           "../../../crates/shielder_bindings/pkg"
         ]

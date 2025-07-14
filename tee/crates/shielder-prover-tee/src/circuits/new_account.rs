@@ -1,4 +1,5 @@
 use std::vec::Vec;
+
 use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     field_element_to_le_bits,
@@ -6,6 +7,7 @@ use shielder_circuits::{
     Fr, GrumpkinPointAffine, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
+
 use crate::circuits::{vec_to_f, SerializableCircuit};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -98,10 +100,7 @@ impl SerializableCircuit for NewAccountCircuit {
     type Input = NewAccountProveInputsBytes;
     type Output = NewAccountPubInputsBytes;
 
-    fn prove(
-        &self,
-        new_account_bytes: NewAccountProveInputsBytes,
-    ) -> Vec<u8> {
+    fn prove(&self, new_account_bytes: NewAccountProveInputsBytes) -> Vec<u8> {
         self.0.prove(
             &NewAccountProverKnowledge {
                 id: vec_to_f(new_account_bytes.id),
@@ -109,7 +108,9 @@ impl SerializableCircuit for NewAccountCircuit {
                 initial_deposit: vec_to_f(new_account_bytes.initial_deposit),
                 caller_address: vec_to_f(new_account_bytes.caller_address),
                 token_address: vec_to_f(new_account_bytes.token_address),
-                encryption_salt: field_element_to_le_bits(vec_to_f(new_account_bytes.encryption_salt)),
+                encryption_salt: field_element_to_le_bits(vec_to_f(
+                    new_account_bytes.encryption_salt,
+                )),
                 mac_salt: vec_to_f(new_account_bytes.mac_salt),
                 anonymity_revoker_public_key: GrumpkinPointAffine {
                     x: vec_to_f(new_account_bytes.anonymity_revoker_public_key_x),
@@ -129,7 +130,9 @@ impl SerializableCircuit for NewAccountCircuit {
             initial_deposit: vec_to_f(new_account_prove_inputs_bytes.initial_deposit),
             caller_address: vec_to_f(new_account_prove_inputs_bytes.caller_address),
             token_address: vec_to_f(new_account_prove_inputs_bytes.token_address),
-            encryption_salt: field_element_to_le_bits(vec_to_f(new_account_prove_inputs_bytes.encryption_salt)),
+            encryption_salt: field_element_to_le_bits(vec_to_f(
+                new_account_prove_inputs_bytes.encryption_salt,
+            )),
             mac_salt: vec_to_f(new_account_prove_inputs_bytes.mac_salt),
             anonymity_revoker_public_key: GrumpkinPointAffine {
                 x: vec_to_f(new_account_prove_inputs_bytes.anonymity_revoker_public_key_x),
@@ -142,5 +145,3 @@ impl SerializableCircuit for NewAccountCircuit {
 }
 
 pub type SerializableNewAccountCircuit = NewAccountCircuit;
-
-

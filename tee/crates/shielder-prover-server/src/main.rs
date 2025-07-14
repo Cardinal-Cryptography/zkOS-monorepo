@@ -3,13 +3,17 @@ mod handlers;
 
 use std::{sync::Arc, time::Duration};
 
-use axum::{routing::get, serve, Router};
-use axum::extract::DefaultBodyLimit;
-use axum::routing::post;
+use axum::{
+    extract::DefaultBodyLimit,
+    routing::{get, post},
+    serve, Router,
+};
 use clap::Parser;
-use log::{info};
-use tokio::net::TcpListener;
 use error::ShielderProverServerError as Error;
+use log::info;
+use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
+
 use crate::handlers as server_handlers;
 
 #[derive(Parser, Debug, Clone)]
@@ -56,9 +60,16 @@ async fn main() -> Result<(), Error> {
 
     let app = Router::new()
         .route("/health", get(server_handlers::health::health))
-        .route("/public_key", get(server_handlers::tee_public_key::tee_public_key))
-        .route("/proof", post(server_handlers::generate_proof::generate_proof))
+        .route(
+            "/public_key",
+            get(server_handlers::tee_public_key::tee_public_key),
+        )
+        .route(
+            "/proof",
+            post(server_handlers::generate_proof::generate_proof),
+        )
         .layer(DefaultBodyLimit::max(options.maximum_request_size))
+        .layer(CorsLayer::permissive())
         .with_state(AppState { options, task_pool }.into());
 
     info!("Starting local server on {}", listener.local_addr()?);
@@ -66,5 +77,3 @@ async fn main() -> Result<(), Error> {
 
     Ok(())
 }
-
-

@@ -17,14 +17,14 @@ export class DepositTeeCircuit implements DepositCircuit {
   }> {
     const witness = {
       id: values.id.bytes,
-      nullifierOld: values.nullifierOld.bytes,
-      accountBalanceOld: values.accountBalanceOld.bytes,
-      tokenAddress: values.tokenAddress.bytes,
+      nullifier_old: values.nullifierOld.bytes,
+      account_balance_old: values.accountBalanceOld.bytes,
+      token_address: values.tokenAddress.bytes,
       path: values.path,
       value: values.value.bytes,
-      callerAddress: values.callerAddress.bytes,
-      nullifierNew: values.nullifierNew.bytes,
-      macSalt: values.macSalt.bytes
+      caller_address: values.callerAddress.bytes,
+      nullifier_new: values.nullifierNew.bytes,
+      mac_salt: values.macSalt.bytes
     };
 
     const witnessBytes = objectToBytes(witness);
@@ -32,20 +32,27 @@ export class DepositTeeCircuit implements DepositCircuit {
       "Deposit",
       witnessBytes
     );
-    const pubInputsNonScalar = bytesToObject(
-      pubInputsBytes
-    ) as DepositPubInputs<Uint8Array>;
+    const pubInputsNonScalar = bytesToObject(pubInputsBytes) as {
+      merkle_root: Uint8Array;
+      h_nullifier_old: Uint8Array;
+      h_note_new: Uint8Array;
+      value: Uint8Array;
+      caller_address: Uint8Array;
+      token_address: Uint8Array;
+      mac_salt: Uint8Array;
+      mac_commitment: Uint8Array;
+    };
     return {
       proof,
       pubInputs: {
-        merkleRoot: new Scalar(pubInputsNonScalar.merkleRoot),
-        hNullifierOld: new Scalar(pubInputsNonScalar.hNullifierOld),
-        hNoteNew: new Scalar(pubInputsNonScalar.hNoteNew),
+        merkleRoot: new Scalar(pubInputsNonScalar.merkle_root),
+        hNullifierOld: new Scalar(pubInputsNonScalar.h_nullifier_old),
+        hNoteNew: new Scalar(pubInputsNonScalar.h_note_new),
         value: new Scalar(pubInputsNonScalar.value),
-        callerAddress: new Scalar(pubInputsNonScalar.callerAddress),
-        tokenAddress: new Scalar(pubInputsNonScalar.tokenAddress),
-        macSalt: new Scalar(pubInputsNonScalar.macSalt),
-        macCommitment: new Scalar(pubInputsNonScalar.macCommitment)
+        callerAddress: new Scalar(pubInputsNonScalar.caller_address),
+        tokenAddress: new Scalar(pubInputsNonScalar.token_address),
+        macSalt: new Scalar(pubInputsNonScalar.mac_salt),
+        macCommitment: new Scalar(pubInputsNonScalar.mac_commitment)
       }
     };
   }

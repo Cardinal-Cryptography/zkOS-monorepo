@@ -1,4 +1,4 @@
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
 
 use futures::{SinkExt as _, StreamExt as _};
 use serde::{Deserialize, Serialize};

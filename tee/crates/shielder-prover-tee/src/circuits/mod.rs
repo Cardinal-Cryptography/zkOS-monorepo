@@ -1,13 +1,14 @@
 //! this module is a copy-paste of crates/shielder_bindings/src/circuits
 //! some of the original contents were removed as target of this module is purely std
 
-use std::vec::Vec;
 use core::marker::PhantomData;
+use std::vec::Vec;
 
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     circuits::{Params, ProvingKey},
+    consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT},
     deposit::DepositProverKnowledge,
     generate_proof,
     marshall::{unmarshall_params, unmarshall_pk},
@@ -15,11 +16,10 @@ use shielder_circuits::{
     withdraw::WithdrawProverKnowledge,
     Fr, ProverKnowledge,
 };
-use shielder_circuits::consts::merkle_constants::{ARITY, NOTE_TREE_HEIGHT};
 use type_conversions::bytes_to_field;
 
-pub mod new_account;
 pub mod deposit;
+pub mod new_account;
 pub mod withdraw;
 
 pub trait WasmCircuit {
@@ -104,7 +104,7 @@ pub fn vec_to_path(v: Vec<u8>) -> [[Fr; ARITY]; NOTE_TREE_HEIGHT] {
                         .try_into()
                         .unwrap_or_else(|_| panic!("should be {} bytes long", Fr::size())),
                 )
-                    .expect("failed to convert to F");
+                .expect("failed to convert to F");
             }
         }
     }
