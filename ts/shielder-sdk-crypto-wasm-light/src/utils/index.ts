@@ -9,6 +9,7 @@ export function objectToBytes(object: unknown): Uint8Array {
     if (value instanceof Uint8Array) {
       return Array.from(value);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value;
   });
   return new TextEncoder().encode(jsonString);

@@ -4,8 +4,7 @@ import {
   NewAccountCircuit,
   NewAccountPubInputs,
   Proof,
-  Scalar,
-  scalarToBigint
+  Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { TeeClient } from "./teeClient";
 
