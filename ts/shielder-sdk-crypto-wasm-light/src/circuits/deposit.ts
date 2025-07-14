@@ -7,8 +7,12 @@ import {
   Scalar
 } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { TeeClient } from "./teeClient";
+import { TeeClient } from "./teeClient";
 
 export class DepositTeeCircuit implements DepositCircuit {
+  constructor(private teeClient: TeeClient) {}
+
+  async prove(values: DepositAdvice<Scalar>): Promise<{
   constructor(private teeClient: TeeClient) {}
 
   async prove(values: DepositAdvice<Scalar>): Promise<{
@@ -56,6 +60,7 @@ export class DepositTeeCircuit implements DepositCircuit {
       }
     };
   }
+
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
   verify(proof: Proof, pubInputs: DepositPubInputs<Scalar>): Promise<boolean> {
