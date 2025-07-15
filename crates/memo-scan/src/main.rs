@@ -1,9 +1,10 @@
 use alloy_primitives::Address;
 use anyhow::Result;
 use clap::Parser;
+
 use crate::scan::scan_blocks;
-mod utils;
 pub mod scan;
+mod utils;
 
 /// Scan blocks for referrals in the shielder contract.
 #[derive(Parser, Debug)]
@@ -26,12 +27,13 @@ struct Args {
     stop_block: Option<u64>,
 }
 
-
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     let args = Args::parse();
 
-    let contract_address = args.contract_address.parse::<Address>()
+    let contract_address = args
+        .contract_address
+        .parse::<Address>()
         .map_err(|_| anyhow::anyhow!("Invalid contract address"))?;
 
     let referrals = scan_blocks(
@@ -39,7 +41,8 @@ async fn main() -> Result<()> {
         &contract_address,
         args.start_block,
         args.stop_block,
-    ).await?;
+    )
+    .await?;
     println!("Found {} referrals", referrals.len());
     Ok(())
 }

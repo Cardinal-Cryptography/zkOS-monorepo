@@ -14,7 +14,6 @@ use crate::utils::get_contract_deployment_block_num;
 
 const BATCH_LENGTH: usize = 10000;
 
-
 pub struct Referral {
     pub block_number: u64,
     pub transaction_hash: [u8; 32],

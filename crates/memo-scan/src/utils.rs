@@ -4,7 +4,6 @@ use alloy_provider::Provider;
 use alloy_transport::BoxTransport;
 use anyhow::Result;
 
-
 // This thing is guaranteed to work correctly only if the provider is an archival node.
 async fn get_code_at_height(
     provider: &impl Provider<BoxTransport, AnyNetwork>,
