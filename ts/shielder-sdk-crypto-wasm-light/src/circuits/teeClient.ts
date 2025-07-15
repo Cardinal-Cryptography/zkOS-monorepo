@@ -6,7 +6,7 @@ import {
 } from "@/nitro-attestation";
 import * as secp from "@noble/secp256k1";
 import { decrypt, encrypt, generateKeypair } from "./crypto";
-import { hexToUint8, objectToBytes } from "@/utils";
+import { objectToBytes } from "@/utils";
 
 type TeePublicKeyResponse = {
   TeePublicKey: {
