@@ -5,7 +5,7 @@ use crate::{
     vsock::{VsockClient, VsockServer},
 };
 
-pub const VSOCK_PORT: u32 = 5000;
+pub const VSOCK_PORT: u16 = 5000;
 
 /// Request to generate proof. A `payload` is encrypted `ciphertext=(pub_sk, circuit_type, circuit_inputs)`, where
 /// * `pub_sk` is a user public key, expressed as a vector of bytes, compatible with [ecies-encryption-lib](https://github.com/Cardinal-Cryptography/ecies-encryption-lib),

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{extract::State, response::IntoResponse, Json};
+use tracing::instrument;
 use shielder_prover_common::protocol::Request;
 
 use crate::{
@@ -8,6 +9,8 @@ use crate::{
     handlers::{request, GenerateProofPayload},
     AppState,
 };
+
+#[instrument(level = "trace")]
 pub async fn generate_proof(
     State(state): State<Arc<AppState>>,
     Json(generate_proof_payload): Json<GenerateProofPayload>,

@@ -1,5 +1,6 @@
 mod error;
 mod handlers;
+mod command_line_args;
 
 use std::{sync::Arc, time::Duration};
 
@@ -8,51 +9,42 @@ use axum::{
     routing::{get, post},
     serve, Router,
 };
-use clap::Parser;
+
 use error::ShielderProverServerError as Error;
-use log::info;
+use clap::Parser;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
-
+use tracing::info;
+use tracing_subscriber::{fmt, EnvFilter};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use crate::command_line_args::CommandLineArgs;
 use crate::handlers as server_handlers;
 
-#[derive(Parser, Debug, Clone)]
-struct Options {
-    #[arg(short, long, default_value = "3000")]
-    port: u16,
-
-    #[arg(short, long, default_value = "127.0.0.1")]
-    bind_address: String,
-
-    #[clap(long, default_value_t = vsock::VMADDR_CID_HOST)]
-    tee_cid: u32,
-
-    #[clap(long, default_value_t = 100)]
-    task_pool_capacity: usize,
-
-    /// Maximum request size (in bytes) sent to server
-    #[clap(long, default_value_t = 100 * 1024)]
-    maximum_request_size: usize,
-
-    #[clap(long, default_value_t = 5)]
-    task_pool_timeout_secs: u64,
-
-    #[clap(long, default_value_t = 600)]
-    tee_compute_timeout_secs: u64,
-}
-
+#[derive(Debug)]
 struct AppState {
-    options: Options,
+    options: CommandLineArgs,
     task_pool: Arc<tokio_task_pool::Pool>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::registry()
+        .with(
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .with(
+            fmt::layer()
+                .with_ansi(true)
+                .with_timer(fmt::time::ChronoUtc::new("%Y-%m-%dT%H:%M:%S%.3fZ".into()))
+                .with_span_events(fmt::format::FmtSpan::CLOSE),
+        )
+        .init();
 
-    let options = Options::parse();
+    let options = CommandLineArgs::parse();
 
-    let listener = TcpListener::bind((options.bind_address.clone(), options.port)).await?;
+    let listener = TcpListener::bind((options.bind_address.clone(), options.public_port)).await?;
     let task_pool = tokio_task_pool::Pool::bounded(options.task_pool_capacity)
         .with_spawn_timeout(Duration::from_secs(options.task_pool_timeout_secs))
         .with_run_timeout(Duration::from_secs(options.tee_compute_timeout_secs))
