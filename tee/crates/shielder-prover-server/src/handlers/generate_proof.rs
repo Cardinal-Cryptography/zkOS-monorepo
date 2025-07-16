@@ -1,22 +1,32 @@
 use std::sync::Arc;
-use axum::extract::State;
-use axum::Json;
-use axum::response::IntoResponse;
+
+use axum::{extract::State, response::IntoResponse, Json};
 use shielder_prover_common::protocol::Request;
-use crate::AppState;
-use crate::error::ShielderProverServerError;
-use crate::handlers::{request, GenerateProofPayload};
-pub async fn generate_proof(State(state): State<Arc<AppState>>,
-                            Json(generate_proof_payload): Json<GenerateProofPayload>) -> impl IntoResponse {
+
+use crate::{
+    error::ShielderProverServerError,
+    handlers::{request, GenerateProofPayload},
+    AppState,
+};
+pub async fn generate_proof(
+    State(state): State<Arc<AppState>>,
+    Json(generate_proof_payload): Json<GenerateProofPayload>,
+) -> impl IntoResponse {
     let task_pool = state.task_pool.clone();
 
     task_pool
-        .spawn(async move { request(state, Request::GenerateProof {
-            payload: generate_proof_payload.payload}).await
+        .spawn(async move {
+            request(
+                state,
+                Request::GenerateProof {
+                    payload: generate_proof_payload.payload,
+                },
+            )
+            .await
         })
         .await
-        .map_err(|e| ShielderProverServerError::TaskPool(e))?
+        .map_err(ShielderProverServerError::TaskPool)?
         .await
-        .map_err(|e| ShielderProverServerError::JoinHandleError(e))??
-        .map_err(|e| ShielderProverServerError::ProvingServerError(e))
+        .map_err(ShielderProverServerError::JoinHandleError)??
+        .map_err(ShielderProverServerError::ProvingServerError)
 }

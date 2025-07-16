@@ -1,20 +1,21 @@
 use std::sync::Arc;
-use axum::extract::State;
-use axum::Json;
+
+use axum::{extract::State, Json};
 use shielder_prover_common::protocol::{Request, Response};
-use crate::AppState;
-use crate::error::ShielderProverServerError;
-use crate::handlers::request;
+
+use crate::{error::ShielderProverServerError, handlers::request, AppState};
 
 #[axum::debug_handler]
-pub async fn tee_public_key(State(state): State<Arc<AppState>>) -> Result<Json<Response>, ShielderProverServerError> {
+pub async fn tee_public_key(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Response>, ShielderProverServerError> {
     let task_pool = state.task_pool.clone();
 
     task_pool
         .spawn(async move { request(state, Request::TeePublicKey).await })
         .await
-        .map_err(|e| ShielderProverServerError::TaskPool(e))?
+        .map_err(ShielderProverServerError::TaskPool)?
         .await
-        .map_err(|e| ShielderProverServerError::JoinHandleError(e))??
-        .map_err(|e| ShielderProverServerError::ProvingServerError(e))
+        .map_err(ShielderProverServerError::JoinHandleError)??
+        .map_err(ShielderProverServerError::ProvingServerError)
 }

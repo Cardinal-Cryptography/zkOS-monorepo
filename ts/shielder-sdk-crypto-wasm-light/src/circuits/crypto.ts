@@ -36,11 +36,11 @@ async function hkdf(
 }
 
 export async function encrypt(
-  message: string,
-  recipientPubHex: string
-): Promise<string> {
+  message: Uint8Array,
+  recipientPub: secp.Point
+): Promise<Uint8Array> {
   const cryptoAPI = await getCrypto();
-  const recipientPub = secp.Point.fromHex(recipientPubHex);
+
   const ephSk = secp.utils.randomPrivateKey();
   const ephPk = secp.getPublicKey(ephSk, true);
 
@@ -49,12 +49,11 @@ export async function encrypt(
   const aesKey = await hkdf(shared, cryptoAPI);
 
   const iv = cryptoAPI.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(message);
 
   const ciphertextBuffer = await cryptoAPI.subtle.encrypt(
     { name: "AES-GCM", iv },
     aesKey,
-    encoded
+    message
   );
   const ciphertext = new Uint8Array(ciphertextBuffer);
 
@@ -63,15 +62,14 @@ export async function encrypt(
   out.set(iv, ephPk.length);
   out.set(ciphertext, ephPk.length + iv.length);
 
-  return uint8ToHex(out);
+  return out;
 }
 
 export async function decrypt(
-  ciphertextHex: string,
+  bytes: Uint8Array,
   recipientSkHex: string
-): Promise<string> {
+): Promise<Uint8Array> {
   const cryptoAPI = await getCrypto();
-  const bytes = hexToUint8(ciphertextHex);
   const ephPk = secp.Point.fromHex(bytes.slice(0, 33));
   const iv = bytes.slice(33, 45);
   const ciphertext = bytes.slice(45);
@@ -87,7 +85,7 @@ export async function decrypt(
     aesKey,
     ciphertext
   );
-  return new TextDecoder().decode(plaintextBuffer);
+  return new Uint8Array(plaintextBuffer);
 }
 
 async function getCrypto(): Promise<Crypto> {

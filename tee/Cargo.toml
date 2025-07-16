@@ -29,6 +29,7 @@ tokio = "1.45.0"
 tokio-task-pool = "0.1.5"
 tokio-util = "0.7.15"
 tokio-vsock = "0.7.1"
+tower-http = { version = "0.6.1" }
 vsock = "0.5.1"
 
 shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "df31437" }

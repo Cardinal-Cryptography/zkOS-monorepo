@@ -1,10 +1,12 @@
 use std::vec::Vec;
+
 use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     withdraw::{WithdrawInstance, WithdrawProverKnowledge},
     Fr, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
+
 use crate::circuits::{vec_to_f, vec_to_path, SerializableCircuit};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -77,10 +79,7 @@ impl SerializableCircuit for WithdrawCircuit {
     type Input = WithdrawProveInputsBytes;
     type Output = WithdrawPubInputsBytes;
 
-    fn prove(
-        &self,
-       withdraw_prove_inputs_bytes: WithdrawProveInputsBytes,
-    ) -> Vec<u8> {
+    fn prove(&self, withdraw_prove_inputs_bytes: WithdrawProveInputsBytes) -> Vec<u8> {
         self.0.prove(
             &WithdrawProverKnowledge {
                 id: vec_to_f(withdraw_prove_inputs_bytes.id),
@@ -97,9 +96,7 @@ impl SerializableCircuit for WithdrawCircuit {
         )
     }
 
-    fn pub_inputs(
-        withdraw_prove_inputs_bytes: WithdrawProveInputsBytes,
-    ) -> WithdrawPubInputsBytes {
+    fn pub_inputs(withdraw_prove_inputs_bytes: WithdrawProveInputsBytes) -> WithdrawPubInputsBytes {
         let knowledge = WithdrawProverKnowledge {
             id: vec_to_f(withdraw_prove_inputs_bytes.id),
             nullifier_old: vec_to_f(withdraw_prove_inputs_bytes.nullifier_old),

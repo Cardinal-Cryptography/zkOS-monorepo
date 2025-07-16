@@ -10,6 +10,7 @@ import {
 } from "@cardinal-cryptography/shielder-sdk";
 import type { CryptoClient } from "@cardinal-cryptography/shielder-sdk-crypto";
 import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm";
+// import { initWasmWorker } from "@cardinal-cryptography/shielder-sdk-crypto-wasm-light";
 import type { GlobalConfigFixture } from "@tests/playwrightFixtures/globalConfig";
 import {
   type ShielderTestFixture,
@@ -78,6 +79,10 @@ function EntryPoint() {
           pkBuf: withdrawPk
         }
       );
+      // window.wasmCryptoClient.cryptoClient = initWasmWorker(
+      //   "http://51.20.132.7:3000",
+      //   true
+      // );
       // Expose shielder utilities
       window.shielder = window.shielder || {};
       window.shielder.createShielderClient = createShielderClient;

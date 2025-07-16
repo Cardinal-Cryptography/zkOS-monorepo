@@ -1,10 +1,12 @@
 use std::vec::Vec;
+
 use serde::{Deserialize, Serialize};
 use shielder_circuits::{
     deposit::{DepositInstance, DepositProverKnowledge},
     Fr, PublicInputProvider,
 };
 use type_conversions::field_to_bytes;
+
 use crate::circuits::{vec_to_f, vec_to_path, SerializableCircuit};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -75,10 +77,7 @@ impl SerializableCircuit for DepositCircuit {
     type Input = DepositProveInputBytes;
     type Output = DepositPubInputsBytes;
 
-    fn prove(
-        &self,
-        deposit_prove_input_bytes: DepositProveInputBytes,
-    ) -> Vec<u8> {
+    fn prove(&self, deposit_prove_input_bytes: DepositProveInputBytes) -> Vec<u8> {
         self.0.prove(
             &DepositProverKnowledge {
                 id: vec_to_f(deposit_prove_input_bytes.id),
@@ -95,9 +94,7 @@ impl SerializableCircuit for DepositCircuit {
         )
     }
 
-    fn pub_inputs(
-        deposit_prove_input_bytes: DepositProveInputBytes,
-    ) -> DepositPubInputsBytes {
+    fn pub_inputs(deposit_prove_input_bytes: DepositProveInputBytes) -> DepositPubInputsBytes {
         let knowledge = DepositProverKnowledge {
             id: vec_to_f(deposit_prove_input_bytes.id),
             nullifier_old: vec_to_f(deposit_prove_input_bytes.nullifier_old),
@@ -107,7 +104,7 @@ impl SerializableCircuit for DepositCircuit {
             deposit_value: vec_to_f(deposit_prove_input_bytes.value),
             caller_address: vec_to_f(deposit_prove_input_bytes.caller_address),
             nullifier_new: vec_to_f(deposit_prove_input_bytes.nullifier_new),
-            mac_salt: vec_to_f(deposit_prove_input_bytes. mac_salt),
+            mac_salt: vec_to_f(deposit_prove_input_bytes.mac_salt),
         };
 
         knowledge.into()

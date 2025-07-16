@@ -1,24 +1,25 @@
 use std::sync::Arc;
+
 use axum::Json;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use shielder_prover_common::protocol::{ProverClient, Request, Response, VSOCK_PORT};
-use shielder_prover_common::vsock::VsockError;
-use shielder_prover_common::base64_serialization;
+use shielder_prover_common::{
+    base64_serialization,
+    protocol::{ProverClient, Request, Response, VSOCK_PORT},
+    vsock::VsockError,
+};
+
 use crate::AppState;
 
+pub mod generate_proof;
 pub mod health;
 pub mod tee_public_key;
-pub mod generate_proof;
 
 async fn request(state: Arc<AppState>, request: Request) -> Result<Json<Response>, VsockError> {
     debug!("Sending TEE request: {:?}", request);
 
-    let mut tee_client = ProverClient::new(state.options.tee_cid, VSOCK_PORT)
-        .await?;
-    let response = tee_client
-        .request(&request)
-        .await?;
+    let mut tee_client = ProverClient::new(state.options.tee_cid, VSOCK_PORT).await?;
+    let response = tee_client.request(&request).await?;
 
     debug!("Got TEE response: {:?}", response);
 

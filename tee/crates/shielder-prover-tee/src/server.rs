@@ -1,21 +1,25 @@
 use std::sync::Arc;
-use log::{debug, info};
-use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
-use shielder_prover_common::protocol::{CircuitType, Payload, ProverServer, Request, Response};
-use shielder_prover_common::vsock::VsockError;
-use ecies_encryption_lib::{generate_keypair, PrivKey, PubKey};
-use ecies_encryption_lib::utils::to_hex;
-use serde::{Deserialize};
-use serde_json::Deserializer as JsonDeserializer;
-use crate::circuits::SerializableCircuit;
-use crate::circuits::deposit::SerializableDepositCircuit;
-use crate::circuits::new_account::SerializableNewAccountCircuit;
-use crate::circuits::withdraw::SerializableWithdrawCircuit;
 
 #[cfg(not(feature = "without_attestation"))]
-use aws_nitro_enclaves_nsm_api::{api::Request as NsmRequest,
-                                 driver::{nsm_process_request, nsm_init, nsm_exit},
-                                 api::Response as NsmResponse,};
+use aws_nitro_enclaves_nsm_api::{
+    api::Request as NsmRequest,
+    api::Response as NsmResponse,
+    driver::{nsm_exit, nsm_init, nsm_process_request},
+};
+use ecies_encryption_lib::{generate_keypair, utils::to_hex, PrivKey, PubKey};
+use log::{debug, info};
+use serde::Deserialize;
+use serde_json::Deserializer as JsonDeserializer;
+use shielder_prover_common::{
+    protocol::{CircuitType, Payload, ProverServer, Request, Response},
+    vsock::VsockError,
+};
+use tokio_vsock::{VsockAddr, VsockListener, VsockStream, VMADDR_CID_ANY};
+
+use crate::circuits::{
+    deposit::SerializableDepositCircuit, new_account::SerializableNewAccountCircuit,
+    withdraw::SerializableWithdrawCircuit, SerializableCircuit,
+};
 
 pub struct Server {
     private_key: Vec<u8>,
@@ -60,7 +64,7 @@ impl Server {
         &self.listener
     }
 
-    pub fn public_key(&self) -> Vec<u8>{
+    pub fn public_key(&self) -> Vec<u8> {
         self.public_key.clone()
     }
     pub async fn handle_client(self: Arc<Self>, stream: VsockStream) {
@@ -76,13 +80,10 @@ impl Server {
                 .handle_request(|request| match request {
                     Request::Ping => Ok(Response::Pong),
                     Request::TeePublicKey => self.public_key_response(),
-                    Request::GenerateProof {payload} => {
-                            let (proof, pub_inputs) = self.encrypted_proof_response(payload)?;
-                            Ok(Response::EncryptedProof{
-                                proof,
-                                pub_inputs,
-                            })
-                        }
+                    Request::GenerateProof { payload } => {
+                        let (proof, pub_inputs) = self.encrypted_proof_response(payload)?;
+                        Ok(Response::EncryptedProof { proof, pub_inputs })
+                    }
                 })
                 .await?;
         }
@@ -105,50 +106,79 @@ impl Server {
     }
 
     #[cfg(not(feature = "without_attestation"))]
-    fn request_attestation_from_nsm_driver(&self, tee_public_key: Vec<u8>) -> Result<Vec<u8>, VsockError> {
-        match nsm_process_request(self.nsm_fd, NsmRequest::Attestation {
-            user_data: None,
-            public_key: Some(tee_public_key.into()),
-            nonce: None
-        }) {
+    fn request_attestation_from_nsm_driver(
+        &self,
+        tee_public_key: Vec<u8>,
+    ) -> Result<Vec<u8>, VsockError> {
+        match nsm_process_request(
+            self.nsm_fd,
+            NsmRequest::Attestation {
+                user_data: None,
+                public_key: Some(tee_public_key.into()),
+                nonce: None,
+            },
+        ) {
             NsmResponse::Attestation { document } => Ok(document),
-            _ => Err(VsockError::Protocol(String::from("NSM driver failed to compute attestation."))),
+            _ => Err(VsockError::Protocol(String::from(
+                "NSM driver failed to compute attestation.",
+            ))),
         }
     }
 
-    fn encrypted_proof_response(&self, request_payload: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), VsockError>  {
+    fn encrypted_proof_response(
+        &self,
+        request_payload: Vec<u8>,
+    ) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
         let decrypted_payload = self.decrypt_using_servers_private_key(&request_payload)?;
 
-        let mut payload_deserializer = JsonDeserializer::from_reader(decrypted_payload.as_slice());
-        let deserialized_payload = Payload::deserialize(&mut payload_deserializer)?;
+        let decrypted_payload = str::from_utf8(&decrypted_payload).map_err(|_| {
+            VsockError::Protocol(String::from("Failed to decode decrypted payload as UTF-8."))
+        })?;
+        let deserialized_payload: Payload = serde_json::from_str(decrypted_payload)?;
 
-        let (proof, pub_inputs) = Self::compute_proof(&deserialized_payload.circuit_inputs, deserialized_payload.circuit_type)?;
+        let (proof, pub_inputs) = Self::compute_proof(
+            &deserialized_payload.circuit_inputs,
+            deserialized_payload.circuit_type,
+        )?;
         let encrypted_proof = Self::encrypt_bytes(&deserialized_payload.user_public_key, proof)?;
-        let encrypted_pub_inputs = Self::encrypt_bytes(&deserialized_payload.user_public_key, pub_inputs)?;
+        let encrypted_pub_inputs =
+            Self::encrypt_bytes(&deserialized_payload.user_public_key, pub_inputs)?;
 
         Ok((encrypted_proof, encrypted_pub_inputs))
     }
 
     fn encrypt_bytes(user_public_key: &[u8], bytes: Vec<u8>) -> Result<Vec<u8>, VsockError> {
-        let pub_key = PubKey::from_bytes(&user_public_key)
+        let pub_key = PubKey::from_bytes(user_public_key)
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
         let encrypted_bytes = ecies_encryption_lib::encrypt(bytes.as_slice(), &pub_key);
         Ok(encrypted_bytes)
     }
 
-    fn compute_proof(serialized_circuit_inputs: &[u8], circuit_type: CircuitType) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
+    fn compute_proof(
+        serialized_circuit_inputs: &[u8],
+        circuit_type: CircuitType,
+    ) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
         let (proof, pub_inputs) = match circuit_type {
-            CircuitType::NewAccount =>
-                Self::compute_proof_for_circuit(serialized_circuit_inputs, SerializableNewAccountCircuit::new())?,
-            CircuitType::Deposit =>
-                Self::compute_proof_for_circuit(serialized_circuit_inputs, SerializableDepositCircuit::new())?,
-            CircuitType::Withdraw =>
-                Self::compute_proof_for_circuit(serialized_circuit_inputs, SerializableWithdrawCircuit::new())?,
+            CircuitType::NewAccount => Self::compute_proof_for_circuit(
+                serialized_circuit_inputs,
+                SerializableNewAccountCircuit::new(),
+            )?,
+            CircuitType::Deposit => Self::compute_proof_for_circuit(
+                serialized_circuit_inputs,
+                SerializableDepositCircuit::new(),
+            )?,
+            CircuitType::Withdraw => Self::compute_proof_for_circuit(
+                serialized_circuit_inputs,
+                SerializableWithdrawCircuit::new(),
+            )?,
         };
         Ok((proof, pub_inputs))
     }
 
-    fn compute_proof_for_circuit<C>(serialized_circuit_inputs: &[u8], circuit: C) -> Result<(Vec<u8>, Vec<u8>), VsockError>
+    fn compute_proof_for_circuit<C>(
+        serialized_circuit_inputs: &[u8],
+        circuit: C,
+    ) -> Result<(Vec<u8>, Vec<u8>), VsockError>
     where
         C: SerializableCircuit,
     {
@@ -158,13 +188,19 @@ impl Server {
         let pub_inputs_bytes = C::pub_inputs(circuit_pub_inputs_bytes.clone());
         // prove() might panic, which won't be caught here, however default behaviour of this server is to ignore panic
         // see https://docs.rs/tokio/latest/tokio/runtime/enum.UnhandledPanic.html#variant.Ignore
-        Ok((circuit.prove(circuit_pub_inputs_bytes), serde_json::to_vec(&pub_inputs_bytes)?))
+        Ok((
+            circuit.prove(circuit_pub_inputs_bytes),
+            serde_json::to_vec(&pub_inputs_bytes)?,
+        ))
     }
 
-    fn decrypt_using_servers_private_key(&self, request_payload: &Vec<u8>) -> Result<Vec<u8>, VsockError> {
+    fn decrypt_using_servers_private_key(
+        &self,
+        request_payload: &[u8],
+    ) -> Result<Vec<u8>, VsockError> {
         let private_key = PrivKey::from_bytes(self.private_key.as_slice())
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
-        let decrypted_payload = ecies_encryption_lib::decrypt(&request_payload, &private_key)
+        let decrypted_payload = ecies_encryption_lib::decrypt(request_payload, &private_key)
             .map_err(|error| VsockError::Protocol(error.to_string()))?;
         Ok(decrypted_payload)
     }
@@ -175,7 +211,9 @@ impl Server {
         let nsm_fd = nsm_init();
 
         if nsm_fd < 0 {
-            return Err(VsockError::Protocol(String::from("Failed to initialize NSM driver.")));
+            return Err(VsockError::Protocol(String::from(
+                "Failed to initialize NSM driver.",
+            )));
         }
 
         Ok(nsm_fd)
