@@ -40,7 +40,7 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
                 knowledge.compute_public_input(NewAccountInstance::InitialDeposit),
             ),
             commitment: field_to_bytes(
-                knowledge.compute_public_input(NewAccountInstance::CallerAddress),
+                knowledge.compute_public_input(NewAccountInstance::Commitment),
             ),
             token_address: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::TokenAddress),

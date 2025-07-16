@@ -32,7 +32,7 @@ tokio-vsock = "0.7.1"
 tower-http = { version = "0.6.1" }
 vsock = "0.5.1"
 
-shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "df31437" }
+shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "3bc3087" }
 ecies-encryption-lib = { git = "https://github.com/Cardinal-Cryptography/ecies-encryption-lib", branch = "main" }
 
 # This is not ideal - one workspace depends on another, but as long as it reproducibly produces
