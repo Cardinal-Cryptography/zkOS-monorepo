@@ -37,5 +37,5 @@ ecies-encryption-lib = { git = "https://github.com/Cardinal-Cryptography/ecies-e
 
 # This is not ideal - one workspace depends on another, but as long as it reproducibly produces
 # the same measurements, we are good
-type-conversions = { git = "https://github.com/Cardinal-Cryptography/zkOS-monorepo", rev = "4ff7e5a" }
-powers-of-tau = { git = "https://github.com/Cardinal-Cryptography/zkOS-monorepo", rev = "4ff7e5a" }
+type-conversions = { path = "../crates/type-conversions" }
+powers-of-tau = { path = "../crates/powers-of-tau" }

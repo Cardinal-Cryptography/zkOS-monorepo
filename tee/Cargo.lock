@@ -1771,7 +1771,6 @@ dependencies = [
 [[package]]
 name = "powers-of-tau"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a#4ff7e5a5f601581fc1e1f7bb823b7572aeba3092"
 dependencies = [
  "byteorder",
  "halo2_proofs",
@@ -2760,7 +2759,6 @@ dependencies = [
 [[package]]
 name = "type-conversions"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a#4ff7e5a5f601581fc1e1f7bb823b7572aeba3092"
 dependencies = [
  "alloy-primitives",
  "halo2curves",
