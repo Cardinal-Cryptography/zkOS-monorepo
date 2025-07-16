@@ -825,7 +825,7 @@ dependencies = [
 [[package]]
 name = "ecies-encryption-lib"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/ecies-encryption-lib?branch=main#a03b55e37d610aa9babf4719ffaea6e61fe7655a"
+source = "git+https://github.com/Cardinal-Cryptography/ecies-encryption-lib?rev=a03b55e37d610aa9babf4719ffaea6e61fe7655a#a03b55e37d610aa9babf4719ffaea6e61fe7655a"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -1782,7 +1782,7 @@ dependencies = [
 [[package]]
 name = "powers-of-tau"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a#4ff7e5a5f601581fc1e1f7bb823b7572aeba3092"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=374a0d5dea2128e9b5100ede6daecc9253a241d9#374a0d5dea2128e9b5100ede6daecc9253a241d9"
 dependencies = [
  "byteorder",
  "halo2_proofs",
@@ -2801,7 +2801,7 @@ dependencies = [
 [[package]]
 name = "type-conversions"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a#4ff7e5a5f601581fc1e1f7bb823b7572aeba3092"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=374a0d5dea2128e9b5100ede6daecc9253a241d9#374a0d5dea2128e9b5100ede6daecc9253a241d9"
 dependencies = [
  "alloy-primitives",
  "halo2curves",

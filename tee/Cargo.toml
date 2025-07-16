@@ -32,10 +32,11 @@ tokio-vsock = "0.7.1"
 tower-http = { version = "0.6.1" }
 vsock = "0.5.1"
 
+# below dependency is also used in master workspace Cargo.toml
 shielder-circuits = { git = "https://github.com/Cardinal-Cryptography/zkOS-circuits", rev = "3bc3087" }
-ecies-encryption-lib = { git = "https://github.com/Cardinal-Cryptography/ecies-encryption-lib", branch = "main" }
 
-# This is not ideal - one workspace depends on another, but as long as it reproducibly produces
-# the same measurements, we are good
-type-conversions = { git = "https://github.com/Cardinal-Cryptography/zkOS-monorepo", rev = "4ff7e5a" }
-powers-of-tau = { git = "https://github.com/Cardinal-Cryptography/zkOS-monorepo", rev = "4ff7e5a" }
+ecies-encryption-lib = { git = "https://github.com/Cardinal-Cryptography/ecies-encryption-lib", rev = "a03b55e37d610aa9babf4719ffaea6e61fe7655a" }
+
+# below dependencies contains a rev which is also used in tee/nix/flake.nix, which is far from ideal since one needs to bump it there as well
+type-conversions = { git = "https://github.com/Cardinal-Cryptography/zkOS-monorepo", rev = "374a0d5dea2128e9b5100ede6daecc9253a241d9" }
+powers-of-tau = { git = "https://github.com/Cardinal-Cryptography/zkOS-monorepo", rev = "374a0d5dea2128e9b5100ede6daecc9253a241d9" }
