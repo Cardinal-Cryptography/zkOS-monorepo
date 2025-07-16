@@ -17,6 +17,7 @@
     "@cardinal-cryptography/shielder-sdk": "workspace:*",
     "@cardinal-cryptography/shielder-sdk-crypto": "workspace:*",
     "@cardinal-cryptography/shielder-sdk-crypto-wasm": "workspace:*",
+    "@cardinal-cryptography/shielder-sdk-crypto-wasm-light": "workspace:*",
     "@playwright/test": "^1.45.0",
     "@types/node": "^20.17.19",
     "@types/react": "^18.3.3",
