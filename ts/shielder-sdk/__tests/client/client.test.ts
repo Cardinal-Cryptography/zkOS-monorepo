@@ -18,7 +18,7 @@ import { OutdatedSdkError } from "../../src/errors";
 import { ShielderCallbacks } from "../../src/client/types";
 import { nativeToken } from "../../src/utils";
 import { ShielderActions } from "../../src/client/actions";
-import { ProtocolFees } from "../../src/protocol-fees/protocolFees";
+import { ProtocolFees } from "../../src/protocolFees";
 import { AccountRegistry } from "../../src/state/accountRegistry";
 import { StateSynchronizer } from "../../src/state/sync/synchronizer";
 import { HistoryFetcher } from "../../src/state/sync/historyFetcher";

@@ -9,7 +9,7 @@ import { ShielderActions } from "./actions";
 import { ShielderComponents } from "./factories";
 import { QuotedFees } from "@/chain/relayer";
 import { handleShielderError } from "@/utils/errorHandler";
-import { ProtocolFees, ProtocolFeeQuote } from "@/protocol-fees/protocolFees";
+import { ProtocolFees, ProtocolFeeQuote } from "@/protocolFees";
 
 export class ShielderClient {
   private accountRegistry: AccountRegistry;

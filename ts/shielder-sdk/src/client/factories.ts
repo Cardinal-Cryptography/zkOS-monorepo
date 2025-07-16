@@ -24,7 +24,7 @@ import {
 import { LocalStateTransition } from "@/state/localStateTransition";
 import { ChainStateTransition } from "@/state/sync/chainStateTransition";
 import { AccountOnchain } from "@/state/accountOnchain";
-import { ProtocolFees } from "@/protocol-fees/protocolFees";
+import { ProtocolFees } from "@/protocolFees";
 
 // Base config with common properties
 type BaseShielderConfig = {
