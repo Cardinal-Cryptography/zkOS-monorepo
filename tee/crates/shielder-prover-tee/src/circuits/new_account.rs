@@ -15,7 +15,7 @@ pub struct NewAccountPubInputsBytes {
     pub hashed_note: Vec<u8>,
     pub prenullifier: Vec<u8>,
     pub initial_deposit: Vec<u8>,
-    pub caller_address: Vec<u8>,
+    pub commitment: Vec<u8>,
     pub token_address: Vec<u8>,
     pub anonymity_revoker_public_key_x: Vec<u8>,
     pub anonymity_revoker_public_key_y: Vec<u8>,
@@ -39,7 +39,7 @@ impl From<NewAccountProverKnowledge<Fr>> for NewAccountPubInputsBytes {
             initial_deposit: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::InitialDeposit),
             ),
-            caller_address: field_to_bytes(
+            commitment: field_to_bytes(
                 knowledge.compute_public_input(NewAccountInstance::CallerAddress),
             ),
             token_address: field_to_bytes(
@@ -88,7 +88,7 @@ pub struct NewAccountProveInputsBytes {
     id: Vec<u8>,
     nullifier: Vec<u8>,
     initial_deposit: Vec<u8>,
-    caller_address: Vec<u8>,
+    commitment: Vec<u8>,
     token_address: Vec<u8>,
     encryption_salt: Vec<u8>,
     mac_salt: Vec<u8>,
@@ -106,7 +106,7 @@ impl SerializableCircuit for NewAccountCircuit {
                 id: vec_to_f(new_account_bytes.id),
                 nullifier: vec_to_f(new_account_bytes.nullifier),
                 initial_deposit: vec_to_f(new_account_bytes.initial_deposit),
-                caller_address: vec_to_f(new_account_bytes.caller_address),
+                commitment: vec_to_f(new_account_bytes.commitment),
                 token_address: vec_to_f(new_account_bytes.token_address),
                 encryption_salt: field_element_to_le_bits(vec_to_f(
                     new_account_bytes.encryption_salt,
@@ -128,7 +128,7 @@ impl SerializableCircuit for NewAccountCircuit {
             id: vec_to_f(new_account_prove_inputs_bytes.id),
             nullifier: vec_to_f(new_account_prove_inputs_bytes.nullifier),
             initial_deposit: vec_to_f(new_account_prove_inputs_bytes.initial_deposit),
-            caller_address: vec_to_f(new_account_prove_inputs_bytes.caller_address),
+            commitment: vec_to_f(new_account_prove_inputs_bytes.commitment),
             token_address: vec_to_f(new_account_prove_inputs_bytes.token_address),
             encryption_salt: field_element_to_le_bits(vec_to_f(
                 new_account_prove_inputs_bytes.encryption_salt,
