@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get-artifact-names.outputs.eif }}
-          path: result/shielderProverTee/image.eif
+          path: result/shielderProverTEE/image.eif
           if-no-files-found: error
           retention-days: 7
 
@@ -64,6 +64,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get-artifact-names.outputs.measurements }}
-          path: result/shielderProverTee/pcr.json
+          path: result/shielderProverTEE/pcr.json
           if-no-files-found: error
           retention-days: 7
