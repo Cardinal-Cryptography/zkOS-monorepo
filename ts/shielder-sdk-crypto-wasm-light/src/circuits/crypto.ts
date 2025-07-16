@@ -1,5 +1,5 @@
 import { uint8ToHex } from "@/nitro-attestation";
-import { hexToUint8 } from "@/utils";
+import { getCrypto, hexToUint8 } from "@/utils";
 import * as secp from "@noble/secp256k1";
 
 type Keypair = { sk: Uint8Array; pk: Uint8Array };
@@ -86,10 +86,4 @@ export async function decrypt(
     ciphertext
   );
   return new Uint8Array(plaintextBuffer);
-}
-
-async function getCrypto(): Promise<Crypto> {
-  return typeof globalThis.crypto !== "undefined"
-    ? globalThis.crypto
-    : ((await import("node:crypto")).webcrypto as Crypto);
 }

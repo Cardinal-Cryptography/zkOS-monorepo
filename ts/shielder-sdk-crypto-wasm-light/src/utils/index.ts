@@ -59,3 +59,9 @@ export function hexToUint8(hex: string): Uint8Array {
   }
   return bytes;
 }
+
+export async function getCrypto(): Promise<Crypto> {
+  return typeof globalThis.crypto !== "undefined"
+    ? globalThis.crypto
+    : ((await import("node:crypto")).webcrypto as Crypto);
+}

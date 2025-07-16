@@ -5,6 +5,7 @@
 import * as asn1js from "asn1js";
 import * as pkijs from "pkijs";
 import { AWS_NITRO_ROOT_CERTIFICATE } from "./constants";
+import { getCrypto } from "@/utils";
 
 /**
  * Validate certificate chain against AWS Nitro root certificate
@@ -97,6 +98,7 @@ function parseAWSRootCertificate(): pkijs.Certificate {
 async function extractPublicKeyFromCertificate(
   certificate: pkijs.Certificate
 ): Promise<CryptoKey> {
+  const cryptoApi = await getCrypto();
   // Get the Subject Public Key Info (SPKI) from the certificate
   const spkiBytes =
     certificate.subjectPublicKeyInfo.subjectPublicKey.toBER(false);
@@ -107,7 +109,7 @@ async function extractPublicKeyFromCertificate(
 
   // Import the key for use with Web Crypto API
   // AWS Nitro uses ECDSA with P-384 curve for attestation signatures
-  return await window.crypto.subtle.importKey(
+  return await cryptoApi.subtle.importKey(
     "raw",
     publicKeyBytes,
     {
