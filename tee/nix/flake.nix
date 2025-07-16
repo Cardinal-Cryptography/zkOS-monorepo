@@ -12,7 +12,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # below depency is also used in tee/Cargo.toml, which is far from ideal since one needs to bump it there as well
+    # below dependency is also used in tee/Cargo.toml, which is far from ideal since one needs to bump it there as well
     zkOS-monorepo = {
       url = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=374a0d5dea2128e9b5100ede6daecc9253a241d9";
       flake = false;
