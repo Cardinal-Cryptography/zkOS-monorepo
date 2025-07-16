@@ -1,0 +1,69 @@
+---
+
+name: "Build enclave artifacts"
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'git ref: hash, branch, tag to build enclave files from'
+        type: string
+        required: true
+    outputs:
+      artifact-name-eif:
+        description: 'Name of artifact: shielder-prover-tee enclave file'
+        value: ${{ jobs.main.outputs.artifact-name-eif }}
+      artifact-name-measurements:
+        description: 'Name of artifact: shielder-prover-tee enclave measurements'
+        value: ${{ jobs.main.outputs.artifact-name-measurements }}
+jobs:
+  main:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: "tee/nix"
+    outputs:
+      artifact-name-eif: ${{ steps.get-artifact-names.outputs.eif }}
+      artifact-name-measurements: ${{ steps.steps.get-artifact-names.outputs.measurements }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Call action get-ref-properties
+        id: get-ref-properties
+        uses: Cardinal-Cryptography/github-actions/get-ref-properties@v7
+
+      - name: Install nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Check nix inputs
+        run: nix flake check
+
+      - name: Build enclave for shielder-prover-tee
+        # yamllint disable rule:line-length
+        run: |
+          nix build --override-input zkOS-monorepo 'github:Cardinal-Cryptography/zkOS-monorepo/${{ steps.get-ref-properties.outputs.full-sha }}'
+
+      - name: Get artifact names
+        id: get-artifact-names
+        run: |
+          echo "eif=shielder-prover-tee-eif" >> $GITHUB_OUTPUT
+          echo "measurements=shielder-prover-tee-measurements" >> $GITHUB_OUTPUT
+
+      - name: Upload EIF to GH Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get-artifact-names.outputs.eif }}
+          path: result/shielderProverTee/image.eif
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload measurements to GH Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get-artifact-names.outputs.measurements }}
+          path: result/shielderProverTee/pcr.json
+          if-no-files-found: error
+          retention-days: 7
