@@ -7,6 +7,7 @@ import { NewAccountAction } from "../../src/actions/newAccount";
 import { DepositAction } from "../../src/actions/deposit";
 import { WithdrawAction } from "../../src/actions/withdraw";
 import { LocalStateTransition } from "../../src/state/localStateTransition";
+import { bytesToHex } from "viem";
 
 // Utility function to create a note event
 const createNoteEvent = (
@@ -18,10 +19,12 @@ const createNoteEvent = (
   amount,
   newNote: 123n, // Simplified for testing
   newNoteIndex,
-  contractVersion: "0x000001",
+  contractVersion: "0x000101",
   txHash: "0x123",
   block: 1n,
-  tokenAddress: "0x0000000000000000000000000000000000000000"
+  tokenAddress: "0x0000000000000000000000000000000000000000",
+  protocolFee: 0n,
+  memo: bytesToHex(new Uint8Array)
 });
 
 // Utility function to create a mock state

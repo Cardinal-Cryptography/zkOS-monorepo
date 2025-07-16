@@ -14,3 +14,4 @@ export {
   InjectedStorageInterface
 } from "@/storage/storageSchema";
 export type { QuotedFees } from "@/chain/relayer";
+export type { ProtocolFees, ProtocolFeeQuote } from "@/protocolFees";
