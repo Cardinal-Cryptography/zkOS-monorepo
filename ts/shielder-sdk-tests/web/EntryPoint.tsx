@@ -45,7 +45,7 @@ declare global {
 
 function EntryPoint() {
   useEffect(() => {
-    const initialize = async () => {
+    const initialize = () => {
       // test fixtures initialization
       window.testFixtures = window.testFixtures || {};
       window.testFixtures.setupHappyTest = setupShielderTest;
@@ -55,7 +55,7 @@ function EntryPoint() {
       window.wasmCryptoClient.cryptoClient =
         cryptoClientType === "wasm-full"
           ? initFullWasm()
-          : initLightWasm(proverServerUrl!, checkNitroAttestation);
+          : initLightWasm(proverServerUrl, checkNitroAttestation);
       // Expose shielder utilities
       window.shielder = window.shielder || {};
       window.shielder.createShielderClient = createShielderClient;
