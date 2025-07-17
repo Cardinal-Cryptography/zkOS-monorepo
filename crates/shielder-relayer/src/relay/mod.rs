@@ -120,6 +120,7 @@ fn create_call(c: RelayCalldata, relayer_address: Address, relayer_fee: U256) ->
         mac_commitment: c.mac_commitment,
         token: c.fee_token,
         pocket_money: c.pocket_money,
+        memo: c.memo,
     }
 }
 

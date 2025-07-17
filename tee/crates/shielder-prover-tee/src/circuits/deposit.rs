@@ -15,7 +15,7 @@ pub struct DepositPubInputsBytes {
     pub h_nullifier_old: Vec<u8>,
     pub h_note_new: Vec<u8>,
     pub value: Vec<u8>,
-    pub caller_address: Vec<u8>,
+    pub commitment: Vec<u8>,
     pub token_address: Vec<u8>,
     pub mac_salt: Vec<u8>,
     pub mac_commitment: Vec<u8>,
@@ -34,9 +34,7 @@ impl From<DepositProverKnowledge<Fr>> for DepositPubInputsBytes {
                 knowledge.compute_public_input(DepositInstance::HashedNewNote),
             ),
             value: field_to_bytes(knowledge.compute_public_input(DepositInstance::DepositValue)),
-            caller_address: field_to_bytes(
-                knowledge.compute_public_input(DepositInstance::CallerAddress),
-            ),
+            commitment: field_to_bytes(knowledge.compute_public_input(DepositInstance::Commitment)),
             token_address: field_to_bytes(
                 knowledge.compute_public_input(DepositInstance::TokenAddress),
             ),
@@ -68,7 +66,7 @@ pub struct DepositProveInputBytes {
     token_address: Vec<u8>,
     path: Vec<u8>,
     value: Vec<u8>,
-    caller_address: Vec<u8>,
+    commitment: Vec<u8>,
     nullifier_new: Vec<u8>,
     mac_salt: Vec<u8>,
 }
@@ -86,7 +84,7 @@ impl SerializableCircuit for DepositCircuit {
                 token_address: vec_to_f(deposit_prove_input_bytes.token_address),
                 path: vec_to_path(deposit_prove_input_bytes.path),
                 deposit_value: vec_to_f(deposit_prove_input_bytes.value),
-                caller_address: vec_to_f(deposit_prove_input_bytes.caller_address),
+                commitment: vec_to_f(deposit_prove_input_bytes.commitment),
                 nullifier_new: vec_to_f(deposit_prove_input_bytes.nullifier_new),
                 mac_salt: vec_to_f(deposit_prove_input_bytes.mac_salt),
             },
@@ -102,7 +100,7 @@ impl SerializableCircuit for DepositCircuit {
             token_address: vec_to_f(deposit_prove_input_bytes.token_address),
             path: vec_to_path(deposit_prove_input_bytes.path),
             deposit_value: vec_to_f(deposit_prove_input_bytes.value),
-            caller_address: vec_to_f(deposit_prove_input_bytes.caller_address),
+            commitment: vec_to_f(deposit_prove_input_bytes.commitment),
             nullifier_new: vec_to_f(deposit_prove_input_bytes.nullifier_new),
             mac_salt: vec_to_f(deposit_prove_input_bytes.mac_salt),
         };

@@ -19,7 +19,7 @@ export class NewAccountTeeCircuit implements NewAccountCircuit {
       id: values.id.bytes,
       nullifier: values.nullifier.bytes,
       initial_deposit: values.initialDeposit.bytes,
-      caller_address: values.callerAddress.bytes,
+      commitment: values.commitment.bytes,
       token_address: values.tokenAddress.bytes,
       encryption_salt: values.encryptionSalt.bytes,
       mac_salt: values.macSalt.bytes,
@@ -36,7 +36,7 @@ export class NewAccountTeeCircuit implements NewAccountCircuit {
       hashed_note: Uint8Array;
       prenullifier: Uint8Array;
       initial_deposit: Uint8Array;
-      caller_address: Uint8Array;
+      commitment: Uint8Array;
       token_address: Uint8Array;
       anonymity_revoker_public_key_x: Uint8Array;
       anonymity_revoker_public_key_y: Uint8Array;
@@ -52,7 +52,7 @@ export class NewAccountTeeCircuit implements NewAccountCircuit {
       hNote: new Scalar(pubInputsNonScalar.hashed_note),
       prenullifier: new Scalar(pubInputsNonScalar.prenullifier),
       initialDeposit: new Scalar(pubInputsNonScalar.initial_deposit),
-      callerAddress: new Scalar(pubInputsNonScalar.caller_address),
+      commitment: new Scalar(pubInputsNonScalar.commitment),
       tokenAddress: new Scalar(pubInputsNonScalar.token_address),
       anonymityRevokerPublicKeyX: new Scalar(
         pubInputsNonScalar.anonymity_revoker_public_key_x

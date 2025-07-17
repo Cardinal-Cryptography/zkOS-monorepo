@@ -19,6 +19,12 @@ contract DeployShielderScript is Script {
         uint256 arPublicKeyX = uint256(vm.envBytes32("AR_PUBLIC_KEY_X"));
         uint256 arPublicKeyY = uint256(vm.envBytes32("AR_PUBLIC_KEY_Y"));
 
+        uint256 protocolDepositFeeBps = vm.envUint("PROTOCOL_DEPOSIT_FEE_BPS");
+        uint256 protocolWithdrawFeeBps = vm.envUint(
+            "PROTOCOL_WITHDRAW_FEE_BPS"
+        );
+        address protocolFeeReceiver = vm.envAddress("PROTOCOL_FEE_RECEIVER");
+
         bool isArbitrumChain = vm.envBool("IS_ARBITRUM_CHAIN");
 
         vm.startBroadcast(privateKey);
@@ -32,7 +38,15 @@ contract DeployShielderScript is Script {
 
         bytes memory data = abi.encodeCall(
             Shielder.initialize,
-            (owner, arPublicKeyX, arPublicKeyY, isArbitrumChain)
+            (
+                owner,
+                arPublicKeyX,
+                arPublicKeyY,
+                isArbitrumChain,
+                protocolDepositFeeBps,
+                protocolWithdrawFeeBps,
+                protocolFeeReceiver
+            )
         );
 
         address proxy = address(new ERC1967Proxy(shielderImplementation, data));

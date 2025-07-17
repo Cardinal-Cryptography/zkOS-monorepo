@@ -1538,6 +1538,17 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 [[package]]
 name = "macros"
 version = "0.1.0"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087#3bc3087bfdd4b64dddc5f734915e31e8a663cfd8"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "macros"
+version = "0.1.0"
 source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437#df314375b3fc0dad87a0e2805ff3c616b1794f35"
 dependencies = [
  "darling",
@@ -1851,7 +1862,7 @@ dependencies = [
  "halo2curves",
  "num-bigint",
  "rand 0.8.5",
- "shielder-circuits",
+ "shielder-circuits 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437)",
 ]
 
 [[package]]
@@ -2379,20 +2390,39 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437#df314375b3fc0dad87a0e2805ff3c616b1794f35"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087#3bc3087bfdd4b64dddc5f734915e31e8a663cfd8"
 dependencies = [
  "halo2_poseidon",
  "halo2_proofs",
  "human_bytes",
  "lazy_static",
- "macros",
+ "macros 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087)",
  "once_cell",
  "rand 0.8.5",
  "rand_core 0.6.4",
  "static_assertions",
  "strum",
  "strum_macros",
- "transcript",
+ "transcript 0.2.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087)",
+]
+
+[[package]]
+name = "shielder-circuits"
+version = "0.1.0"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437#df314375b3fc0dad87a0e2805ff3c616b1794f35"
+dependencies = [
+ "halo2_poseidon",
+ "halo2_proofs",
+ "human_bytes",
+ "lazy_static",
+ "macros 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437)",
+ "once_cell",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+ "static_assertions",
+ "strum",
+ "strum_macros",
+ "transcript 0.2.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437)",
 ]
 
 [[package]]
@@ -2437,7 +2467,7 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "serde_json",
- "shielder-circuits",
+ "shielder-circuits 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087)",
  "shielder-prover-common",
  "tokio",
  "tokio-vsock",
@@ -2817,6 +2847,17 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "transcript"
+version = "0.2.0"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087#3bc3087bfdd4b64dddc5f734915e31e8a663cfd8"
+dependencies = [
+ "halo2_proofs",
+ "itertools 0.13.0",
+ "ruint",
+ "sha3 0.10.8",
 ]
 
 [[package]]

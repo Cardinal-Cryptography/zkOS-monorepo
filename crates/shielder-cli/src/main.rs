@@ -100,31 +100,58 @@ async fn perform_contract_action(
     command: ContractInteractionCommand,
 ) -> Result<()> {
     match command {
-        ContractInteractionCommand::NewAccount(NewAccountCmd { amount, .. }) => {
-            new_account(app_state, amount, Token::Native).await
+        ContractInteractionCommand::NewAccount(NewAccountCmd { amount, memo, .. }) => {
+            new_account(app_state, amount, Token::Native, memo.unwrap_or(vec![])).await
         }
         ContractInteractionCommand::NewAccountERC20(NewAccountERC20Cmd {
             amount,
             token_address,
+            memo,
             ..
-        }) => new_account(app_state, amount, Token::ERC20(token_address)).await,
+        }) => {
+            new_account(
+                app_state,
+                amount,
+                Token::ERC20(token_address),
+                memo.unwrap_or(vec![]),
+            )
+            .await
+        }
 
-        ContractInteractionCommand::Deposit(DepositCmd { amount }) => {
-            deposit(app_state, amount, Token::Native).await
+        ContractInteractionCommand::Deposit(DepositCmd { amount, memo }) => {
+            deposit(app_state, amount, Token::Native, memo.unwrap_or(vec![])).await
         }
         ContractInteractionCommand::DepositERC20(DepositERC20Cmd {
             amount,
             token_address,
-        }) => deposit(app_state, amount, Token::ERC20(token_address)).await,
+            memo,
+        }) => {
+            deposit(
+                app_state,
+                amount,
+                Token::ERC20(token_address),
+                memo.unwrap_or(vec![]),
+            )
+            .await
+        }
 
-        ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to }) => {
-            withdraw(app_state, amount, to, Token::Native, 0).await
+        ContractInteractionCommand::Withdraw(WithdrawCmd { amount, to, memo }) => {
+            withdraw(
+                app_state,
+                amount,
+                to,
+                Token::Native,
+                0,
+                memo.unwrap_or(vec![]),
+            )
+            .await
         }
         ContractInteractionCommand::WithdrawERC20(WithdrawERC20Cmd {
             amount,
             to,
             token_address,
             pocket_money,
+            memo,
         }) => {
             withdraw(
                 app_state,
@@ -132,6 +159,7 @@ async fn perform_contract_action(
                 to,
                 Token::ERC20(token_address),
                 pocket_money,
+                memo.unwrap_or(vec![]),
             )
             .await
         }

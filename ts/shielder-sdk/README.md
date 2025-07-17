@@ -38,12 +38,19 @@ const shielderClient = createShielderClient({
   callbacks: { ... } // Optional callbacks for monitoring operations
 });
 
+const amount = 1000n;
+
+// Calculate protocol fee 
+const { protocolFee } = await shielderClient.getProtocolShieldFee(amount);
+
 // Shield native tokens
 await shielderClient.shield(
   nativeToken(), // Token to shield (native token)
-  1000n, // Amount to shield (in wei)
+  amount, // Amount to shield (in wei)
   sendShielderTransaction, // Function to send transaction
-  "0x..." // From address
+  "0x...", // From address
+  protocolFee, // Fee that will be deducted from the `amount`
+  memoBytes // Data to be included in the emitted event on chain
 );
 ```
 
@@ -87,12 +94,19 @@ Currently available implementations:
 #### Shielding Tokens
 
 ```typescript
+const amount = 1000n;
+
+// Calculate protocol fee 
+const { protocolFee } = await shielderClient.getProtocolShieldFee(amount);
+
 // Shield native tokens
 const txHash = await shielderClient.shield(
   nativeToken(), // Token to shield
   amount, // Amount in wei
   sendShielderTransaction, // Transaction sender function
-  fromAddress // Sender's address
+  fromAddress, // Sender's address
+  protocolFee, // Fee that will be deducted from the `amount`
+  memoBytes // Data to be included in the emitted event on chain
 );
 
 // Shield ERC20 tokens
@@ -100,35 +114,51 @@ const txHash = await shielderClient.shield(
   erc20Token("0xTokenAddress"), // Token to shield
   amount, // Amount in wei
   sendShielderTransaction, // Transaction sender function
-  fromAddress // Sender's address
+  fromAddress, // Sender's address
+  protocolFee, // Fee that will be deducted from the `amount`
+  memoBytes // Data to be included in the emitted event on chain
 );
 ```
 
 #### Withdrawing Tokens
 
 ```typescript
-// Get current withdraw fees
-const fees = await shielderClient.getWithdrawFees();
+// Get current relayer fees
+const relayerFees = await shielderClient.getRelayerFees();
+
+const amount = 1000n;
+
+// Calculate protocol fee 
+const { protocolFee } = await shielderClient.getProtocolWithdrawFee(amount);
 
 // Withdraw native tokens
 const txHash = await shielderClient.withdraw(
   nativeToken(), // Token to withdraw
   amount, // Amount in wei
-  fees.fee_details.total_cost_fee_token, // Total fee for the operation
-  toAddress // Recipient's address
+  relayerFees.fee_details.total_cost_fee_token, // Total relayer fee for the operation
+  toAddress, // Recipient's address
+  protocolFee, // Fee that will be deducted from the `amount`
+  memoBytes // Data to be included in the emitted event on chain
 );
 ```
 
 #### Manual Withdrawal (Bypassing Relayer)
 
 ```typescript
+const amount = 1000n;
+
+// Calculate protocol fee 
+const { protocolFee } = await shielderClient.getProtocolWithdrawFee(amount);
+
 // Withdraw tokens directly (non-anonymous)
 const txHash = await shielderClient.withdrawManual(
   nativeToken(), // Token to withdraw
   amount, // Amount in wei
   toAddress, // Recipient's address
   sendShielderTransaction, // Transaction sender function
-  fromAddress // Sender's address
+  fromAddress, // Sender's address
+  protocolFee, // Fee that will be deducted from the `amount`
+  memoBytes // Data to be included in the emitted event on chain
 );
 ```
 

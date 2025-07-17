@@ -12,11 +12,14 @@ function show_help {
     echo "  --help                Show this help message and exit"
     echo ""
     echo "Environment Variables:"
-    echo "  NETWORK              Target network (default: anvil)"
-    echo "  PRIVATE_KEY          Private key for deployment"
-    echo "  IS_ARBITRUM_CHAIN    Flag to indicate if the target network is Arbitrum (default: true)"
-    echo "  AR_PUBLIC_KEY        Anonymity Revoker public key as a CSV pair 'x,y'"
-    echo "  AR_SEED              Seed to generate Anonymity Revoker key pair"
+    echo "  NETWORK                     Target network (default: anvil)"
+    echo "  PRIVATE_KEY                 Private key for deployment"
+    echo "  IS_ARBITRUM_CHAIN           Flag to indicate if the target network is Arbitrum (default: true)"
+    echo "  AR_PUBLIC_KEY               Anonymity Revoker public key as a CSV pair 'x,y'"
+    echo "  AR_SEED                     Seed to generate Anonymity Revoker key pair"
+    echo "  PROTOCOL_DEPOSIT_FEE_BPS    Fee charged on the deposit amount in BPS (default: 0)"
+    echo "  PROTOCOL_WITHDRAW_FEE_BPS   Fee charged on the withdraw amount in BPS. (default: 0)"
+    echo "  PROTOCOL_FEE_RECEIVER       Receiver of the protocol fee (default: Public Address of the PRIVATE_KEY)"
     echo ""
     echo "If AR_PUBLIC_KEY is provided, it will be used directly."
     echo "If AR_SEED is provided but not AR_PUBLIC_KEY, a new key pair will be generated."
@@ -36,6 +39,9 @@ done
 NETWORK=${NETWORK:-anvil}
 OWNER_ADDRESS=$(cast wallet address ${PRIVATE_KEY})
 IS_ARBITRUM_CHAIN=${IS_ARBITRUM_CHAIN:-true}
+PROTOCOL_DEPOSIT_FEE_BPS=${PROTOCOL_DEPOSIT_FEE_BPS:-0}
+PROTOCOL_WITHDRAW_FEE_BPS=${PROTOCOL_WITHDRAW_FEE_BPS:-0}
+PROTOCOL_FEE_RECEIVER=${PROTOCOL_FEE_RECEIVER:-$OWNER_ADDRESS}
 
 # Handle AR public key
 if [ -n "${AR_PUBLIC_KEY:-}" ]; then
@@ -72,4 +78,7 @@ OWNER_ADDRESS=${OWNER_ADDRESS} \
 AR_PUBLIC_KEY_X=${AR_PUBLIC_KEY_X} \
 AR_PUBLIC_KEY_Y=${AR_PUBLIC_KEY_Y} \
 IS_ARBITRUM_CHAIN=${IS_ARBITRUM_CHAIN} \
+PROTOCOL_DEPOSIT_FEE_BPS=${PROTOCOL_DEPOSIT_FEE_BPS} \
+PROTOCOL_WITHDRAW_FEE_BPS=${PROTOCOL_WITHDRAW_FEE_BPS} \
+PROTOCOL_FEE_RECEIVER=${PROTOCOL_FEE_RECEIVER} \
 forge script DeployShielderScript --broadcast --rpc-url ${NETWORK} --sender $(cast wallet address ${PRIVATE_KEY})
