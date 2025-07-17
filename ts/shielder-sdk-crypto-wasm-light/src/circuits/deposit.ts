@@ -22,7 +22,7 @@ export class DepositTeeCircuit implements DepositCircuit {
       token_address: values.tokenAddress.bytes,
       path: values.path,
       value: values.value.bytes,
-      caller_address: values.callerAddress.bytes,
+      commitment: values.commitment.bytes,
       nullifier_new: values.nullifierNew.bytes,
       mac_salt: values.macSalt.bytes
     };
@@ -37,7 +37,7 @@ export class DepositTeeCircuit implements DepositCircuit {
       h_nullifier_old: Uint8Array;
       h_note_new: Uint8Array;
       value: Uint8Array;
-      caller_address: Uint8Array;
+      commitment: Uint8Array;
       token_address: Uint8Array;
       mac_salt: Uint8Array;
       mac_commitment: Uint8Array;
@@ -49,7 +49,7 @@ export class DepositTeeCircuit implements DepositCircuit {
         hNullifierOld: new Scalar(pubInputsNonScalar.h_nullifier_old),
         hNoteNew: new Scalar(pubInputsNonScalar.h_note_new),
         value: new Scalar(pubInputsNonScalar.value),
-        callerAddress: new Scalar(pubInputsNonScalar.caller_address),
+        commitment: new Scalar(pubInputsNonScalar.commitment),
         tokenAddress: new Scalar(pubInputsNonScalar.token_address),
         macSalt: new Scalar(pubInputsNonScalar.mac_salt),
         macCommitment: new Scalar(pubInputsNonScalar.mac_commitment)

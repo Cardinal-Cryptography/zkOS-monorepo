@@ -1,6 +1,6 @@
 import { describe, it, expect, vitest, beforeEach, Mocked } from "vitest";
 
-import { Address, Hash, PublicClient } from "viem";
+import { Address, bytesToHex, Hash, hexToBytes, PublicClient } from "viem";
 import { MockedCryptoClient } from "../helpers";
 import { ShielderClient } from "../../src/client/client";
 import { createShielderClient } from "../../src/client/factories";
@@ -18,6 +18,7 @@ import { OutdatedSdkError } from "../../src/errors";
 import { ShielderCallbacks } from "../../src/client/types";
 import { nativeToken } from "../../src/utils";
 import { ShielderActions } from "../../src/client/actions";
+import { ProtocolFees } from "../../src/protocolFees";
 import { AccountRegistry } from "../../src/state/accountRegistry";
 import { StateSynchronizer } from "../../src/state/sync/synchronizer";
 import { HistoryFetcher } from "../../src/state/sync/historyFetcher";
@@ -45,6 +46,7 @@ describe("ShielderClient", () => {
   let mockStateSynchronizer: Mocked<StateSynchronizer>;
   let mockHistoryFetcher: Mocked<HistoryFetcher>;
   let mockShielderActions: Mocked<ShielderActions>;
+  let mockProtocolFees: Mocked<ProtocolFees>;
   let callbacks: ShielderCallbacks;
   let mockState: AccountStateMerkleIndexed;
   const mockedRelayerAddress =
@@ -83,7 +85,7 @@ describe("ShielderClient", () => {
     } as unknown as Mocked<HistoryFetcher>;
 
     mockShielderActions = {
-      getWithdrawFees: vitest.fn(),
+      getRelayerFees: vitest.fn(),
       shield: vitest.fn(),
       withdraw: vitest.fn(),
       withdrawManual: vitest.fn()
@@ -97,12 +99,20 @@ describe("ShielderClient", () => {
       onAccountNotOnChain: vitest.fn()
     };
 
+    mockProtocolFees = {
+        getProtocolDepositFee: vitest.fn(),
+        getProtocolWithdrawFee: vitest.fn(),
+        syncProtocolDepositFeeBps: vitest.fn(),
+        syncProtocolWithdrawFeeBps: vitest.fn()
+    } as unknown as Mocked<ProtocolFees>
+
     // Create client instance with mocked components
     const components: ShielderComponents = {
       accountRegistry: mockAccountRegistry,
       stateSynchronizer: mockStateSynchronizer,
       historyFetcher: mockHistoryFetcher,
-      shielderActions: mockShielderActions
+      shielderActions: mockShielderActions,
+      protocolFees: mockProtocolFees
     };
 
     client = new ShielderClient(components, callbacks);
@@ -264,14 +274,20 @@ describe("ShielderClient", () => {
           amount: 1000n,
           txHash: "0x123" as Hash,
           block: 1n,
-          token: nativeToken()
+          newNote: undefined as any,
+          token: nativeToken(),
+          protocolFee: 0n,
+          memo: bytesToHex(new Uint8Array())
         },
         {
           type: "Deposit",
           amount: 2000n,
           txHash: "0x456" as Hash,
           block: 2n,
-          token: nativeToken()
+          newNote: undefined as any,
+          token: nativeToken(),
+          protocolFee: 0n,
+          memo: bytesToHex(new Uint8Array())
         }
       ];
 
@@ -310,15 +326,15 @@ describe("ShielderClient", () => {
     });
   });
 
-  describe("getWithdrawFees", () => {
+  describe("getRelayerFees", () => {
     it("should delegate to shielderActions", async () => {
       const mockFees = quotedFeesFromExpectedTokenFee(100n);
-      mockShielderActions.getWithdrawFees.mockResolvedValue(mockFees);
+      mockShielderActions.getRelayerFees.mockResolvedValue(mockFees);
 
-      const fees = await client.getWithdrawFees(nativeToken(), 0n);
+      const fees = await client.getRelayerFees(nativeToken(), 0n);
 
       expect(fees).toEqual(mockFees);
-      expect(mockShielderActions.getWithdrawFees).toHaveBeenCalledWith(
+      expect(mockShielderActions.getRelayerFees).toHaveBeenCalledWith(
         nativeToken(),
         0n
       );
@@ -331,6 +347,8 @@ describe("ShielderClient", () => {
       const mockFrom = "0x1234567890123456789012345678901234567890" as const;
       const mockTxHash = "0x9876543210" as Hash;
       const mockSendTransaction = vitest.fn().mockResolvedValue(mockTxHash);
+      const mockProtocolFee = 0n;
+      const mockMemo = Uint8Array.from([]);
 
       mockShielderActions.shield.mockResolvedValue(mockTxHash);
 
@@ -338,7 +356,9 @@ describe("ShielderClient", () => {
         nativeToken(),
         mockAmount,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -346,7 +366,9 @@ describe("ShielderClient", () => {
         nativeToken(),
         mockAmount,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
     });
   });
@@ -359,6 +381,8 @@ describe("ShielderClient", () => {
         "0x1234567890123456789012345678901234567890" as Address;
       const mockTxHash = "0x9876543210" as Hash;
       const mockPocketMoney = 0n;
+      const mockProtocolFee = 0n;
+      const mockMemo = Uint8Array.from([]);
 
       mockShielderActions.withdraw.mockResolvedValue(mockTxHash);
 
@@ -367,7 +391,9 @@ describe("ShielderClient", () => {
         mockAmount,
         quotedFeesFromExpectedTokenFee(mockExpectedFee),
         mockAddress,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -376,7 +402,9 @@ describe("ShielderClient", () => {
         mockAmount,
         quotedFeesFromExpectedTokenFee(mockExpectedFee),
         mockAddress,
-        mockPocketMoney
+        mockPocketMoney,
+        mockProtocolFee,
+        mockMemo
       );
     });
   });
@@ -389,6 +417,8 @@ describe("ShielderClient", () => {
       const mockFrom = "0x1234567890123456789012345678901234567890" as const;
       const mockTxHash = "0x9876543210" as Hash;
       const mockSendTransaction = vitest.fn().mockResolvedValue(mockTxHash);
+      const mockProtocolFee = 0n;
+      const mockMemo = Uint8Array.from([]);
 
       mockShielderActions.withdrawManual.mockResolvedValue(mockTxHash);
 
@@ -397,7 +427,9 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
 
       expect(txHash).toBe(mockTxHash);
@@ -406,7 +438,9 @@ describe("ShielderClient", () => {
         mockAmount,
         mockAddress,
         mockSendTransaction,
-        mockFrom
+        mockFrom,
+        mockProtocolFee,
+        mockMemo
       );
     });
   });

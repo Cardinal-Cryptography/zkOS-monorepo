@@ -99,6 +99,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "android-tzdata"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e999941b234f3131b00bc13c22d06e8c5ff726d1b6318ac7eb276997bbb4fef0"
+
+[[package]]
+name = "android_system_properties"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "819e7219dbd41043ac279b19830f2efc897156490d7fd6ea916720117ee66311"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -496,6 +511,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
+name = "bumpalo"
+version = "3.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+
+[[package]]
 name = "byte-slice-cast"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -536,6 +557,18 @@ name = "cfg_aliases"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
+
+[[package]]
+name = "chrono"
+version = "0.4.41"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c469d952047f47f91b68d1cba3f10d63c11d73e4636f24f08daf0278abf01c4d"
+dependencies = [
+ "android-tzdata",
+ "iana-time-zone",
+ "num-traits",
+ "windows-link",
+]
 
 [[package]]
 name = "cipher"
@@ -637,6 +670,12 @@ name = "constant_time_eq"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
+
+[[package]]
+name = "core-foundation-sys"
+version = "0.8.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cpufeatures"
@@ -825,7 +864,7 @@ dependencies = [
 [[package]]
 name = "ecies-encryption-lib"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/ecies-encryption-lib?branch=main#a03b55e37d610aa9babf4719ffaea6e61fe7655a"
+source = "git+https://github.com/Cardinal-Cryptography/ecies-encryption-lib?rev=a03b55e37d610aa9babf4719ffaea6e61fe7655a#a03b55e37d610aa9babf4719ffaea6e61fe7655a"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -1300,6 +1339,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "iana-time-zone"
+version = "0.1.63"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0c919e5debc312ad217002b8048a17b7d83f80703865bbfcfebb0458b0b27d8"
+dependencies = [
+ "android_system_properties",
+ "core-foundation-sys",
+ "iana-time-zone-haiku",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "windows-core",
+]
+
+[[package]]
+name = "iana-time-zone-haiku"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1387,6 +1450,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
+name = "js-sys"
+version = "0.3.77"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cfaf33c695fc6e08064efbc1f72ec937429614f25eef83af942d0e227c3a28f"
+dependencies = [
+ "once_cell",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "k256"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1461,6 +1534,17 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "macros"
+version = "0.1.0"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087#3bc3087bfdd4b64dddc5f734915e31e8a663cfd8"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
 
 [[package]]
 name = "macros"
@@ -1771,14 +1855,14 @@ dependencies = [
 [[package]]
 name = "powers-of-tau"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a#4ff7e5a5f601581fc1e1f7bb823b7572aeba3092"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=374a0d5dea2128e9b5100ede6daecc9253a241d9#374a0d5dea2128e9b5100ede6daecc9253a241d9"
 dependencies = [
  "byteorder",
  "halo2_proofs",
  "halo2curves",
  "num-bigint",
  "rand 0.8.5",
- "shielder-circuits",
+ "shielder-circuits 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437)",
 ]
 
 [[package]]
@@ -2306,20 +2390,39 @@ dependencies = [
 [[package]]
 name = "shielder-circuits"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437#df314375b3fc0dad87a0e2805ff3c616b1794f35"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087#3bc3087bfdd4b64dddc5f734915e31e8a663cfd8"
 dependencies = [
  "halo2_poseidon",
  "halo2_proofs",
  "human_bytes",
  "lazy_static",
- "macros",
+ "macros 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087)",
  "once_cell",
  "rand 0.8.5",
  "rand_core 0.6.4",
  "static_assertions",
  "strum",
  "strum_macros",
- "transcript",
+ "transcript 0.2.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087)",
+]
+
+[[package]]
+name = "shielder-circuits"
+version = "0.1.0"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437#df314375b3fc0dad87a0e2805ff3c616b1794f35"
+dependencies = [
+ "halo2_poseidon",
+ "halo2_proofs",
+ "human_bytes",
+ "lazy_static",
+ "macros 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437)",
+ "once_cell",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+ "static_assertions",
+ "strum",
+ "strum_macros",
+ "transcript 0.2.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=df31437)",
 ]
 
 [[package]]
@@ -2341,15 +2444,14 @@ name = "shielder-prover-server"
 version = "0.1.0"
 dependencies = [
  "axum",
- "base64",
  "clap",
- "log",
  "serde",
  "shielder-prover-common",
  "thiserror",
  "tokio",
  "tokio-task-pool",
  "tower-http",
+ "tracing",
  "tracing-subscriber",
  "vsock",
 ]
@@ -2365,7 +2467,7 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "serde_json",
- "shielder-circuits",
+ "shielder-circuits 0.1.0 (git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087)",
  "shielder-prover-common",
  "tokio",
  "tokio-vsock",
@@ -2734,6 +2836,7 @@ version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8189decb5ac0fa7bc8b96b7cb9b2701d60d48805aca84a238004d665fcc4008"
 dependencies = [
+ "chrono",
  "matchers",
  "nu-ansi-term",
  "once_cell",
@@ -2744,6 +2847,17 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "transcript"
+version = "0.2.0"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-circuits?rev=3bc3087#3bc3087bfdd4b64dddc5f734915e31e8a663cfd8"
+dependencies = [
+ "halo2_proofs",
+ "itertools 0.13.0",
+ "ruint",
+ "sha3 0.10.8",
 ]
 
 [[package]]
@@ -2760,7 +2874,7 @@ dependencies = [
 [[package]]
 name = "type-conversions"
 version = "0.1.0"
-source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=4ff7e5a#4ff7e5a5f601581fc1e1f7bb823b7572aeba3092"
+source = "git+https://github.com/Cardinal-Cryptography/zkOS-monorepo?rev=374a0d5dea2128e9b5100ede6daecc9253a241d9#374a0d5dea2128e9b5100ede6daecc9253a241d9"
 dependencies = [
  "alloy-primitives",
  "halo2curves",
@@ -2872,6 +2986,64 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-bindgen"
+version = "0.2.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1edc8929d7499fc4e8f0be2262a241556cfc54a0bea223790e71446f2aab1ef5"
+dependencies = [
+ "cfg-if",
+ "once_cell",
+ "rustversion",
+ "wasm-bindgen-macro",
+]
+
+[[package]]
+name = "wasm-bindgen-backend"
+version = "0.2.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f0a0651a5c2bc21487bde11ee802ccaf4c51935d0d3d42a6101f98161700bc6"
+dependencies = [
+ "bumpalo",
+ "log",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-macro"
+version = "0.2.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fe63fc6d09ed3792bd0897b314f53de8e16568c2b3f7982f468c0bf9bd0b407"
+dependencies = [
+ "quote",
+ "wasm-bindgen-macro-support",
+]
+
+[[package]]
+name = "wasm-bindgen-macro-support"
+version = "0.2.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ae87ea40c9f689fc23f209965b6fb8a99ad69aeeb0231408be24920604395de"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+ "wasm-bindgen-backend",
+ "wasm-bindgen-shared",
+]
+
+[[package]]
+name = "wasm-bindgen-shared"
+version = "0.2.100"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a05d73b933a847d6cccdda8f838a22ff101ad9bf93e33684f39c1f5f0eece3d"
+dependencies = [
+ "unicode-ident",
+]
+
+[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2892,6 +3064,65 @@ name = "winapi-x86_64-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+
+[[package]]
+name = "windows-core"
+version = "0.61.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0fdd3ddb90610c7638aa2b3a3ab2904fb9e5cdbecc643ddb3647212781c4ae3"
+dependencies = [
+ "windows-implement",
+ "windows-interface",
+ "windows-link",
+ "windows-result",
+ "windows-strings",
+]
+
+[[package]]
+name = "windows-implement"
+version = "0.60.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a47fddd13af08290e67f4acabf4b459f647552718f683a7b415d290ac744a836"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "windows-interface"
+version = "0.59.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd9211b69f8dcdfa817bfd14bf1c97c9188afa36f4750130fcdf3f400eca9fa8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "windows-link"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e6ad25900d524eaabdbbb96d20b4311e1e7ae1699af4fb28c17ae66c80d798a"
+
+[[package]]
+name = "windows-result"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56f42bd332cc6c8eac5af113fc0c1fd6a8fd2aa08a0119358686e5160d0586c6"
+dependencies = [
+ "windows-link",
+]
+
+[[package]]
+name = "windows-strings"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56e6c93f3a0c3b36176cb1327a4958a0353d5d166c2a35cb268ace15e91d3b57"
+dependencies = [
+ "windows-link",
+]
 
 [[package]]
 name = "windows-sys"

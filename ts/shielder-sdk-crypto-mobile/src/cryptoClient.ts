@@ -88,7 +88,7 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifier),
           scalarToArrayBuffer(advice.initialDeposit),
-          scalarToArrayBuffer(advice.callerAddress),
+          scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.tokenAddress),
           scalarToArrayBuffer(advice.encryptionSalt),
           scalarToArrayBuffer(advice.macSalt),
@@ -104,7 +104,7 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifier),
           scalarToArrayBuffer(advice.initialDeposit),
-          scalarToArrayBuffer(advice.callerAddress),
+          scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.tokenAddress),
           scalarToArrayBuffer(advice.encryptionSalt),
           scalarToArrayBuffer(advice.macSalt),
@@ -115,7 +115,7 @@ export class RNCryptoClient implements CryptoClient {
           hNote: arrayBufferToScalar(rawPubInputs.hashedNote),
           prenullifier: arrayBufferToScalar(rawPubInputs.prenullifier),
           initialDeposit: arrayBufferToScalar(rawPubInputs.initialDeposit),
-          callerAddress: arrayBufferToScalar(rawPubInputs.callerAddress),
+          commitment: arrayBufferToScalar(rawPubInputs.commitment),
           tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
           anonymityRevokerPublicKeyX: arrayBufferToScalar(
             rawPubInputs.anonymityRevokerPublicKeyX
@@ -147,7 +147,7 @@ export class RNCryptoClient implements CryptoClient {
             scalarToArrayBuffer(pubInputs.hNote),
             scalarToArrayBuffer(pubInputs.prenullifier),
             scalarToArrayBuffer(pubInputs.initialDeposit),
-            scalarToArrayBuffer(pubInputs.callerAddress),
+            scalarToArrayBuffer(pubInputs.commitment),
             scalarToArrayBuffer(pubInputs.tokenAddress),
             scalarToArrayBuffer(pubInputs.anonymityRevokerPublicKeyX),
             scalarToArrayBuffer(pubInputs.anonymityRevokerPublicKeyY),
@@ -176,7 +176,7 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.tokenAddress),
           new Uint8Array(advice.path).buffer,
           scalarToArrayBuffer(advice.value),
-          scalarToArrayBuffer(advice.callerAddress),
+          scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.nullifierNew),
           scalarToArrayBuffer(advice.macSalt)
         );
@@ -192,7 +192,7 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.tokenAddress),
           new Uint8Array(advice.path).buffer,
           scalarToArrayBuffer(advice.value),
-          scalarToArrayBuffer(advice.callerAddress),
+          scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.nullifierNew),
           scalarToArrayBuffer(advice.macSalt)
         );
@@ -201,7 +201,7 @@ export class RNCryptoClient implements CryptoClient {
           hNullifierOld: arrayBufferToScalar(rawPubInputs.hNullifierOld),
           hNoteNew: arrayBufferToScalar(rawPubInputs.hNoteNew),
           value: arrayBufferToScalar(rawPubInputs.value),
-          callerAddress: arrayBufferToScalar(rawPubInputs.callerAddress),
+          commitment: arrayBufferToScalar(rawPubInputs.commitment),
           tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
           macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
           macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
@@ -216,7 +216,7 @@ export class RNCryptoClient implements CryptoClient {
             scalarToArrayBuffer(pubInputs.hNullifierOld),
             scalarToArrayBuffer(pubInputs.hNoteNew),
             scalarToArrayBuffer(pubInputs.value),
-            scalarToArrayBuffer(pubInputs.callerAddress),
+            scalarToArrayBuffer(pubInputs.commitment),
             scalarToArrayBuffer(pubInputs.tokenAddress),
             scalarToArrayBuffer(pubInputs.macSalt),
             scalarToArrayBuffer(pubInputs.macCommitment),

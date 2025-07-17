@@ -1,4 +1,4 @@
-export const contractVersion = "0x000100";
+export const contractVersion = "0x000101";
 export const relayPath = "/relay";
 export const feePath = "/quote_fees";
 export const feeAddressPath = "/fee_address";

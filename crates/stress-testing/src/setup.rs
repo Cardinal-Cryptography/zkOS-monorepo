@@ -9,9 +9,13 @@ use anyhow::{anyhow, Result};
 use shielder_account::{ShielderAction, Token};
 use shielder_circuits::new_account::NewAccountCircuit;
 use shielder_contract::{
-    alloy_primitives::U256, call_type::Call, events::get_event, providers::create_simple_provider,
+    alloy_primitives::U256,
+    call_type::{Call, DryRun},
+    events::get_event,
+    providers::create_simple_provider,
     ShielderContract::NewAccount,
 };
+use shielder_setup::protocol_fee::compute_protocol_fee_from_net;
 
 use crate::{actor::Actor, config::Config, util::proving_keys, INITIAL_BALANCE, SHIELDED_BALANCE};
 
@@ -67,22 +71,37 @@ async fn shield_tokens(config: &Config, actors: &mut [Actor]) -> Result<()> {
     let shielded_amount = U256::from(SHIELDED_BALANCE);
     let provider = create_simple_provider(&config.node_rpc_url).await?;
 
-    println!("⏳ Creating shielder accounts. Every account will shield {SHIELDED_BALANCE}.");
+    let protocol_fee = if let Some(actor) = actors.first() {
+        let protocol_fee_bps = actor
+            .shielder_user
+            .protocol_deposit_fee_bps::<DryRun>()
+            .await?;
+        compute_protocol_fee_from_net(shielded_amount, protocol_fee_bps)
+    } else {
+        U256::ZERO
+    };
+    let total_amount = shielded_amount + protocol_fee;
+
+    println!(
+        "⏳ Creating shielder accounts. Every account will shield {}, additionally paying {} protocol fee.",
+        shielded_amount, protocol_fee
+    );
     for actor in actors {
-        let call = actor.prepare_new_account_call(&params, &pk, shielded_amount);
+        let call = actor.prepare_new_account_call(&params, &pk, total_amount, protocol_fee);
 
         let (tx_hash, block_hash) = actor
             .shielder_user
-            .new_account_native::<Call>(call, shielded_amount)
+            .new_account_native::<Call>(call, total_amount)
             .await?;
 
         let new_account_event = get_event::<NewAccount>(&provider, tx_hash, block_hash).await?;
 
         actor.account.register_action(ShielderAction::new_account(
-            shielded_amount,
+            total_amount,
             new_account_event.newNoteIndex,
             tx_hash,
             Token::Native,
+            protocol_fee,
         ));
 
         println!("  ✅ Shielded tokens for address {}", actor.address());

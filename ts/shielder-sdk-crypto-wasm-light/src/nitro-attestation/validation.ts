@@ -91,15 +91,15 @@ function validateFieldTypes(doc: AttestationDocument): void {
   }
 
   // Validate optional fields if present
-  if (doc.public_key !== undefined && !(doc.public_key instanceof Uint8Array)) {
+  if (doc.public_key && !(doc.public_key instanceof Uint8Array)) {
     throw new Error("Invalid public_key: must be Uint8Array");
   }
 
-  if (doc.user_data !== undefined && !(doc.user_data instanceof Uint8Array)) {
+  if (doc.user_data && !(doc.user_data instanceof Uint8Array)) {
     throw new Error("Invalid user_data: must be Uint8Array");
   }
 
-  if (doc.nonce !== undefined && !(doc.nonce instanceof Uint8Array)) {
+  if (doc.nonce && !(doc.nonce instanceof Uint8Array)) {
     throw new Error("Invalid nonce: must be Uint8Array");
   }
 }

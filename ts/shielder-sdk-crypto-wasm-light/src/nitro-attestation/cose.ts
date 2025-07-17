@@ -8,6 +8,7 @@ import {
   CBOR_SIGNATURE_FIX_POSITION,
   CBOR_SIGNATURE_FIX_VALUE
 } from "./constants";
+import { getCrypto } from "@/utils";
 
 /**
  * Decode CBOR-encoded COSE_Sign1 signature structure
@@ -97,7 +98,8 @@ export async function verifyCOSESignature(
   publicKey: CryptoKey
 ): Promise<void> {
   try {
-    const isValid = await window.crypto.subtle.verify(
+    const cryptoApi = await getCrypto();
+    const isValid = await cryptoApi.subtle.verify(
       {
         name: "ECDSA",
         hash: "SHA-384"

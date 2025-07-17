@@ -2,12 +2,15 @@ use std::sync::Arc;
 
 use axum::{extract::State, response::IntoResponse, Json};
 use shielder_prover_common::protocol::Request;
+use tracing::instrument;
 
 use crate::{
     error::ShielderProverServerError,
     handlers::{request, GenerateProofPayload},
     AppState,
 };
+
+#[instrument(level = "trace")]
 pub async fn generate_proof(
     State(state): State<Arc<AppState>>,
     Json(generate_proof_payload): Json<GenerateProofPayload>,

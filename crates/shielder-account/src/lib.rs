@@ -68,7 +68,7 @@ impl ShielderAccount {
             ShielderAction::Deposit(data) | ShielderAction::NewAccount(data) => {
                 self.shielded_amount = self
                     .shielded_amount
-                    .checked_add(data.amount)
+                    .checked_add(data.amount - data.protocol_fee)
                     .expect("shielded amount overflow");
             }
             ShielderAction::Withdraw { data, .. } => {

@@ -10,6 +10,7 @@ use shielder_circuits::{
     Field, Fr, GrumpkinPointAffine, ProverKnowledge, PublicInputProvider,
 };
 use shielder_contract::{
+    DepositCommitment, NewAccountCommitment,
     ShielderContract::{
         depositERC20Call, depositNativeCall, newAccountERC20Call, newAccountNativeCall,
         withdrawERC20Call, withdrawNativeCall,
@@ -68,6 +69,7 @@ pub struct NewAccountCall {
     pub mac_salt: U256,
     pub mac_commitment: U256,
     pub proof: Bytes,
+    pub memo: Bytes,
 }
 
 impl TryFrom<NewAccountCall> for newAccountNativeCall {
@@ -86,6 +88,7 @@ impl TryFrom<NewAccountCall> for newAccountNativeCall {
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
+                memo: calldata.memo,
             }),
             Token::ERC20(_) => Err(CallTypeConversionError),
         }
@@ -111,6 +114,7 @@ impl TryFrom<NewAccountCall> for newAccountERC20Call {
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
+                memo: calldata.memo,
             }),
         }
     }
@@ -121,6 +125,8 @@ pub struct NewAccountCallExtra {
     pub encryption_salt: U256,
     pub mac_salt: U256,
     pub caller_address: Address,
+    pub protocol_fee: U256,
+    pub memo: Bytes,
 }
 
 pub enum NewAccountCallType {}
@@ -135,11 +141,17 @@ impl CallType for NewAccountCallType {
         amount: U256,
         extra: &Self::Extra,
     ) -> Self::ProverKnowledge {
+        let commitment = NewAccountCommitment {
+            caller_address: extra.caller_address,
+            protocol_fee: extra.protocol_fee,
+        }
+        .commitment_hash();
+
         NewAccountProverKnowledge {
             id: u256_to_field(account.id),
             nullifier: u256_to_field(account.next_nullifier()),
-            initial_deposit: u256_to_field(amount),
-            caller_address: address_to_field(extra.caller_address),
+            initial_deposit: u256_to_field(amount - extra.protocol_fee),
+            commitment: u256_to_field(commitment),
             token_address: address_to_field(token.address()),
             encryption_salt: field_element_to_le_bits::<Fr>(u256_to_field(extra.encryption_salt)),
             anonymity_revoker_public_key: GrumpkinPointAffine {
@@ -153,11 +165,11 @@ impl CallType for NewAccountCallType {
     fn prepare_call_data(
         prover_knowledge: &Self::ProverKnowledge,
         proof: Vec<u8>,
-        _: &Self::Extra,
+        extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::new_account::NewAccountInstance::*;
         NewAccountCall {
-            amount: field_to_u256(prover_knowledge.initial_deposit),
+            amount: field_to_u256(prover_knowledge.initial_deposit) + extra.protocol_fee,
             token: field_to_address(prover_knowledge.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
             new_note: field_to_u256(prover_knowledge.compute_public_input(HashedNote)),
@@ -173,6 +185,7 @@ impl CallType for NewAccountCallType {
             mac_salt: field_to_u256(prover_knowledge.compute_public_input(MacSalt)),
             mac_commitment: field_to_u256(prover_knowledge.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof),
+            memo: extra.memo.clone(),
         }
     }
 }
@@ -188,6 +201,7 @@ pub struct DepositCall {
     pub mac_salt: U256,
     pub mac_commitment: U256,
     pub proof: Bytes,
+    pub memo: Bytes,
 }
 
 impl TryFrom<DepositCall> for depositNativeCall {
@@ -203,6 +217,7 @@ impl TryFrom<DepositCall> for depositNativeCall {
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
+                memo: calldata.memo,
             }),
             Token::ERC20(_) => Err(CallTypeConversionError),
         }
@@ -225,6 +240,7 @@ impl TryFrom<DepositCall> for depositERC20Call {
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
                 proof: calldata.proof,
+                memo: calldata.memo,
             }),
         }
     }
@@ -234,6 +250,8 @@ pub struct DepositExtra {
     pub merkle_path: [[U256; ARITY]; NOTE_TREE_HEIGHT],
     pub mac_salt: U256,
     pub caller_address: Address,
+    pub protocol_fee: U256,
+    pub memo: Bytes,
 }
 
 pub enum DepositCallType {}
@@ -255,14 +273,20 @@ impl CallType for DepositCallType {
             ..
         } = account.get_secrets();
 
+        let commitment = DepositCommitment {
+            caller_address: extra.caller_address,
+            protocol_fee: extra.protocol_fee,
+        }
+        .commitment_hash();
+
         DepositProverKnowledge {
             id: u256_to_field(account.id),
             nullifier_old: u256_to_field(nullifier_old),
             account_old_balance: u256_to_field(account.shielded_amount),
-            caller_address: address_to_field(extra.caller_address),
+            commitment: u256_to_field(commitment),
             token_address: address_to_field(token.address()),
             path: map_path_to_field(extra.merkle_path),
-            deposit_value: u256_to_field(amount),
+            deposit_value: u256_to_field(amount - extra.protocol_fee),
             nullifier_new: u256_to_field(nullifier_new),
             mac_salt: u256_to_field(extra.mac_salt),
         }
@@ -271,11 +295,11 @@ impl CallType for DepositCallType {
     fn prepare_call_data(
         pk: &Self::ProverKnowledge,
         proof: Vec<u8>,
-        _: &Self::Extra,
+        extra: &Self::Extra,
     ) -> Self::Calldata {
         use shielder_circuits::circuits::deposit::DepositInstance::*;
         DepositCall {
-            amount: field_to_u256(pk.deposit_value),
+            amount: field_to_u256(pk.deposit_value) + extra.protocol_fee,
             token: field_to_address(pk.token_address).into(),
             expected_contract_version: contract_version().to_bytes(),
             old_nullifier_hash: field_to_u256(pk.compute_public_input(HashedOldNullifier)),
@@ -284,6 +308,7 @@ impl CallType for DepositCallType {
             mac_salt: field_to_u256(pk.compute_public_input(MacSalt)),
             mac_commitment: field_to_u256(pk.compute_public_input(MacCommitment)),
             proof: Bytes::from(proof.to_vec()),
+            memo: extra.memo.clone(),
         }
     }
 }
@@ -303,6 +328,7 @@ pub struct WithdrawCall {
     pub mac_commitment: U256,
     pub proof: Bytes,
     pub pocket_money: U256,
+    pub memo: Bytes,
 }
 
 impl TryFrom<WithdrawCall> for withdrawNativeCall {
@@ -322,6 +348,7 @@ impl TryFrom<WithdrawCall> for withdrawNativeCall {
                 relayerFee: calldata.relayer_fee,
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
+                memo: calldata.memo,
             }),
             Token::ERC20(_) => Err(CallTypeConversionError),
         }
@@ -347,6 +374,7 @@ impl TryFrom<WithdrawCall> for withdrawERC20Call {
                 relayerFee: calldata.relayer_fee,
                 macSalt: calldata.mac_salt,
                 macCommitment: calldata.mac_commitment,
+                memo: calldata.memo,
             }),
         }
     }
@@ -361,6 +389,8 @@ pub struct WithdrawExtra {
     pub chain_id: U256,
     pub mac_salt: U256,
     pub pocket_money: U256,
+    pub protocol_fee: U256,
+    pub memo: Bytes,
 }
 
 pub enum WithdrawCallType {}
@@ -388,6 +418,8 @@ impl CallType for WithdrawCallType {
             relayer_fee: extra.relayer_fee,
             chain_id: extra.chain_id,
             pocket_money: extra.pocket_money,
+            protocol_fee: extra.protocol_fee,
+            memo: extra.memo.clone(),
         }
         .commitment_hash();
 
@@ -424,6 +456,7 @@ impl CallType for WithdrawCallType {
             mac_salt: field_to_u256(pk.compute_public_input(MacSalt)),
             mac_commitment: field_to_u256(pk.compute_public_input(MacCommitment)),
             pocket_money: extra.pocket_money,
+            memo: extra.memo.clone(),
         }
     }
 }

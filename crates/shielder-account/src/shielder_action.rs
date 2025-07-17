@@ -20,19 +20,34 @@ impl From<(TxHash, ShielderContractEvents)> for ShielderAction {
                 amount,
                 newNoteIndex,
                 tokenAddress,
+                protocolFee,
                 ..
-            }) => Self::new_account(amount, newNoteIndex, tx_hash, tokenAddress.into()),
+            }) => Self::new_account(
+                amount,
+                newNoteIndex,
+                tx_hash,
+                tokenAddress.into(),
+                protocolFee,
+            ),
             ShielderContractEvents::Deposit(Deposit {
                 amount,
                 newNoteIndex,
                 tokenAddress,
+                protocolFee,
                 ..
-            }) => Self::deposit(amount, newNoteIndex, tx_hash, tokenAddress.into()),
+            }) => Self::deposit(
+                amount,
+                newNoteIndex,
+                tx_hash,
+                tokenAddress.into(),
+                protocolFee,
+            ),
             ShielderContractEvents::Withdraw(Withdraw {
                 amount,
                 withdrawalAddress,
                 newNoteIndex,
                 tokenAddress,
+                protocolFee,
                 ..
             }) => Self::withdraw(
                 amount,
@@ -40,27 +55,42 @@ impl From<(TxHash, ShielderContractEvents)> for ShielderAction {
                 tx_hash,
                 withdrawalAddress,
                 tokenAddress.into(),
+                protocolFee,
             ),
         }
     }
 }
 
 impl ShielderAction {
-    pub fn new_account(amount: U256, note_index: U256, tx_hash: TxHash, token: Token) -> Self {
+    pub fn new_account(
+        amount: U256,
+        note_index: U256,
+        tx_hash: TxHash,
+        token: Token,
+        protocol_fee: U256,
+    ) -> Self {
         Self::NewAccount(ShielderTxData {
             amount,
             note_index,
             tx_hash,
             token,
+            protocol_fee,
         })
     }
 
-    pub fn deposit(amount: U256, note_index: U256, tx_hash: TxHash, token: Token) -> Self {
+    pub fn deposit(
+        amount: U256,
+        note_index: U256,
+        tx_hash: TxHash,
+        token: Token,
+        protocol_fee: U256,
+    ) -> Self {
         Self::Deposit(ShielderTxData {
             amount,
             note_index,
             tx_hash,
             token,
+            protocol_fee,
         })
     }
 
@@ -70,6 +100,7 @@ impl ShielderAction {
         tx_hash: TxHash,
         to: Address,
         token: Token,
+        protocol_fee: U256,
     ) -> Self {
         Self::Withdraw {
             to,
@@ -78,6 +109,7 @@ impl ShielderAction {
                 note_index,
                 tx_hash,
                 token,
+                protocol_fee,
             },
         }
     }
@@ -97,4 +129,5 @@ pub struct ShielderTxData {
     pub note_index: U256,
     pub tx_hash: TxHash,
     pub token: Token,
+    pub protocol_fee: U256,
 }

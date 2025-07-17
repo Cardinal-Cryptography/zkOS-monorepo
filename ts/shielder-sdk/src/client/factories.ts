@@ -24,6 +24,7 @@ import {
 import { LocalStateTransition } from "@/state/localStateTransition";
 import { ChainStateTransition } from "@/state/sync/chainStateTransition";
 import { AccountOnchain } from "@/state/accountOnchain";
+import { ProtocolFees } from "@/protocolFees";
 
 // Base config with common properties
 type BaseShielderConfig = {
@@ -46,6 +47,7 @@ export type ShielderComponents = {
   stateSynchronizer: StateSynchronizer;
   historyFetcher: HistoryFetcher;
   shielderActions: ShielderActions;
+  protocolFees: ProtocolFees;
 };
 
 /**
@@ -127,11 +129,14 @@ function createShielderComponents(
     config.callbacks
   );
 
+  const protocolFees = new ProtocolFees(config.contract);
+
   return {
     accountRegistry: storageComponents.accountRegistry,
     stateSynchronizer: syncComponents.stateSynchronizer,
     historyFetcher: syncComponents.historyFetcher,
-    shielderActions
+    shielderActions,
+    protocolFees
   };
 }
 
