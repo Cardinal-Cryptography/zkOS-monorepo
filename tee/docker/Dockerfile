@@ -22,4 +22,4 @@ RUN chmod +x dockerentrypoint.sh
 # Expose the default public port
 EXPOSE 3000
 
-ENTRYPOINT ["./dockerentrypoint.sh"]
+ENTRYPOINT ["/app/shielder-prover-server"]
