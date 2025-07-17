@@ -24,11 +24,8 @@ fn gen_params_pk<C: Circuit<Fr> + Default>(circuit_name: &str, full_params: &Par
     let (params, k, pk, _) = generate_keys_with_min_k(C::default(), full_params.clone())
         .expect("keys should not fail to generate");
     let params_bytes = marshall_params(&params).expect("Failed to marshall params");
-    std::fs::write(
-        format!("artifacts/{circuit_name}/params.bin"),
-        params_bytes,
-    )
-    .expect("Failed to write params.bin");
+    std::fs::write(format!("artifacts/{circuit_name}/params.bin"), params_bytes)
+        .expect("Failed to write params.bin");
     let key_bytes = marshall_pk(k, &pk);
     std::fs::write(format!("artifacts/{circuit_name}/pk.bin"), key_bytes)
         .expect("Failed to write pk.bin");
