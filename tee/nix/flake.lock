@@ -151,16 +151,16 @@
     "zkOS-monorepo": {
       "flake": false,
       "locked": {
-        "lastModified": 1751455595,
-        "narHash": "sha256-9rdyw9yyeMQ0mP+xYohDfktkJ/wAzz2KSvUnXP55Upo=",
+        "lastModified": 1752656551,
+        "narHash": "sha256-RZume0ig/eNs+BvqT3uh3VWfa8b1z0qBUh5g+Knvsyg=",
         "ref": "refs/heads/main",
-        "rev": "1852b2809325e1e089def6dbdf34c03640c06c0c",
-        "revCount": 220,
+        "rev": "374a0d5dea2128e9b5100ede6daecc9253a241d9",
+        "revCount": 233,
         "type": "git",
         "url": "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
       },
       "original": {
-        "rev": "1852b2809325e1e089def6dbdf34c03640c06c0c",
+        "rev": "374a0d5dea2128e9b5100ede6daecc9253a241d9",
         "type": "git",
         "url": "https://github.com/Cardinal-Cryptography/zkOS-monorepo"
       }
