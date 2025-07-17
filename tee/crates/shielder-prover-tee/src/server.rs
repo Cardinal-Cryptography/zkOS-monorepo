@@ -69,7 +69,7 @@ impl Server {
     }
     pub async fn handle_client(self: Arc<Self>, stream: VsockStream) {
         let result = self.do_handle_client(stream).await;
-        debug!("Client disconnected: {:?}", result);
+        debug!("Client disconnected: {result:?}");
     }
 
     async fn do_handle_client(&self, stream: VsockStream) -> Result<(), VsockError> {
