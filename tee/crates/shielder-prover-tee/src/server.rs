@@ -131,10 +131,10 @@ impl Server {
     ) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
         let decrypted_payload = self.decrypt_using_servers_private_key(&request_payload)?;
 
-        let decrypted_payload = str::from_utf8(&decrypted_payload).map_err(|_| {
+        let decrypted_payload = String::from_utf8(decrypted_payload).map_err(|_| {
             VsockError::Protocol(String::from("Failed to decode decrypted payload as UTF-8."))
         })?;
-        let deserialized_payload: Payload = serde_json::from_str(decrypted_payload)?;
+        let deserialized_payload: Payload = serde_json::from_str(&decrypted_payload)?;
 
         let (proof, pub_inputs) = Self::compute_proof(
             &deserialized_payload.circuit_inputs,

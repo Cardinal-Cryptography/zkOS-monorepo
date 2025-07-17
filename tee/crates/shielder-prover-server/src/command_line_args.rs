@@ -1,6 +1,4 @@
 use clap::Parser;
-use shielder_prover_common;
-use vsock;
 
 #[derive(Parser, Debug, Clone)]
 pub struct CommandLineArgs {
