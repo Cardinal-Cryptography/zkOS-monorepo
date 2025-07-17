@@ -1,6 +1,6 @@
 {
   "name": "@cardinal-cryptography/shielder-sdk-crypto-wasm",
-  "version": "0.3.0",
+  "version": "0.3.0-rc.1",
   "description": "",
   "main": "index.js",
   "scripts": {

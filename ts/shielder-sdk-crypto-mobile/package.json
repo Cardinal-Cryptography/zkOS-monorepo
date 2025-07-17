@@ -1,6 +1,6 @@
 {
   "name": "@cardinal-cryptography/shielder-sdk-crypto-mobile",
-  "version": "0.3.0",
+  "version": "0.3.0-rc.1",
   "description": "shielder-sdk cryptography bindings for react native",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
