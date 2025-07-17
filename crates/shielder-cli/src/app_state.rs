@@ -56,6 +56,12 @@ impl RelayerRpcUrl {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Debug, Default, Deserialize, Serialize)]
+pub struct ProtocolFees {
+    pub deposit_fee: Option<U256>,
+    pub withdraw_fee: Option<U256>,
+}
+
 /// Application info that is kept locally.
 ///
 /// WARNING: You SHOULD NOT use `Self::Default` in production, as this will set the seed to
@@ -67,6 +73,7 @@ pub struct AppState {
     pub contract_address: Address,
     pub relayer_rpc_url: RelayerRpcUrl,
     pub signing_key: String,
+    pub protocol_fees: ProtocolFees,
 }
 
 impl AppState {

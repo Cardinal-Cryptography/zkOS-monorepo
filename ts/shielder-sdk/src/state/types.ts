@@ -42,4 +42,6 @@ export type ShielderTransaction = {
   token: Token;
   pocketMoney?: bigint;
   newNote: Scalar;
+  protocolFee: bigint;
+  memo: `0x${string}`;
 };

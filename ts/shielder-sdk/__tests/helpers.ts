@@ -147,7 +147,7 @@ class MockedNewAccountCircuit implements NewAccountCircuit {
         hNote: Scalar.fromBigint(0n),
         prenullifier: Scalar.fromBigint(0n),
         initialDeposit: Scalar.fromBigint(0n),
-        callerAddress: Scalar.fromBigint(0n),
+        commitment: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyX: Scalar.fromBigint(0n),
         anonymityRevokerPublicKeyY: Scalar.fromBigint(0n),
@@ -181,7 +181,7 @@ class MockedDepositCircuit implements DepositCircuit {
         hNullifierOld: Scalar.fromBigint(0n),
         hNoteNew: Scalar.fromBigint(0n),
         value: Scalar.fromBigint(0n),
-        callerAddress: Scalar.fromBigint(0n),
+        commitment: Scalar.fromBigint(0n),
         tokenAddress: Scalar.fromBigint(0n),
         macSalt: Scalar.fromBigint(0n),
         macCommitment: Scalar.fromBigint(0n)

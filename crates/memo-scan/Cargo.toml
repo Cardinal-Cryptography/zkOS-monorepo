@@ -1,0 +1,25 @@
+[package]
+name = "memo-scan"
+version = "0.1.0"
+readme = "README.md"
+description = "Scanner of the Shielder memo attachments to transactions"
+
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-provider = { workspace = true }
+anyhow = { workspace = true, default-features = true }
+shielder-contract = { workspace = true, features = ["erc20"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+alloy-contract = { workspace = true }
+alloy-network = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-sol-types = { workspace = true }
+alloy-transport = { workspace = true }
+clap = { workspace = true, features = ["derive"] }

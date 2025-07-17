@@ -25,7 +25,7 @@ mod tests {
 
     use std::assert_matches::assert_matches;
 
-    use alloy_primitives::U256;
+    use alloy_primitives::{Bytes, U256};
     use rstest::rstest;
     use shielder_contract::ShielderContract::getMerklePathCall;
 
@@ -44,7 +44,8 @@ mod tests {
             &mut deployment,
             TestToken::Native,
             U256::from(1),
-            U256::from(10)
+            U256::from(10),
+            Bytes::from(vec![]),
         )
         .is_ok());
 
