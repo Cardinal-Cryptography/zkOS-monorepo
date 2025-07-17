@@ -44,7 +44,10 @@ jobs:
       - name: Build enclave for shielder-prover-tee
         # yamllint disable rule:line-length
         run: |
+          mkdir out
           nix build --override-input zkOS-monorepo "github:${GITHUB_REPOSITORY}/${{ steps.get-ref-properties.outputs.full-sha }}"
+          cp result/shielderProverTEE/image.eif out/shielder-prover-tee-${{ steps.get-ref-properties.outputs.sha }}.eif
+          cp result/shielderProverTEE/pcr.json out/pcr-${{ steps.get-ref-properties.outputs.sha }}.json
 
       - name: Get artifact names
         id: get-artifact-names
@@ -56,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get-artifact-names.outputs.eif }}
-          path: tee/nix/result/shielderProverTEE/image.eif
+          path: tee/nix/out/shielder-prover-tee-${{ steps.get-ref-properties.outputs.sha }}.eif
           if-no-files-found: error
           retention-days: 7
 
@@ -64,6 +67,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get-artifact-names.outputs.measurements }}
-          path: tee/nix/result/shielderProverTEE/pcr.json
+          path: tee/nix/out/pcr-${{ steps.get-ref-properties.outputs.sha }}.json
           if-no-files-found: error
           retention-days: 7

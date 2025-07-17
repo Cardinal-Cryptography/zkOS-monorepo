@@ -1,0 +1,66 @@
+---
+name: Build and add Shielder Prover Server artifacts to GitHub Release
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  check-vars-and-secrets:
+    name: Check vars and secrets
+    uses: ./.github/workflows/_check-vars-and-secrets.yml
+    secrets: inherit
+
+  build-enclave-artifacts:
+    name: Build enclave artifacts
+    uses: ./.github/workflows/_build-enclave-artifacts.yml
+    with:
+      ref: ${{ github.ref }}
+
+  add-ci-artifacts-to-release:
+    name: Add CI artifacts to the release
+    needs:
+      - check-vars-and-secrets
+      - build-enclave-artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Call action get-ref-properties
+        id: get-ref-properties
+        uses: Cardinal-Cryptography/github-actions/get-ref-properties@v7
+
+      - name: Download enclave artifacts - EIF
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-enclave-artifacts.outputs.artifact-name-eif }}
+          merge-multiple: true
+          path: artifacts
+
+      - name: Download enclave artifacts - Measurements
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-enclave-artifacts.outputs.artifact-name-measurements }}
+          merge-multiple: true
+          path: artifacts
+
+      - name: Generate release artifacts checksum (SHA256)
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          output:
+            checksums.txt
+          patterns: |
+            artifacts/*
+
+      - name: Add CI artifacts to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            checksums.txt
+            artifacts/*
