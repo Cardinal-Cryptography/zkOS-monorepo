@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use axum::{extract::State, Json};
 use shielder_prover_common::protocol::{Request, Response};
-use tracing::{instrument};
+use tracing::instrument;
+
 use crate::{error::ShielderProverServerError, handlers::request, AppState};
 
 #[instrument(level = "trace")]

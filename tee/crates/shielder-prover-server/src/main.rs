@@ -1,6 +1,6 @@
+mod command_line_args;
 mod error;
 mod handlers;
-mod command_line_args;
 
 use std::{sync::Arc, time::Duration};
 
@@ -9,17 +9,14 @@ use axum::{
     routing::{get, post},
     serve, Router,
 };
-
-use error::ShielderProverServerError as Error;
 use clap::Parser;
+use error::ShielderProverServerError as Error;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use tracing::info;
-use tracing_subscriber::{fmt, EnvFilter};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use crate::command_line_args::CommandLineArgs;
-use crate::handlers as server_handlers;
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+use crate::{command_line_args::CommandLineArgs, handlers as server_handlers};
 
 #[derive(Debug)]
 struct AppState {
@@ -30,10 +27,7 @@ struct AppState {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     tracing_subscriber::registry()
-        .with(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info")),
-        )
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
         .with(
             fmt::layer()
                 .with_ansi(true)

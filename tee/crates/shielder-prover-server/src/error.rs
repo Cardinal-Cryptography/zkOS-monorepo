@@ -2,9 +2,9 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response as AxumResponse},
 };
-use tracing::error;
 use shielder_prover_common::vsock::VsockError;
 use tokio::task::JoinError;
+use tracing::error;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ShielderProverServerError {

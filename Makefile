@@ -78,7 +78,7 @@ measure-gas: compile-contracts
 format-rust: # Format all rust crates
 format-rust:
 	cargo +nightly fmt --all -- --check
-	cd tee && cargo +nightly fmt --all -- --check
+	cd tee && cargo fmt --all -- --check
 
 .PHONY: lint-rust
 lint-rust: # Lint all rust crates
