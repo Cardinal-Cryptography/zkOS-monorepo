@@ -1,0 +1,28 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+**/*.rlib
+**/*.d
+**/*.rlib.d
+**/*.o
+**/*.rmeta
+
+# Cargo cache and configuration files
+.cargo/
+
+.nix/
+flake.nix
+flake.lock
+result # Nix build output symlink
+
+# Git-related files
+.git/
+.gitignore
+
+# IDE and editor specific files
+.idea/
+.vscode/
+*.swp
+*~
+.#*
+
