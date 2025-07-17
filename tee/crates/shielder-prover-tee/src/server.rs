@@ -32,8 +32,8 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(port: u32) -> Result<Arc<Self>, VsockError> {
-        let address = VsockAddr::new(VMADDR_CID_ANY, port);
+    pub fn new(port: u16) -> Result<Arc<Self>, VsockError> {
+        let address = VsockAddr::new(VMADDR_CID_ANY, port as u32);
         let listener = VsockListener::bind(address)?;
         info!("Generating server's asymmetric keys...");
 
@@ -69,7 +69,7 @@ impl Server {
     }
     pub async fn handle_client(self: Arc<Self>, stream: VsockStream) {
         let result = self.do_handle_client(stream).await;
-        debug!("Client disconnected: {:?}", result);
+        debug!("Client disconnected: {result:?}");
     }
 
     async fn do_handle_client(&self, stream: VsockStream) -> Result<(), VsockError> {
@@ -131,10 +131,10 @@ impl Server {
     ) -> Result<(Vec<u8>, Vec<u8>), VsockError> {
         let decrypted_payload = self.decrypt_using_servers_private_key(&request_payload)?;
 
-        let decrypted_payload = str::from_utf8(&decrypted_payload).map_err(|_| {
+        let decrypted_payload = String::from_utf8(decrypted_payload).map_err(|_| {
             VsockError::Protocol(String::from("Failed to decode decrypted payload as UTF-8."))
         })?;
-        let deserialized_payload: Payload = serde_json::from_str(decrypted_payload)?;
+        let deserialized_payload: Payload = serde_json::from_str(&decrypted_payload)?;
 
         let (proof, pub_inputs) = Self::compute_proof(
             &deserialized_payload.circuit_inputs,

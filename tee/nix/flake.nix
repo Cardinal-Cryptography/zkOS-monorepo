@@ -27,7 +27,7 @@
 
       craneLib = (crane.mkLib pkgs).overrideToolchain (
         p:
-        p.rust-bin.stable.latest.default.override {
+        p.rust-bin.stable."1.88.0".default.override {
           targets = [ "x86_64-unknown-linux-musl" ];
         }
       );

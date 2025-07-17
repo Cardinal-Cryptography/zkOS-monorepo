@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use axum::{extract::State, Json};
 use shielder_prover_common::protocol::{Request, Response};
+use tracing::instrument;
 
 use crate::{error::ShielderProverServerError, handlers::request, AppState};
 
-#[axum::debug_handler]
+#[instrument(level = "trace")]
 pub async fn tee_public_key(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Response>, ShielderProverServerError> {
