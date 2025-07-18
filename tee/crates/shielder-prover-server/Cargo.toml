@@ -10,7 +10,7 @@ repository = { workspace = true }
 
 [dependencies]
 axum = { workspace = true, features = ["tokio", "macros"] }
-clap = { workspace = true, features = ["derive"] }
+clap = { workspace = true, features = ["derive", "env"] }
 serde = { workspace = true }
 shielder-prover-common = { workspace = true }
 thiserror = { workspace = true }
