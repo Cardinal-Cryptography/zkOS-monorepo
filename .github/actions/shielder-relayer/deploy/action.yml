@@ -14,20 +14,12 @@ inputs:
   github-token:
     description: Github token
     required: true
-  ecr-private-host:
-    description: ECR private host
-    required: true
-  kustomize-version:
-    description: Kustomize version
-    required: true
   environment:
     description: Environment to deploy to
     type: choice
     options:
       - all
-      - dev
       - stage
-      - prod
     required: true
 
 runs:
@@ -36,9 +28,9 @@ runs:
     - name: GIT | Checkout aleph-apps repo
       uses: actions/checkout@v4
       with:
-        repository: Cardinal-Cryptography/aleph-apps
+        repository: Cardinal-Cryptography/blanksquare-apps
         token: ${{ inputs.github-token }}
-        path: "aleph-apps"
+        path: "blanksquare-apps"
         ref: main
 
     - name: Setup yq
@@ -46,26 +38,12 @@ runs:
       with:
         version: "v4.44.3"
 
-    - name: Update docker image tag (dev)
-      if: ${{ inputs.environment == 'dev' || inputs.environment == 'all' }}
-      shell: bash
-      run: |
-        cd aleph-apps/shielder-relayer-v2
-        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' dev-values.yaml
-
     - name: Update docker image tag (stage)
       if: ${{ inputs.environment == 'stage' || inputs.environment == 'all' }}
       shell: bash
       run: |
-        cd aleph-apps/shielder-relayer-v2
-        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' stage-values.yaml
-
-    - name: Update docker image tag (prod)
-      if: ${{ inputs.environment == 'prod' || inputs.environment == 'all' }}
-      shell: bash
-      run: |
-        cd aleph-apps/shielder-relayer-v2
-        yq -i '.relayer.image.tag = "${{ inputs.image-tag }}"' prod-values.yaml
+        cd blanksquare-apps/shielder-v3/stage
+        yq -i '.shielder-relayer.relayer.image.tag = "${{ inputs.image-tag }}"' values.yaml
 
     - name: GIT | Commit changes to aleph-apps repository
       uses: EndBug/add-and-commit@v9.1.4
@@ -78,4 +56,4 @@ runs:
           Updating shielder-relayer on environment: ${{ inputs.environment }}
           docker image tag: ${{ inputs.image-tag }}
         add: "*.yaml"
-        cwd: 'aleph-apps'
+        cwd: 'blanksquare-apps'
