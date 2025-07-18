@@ -35,15 +35,16 @@ jobs:
       - name: GIT | Checkout
         uses: actions/checkout@v4
 
-      # Rust setup for shielder-sdk-crypto-wasm and shielder-sdk
       - name: Prepare Rust env
         if: |
           github.event.inputs.package == 'shielder-sdk-crypto-wasm' ||
+          github.event.inputs.package == 'shielder-sdk-crypto-wasm-light' ||
           github.event.inputs.package == 'shielder-sdk'
         uses: ./.github/actions/prepare-rust-env
 
       - name: Install wasm-pack
-        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm'
+        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm' ||
+          github.event.inputs.package == 'shielder-sdk-crypto-wasm-light'
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Prepare Solidity environment
