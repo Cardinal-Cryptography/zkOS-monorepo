@@ -15,10 +15,6 @@ WORKDIR /app
 
 COPY --from=builder /app/target/release/shielder-prover-server .
 
-COPY docker/dockerentrypoint.sh .
-
-RUN chmod +x dockerentrypoint.sh
-
 # Expose the default public port
 EXPOSE 3000
 
