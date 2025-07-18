@@ -45,6 +45,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           file: ./tee/docker/Dockerfile
           push: true
+          # yamllint disable rule:line-length
           tags: |
             ${{ vars.ECR_CC_RES_PUBLIC_REGISTRY }}shielder-prover:${{ steps.get-ref-properties.outputs.sha }}
             ${{ vars.ECR_PUBLIC_HOST }}shielder-prover:latest
