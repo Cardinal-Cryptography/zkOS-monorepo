@@ -12,6 +12,7 @@ on:
           - shielder-sdk
           - shielder-sdk-crypto
           - shielder-sdk-crypto-wasm
+          - shielder-sdk-crypto-wasm-light
           - shielder-sdk-crypto-mobile
       tag:
         description: "NPM tag"
@@ -27,7 +28,8 @@ jobs:
     if: |
       github.event.inputs.package == 'shielder-sdk' ||
       github.event.inputs.package == 'shielder-sdk-crypto' ||
-      github.event.inputs.package == 'shielder-sdk-crypto-wasm'
+      github.event.inputs.package == 'shielder-sdk-crypto-wasm' ||
+      github.event.inputs.package == 'shielder-sdk-crypto-wasm-light'
     runs-on: [self-hosted, Linux, X64, medium]
     steps:
       - name: GIT | Checkout
@@ -68,6 +70,11 @@ jobs:
         run: make wasm
         working-directory: crates/shielder_bindings
 
+      - name: Build shielder_bindings (wasm-light)
+        if: github.event.inputs.package == 'shielder-sdk-crypto-wasm-light'
+        run: make wasm-without-circuits
+        working-directory: crates/shielder_bindings
+
       - name: Install dependencies (workspace)
         run: pnpm install-deps
         working-directory: ts
@@ -78,8 +85,13 @@ jobs:
             pnpm build-package:sdk
           elif [ "${{ github.event.inputs.package }}" = "shielder-sdk-crypto" ]; then
             pnpm build-package:crypto
-          else
+          elif [ "${{ github.event.inputs.package }}" = "shielder-sdk-crypto-wasm" ]; then
             pnpm build-package:crypto-wasm
+          elif [ "${{ github.event.inputs.package }}" = "shielder-sdk-crypto-wasm-light" ]; then
+            pnpm build-package:crypto-wasm-light
+          else
+            echo "Unknown package: ${{ github.event.inputs.package }}"
+            exit 1
           fi
         working-directory: ts
 
