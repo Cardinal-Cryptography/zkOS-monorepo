@@ -50,6 +50,16 @@ run() {
   setup_shielder_sdk
   scenario
 
+  log_progress "ℹ️ Scenario with non-zero protocol fees"
+  log_progress "ℹ️ Setting non-zero protocol fees..."
+  PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY}" \
+  PROTOCOL_DEPOSIT_FEE_BPS=25 \
+  PROTOCOL_WITHDRAW_FEE_BPS=10 \
+  forge script SetProtocolFeesShielderScript --broadcast --rpc-url ${NODE_RPC_URL} --sender $(cast wallet address ${DEPLOYER_PRIVATE_KEY})
+  log_progress "✅ Non-zero protocol fees set!"
+
+  scenario
+
   popd &>> output.log
 }
 
