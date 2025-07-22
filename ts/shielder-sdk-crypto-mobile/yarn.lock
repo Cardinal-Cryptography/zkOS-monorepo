@@ -1529,7 +1529,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@cardinal-cryptography/shielder-sdk-crypto-mobile@workspace:."
   dependencies:
-    "@cardinal-cryptography/shielder-sdk-crypto": 0.2.0-beta.3
+    "@cardinal-cryptography/shielder-sdk-crypto": 0.3.0-rc.1
     "@react-native-community/cli": 15.0.1
     "@react-native/eslint-config": ^0.73.1
     "@types/react": ^18.2.44
@@ -1550,12 +1550,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@cardinal-cryptography/shielder-sdk-crypto@npm:0.2.0-beta.3":
-  version: 0.2.0-beta.3
-  resolution: "@cardinal-cryptography/shielder-sdk-crypto@npm:0.2.0-beta.3"
+"@cardinal-cryptography/shielder-sdk-crypto@npm:0.3.0-rc.1":
+  version: 0.3.0-rc.1
+  resolution: "@cardinal-cryptography/shielder-sdk-crypto@npm:0.3.0-rc.1"
   dependencies:
     viem: ^2.22.2
-  checksum: 2b176c31ee93829a8930d8494a49a31ee774c339216ebab0ab1e9f6675107e96e78f82a66b48a7c5811dbf49e3c23ce64a768056439b9095b493d9bbbe9efaea
+  checksum: e7b9b944ddb1f9c2cb50988b4e1b4ba3dc42396d9035d9f1aad2ad7e926672d2178e0b848a952eb02496fcfab99a46d452395debbcc0faad2b6a62eceac0fdad
   languageName: node
   linkType: hard
 
