@@ -6,8 +6,11 @@ inputs:
     required: true
   aws-mainnet-ecr-access-key-id:
     required: true
-  ecr-private-host:
-    description: ECR private host
+  ecr-host:
+    description: ECR host
+    required: true
+  ecr-registry:
+    description: ECR registry
     required: true
 
 outputs:
@@ -26,7 +29,7 @@ runs:
       id: login-private-ecr
       uses: docker/login-action@v2
       with:
-        registry: ${{ inputs.ecr-private-host }}
+        registry: ${{ inputs.ecr-host }}
         username: ${{ inputs.aws-mainnet-ecr-access-key-id }}
         password: ${{ inputs.aws-mainnet-ecr-access-key }}
       env:
@@ -46,7 +49,7 @@ runs:
         builder: ${{ steps.buildx.outputs.name }}
         file: ./crates/shielder-relayer/docker/Dockerfile.client
         push: true
-        tags: "${{ inputs.ecr-private-host }}/shielder-relayer:\
+        tags: "${{ inputs.ecr-registry }}shielder-relayer:\
           ${{ steps.get-ref-properties.outputs.sha }}"
 
     - name: OUTPUTS | Set output with docker image
