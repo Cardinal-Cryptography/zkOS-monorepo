@@ -95,11 +95,6 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.anonymityRevokerPublicKeyX),
           scalarToArrayBuffer(advice.anonymityRevokerPublicKeyY)
         );
-        return new Uint8Array(rawProof);
-      });
-    },
-    pubInputs: async (advice) => {
-      return Promise.resolve().then(() => {
         const rawPubInputs = newAccountPubInputs(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifier),
@@ -112,31 +107,34 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.anonymityRevokerPublicKeyY)
         );
         return {
-          hNote: arrayBufferToScalar(rawPubInputs.hashedNote),
-          prenullifier: arrayBufferToScalar(rawPubInputs.prenullifier),
-          initialDeposit: arrayBufferToScalar(rawPubInputs.initialDeposit),
-          commitment: arrayBufferToScalar(rawPubInputs.commitment),
-          tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
-          anonymityRevokerPublicKeyX: arrayBufferToScalar(
-            rawPubInputs.anonymityRevokerPublicKeyX
-          ),
-          anonymityRevokerPublicKeyY: arrayBufferToScalar(
-            rawPubInputs.anonymityRevokerPublicKeyY
-          ),
-          symKeyEncryption1X: arrayBufferToScalar(
-            rawPubInputs.symKeyEncryption1X
-          ),
-          symKeyEncryption1Y: arrayBufferToScalar(
-            rawPubInputs.symKeyEncryption1Y
-          ),
-          symKeyEncryption2X: arrayBufferToScalar(
-            rawPubInputs.symKeyEncryption2X
-          ),
-          symKeyEncryption2Y: arrayBufferToScalar(
-            rawPubInputs.symKeyEncryption2Y
-          ),
-          macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
-          macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
+          proof: new Uint8Array(rawProof),
+          pubInputs: {
+            hNote: arrayBufferToScalar(rawPubInputs.hashedNote),
+            prenullifier: arrayBufferToScalar(rawPubInputs.prenullifier),
+            initialDeposit: arrayBufferToScalar(rawPubInputs.initialDeposit),
+            commitment: arrayBufferToScalar(rawPubInputs.commitment),
+            tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
+            anonymityRevokerPublicKeyX: arrayBufferToScalar(
+              rawPubInputs.anonymityRevokerPublicKeyX
+            ),
+            anonymityRevokerPublicKeyY: arrayBufferToScalar(
+              rawPubInputs.anonymityRevokerPublicKeyY
+            ),
+            symKeyEncryption1X: arrayBufferToScalar(
+              rawPubInputs.symKeyEncryption1X
+            ),
+            symKeyEncryption1Y: arrayBufferToScalar(
+              rawPubInputs.symKeyEncryption1Y
+            ),
+            symKeyEncryption2X: arrayBufferToScalar(
+              rawPubInputs.symKeyEncryption2X
+            ),
+            symKeyEncryption2Y: arrayBufferToScalar(
+              rawPubInputs.symKeyEncryption2Y
+            ),
+            macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
+            macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
+          },
         };
       });
     },
@@ -180,11 +178,7 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.nullifierNew),
           scalarToArrayBuffer(advice.macSalt)
         );
-        return new Uint8Array(rawProof);
-      });
-    },
-    pubInputs: async (advice) => {
-      return Promise.resolve().then(() => {
+
         const rawPubInputs = depositPubInputs(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifierOld),
@@ -197,14 +191,17 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.macSalt)
         );
         return {
-          merkleRoot: arrayBufferToScalar(rawPubInputs.merkleRoot),
-          hNullifierOld: arrayBufferToScalar(rawPubInputs.hNullifierOld),
-          hNoteNew: arrayBufferToScalar(rawPubInputs.hNoteNew),
-          value: arrayBufferToScalar(rawPubInputs.value),
-          commitment: arrayBufferToScalar(rawPubInputs.commitment),
-          tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
-          macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
-          macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
+          proof: new Uint8Array(rawProof),
+          pubInputs: {
+            merkleRoot: arrayBufferToScalar(rawPubInputs.merkleRoot),
+            hNullifierOld: arrayBufferToScalar(rawPubInputs.hNullifierOld),
+            hNoteNew: arrayBufferToScalar(rawPubInputs.hNoteNew),
+            value: arrayBufferToScalar(rawPubInputs.value),
+            commitment: arrayBufferToScalar(rawPubInputs.commitment),
+            tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
+            macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
+            macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
+          },
         };
       });
     },
@@ -243,11 +240,7 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.commitment),
           scalarToArrayBuffer(advice.macSalt)
         );
-        return new Uint8Array(rawProof);
-      });
-    },
-    pubInputs: async (advice) => {
-      return Promise.resolve().then(() => {
+
         const rawPubInputs = withdrawPubInputs(
           scalarToArrayBuffer(advice.id),
           scalarToArrayBuffer(advice.nullifierOld),
@@ -260,14 +253,17 @@ export class RNCryptoClient implements CryptoClient {
           scalarToArrayBuffer(advice.macSalt)
         );
         return {
-          merkleRoot: arrayBufferToScalar(rawPubInputs.merkleRoot),
-          hNullifierOld: arrayBufferToScalar(rawPubInputs.hNullifierOld),
-          hNoteNew: arrayBufferToScalar(rawPubInputs.hNoteNew),
-          value: arrayBufferToScalar(rawPubInputs.withdrawalValue),
-          tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
-          commitment: arrayBufferToScalar(rawPubInputs.commitment),
-          macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
-          macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
+          proof: new Uint8Array(rawProof),
+          pubInputs: {
+            merkleRoot: arrayBufferToScalar(rawPubInputs.merkleRoot),
+            hNullifierOld: arrayBufferToScalar(rawPubInputs.hNullifierOld),
+            hNoteNew: arrayBufferToScalar(rawPubInputs.hNoteNew),
+            value: arrayBufferToScalar(rawPubInputs.withdrawalValue),
+            tokenAddress: arrayBufferToScalar(rawPubInputs.tokenAddress),
+            commitment: arrayBufferToScalar(rawPubInputs.commitment),
+            macSalt: arrayBufferToScalar(rawPubInputs.macSalt),
+            macCommitment: arrayBufferToScalar(rawPubInputs.macCommitment),
+          },
         };
       });
     },
