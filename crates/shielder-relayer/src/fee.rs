@@ -25,6 +25,17 @@ pub struct FeeDetails {
     /// but excluding the commission.
     #[schema(value_type = String)]
     pub relayer_cost_native: U256,
+    /// The actual on-chain cost of the relay in fee token, including gas and pocket money,
+    /// but excluding the commission.
+    #[schema(value_type = String)]
+    pub relayer_cost_fee_token: U256,
+
+    /// The cost of pocket money in native.
+    #[schema(value_type = String)]
+    pub pocket_money_native: U256,
+    /// The cost of pocket money in fee token.
+    #[schema(value_type = String)]
+    pub pocket_money_fee_token: U256,
 
     /// Gas cost for relay call (in native token).
     #[schema(value_type = String)]
@@ -85,6 +96,9 @@ pub fn compute_fee(
         total_cost_native,
         total_cost_fee_token: scale_u256(total_cost_native, native_to_fee_ratio)?,
         relayer_cost_native,
+        relayer_cost_fee_token: scale_u256(relayer_cost_native, native_to_fee_ratio)?,
+        pocket_money_native: pocket_money,
+        pocket_money_fee_token: scale_u256(pocket_money, native_to_fee_ratio)?,
         gas_cost_native,
         gas_cost_fee_token: scale_u256(gas_cost_native, native_to_fee_ratio)?,
         commission_native,
