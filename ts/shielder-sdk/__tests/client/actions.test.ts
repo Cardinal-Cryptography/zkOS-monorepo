@@ -302,6 +302,8 @@ describe("ShielderActions", () => {
           gas_cost_native: 0n,
           gas_cost_fee_token: 0n,
           relayer_cost_native: 0n,
+          pocket_money_native: 0n,
+          pocket_money_fee_token: 0n,
           commission_native: 0n,
           commission_fee_token: 0n
         },
