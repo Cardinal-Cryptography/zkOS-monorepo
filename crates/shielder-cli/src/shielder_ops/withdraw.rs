@@ -52,9 +52,10 @@ pub async fn withdraw(
         protocol_fee_bps
     };
 
+    let mut amount = U256::from(amount) + quoted_fee.fee_details.total_cost_fee_token;
     let protocol_fee = compute_protocol_fee_from_net(U256::from(amount), protocol_fee_bps);
 
-    let amount = U256::from(amount) + quoted_fee.fee_details.total_cost_fee_token + protocol_fee;
+    amount += protocol_fee;
 
     let shielded_amount = app_state.accounts[&token.address()].shielded_amount;
 
