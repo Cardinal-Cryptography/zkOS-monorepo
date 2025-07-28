@@ -1,7 +1,15 @@
+terraform {
+  backend "s3" {
+    bucket = "proving-server-tf-state"
+    key    = "terraform/tee/terraform.tfstate"
+    region = "eu-north-1"
+  }
+}
+
 variable "aws_region" {
   description = "AWS region to deploy to"
   type        = string
-  default     = "eu-central-1"
+  default     = "eu-north-1"
 }
 
 variable "instance_type" {
@@ -24,6 +32,12 @@ variable "eif_url" {
 variable "proxy_image" {
   description = "Public ECR URI of the proxy Docker image"
   type        = string
+}
+
+variable "debug_mode" {
+  description = "Enable debug mode for the Nitro Enclave"
+  type        = bool
+  default     = false
 }
 
 
@@ -171,7 +185,7 @@ export TEE_CID=16
 
 # Run the enclave
 echo "Starting Nitro Enclave with CID=$${TEE_CID}"
-nitro-cli run-enclave --cpu-count 2 --memory 2048 --enclave-cid $${TEE_CID} --eif-path /home/ec2-user/image.eif --debug-mode
+nitro-cli run-enclave --cpu-count 2 --memory 2048 --enclave-cid $${TEE_CID} --eif-path /home/ec2-user/image.eif${var.debug_mode ? " --debug-mode" : ""}
 
 # Wait for enclave to start
 sleep 5
@@ -194,7 +208,7 @@ docker run -d \
   --name shielder-prover-proxy \
   --restart always \
   -p 3000:3000 \
-  --privileged \
+  --security-opt seccomp=unconfined \
   -e ENCLAVE_CID="$${ACTUAL_CID}" \
   -e RUST_LOG=debug \
   "${var.proxy_image}" \
