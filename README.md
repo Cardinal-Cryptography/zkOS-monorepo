@@ -1,3 +1,6 @@
+# This repo has been deprecated. All development moved to https://github.com/Cardinal-Cryptography/blanksquare-monorepo
+
+
 [![LOGO][logo]][aleph-homepage]
 
 [![Nightly Testnet E2E tests][nightly-tests-badge]][nightly-tests]
